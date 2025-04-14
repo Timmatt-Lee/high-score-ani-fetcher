@@ -2,9 +2,8 @@
 content %}
 <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap">
   <h1>Favorites</h1>
-  {# --- ADDED: Display Count --- #}
-  <span class="badge bg-primary rounded-pill fs-6">
-    {# Changed color to primary #} {{ list_count }} item(s)
+  <span id="listCountBadge" class="badge bg-primary rounded-pill fs-6"> {# <<< ADDED ID #}
+      {{ list_count }} item(s)
   </span>
 </div>
 
@@ -23,6 +22,7 @@ content %}
     <i class="bi bi-trash-fill me-1"></i> Move Selected to Trash {# Kept icon #}
   </button>
 </div>
+<div id="batch-status-message" class="mt-2" role="status" aria-live="polite"></div> {# <--- ADD THIS LINE #}
 
 <div class="table-responsive">
   <table

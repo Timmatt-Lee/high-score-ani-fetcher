@@ -126,7 +126,23 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.tablesorter/2.31.3/js/jquery.tablesorter.widgets.min.js"></script>
     <script src="{{ url_for('static', filename='js/common.js') }}"></script>
 
+    <div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 1100"> {# High z-index #}
+      <div id="actionToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true" data-bs-delay="5000"> {# Default 5s delay #}
+        <div class="toast-header">
+          {# Optional: <i class="bi bi-info-circle-fill me-2"></i> #}
+          <strong class="me-auto" id="toastTitle">Action Status</strong> {# Give title an ID #}
+          <small id="toastTimestamp">Just now</small> {# Give timestamp an ID #}
+          <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+        </div>
+        <div class="toast-body" id="toastBody">
+          {# Message will be injected here by JavaScript #}
+        </div>
+      </div>
+    </div>
+    {# End Toast Container #}
+    
     {% block scripts %} {# Page-specific script tags will go here #} {% endblock
     %}
-  </body>
+
+  </body> {# Closing body tag #}
 </html>
