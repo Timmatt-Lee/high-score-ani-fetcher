@@ -72,45 +72,25 @@
           {{ anime.description }}
         </td>
         <td class="action-buttons-cell">
-          <div
-            class="btn-group btn-group-sm"
-            role="group"
-            aria-label="Item Actions for {{ anime.title }}"
-          >
-            {# Restore Form Button (Move to Main List) #}
-            <form
-              action="{{ url_for('restore_from_trash') }}"
-              method="post"
-              style="display: inline"
-            >
-              <input type="hidden" name="link" value="{{ anime.link }}" />
-              <button
-                type="submit"
-                class="btn btn-secondary"
-                title="Restore (Move to Main List)"
-                aria-label="Restore {{ anime.title }} (Move to Main List)"
-              >
-                <i class="bi bi-arrow-repeat"></i> {# Icon only #}
-              </button>
-            </form>
-            {# Add to Favorites Form Button #}
-            <form
-              action="{{ url_for('add_to_favorites') }}"
-              method="post"
-              style="display: inline"
-            >
-              <input type="hidden" name="link" value="{{ anime.link }}" />
-              <button
-                type="submit"
-                class="btn btn-primary"
-                title="Move to Favorites"
-                aria-label="Move {{ anime.title }} to Favorites"
-              >
-                <i class="bi bi-heart-fill"></i> {# Icon only #}
-              </button>
-            </form>
-          </div>
-        </td>
+          <div class="btn-group btn-group-sm" role="group" aria-label="Item Actions for {{ anime.title }}">
+             {# Restore Button - Changed from form to button #}
+             <button type="button" class="btn btn-secondary single-action-button"
+                     title="Restore (Move to Main List)" aria-label="Restore {{ anime.title }} (Move to Main List)"
+                     data-action-url="{{ url_for('restore_from_trash') }}"
+                     data-anime-link="{{ anime.link }}"
+                     data-anime-title="{{ anime.title }}">
+                 <i class="bi bi-arrow-repeat"></i>
+             </button>
+             {# Add to Favorites Button - Changed from form to button #}
+             <button type="button" class="btn btn-primary single-action-button"
+                     title="Move to Favorites" aria-label="Move {{ anime.title }} to Favorites"
+                     data-action-url="{{ url_for('add_to_favorites') }}"
+                     data-anime-link="{{ anime.link }}"
+                     data-anime-title="{{ anime.title }}">
+                 <i class="bi bi-heart-fill"></i>
+             </button>
+         </div>
+     </td>
       </tr>
       {% else %}
       <tr>

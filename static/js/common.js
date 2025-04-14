@@ -1,5 +1,139 @@
+// --- Delegated Event Listener for Single Action Buttons ---
+// We attach the listener to the document body, but it only acts on clicks
+// originating from elements with the 'single-action-button' class.
+$(document).on("click", ".single-action-button", function (event) {
+  event.preventDefault(); // Prevent any default button behavior
+
+  const button = $(this); // The button that was clicked (jQuery object)
+  // Read data attributes from the clicked button
+  const actionUrl = button.data("action-url");
+  const animeLink = button.data("anime-link");
+  const animeTitle = button.data("anime-title") || "this item"; // Use title from data attribute
+
+  // Basic validation
+  if (!actionUrl || !animeLink) {
+    console.error(
+      "Missing data-action-url or data-anime-link on button:",
+      button[0]
+    );
+    showToast(
+      "Could not perform action: button configuration missing.",
+      "error"
+    );
+    return;
+  }
+
+  // Disable button and show spinner temporarily
+  button.prop("disabled", true);
+  const originalHtml = button.html(); // Store original content (icon)
+  button.html(
+    '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>'
+  );
+
+  // Prepare data to send. Backend expects 'link' in form data.
+  const formData = new URLSearchParams();
+  formData.append("link", animeLink);
+
+  // Perform the fetch request
+  fetch(actionUrl, {
+    method: "POST",
+    headers: {
+      // Set Accept header to indicate we prefer JSON response
+      Accept: "application/json",
+      // Content-Type is set automatically for URLSearchParams by fetch
+    },
+    body: formData,
+  })
+    .then((response) => {
+      // Check if response is ok (status 2xx)
+      if (!response.ok) {
+        // Attempt to parse error JSON, fallback to status text
+        return response
+          .json()
+          .catch(() => null)
+          .then((errData) => {
+            const errorMsg =
+              errData?.error ||
+              `Request failed: ${response.statusText} (${response.status})`;
+            throw new Error(errorMsg); // Throw an error to be caught by .catch()
+          });
+      }
+      // Check Content-Type even on success
+      const contentType = response.headers.get("content-type");
+      if (contentType && contentType.includes("application/json")) {
+        return response.json(); // Parse JSON body
+      } else {
+        console.warn("Received non-JSON success response for single action.");
+        // Assume success based on 2xx status, provide generic message
+        // The backend *should* send JSON based on Accept header, but have a fallback.
+        return {
+          success: true,
+          message: `Action on '${animeTitle}' completed.`,
+        };
+      }
+    })
+    .then((data) => {
+      // Success! Backend confirmed action (and sent JSON)
+      // --- IMMEDIATE UI UPDATE ---
+      const $row = button.closest("tr"); // Find the table row containing the button
+      const tableElement = $row.closest("table"); // Find parent table
+      const tableBody = tableElement.find("tbody");
+      const tableId = tableElement.attr("id");
+
+      if ($row.length > 0) {
+        $row.fadeOut(300, function () {
+          // Optional: Fade out before removing
+          $(this).remove(); // Remove the row from the DOM
+
+          // Update tablesorter's cache
+          tableElement.trigger("update", [true]); // Optional resort
+
+          // Update the displayed item count badge
+          const countBadge = document.getElementById("listCountBadge");
+          if (countBadge) {
+            const currentText = countBadge.textContent || "";
+            const match = currentText.match(/(\d+)/);
+            if (match) {
+              let currentCount = parseInt(match[1], 10);
+              let newCount = Math.max(0, currentCount - 1); // Subtract 1
+              let suffix = " item(s)";
+              if (tableId === "anime-table") suffix += " shown";
+              countBadge.textContent = `${newCount}${suffix}`;
+            }
+          }
+
+          // Check if table body is now empty and show empty row message
+          const $emptyRow = tableElement.find("#empty-row");
+          if (
+            tableBody.find("tr[data-link]").length === 0 &&
+            $emptyRow.length > 0
+          ) {
+            $emptyRow
+              .find("td")
+              .attr("colspan", tableElement.find("thead th").length);
+            $emptyRow.show();
+          }
+        });
+      }
+      // --- END UI UPDATE ---
+
+      showToast(data.message || `Action successful!`, "success"); // Show success toast notification
+    })
+    .catch((error) => {
+      console.error(`Single Action Error (${actionUrl}):`, error);
+      showToast(`Error: ${error.message}`, "error"); // Show error toast notification
+    })
+    .finally(() => {
+      // Restore button state ONLY if it hasn't been removed from DOM
+      if (button.closest("body").length) {
+        // Check if button still exists
+        button.prop("disabled", false);
+        button.html(originalHtml); // Restore original icon/content
+      }
+    });
+});
+
 // --- Toast Handling ---
-// (Keep showToast and related initialization variables/logic as is) ...
 let actionToastElement = null;
 let actionToastBody = null;
 let actionToastTitle = null;

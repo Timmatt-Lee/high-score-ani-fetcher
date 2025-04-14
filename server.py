@@ -615,42 +615,110 @@ def _move_item_logic(link, source_list_name, target_list_name):
         logging.warning(f"Item with link {link} not found in source list '{source_list_name}' for move.")
         return False
 
-# (Individual move routes: add_to_favorites, move_to_trash, restore_from_trash, remove_from_favorites - Keep as is)
 @app.route('/add_to_favorites', methods=['POST'])
 def add_to_favorites():
     link = request.form.get('link')
-    if not link: return redirect(request.referrer or url_for('index'))
-    data = load_data(); source = 'search_list'
-    if not any(item.get('link') == link for item in data.get('search_list', [])):
-        if any(item.get('link') == link for item in data.get('trash', [])): source = 'trash'
-        else: return redirect(request.referrer or url_for('index'))
-    _move_item_logic(link, source, 'favorites')
-    return redirect(request.referrer or url_for('index'))
+    is_ajax = request.accept_mimetypes.accept_json and \
+              not request.accept_mimetypes.accept_html # Check if JSON is preferred
 
+    if not link:
+        if is_ajax: return jsonify(error="Missing link data"), 400
+        # Add flash message for non-ajax? TBD
+        return redirect(request.referrer or url_for('index'))
+
+    # Determine source list
+    data = load_data()
+    source = None
+    if any(item.get('link') == link for item in data.get('search_list', [])):
+        source = 'search_list'
+    elif any(item.get('link') == link for item in data.get('trash', [])):
+         source = 'trash'
+
+    if not source:
+        msg = f"Item {link} not found in valid source lists for add_to_favorites."
+        logging.warning(msg)
+        if is_ajax: return jsonify(error=msg), 404
+        return redirect(request.referrer or url_for('index'))
+
+    success = _move_item_logic(link, source, 'favorites')
+    item_title = data.get('all_anime_cache', {}).get(link, {}).get('title', 'Item') # Get title
+
+    if is_ajax:
+        if success:
+            return jsonify(success=True, message=f"'{item_title}' added to Favorites.")
+        else:
+            return jsonify(error=f"Failed to add '{item_title}' to Favorites."), 500
+    else:
+        return redirect(request.referrer or url_for('index'))
 @app.route('/move_to_trash', methods=['POST'])
 def move_to_trash():
     link = request.form.get('link')
-    if not link: return redirect(request.referrer or url_for('index'))
-    data = load_data(); source = 'search_list'
-    if not any(item.get('link') == link for item in data.get('search_list', [])):
-        if any(item.get('link') == link for item in data.get('favorites', [])): source = 'favorites'
-        else: return redirect(request.referrer or url_for('index'))
-    _move_item_logic(link, source, 'trash')
-    return redirect(request.referrer or url_for('index'))
+    is_ajax = request.accept_mimetypes.accept_json and not request.accept_mimetypes.accept_html
+
+    if not link: # Basic validation
+        if is_ajax: return jsonify(error="Missing link data"), 400
+        return redirect(request.referrer or url_for('index'))
+
+    # Determine source list
+    data = load_data()
+    source = None
+    if any(item.get('link') == link for item in data.get('search_list', [])):
+        source = 'search_list'
+    elif any(item.get('link') == link for item in data.get('favorites', [])):
+         source = 'favorites'
+
+    if not source:
+        msg = f"Item {link} not found in valid source lists for move_to_trash."
+        logging.warning(msg)
+        if is_ajax: return jsonify(error=msg), 404
+        return redirect(request.referrer or url_for('index'))
+
+    success = _move_item_logic(link, source, 'trash')
+    item_title = data.get('all_anime_cache', {}).get(link, {}).get('title', 'Item')
+
+    if is_ajax:
+        if success: return jsonify(success=True, message=f"'{item_title}' moved to Trash.")
+        else: return jsonify(error=f"Failed to move '{item_title}' to Trash."), 500
+    else: return redirect(request.referrer or url_for('index'))
+
 
 @app.route('/restore_from_trash', methods=['POST'])
 def restore_from_trash():
     link = request.form.get('link')
-    if not link: return redirect(url_for('trash'))
-    _move_item_logic(link, 'trash', 'search_list')
-    return redirect(url_for('trash'))
+    is_ajax = request.accept_mimetypes.accept_json and not request.accept_mimetypes.accept_html
+
+    if not link:
+        if is_ajax: return jsonify(error="Missing link data"), 400
+        return redirect(url_for('trash'))
+
+    # Source is always 'trash' here
+    success = _move_item_logic(link, 'trash', 'search_list')
+    # Get title (might not be in cache if added directly to trash somehow, handle gracefully)
+    item_title = load_data().get('all_anime_cache', {}).get(link, {}).get('title', 'Item')
+
+    if is_ajax:
+        if success: return jsonify(success=True, message=f"'{item_title}' restored to Main List.")
+        else: return jsonify(error=f"Failed to restore '{item_title}'."), 500 # Could be 404 if not found
+    else: return redirect(url_for('trash'))
+
 
 @app.route('/remove_from_favorites', methods=['POST'])
 def remove_from_favorites():
     link = request.form.get('link')
-    if not link: return redirect(url_for('favorites'))
-    _move_item_logic(link, 'favorites', 'search_list')
-    return redirect(url_for('favorites'))
+    is_ajax = request.accept_mimetypes.accept_json and not request.accept_mimetypes.accept_html
+
+    if not link:
+        if is_ajax: return jsonify(error="Missing link data"), 400
+        return redirect(url_for('favorites'))
+
+    # Source is always 'favorites' here
+    success = _move_item_logic(link, 'favorites', 'search_list')
+    item_title = load_data().get('all_anime_cache', {}).get(link, {}).get('title', 'Item')
+
+    if is_ajax:
+        if success: return jsonify(success=True, message=f"'{item_title}' removed from Favorites.")
+        else: return jsonify(error=f"Failed to remove '{item_title}' from Favorites."), 500
+    else: return redirect(url_for('favorites'))
 
 # --- Action Routes (Batch Moves) ---
 def _batch_move_items_logic(links, source_list_name, target_list_name):

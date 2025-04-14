@@ -71,45 +71,25 @@ content %}
           {{ anime.description }}
         </td>
         <td class="action-buttons-cell">
-          <div
-            class="btn-group btn-group-sm"
-            role="group"
-            aria-label="Item Actions for {{ anime.title }}"
-          >
-            {# Remove Fav Form Button (Move to Main List) #}
-            <form
-              action="{{ url_for('remove_from_favorites') }}"
-              method="post"
-              style="display: inline"
-            >
-              <input type="hidden" name="link" value="{{ anime.link }}" />
-              <button
-                type="submit"
-                class="btn btn-secondary"
-                title="Move to Main List"
-                aria-label="Remove {{ anime.title }} from Favorites (Move to Main List)"
-              >
-                <i class="bi bi-arrow-return-left"></i> {# Icon only #}
+          <div class="btn-group btn-group-sm" role="group" aria-label="Item Actions for {{ anime.title }}">
+              {# Remove Fav Button - Changed from form to button #}
+              <button type="button" class="btn btn-secondary single-action-button"
+                      title="Move to Main List" aria-label="Remove {{ anime.title }} from Favorites (Move to Main List)"
+                      data-action-url="{{ url_for('remove_from_favorites') }}"
+                      data-anime-link="{{ anime.link }}"
+                      data-anime-title="{{ anime.title }}">
+                  <i class="bi bi-arrow-return-left"></i>
               </button>
-            </form>
-            {# Move to Trash Form Button #}
-            <form
-              action="{{ url_for('move_to_trash') }}"
-              method="post"
-              style="display: inline"
-            >
-              <input type="hidden" name="link" value="{{ anime.link }}" />
-              <button
-                type="submit"
-                class="btn btn-warning"
-                title="Move to Trash"
-                aria-label="Move {{ anime.title }} to Trash"
-              >
-                <i class="bi bi-trash-fill"></i> {# Icon only #}
+              {# Move to Trash Button - Changed from form to button #}
+              <button type="button" class="btn btn-warning single-action-button"
+                      title="Move to Trash" aria-label="Move {{ anime.title }} to Trash"
+                      data-action-url="{{ url_for('move_to_trash') }}"
+                      data-anime-link="{{ anime.link }}"
+                      data-anime-title="{{ anime.title }}">
+                  <i class="bi bi-trash-fill"></i>
               </button>
-            </form>
           </div>
-        </td>
+      </td>
       </tr>
       {% else %}
       <tr>
