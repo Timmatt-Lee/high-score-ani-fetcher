@@ -94,7 +94,7 @@ All application data, including the main filtered list, favorites, trash, and th
 
 You can adjust some behavior by modifying the constants and configuration dictionary near the top of the `server.py` file:
 
-* `CONFIG['SCRAPE_FILTER_SCORE_THRESHOLD']`: Minimum score for an anime to appear on the main list.
+* `SCORE_THRESHOLD`: Minimum score for an anime to appear on the main list.
 * `EPISODE_THRESHOLD`: Minimum episode count for an anime to appear on the main list.
 * `SCRAPE_PAGE_DELAY_MIN`/`MAX`: Wait time between fetching list pages.
 * `SCRAPE_DETAIL_DELAY_MIN`/`MAX`: Wait time between fetching detail pages.
