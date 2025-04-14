@@ -1,6 +1,13 @@
 {% extends 'base.html' %} {% block title %}Anime List{% endblock %} {% block
 content %}
-<h1 class="mb-3">Anime List</h1>
+<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap">
+  {# Added flex-wrap #}
+  <h1>Anime List</h1>
+  {# --- ADDED: Display Count --- #}
+  <span class="badge bg-info rounded-pill fs-6">
+    {# Changed color to info #} {{ list_count }} item(s) shown
+  </span>
+</div>
 
 {# Scraping Controls Section #}
 <div id="scraping-controls" class="mb-3 d-flex flex-wrap align-items-center">

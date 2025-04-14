@@ -502,17 +502,19 @@ def progress():
 
 
 # --- Flask Routes & Other Logic ---
-# (Keep remaining routes: index, start_scrape, stop_scrape, favorites, trash,
-#  _move_item_logic, individual move routes, _batch_move_items_logic, batch_action,
-#  human_format_filter, error handlers, and __main__ block exactly as they were
-#  in the previous refactored version)
-# ... (Previous code for routes etc.) ...
-
 @app.route('/')
 def index():
-    # ... (Keep as is) ...
+    """Displays the main list of anime, sorted by score."""
     data = load_data()
-    search_list_sorted = sorted(data.get('search_list', []), key=lambda x: x.get('score', 0.0), reverse=True)
+    # Filter logic happens during scrape, search_list should be ready
+    search_list_items = data.get('search_list', [])
+    search_list_sorted = sorted(
+        search_list_items,
+        key=lambda x: x.get('score', 0.0),
+        reverse=True
+    )
+    search_list_count = len(search_list_items) # Calculate count
+
     initial_state_for_template = {
         'is_running': SCRAPING_STATE['is_running'],
         'stop_requested': SCRAPING_STATE['stop_requested'],
@@ -520,13 +522,46 @@ def index():
     }
     return render_template('index.html',
                            search_list=search_list_sorted,
+                           list_count=search_list_count, # Pass count to template
                            scraping_state_initial=initial_state_for_template,
-                           score_threshold=SCORE_THRESHOLD)
+                           score_threshold=SCORE_THRESHOLD) # Use constant
+
+
+@app.route('/favorites')
+def favorites():
+    """Displays the favorites list, sorted by score."""
+    data = load_data()
+    favorites_items = data.get('favorites', [])
+    favorites_sorted = sorted(
+        favorites_items,
+        key=lambda x: x.get('score', 0.0),
+        reverse=True
+    )
+    favorites_count = len(favorites_items) # Calculate count
+    return render_template('favorites.html',
+                           favorites=favorites_sorted,
+                           list_count=favorites_count) # Pass count to template
+
+
+@app.route('/trash')
+def trash():
+    """Displays the trash list, sorted by score."""
+    data = load_data()
+    trash_items = data.get('trash', [])
+    trash_sorted = sorted(
+        trash_items,
+        key=lambda x: x.get('score', 0.0),
+        reverse=True
+    )
+    trash_count = len(trash_items) # Calculate count
+    return render_template('trash.html',
+                           trash=trash_sorted,
+                           list_count=trash_count) # Pass count to template
 
 
 @app.route('/start_scrape')
 def start_scrape():
-    # ... (Keep as is) ...
+    
     global SCRAPING_STATE
     if not SCRAPING_STATE['is_running']:
         SCRAPING_STATE['is_running'] = True
@@ -545,7 +580,7 @@ def start_scrape():
 
 @app.route('/stop_scrape')
 def stop_scrape():
-     # ... (Keep as is) ...
+     
     global SCRAPING_STATE
     if SCRAPING_STATE['is_running']:
         logging.info("Stop request received.")
@@ -556,25 +591,8 @@ def stop_scrape():
     return redirect(url_for('index'))
 
 
-@app.route('/favorites')
-def favorites():
-    # ... (Keep as is) ...
-    data = load_data()
-    favorites_sorted = sorted(data.get('favorites', []), key=lambda x: x.get('score', 0.0), reverse=True)
-    return render_template('favorites.html', favorites=favorites_sorted)
-
-
-@app.route('/trash')
-def trash():
-    # ... (Keep as is) ...
-    data = load_data()
-    trash_sorted = sorted(data.get('trash', []), key=lambda x: x.get('score', 0.0), reverse=True)
-    return render_template('trash.html', trash=trash_sorted)
-
-
 # --- Action Routes (Single Item Moves) ---
 def _move_item_logic(link, source_list_name, target_list_name):
-    # ... (Keep as is) ...
     data = load_data()
     source_list = data.get(source_list_name)
     target_list = data.get(target_list_name)
@@ -636,7 +654,7 @@ def remove_from_favorites():
 
 # --- Action Routes (Batch Moves) ---
 def _batch_move_items_logic(links, source_list_name, target_list_name):
-     # ... (Keep as is) ...
+     
     if not links: return 0
     data = load_data()
     source_list = data.get(source_list_name); target_list = data.get(target_list_name)
@@ -662,7 +680,7 @@ def _batch_move_items_logic(links, source_list_name, target_list_name):
 
 @app.route('/batch_action', methods=['POST'])
 def batch_action():
-     # ... (Keep as is) ...
+     
     data = request.get_json()
     if not data: return jsonify(error="Invalid request body. JSON expected."), 400
     links = data.get('links'); action = data.get('action')
@@ -685,7 +703,7 @@ def batch_action():
 # --- Custom Jinja Filter ---
 @app.template_filter('human_format')
 def human_format_filter(value):
-    # ... (Keep as is) ...
+    
     if value is None: return "N/A"
     if isinstance(value, str):
         try: value = float(value.replace(',', ''))
@@ -705,7 +723,7 @@ def human_format_filter(value):
 # --- Error Handlers ---
 @app.errorhandler(404)
 def page_not_found(e):
-    # ... (Keep as is) ...
+    
     logging.warning(f"Not Found error: {request.path} - {e}")
     if request.accept_mimetypes.accept_json and not request.accept_mimetypes.accept_html:
         return jsonify(error="Not Found", description=str(e)), 404
@@ -713,7 +731,7 @@ def page_not_found(e):
 
 @app.errorhandler(500)
 def internal_server_error(e):
-     # ... (Keep as is) ...
+     
     logging.error(f"Internal Server Error: {request.path} - {e}", exc_info=True)
     if request.accept_mimetypes.accept_json and not request.accept_mimetypes.accept_html:
          return jsonify(error="Internal Server Error", description=str(e)), 500
