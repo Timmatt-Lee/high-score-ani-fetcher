@@ -1,0 +1,122 @@
+{% extends 'base.html' %} {% block title %}Trash{% endblock %} {% block content
+%}
+<h1 class="mb-3">Trash</h1>
+
+<div id="batch-actions" class="mb-3">
+  <button
+    class="btn btn-secondary btn-sm"
+    onclick="performGenericBatchAction('/batch_action', 'trash-table', 'restore_from_trash')"
+  >
+    <i class="bi bi-arrow-repeat me-1"></i> Restore Selected (to Main List) {#
+    Kept icon #}
+  </button>
+  <button
+    class="btn btn-primary btn-sm"
+    onclick="performGenericBatchAction('/batch_action', 'trash-table', 'fav_from_trash')"
+  >
+    <i class="bi bi-heart-fill me-1"></i> Move Selected to Favorites {# Kept
+    icon #}
+  </button>
+</div>
+
+<div class="table-responsive">
+  <table
+    id="trash-table"
+    class="table table-striped table-bordered table-hover table-sm tablesorter"
+  >
+    <thead class="table-light">
+      <tr>
+        <th class="sorter-false checkbox-col text-center">
+          <input type="checkbox" class="form-check-input" id="select-all" />
+        </th>
+        <th>Title</th>
+        <th class="sorter-digit">Score</th>
+        <th class="sorter-digit">Watch Count</th>
+        <th class="sorter-digit">Rating Count</th>
+        <th>Ep. Count</th>
+        <th>Upload Date</th>
+        <th>Description</th>
+        <th class="sorter-false action-buttons-cell">Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for anime in trash %}
+      <tr>
+        <td class="checkbox-col text-center">
+          <input
+            type="checkbox"
+            class="form-check-input"
+            name="selected_anime"
+            value="{{ anime.link }}"
+          />
+        </td>
+        <td>
+          <a href="{{ anime.link }}" target="_blank" title="{{ anime.title }}"
+            >{{ anime.title }}</a
+          >
+        </td>
+        <td>{{ anime.score }}</td>
+        <td>{{ anime.watch_count | human_format }}</td>
+        {# Apply filter #}
+        <td>{{ anime.rating_count | human_format }}</td>
+        {# Apply filter #}
+        <td>{{ anime.episode_count }}</td>
+        <td>{{ anime.upload_date }}</td>
+        <td class="description-cell" title="{{ anime.description }}">
+          {{ anime.description }}
+        </td>
+        <td class="action-buttons-cell">
+          <div
+            class="btn-group btn-group-sm"
+            role="group"
+            aria-label="Item Actions for {{ anime.title }}"
+          >
+            {# Restore Form Button (Move to Main List) #}
+            <form
+              action="{{ url_for('restore_from_trash') }}"
+              method="post"
+              style="display: inline"
+            >
+              <input type="hidden" name="link" value="{{ anime.link }}" />
+              <button
+                type="submit"
+                class="btn btn-secondary"
+                title="Restore (Move to Main List)"
+                aria-label="Restore {{ anime.title }} (Move to Main List)"
+              >
+                <i class="bi bi-arrow-repeat"></i> {# Icon only #}
+              </button>
+            </form>
+            {# Add to Favorites Form Button #}
+            <form
+              action="{{ url_for('add_to_favorites') }}"
+              method="post"
+              style="display: inline"
+            >
+              <input type="hidden" name="link" value="{{ anime.link }}" />
+              <button
+                type="submit"
+                class="btn btn-primary"
+                title="Move to Favorites"
+                aria-label="Move {{ anime.title }} to Favorites"
+              >
+                <i class="bi bi-heart-fill"></i> {# Icon only #}
+              </button>
+            </form>
+          </div>
+        </td>
+      </tr>
+      {% else %}
+      <tr>
+        <td colspan="9" class="text-center text-muted fst-italic py-3">
+          Your trash can is empty.
+        </td>
+      </tr>
+      {# Colspan 9, added padding/style #} {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %} {% block scripts %} {# common.js is loaded in base.html BEFORE
+this block #}
+<script src="{{ url_for('static', filename='js/trash.js') }}"></script>
+{% endblock %}
