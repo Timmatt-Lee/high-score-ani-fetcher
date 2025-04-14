@@ -27,10 +27,10 @@ EPISODE_THRESHOLD = 10
 BASE_URL = "https://ani.gamer.com.tw/"
 ANIME_LIST_URL_TEMPLATE = BASE_URL + "animeList.php?page={}"
 # Delays (Increase base page delay slightly to be nicer)
-SCRAPE_PAGE_DELAY_MIN = 0.5
-SCRAPE_PAGE_DELAY_MAX = 1.5
-SCRAPE_DETAIL_DELAY_MIN = 0.5
-SCRAPE_DETAIL_DELAY_MAX = 1.5
+SCRAPE_PAGE_DELAY_MIN = 1
+SCRAPE_PAGE_DELAY_MAX = 2
+SCRAPE_DETAIL_DELAY_MIN = 1
+SCRAPE_DETAIL_DELAY_MAX = 2
 # Retries and Rate Limiting
 SCRAPE_RETRY_COUNT = 5
 # Cap the maximum wait time respected from Retry-After header (in seconds)

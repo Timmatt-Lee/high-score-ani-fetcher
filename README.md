@@ -37,7 +37,7 @@ A Flask-based web application to fetch and track high-scoring anime from <https:
 1. **Clone the Repository:**
 
     ```bash
-    git clone https://github.com/timmatt/high-score-ani-fetcher.git
+    git clone https://github.com/Timmatt-Lee/high-score-ani-fetcher.git
     cd high-score-ani-fetcher
     ```
 
@@ -109,7 +109,7 @@ You can adjust some behavior by modifying the constants and configuration dictio
 
 ## Contributing
 
-Contributions, issues, and feature requests are welcome\! Feel free to check [issues page](https://github.com/timmatt/high-score-ani-fetcher/issues).
+Contributions, issues, and feature requests are welcome\! Feel free to check [issues page](https://github.com/Timmatt-Lee/high-score-ani-fetcher/issues).
 
 ## License
 
