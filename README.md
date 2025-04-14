@@ -4,6 +4,10 @@ A Flask-based web application to fetch and track high-scoring anime from <https:
 
 ![](screenshot.png)
 
+**Note on Code Origin:**
+
+Much of the code in this repository was generated with assistance from Google Gemini 2.5 Pro. While functional for its purpose as a local tool, it may not reflect all conventional coding practices or the maintainer's preferred style. It is shared 'as-is' for community utility.
+
 ## Features
 
 * **Data Fetching:** Scrapes anime titles, scores, descriptions, episode counts, watch counts, rating counts, and upload dates from <https://ani.gamer.com.tw>.
