@@ -264,33 +264,56 @@ def _parse_card_basic_info(card):
     }
 
 def scrape_anime_data_task():
-    """Background task to scrape anime data."""
-    # Add application context wrapper
+    """
+    Background task to scrape anime data from ani.gamer.com.tw.
+    Uses caching, checks Fav/Trash lists, and applies score/episode filters.
+    Updates progress via SCRAPING_STATE and puts relevant items
+    into SCRAPING_STATE['new_anime_queue'].
+    Runs within a Flask application context.
+    """
+    # Ensure task runs within Flask application context
     with app.app_context():
         global SCRAPING_STATE
         logging.info("Scraping task started.")
+        # Get configuration/constants
         score_threshold = SCORE_THRESHOLD
-        episode_threshold = EPISODE_THRESHOLD # Use the constant defined earlier
+        episode_threshold = EPISODE_THRESHOLD
         update_progress(percentage=0, loaded_count=0, total_estimated=0, current_anime='', status_message='Initializing...')
 
-        # Reset queue
+        # Reset queue before starting
         while not SCRAPING_STATE['new_anime_queue'].empty():
-            try: SCRAPING_STATE['new_anime_queue'].get_nowait()
-            except queue.Empty: break
+            try:
+                SCRAPING_STATE['new_anime_queue'].get_nowait()
+            except queue.Empty:
+                break
 
-        anime_data_store = load_data()
-        search_list = anime_data_store.get('search_list', [])
-        all_anime_cache = anime_data_store.get('all_anime_cache', {})
+        # --- Load ALL relevant data at the start ---
+        try:
+            anime_data_store = load_data()
+            search_list = anime_data_store.get('search_list', [])
+            favorites_list = anime_data_store.get('favorites', [])
+            trash_list = anime_data_store.get('trash', [])
+            all_anime_cache = anime_data_store.get('all_anime_cache', {})
+        except Exception as load_err:
+            logging.error(f"Fatal error loading data at start of scrape task: {load_err}", exc_info=True)
+            SCRAPING_STATE['is_running'] = False
+            update_progress(status_message="Error: Could not load initial data.")
+            return # Cannot proceed without data
+
+        # Create sets for efficient lookups
         links_in_search_list = {item['link'] for item in search_list}
+        links_in_favorites = {item['link'] for item in favorites_list}
+        links_in_trash = {item['link'] for item in trash_list}
+        # --- End loading data ---
 
         total_pages = get_total_pages()
         if total_pages == 0:
             SCRAPING_STATE['is_running'] = False
             update_progress(status_message="Scraping failed: Could not determine page count.")
             logging.error("Scraping stopped: Failed to get total pages.")
-            return
+            return # Exit function
 
-        anime_per_page_estimate = 28
+        anime_per_page_estimate = 28 # Rough estimate
         total_estimated_items = total_pages * anime_per_page_estimate
         update_progress(total_estimated=total_estimated_items, status_message='Starting page iteration...')
 
@@ -300,8 +323,8 @@ def scrape_anime_data_task():
         # --- Page Loop ---
         for page_num in range(1, total_pages + 1):
             if SCRAPING_STATE['stop_requested']:
-                logging.info("Scraping task stopped by user request.")
-                break
+                logging.info("Scraping task stopped by user request during page loop.")
+                break # Exit page loop
 
             page_url = ANIME_LIST_URL_TEMPLATE.format(page_num)
             update_progress(status_message=f"Fetching page {page_num}/{total_pages}...")
@@ -309,50 +332,57 @@ def scrape_anime_data_task():
 
             page_response = _make_request_with_retry(
                 page_url, headers, timeout=20,
-                min_delay=SCRAPE_PAGE_DELAY_MIN, max_delay=SCRAPE_PAGE_DELAY_MAX,
+                min_delay=SCRAPE_PAGE_DELAY_MIN,
+                max_delay=SCRAPE_PAGE_DELAY_MAX,
                 purpose=f"fetch page {page_num}"
             )
-            if page_response is None: continue # Skip page on error
+            if page_response is None:
+                logging.warning(f"Skipping page {page_num} due to fetch errors.")
+                continue # Skip to next page
 
             try:
                 soup = BeautifulSoup(page_response.content, 'html.parser')
                 anime_cards = soup.find_all('a', class_='theme-list-main')
-                if not anime_cards: continue
+                if not anime_cards:
+                    logging.warning(f"No anime cards found on page {page_num}. Structure might have changed.")
+                    continue
 
                 # --- Card Loop ---
                 for card in anime_cards:
-                    if SCRAPING_STATE['stop_requested']: break
+                    if SCRAPING_STATE['stop_requested']:
+                        logging.info("Scraping task stopped by user request during card loop.")
+                        break # Exit card loop
 
+                    # --- 1. Parse Basic Info ---
                     current_basic_info = _parse_card_basic_info(card)
-                    if not current_basic_info: continue
+                    if not current_basic_info:
+                        logging.warning("Skipping card: Failed to parse basic info.")
+                        continue
 
                     anime_link = current_basic_info['link']
                     title = current_basic_info['title']
-                    update_progress(current_anime=title)
+                    update_progress(current_anime=title) # Update status for UI
 
+                    # --- 2. Check Cache & Decide on Detail Fetch ---
                     cache_hit = anime_link in all_anime_cache
                     cached_entry = all_anime_cache.get(anime_link) if cache_hit else {}
-                    final_anime_entry = {} # Will hold the definitive data for this item
-                    cache_updated = False
-                    item_changed_in_search_list = False
-
                     needs_detail_refetch = False
+
                     if cache_hit:
-                        # Compare current basic info with cached info to see if details *need* re-fetching
                         cached_episode_count = parse_episode_count(cached_entry.get('episode_count'))
                         cached_watch_count = cached_entry.get('watch_count', 0)
-                        current_episode_count = parse_episode_count(current_basic_info.get('episode_count'))
+                        current_episode_count_parsed_check = parse_episode_count(current_basic_info.get('episode_count')) # Parse for check
                         current_watch_count = current_basic_info.get('watch_count', 0)
 
-                        if current_episode_count > cached_episode_count:
+                        if current_episode_count_parsed_check > cached_episode_count:
                             needs_detail_refetch = True
-                            logging.debug(f"  Update condition: Ep count {cached_episode_count} -> {current_episode_count} for {title}")
-                        # Use >= 0 check for cached_watch_count to avoid issues with 0 * 2
-                        if current_watch_count > (cached_watch_count * 2) and cached_watch_count >= 0 :
+                            logging.debug(f"  Update condition: Ep count {cached_episode_count} -> {current_episode_count_parsed_check} for {title}")
+                        if current_watch_count > (cached_watch_count * 2) and cached_watch_count >= 0:
                              needs_detail_refetch = True
                              logging.debug(f"  Update condition: Watch count {cached_watch_count} -> {current_watch_count} (>{cached_watch_count * 2}) for {title}")
 
-                    # --- Decide how to get score/rating/description ---
+                    # --- 3. Get Full Item Data (Fetch or Cache) ---
+                    final_anime_entry = {} # Will hold the definitive data for this item
                     score = 0.0
                     rating_count = 0
                     description = ""
@@ -373,87 +403,135 @@ def scrape_anime_data_task():
                             'description': cached_entry.get('description', 'Cached - No description')
                         }
 
-                    # --- Update Cache ---
-                    # Always update cache if entry is new or differs from stored version
+                    # --- 4. Update Cache ---
+                    cache_updated = False
+                    # Update cache if entry is new or differs from stored version
                     if not cache_hit or all_anime_cache.get(anime_link) != final_anime_entry:
                         all_anime_cache[anime_link] = final_anime_entry.copy()
                         cache_updated = True
                         logging.debug(f"  Cache updated for: {title}")
 
-                    # --- Apply Filter & Update Search List ---
+                    # --- 5. Apply Filter & Update Search List ---
                     current_score = final_anime_entry.get('score', 0.0)
-                    # Use the parsed episode count for comparison
-                    current_episode_count_parsed = parse_episode_count(final_anime_entry.get('episode_count'))
-
-                    # Apply new filter criteria
-                    passed_filter = (current_episode_count_parsed >= episode_threshold and
+                    # Use the parsed episode count for filtering comparison
+                    current_episode_count_parsed_filter = parse_episode_count(final_anime_entry.get('episode_count'))
+                    # Apply filter criteria
+                    passed_filter = (current_episode_count_parsed_filter >= episode_threshold and
                                      current_score >= score_threshold and
-                                     "OVA" not in title) # Keep OVA check
+                                     "OVA" not in title)
 
-                    currently_in_list = anime_link in links_in_search_list
+                    currently_in_search_list = anime_link in links_in_search_list
+                    item_changed_in_search_list = False # Reset flag for this item
 
                     if passed_filter:
-                        log_suffix = f"(Ep: {current_episode_count_parsed}>={episode_threshold}, Score: {current_score}>={score_threshold})"
-                        if not currently_in_list:
-                            search_list.append(final_anime_entry.copy())
-                            links_in_search_list.add(anime_link)
-                            item_changed_in_search_list = True
-                            logging.info(f"  Adding '{title}' to search list {log_suffix}")
-                        else: # Check if update needed
-                            for i, item in enumerate(search_list):
-                                if item['link'] == anime_link and item != final_anime_entry:
-                                    search_list[i] = final_anime_entry.copy()
-                                    item_changed_in_search_list = True
-                                    logging.info(f"  Updating '{title}' in search list {log_suffix}")
-                                    break
+                        # Check if item is already managed by user before modifying search_list
+                        if anime_link in links_in_favorites:
+                            logging.debug(f"  Skipping add/update to search_list: '{title}' is in Favorites.")
+                            # Ensure it's removed from search_list if it was there
+                            if currently_in_search_list:
+                                search_list = [item for item in search_list if item['link'] != anime_link]
+                                links_in_search_list.remove(anime_link)
+                                item_changed_in_search_list = True
+                                logging.info(f"  Removing '{title}' from search list as it's now in Favorites.")
+                        elif anime_link in links_in_trash:
+                            logging.debug(f"  Skipping add/update to search_list: '{title}' is in Trash.")
+                            # Ensure it's removed from search_list if it was there
+                            if currently_in_search_list:
+                                search_list = [item for item in search_list if item['link'] != anime_link]
+                                links_in_search_list.remove(anime_link)
+                                item_changed_in_search_list = True
+                                logging.info(f"  Removing '{title}' from search list as it's now in Trash.")
+                        else:
+                            # Item passed filter AND is NOT in Fav/Trash -> OK to add/update search_list
+                            log_suffix = f"(Ep: {current_episode_count_parsed_filter}>={episode_threshold}, Score: {current_score}>={score_threshold})"
+                            if not currently_in_search_list:
+                                # Add to search list
+                                search_list.append(final_anime_entry.copy())
+                                links_in_search_list.add(anime_link)
+                                item_changed_in_search_list = True
+                                logging.info(f"  Adding '{title}' to search list {log_suffix}")
+                            else:
+                                # Check if update needed in search list
+                                for i, item in enumerate(search_list):
+                                    if item['link'] == anime_link and item != final_anime_entry:
+                                        search_list[i] = final_anime_entry.copy()
+                                        item_changed_in_search_list = True
+                                        logging.info(f"  Updating '{title}' in search list {log_suffix}")
+                                        break # Found and updated/checked
+
                     else: # Did not pass filter
-                        if currently_in_list:
+                        # If it was previously in search_list, remove it now.
+                        if currently_in_search_list:
                             search_list = [item for item in search_list if item['link'] != anime_link]
                             links_in_search_list.remove(anime_link)
                             item_changed_in_search_list = True
-                            log_suffix = f"(Ep: {current_episode_count_parsed}, Score: {current_score}, OVA: {'OVA' in title})"
+                            log_suffix = f"(Ep: {current_episode_count_parsed_filter}, Score: {current_score}, OVA: {'OVA' in title})"
                             logging.info(f"  Removing '{title}' from search list (filter fail) {log_suffix}")
 
-                    # --- Save Data & Update Queue ---
+                    # --- 6. Save Data & Update Queue ---
                     if cache_updated or item_changed_in_search_list:
                         try:
+                            # Prepare data store dict for saving
                             anime_data_store['search_list'] = search_list
+                            anime_data_store['favorites'] = favorites_list # Include potentially unmodified lists
+                            anime_data_store['trash'] = trash_list
                             anime_data_store['all_anime_cache'] = all_anime_cache
                             save_data(anime_data_store)
                         except Exception as save_err:
                             logging.error(f"  Error saving data after processing {title}: {save_err}")
 
-                        if item_changed_in_search_list and passed_filter:
-                            SCRAPING_STATE['new_anime_queue'].put(final_anime_entry.copy())
+                    # Add to SSE queue ONLY if it passed filter AND was added/updated in search_list
+                    # (i.e., wasn't skipped due to being in fav/trash)
+                    if item_changed_in_search_list and passed_filter and \
+                       anime_link not in links_in_favorites and \
+                       anime_link not in links_in_trash:
+                        # Check the specific conditions under which item_changed_in_search_list became true
+                        # It should only be true here if item was added/updated to search_list, not removed.
+                        # Let's refine: Queue if (added or updated) AND passed_filter AND not in fav/trash
+                        action_was_add_or_update = False
+                        if passed_filter and anime_link not in links_in_favorites and anime_link not in links_in_trash:
+                            # Check if it's now in the search list (means add/update happened)
+                            if any(item['link'] == anime_link for item in search_list):
+                                action_was_add_or_update = True
 
-                    # --- Update Progress ---
+                        if item_changed_in_search_list and action_was_add_or_update:
+                             SCRAPING_STATE['new_anime_queue'].put(final_anime_entry.copy())
+
+
+                    # --- 7. Update Progress ---
                     processed_count += 1
                     percentage = min(100.0, (processed_count / total_estimated_items) * 100 if total_estimated_items > 0 else 0)
                     update_progress(percentage=percentage, loaded_count=processed_count)
                     # --- End Card Loop ---
+                # Ensure inner break exits outer loop if needed
+                if SCRAPING_STATE['stop_requested']: break
 
             except Exception as page_err:
                 logging.error(f"Error processing page {page_num} content: {page_err}", exc_info=True)
                 update_progress(message=f"Error processing page {page_num}")
-                continue
+                continue # Skip to next page
             # --- End Page Loop ---
 
         # --- Finalization ---
         SCRAPING_STATE['is_running'] = False
-        # ... (Finalization logic remains the same, ensure it's indented under 'with') ...
         final_status_msg = "Scraping finished." if not SCRAPING_STATE['stop_requested'] else "Scraping stopped by user."
         SCRAPING_STATE['stop_requested'] = False # Reset stop request flag
 
         update_progress(percentage=100, status_message=final_status_msg, current_anime='')
         logging.info(f"Scraping task ended. Status: {final_status_msg}. Processed approximately {processed_count} items.")
 
+        # Final save to ensure consistency
         logging.info("Performing final save check...")
         try:
+            # Use the lists as they exist at the end of the process
             anime_data_store['search_list'] = search_list
+            anime_data_store['favorites'] = favorites_list
+            anime_data_store['trash'] = trash_list
             anime_data_store['all_anime_cache'] = all_anime_cache
             save_data(anime_data_store)
         except Exception as final_save_err:
             logging.error(f"Error during final save: {final_save_err}")
+    # --- End App Context ---
 
 
 # --- SSE Progress Stream ---
