@@ -53,64 +53,85 @@ function connectSSE() {
           progressBar.classList.remove("progress-bar-animated");
         }
       }
-      // Add/Update Table Row
+      // --- Add/Update Table Row ---
       else if (payload.type === "new_anime") {
         const anime = payload.data;
+        // Escape quotes in link for selector safety (important!)
         const safeLinkSelector = `tr[data-link="${anime.link.replace(
           /"/g,
           '\\"'
         )}"]`;
         let $row = $animeTableBody.find(safeLinkSelector);
 
-        $emptyRow.hide();
+        $emptyRow.hide(); // Hide empty message if adding/updating
 
-        // Use the globally available formatLargeNumberJS
         const formattedWatchCount = formatLargeNumberJS(anime.watch_count);
         const formattedRatingCount = formatLargeNumberJS(anime.rating_count);
 
         if ($row.length > 0) {
-          // UPDATE
+          // UPDATE EXISTING ROW LOGIC (ensure it also updates relevant classes if needed)
           let cells = $row.find("td");
           cells
             .eq(1)
             .html(
               `<a href="${anime.link}" target="_blank" title="${anime.title}">${anime.title}</a>`
             );
-          cells.eq(2).text(anime.score);
-          cells.eq(3).text(formattedWatchCount);
-          cells.eq(4).text(formattedRatingCount);
-          cells.eq(5).text(anime.episode_count);
+          cells.eq(2).text(anime.score).addClass("text-end"); // Add alignment class on update
+          cells.eq(3).text(formattedWatchCount).addClass("text-end"); // Add alignment class on update
+          cells.eq(4).text(formattedRatingCount).addClass("text-end"); // Add alignment class on update
+          cells.eq(5).text(anime.episode_count).addClass("text-center"); // Add alignment class on update
           cells.eq(6).text(anime.upload_date);
-          cells.eq(7).text(anime.description).attr("title", anime.description);
+          cells.eq(7).text(anime.description).attr("title", anime.description); // Update desc + title attr
+          // Update ARIA labels on buttons if title changes (though unlikely needed often)
+          let btnGroup = cells.eq(8).find(".btn-group");
+          if (btnGroup.length)
+            btnGroup.attr("aria-label", `Item Actions for ${anime.title}`);
+          let favBtn = cells
+            .eq(8)
+            .find('form[action*="add_to_favorites"] button');
+          if (favBtn.length)
+            favBtn.attr("aria-label", `Add ${anime.title} to Favorites`);
+          let trashBtn = cells
+            .eq(8)
+            .find('form[action*="move_to_trash"] button');
+          if (trashBtn.length)
+            trashBtn.attr("aria-label", `Move ${anime.title} to Trash`);
+
           $animeTable.trigger("updateRow", [$row[0], true]);
         } else {
-          // ADD NEW
-          // Use the dynamically generated URLs from the inline script
+          // ADD NEW ROW - Apply ALL classes and attributes consistently
+          // Escape title simply for attribute values
+          const escapedTitle = anime.title.replace(/"/g, "&quot;");
+
           const newRowHtml = `
-                      <tr data-link="${anime.link}">
-                          <td class="checkbox-col text-center"><input type="checkbox" class="form-check-input" name="selected_anime" value="${anime.link}"></td>
-                          <td><a href="${anime.link}" target="_blank" title="${anime.title}">${anime.title}</a></td>
-                          <td>${anime.score}</td>
-                          <td>${formattedWatchCount}</td>
-                          <td>${formattedRatingCount}</td>
-                          <td>${anime.episode_count}</td>
-                          <td>${anime.upload_date}</td>
-                          <td class="description-cell" title="${anime.description}">${anime.description}</td>
-                          <td class="action-buttons-cell">
-                              <div class="btn-group btn-group-sm" role="group">
-                                  <form action="${actionUrls.add_to_favorites}" method="post" style="display: inline;">
-                                    <input type="hidden" name="link" value="${anime.link}">
-                                    <button type="submit" class="btn btn-primary" title="Add to Favorites"><i class="bi bi-heart-fill"></i></button>
-                                  </form>
-                                  <form action="${actionUrls.move_to_trash}" method="post" style="display: inline;">
-                                    <input type="hidden" name="link" value="${anime.link}">
-                                    <button type="submit" class="btn btn-warning" title="Move to Trash"><i class="bi bi-trash-fill"></i></button>
-                                  </form>
-                               </div>
-                          </td>
-                      </tr>`;
+          <tr data-link="${anime.link}">
+              <td class="checkbox-col text-center"><input type="checkbox" class="form-check-input" name="selected_anime" value="${anime.link}"></td>
+              <td><a href="${anime.link}" target="_blank" title="${escapedTitle}">${anime.title}</a></td>
+              <td class="text-end">${anime.score}</td>
+              <td class="text-end">${formattedWatchCount}</td>
+              <td class="text-end">${formattedRatingCount}</td>
+              <td class="text-center">${anime.episode_count}</td>
+              <td>${anime.upload_date}</td>
+              <td class="description-cell" title="${anime.description}">${anime.description}</td>
+              <td class="action-buttons-cell">
+                  <div class="btn-group btn-group-sm" role="group" aria-label="Item Actions for ${escapedTitle}">
+                      <form action="${actionUrls.add_to_favorites}" method="post" style="display: inline;">
+                          <input type="hidden" name="link" value="${anime.link}">
+                          <button type="submit" class="btn btn-primary" title="Add to Favorites" aria-label="Add ${escapedTitle} to Favorites">
+                              <i class="bi bi-heart-fill"></i>
+                          </button>
+                      </form>
+                      <form action="${actionUrls.move_to_trash}" method="post" style="display: inline;">
+                          <input type="hidden" name="link" value="${anime.link}">
+                          <button type="submit" class="btn btn-warning" title="Move to Trash" aria-label="Move ${escapedTitle} to Trash">
+                              <i class="bi bi-trash-fill"></i>
+                          </button>
+                      </form>
+                   </div>
+              </td>
+          </tr>`;
           $animeTableBody.append(newRowHtml);
-          $animeTable.trigger("update", [true]);
+          $animeTable.trigger("update", [true]); // Trigger update, potentially resort
         }
       }
       // Handle Final State
