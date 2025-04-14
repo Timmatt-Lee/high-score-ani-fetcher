@@ -377,9 +377,10 @@ def scrape_anime_data_task():
                         if current_episode_count_parsed_check > cached_episode_count:
                             needs_detail_refetch = True
                             logging.debug(f"  Update condition: Ep count {cached_episode_count} -> {current_episode_count_parsed_check} for {title}")
-                        if current_watch_count > (cached_watch_count * 2) and cached_watch_count >= 0:
+                        if current_watch_count > (cached_watch_count * 1.1):
                              needs_detail_refetch = True
-                             logging.debug(f"  Update condition: Watch count {cached_watch_count} -> {current_watch_count} (>{cached_watch_count * 2}) for {title}")
+                             # Log with integer formatting for readability
+                             logging.debug(f"  Update condition met: Watch count {cached_watch_count:,.0f} -> {current_watch_count:,.0f} (>10% increase) for '{title}'")
 
                     # --- 3. Get Full Item Data (Fetch or Cache) ---
                     final_anime_entry = {} # Will hold the definitive data for this item
