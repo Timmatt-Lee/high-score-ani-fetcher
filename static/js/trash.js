@@ -7,6 +7,7 @@ $(function () {
     headerTemplate: "{content} {icon}",
     widgets: ["uitheme", "zebra"],
     widgetOptions: { zebra: ["even", "odd"] },
+    textAttribute: "data-sort-value",
     headers: { 0: { sorter: false } },
   });
 

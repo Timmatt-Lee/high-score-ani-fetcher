@@ -68,70 +68,72 @@ function connectSSE() {
         const formattedWatchCount = formatLargeNumberJS(anime.watch_count);
         const formattedRatingCount = formatLargeNumberJS(anime.rating_count);
 
+        // --- Helper to get numeric episode count for sorting ---
+        function getJsEpisodeSortValue(epCountStr) {
+          const num = parseInt(epCountStr, 10);
+          return isNaN(num) ? -1 : num; // Return -1 if not a number (e.g., "N/A")
+        }
+
+        // --- When UPDATING an existing row ---
         if ($row.length > 0) {
-          // UPDATE EXISTING ROW LOGIC (ensure it also updates relevant classes if needed)
           let cells = $row.find("td");
+          const episodeSortValue = getJsEpisodeSortValue(anime.episode_count); // Calculate sort value
+
           cells
             .eq(1)
             .html(
               `<a href="${anime.link}" target="_blank" title="${anime.title}">${anime.title}</a>`
             );
-          cells.eq(2).text(anime.score).addClass("text-end"); // Add alignment class on update
-          cells.eq(3).text(formattedWatchCount).addClass("text-end"); // Add alignment class on update
-          cells.eq(4).text(formattedRatingCount).addClass("text-end"); // Add alignment class on update
-          cells.eq(5).text(anime.episode_count).addClass("text-center"); // Add alignment class on update
+          // Update text, data-sort-value, and class
+          cells
+            .eq(2)
+            .text(anime.score)
+            .attr("data-sort-value", anime.score)
+            .addClass("text-end");
+          cells
+            .eq(3)
+            .text(formattedWatchCount)
+            .attr("data-sort-value", anime.watch_count)
+            .addClass("text-end");
+          cells
+            .eq(4)
+            .text(formattedRatingCount)
+            .attr("data-sort-value", anime.rating_count)
+            .addClass("text-end");
+          cells
+            .eq(5)
+            .text(anime.episode_count)
+            .attr("data-sort-value", episodeSortValue)
+            .addClass("text-center");
           cells.eq(6).text(anime.upload_date);
-          cells.eq(7).text(anime.description).attr("title", anime.description); // Update desc + title attr
-          // Update ARIA labels on buttons if title changes (though unlikely needed often)
-          let btnGroup = cells.eq(8).find(".btn-group");
-          if (btnGroup.length)
-            btnGroup.attr("aria-label", `Item Actions for ${anime.title}`);
-          let favBtn = cells
-            .eq(8)
-            .find('form[action*="add_to_favorites"] button');
-          if (favBtn.length)
-            favBtn.attr("aria-label", `Add ${anime.title} to Favorites`);
-          let trashBtn = cells
-            .eq(8)
-            .find('form[action*="move_to_trash"] button');
-          if (trashBtn.length)
-            trashBtn.attr("aria-label", `Move ${anime.title} to Trash`);
+          cells.eq(7).text(anime.description).attr("title", anime.description);
+          // ... (update aria-labels on buttons if needed) ...
 
-          $animeTable.trigger("updateRow", [$row[0], true]);
+          $animeTable.trigger("updateRow", [$row[0], true]); // Let tablesorter know row updated
         } else {
-          // ADD NEW ROW - Apply ALL classes and attributes consistently
-          // Escape title simply for attribute values
+          // --- When ADDING a new row ---
           const escapedTitle = anime.title.replace(/"/g, "&quot;");
+          const episodeSortValue = getJsEpisodeSortValue(anime.episode_count); // Calculate sort value
 
           const newRowHtml = `
-          <tr data-link="${anime.link}">
-              <td class="checkbox-col text-center"><input type="checkbox" class="form-check-input" name="selected_anime" value="${anime.link}"></td>
-              <td><a href="${anime.link}" target="_blank" title="${escapedTitle}">${anime.title}</a></td>
-              <td class="text-end">${anime.score}</td>
-              <td class="text-end">${formattedWatchCount}</td>
-              <td class="text-end">${formattedRatingCount}</td>
-              <td class="text-center">${anime.episode_count}</td>
-              <td>${anime.upload_date}</td>
-              <td class="description-cell" title="${anime.description}">${anime.description}</td>
-              <td class="action-buttons-cell">
-                  <div class="btn-group btn-group-sm" role="group" aria-label="Item Actions for ${escapedTitle}">
-                      <form action="${actionUrls.add_to_favorites}" method="post" style="display: inline;">
-                          <input type="hidden" name="link" value="${anime.link}">
-                          <button type="submit" class="btn btn-primary" title="Add to Favorites" aria-label="Add ${escapedTitle} to Favorites">
-                              <i class="bi bi-heart-fill"></i>
-                          </button>
-                      </form>
-                      <form action="${actionUrls.move_to_trash}" method="post" style="display: inline;">
-                          <input type="hidden" name="link" value="${anime.link}">
-                          <button type="submit" class="btn btn-warning" title="Move to Trash" aria-label="Move ${escapedTitle} to Trash">
-                              <i class="bi bi-trash-fill"></i>
-                          </button>
-                      </form>
-                   </div>
-              </td>
-          </tr>`;
+      <tr data-link="${anime.link}">
+          <td class="checkbox-col text-center"><input type="checkbox" class="form-check-input" name="selected_anime" value="${anime.link}"></td>
+          <td><a href="${anime.link}" target="_blank" title="${escapedTitle}">${anime.title}</a></td>
+          <td data-sort-value="${anime.score}">${anime.score}</td>
+          <td data-sort-value="${anime.watch_count}">${formattedWatchCount}</td>
+          <td data-sort-value="${anime.rating_count}">${formattedRatingCount}</td>
+          <td data-sort-value="${episodeSortValue}">${anime.episode_count}</td>
+          <td>${anime.upload_date}</td>
+          <td class="description-cell" title="${anime.description}">${anime.description}</td>
+          <td class="action-buttons-cell">
+              <div class="btn-group btn-group-sm" role="group" aria-label="Item Actions for ${escapedTitle}">
+                  {# ... buttons with aria-labels ... #}
+                  <form action="${actionUrls.add_to_favorites}" method="post" style="display: inline;"><input type="hidden" name="link" value="${anime.link}"><button type="submit" class="btn btn-primary" title="Add to Favorites" aria-label="Add ${escapedTitle} to Favorites"><i class="bi bi-heart-fill"></i></button></form><form action="${actionUrls.move_to_trash}" method="post" style="display: inline;"><input type="hidden" name="link" value="${anime.link}"><button type="submit" class="btn btn-warning" title="Move to Trash" aria-label="Move ${escapedTitle} to Trash"><i class="bi bi-trash-fill"></i></button></form>
+               </div>
+          </td>
+      </tr>`;
           $animeTableBody.append(newRowHtml);
-          $animeTable.trigger("update", [true]); // Trigger update, potentially resort
+          $animeTable.trigger("update", [true]); // Let tablesorter know table updated
         }
       }
       // Handle Final State
@@ -196,11 +198,12 @@ function connectSSE() {
 // --- Document Ready ---
 $(function () {
   // Initialize tablesorter with Bootstrap theme
-  const $animeTable = $("#anime-table").tablesorter({
+  $("#anime-table").tablesorter({
     theme: "bootstrap",
     headerTemplate: "{content} {icon}",
     widgets: ["uitheme", "zebra"],
     widgetOptions: { zebra: ["even", "odd"] },
+    textAttribute: 'data-sort-value',
     headers: { 0: { sorter: false } },
   });
 

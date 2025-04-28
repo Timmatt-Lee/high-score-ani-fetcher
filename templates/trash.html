@@ -39,7 +39,7 @@
         <th class="sorter-digit">Score</th>
         <th class="sorter-digit">Watch Count</th>
         <th class="sorter-digit">Rating Count</th>
-        <th>Ep. Count</th>
+        <th class="sorter-digit">Ep. Count</th>
         <th>Upload Date</th>
         <th>Description</th>
         <th class="sorter-false action-buttons-cell">Actions</th>
@@ -61,12 +61,12 @@
             >{{ anime.title }}</a
           >
         </td>
-        <td>{{ anime.score }}</td>
-        <td>{{ anime.watch_count | human_format }}</td>
+        <td data-sort-value="{{ anime.score | float }}">{{ anime.score }}</td>
+        <td data-sort-value="{{ anime.watch_count | float }}">{{ anime.watch_count | human_format }}</td>
         {# Apply filter #}
-        <td>{{ anime.rating_count | human_format }}</td>
+        <td data-sort-value="{{ anime.rating_count | float }}">{{ anime.rating_count | human_format }}</td>
         {# Apply filter #}
-        <td>{{ anime.episode_count }}</td>
+        <td data-sort-value="{{ anime.episode_count | int(-1) }}">{{ anime.episode_count }}</td>
         <td>{{ anime.upload_date }}</td>
         <td class="description-cell" title="{{ anime.description }}">
           {{ anime.description }}
