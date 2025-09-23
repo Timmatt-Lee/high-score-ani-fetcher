@@ -185,7 +185,14 @@ def parse_episode_count(ep_count_value):
 def get_total_pages():
     # (Keep function as is)
     url = ANIME_LIST_URL_TEMPLATE.format(1)
-    headers = {'User-Agent': get_random_user_agent()}
+    headers = {
+        'User-Agent': get_random_user_agent(),
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9',
+        'Accept-Language': 'zh-TW,zh;q=0.9,en-US;q=0.8,en;q=0.7',
+        'Referer': 'https://ani.gamer.com.tw/',  # 加上 Referer 很重要！
+        'Connection': 'keep-alive',
+        'Upgrade-Insecure-Requests': '1'
+    }
     response = _make_request_with_retry(url, headers, purpose="get total pages")
     if response is None: return 0
     try:
@@ -209,7 +216,14 @@ def get_total_pages():
 
 def scrape_anime_details(anime_link):
     # (Keep function as is, relies on _make_request_with_retry)
-    headers = {'User-Agent': get_random_user_agent()}
+    headers = {
+        'User-Agent': get_random_user_agent(),
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9',
+        'Accept-Language': 'zh-TW,zh;q=0.9,en-US;q=0.8,en;q=0.7',
+        'Referer': 'https://ani.gamer.com.tw/', # 假裝是從首頁點過去的
+        'Connection': 'keep-alive',
+        'Upgrade-Insecure-Requests': '1'
+    }
     default_return = (0.0, 0, "Error fetching details.")
     response = _make_request_with_retry(
         anime_link, headers, min_delay=SCRAPE_DETAIL_DELAY_MIN,
