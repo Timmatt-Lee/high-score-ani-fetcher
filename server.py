@@ -226,7 +226,7 @@ def scrape_anime_details(anime_link):
     }
     default_return = (0.0, 0, "Error fetching details.")
     response = _make_request_with_retry(
-        anime_link, headers, min_delay=SCRAPE_DETAIL_DELAY_MIN,
+        anime_link, headers, min_delay=test,
         max_delay=SCRAPE_DETAIL_DELAY_MAX, purpose="fetch anime details"
     )
     if response is None: return default_return
