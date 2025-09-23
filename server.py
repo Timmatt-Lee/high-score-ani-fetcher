@@ -917,5 +917,5 @@ if __name__ == '__main__':
 
     port = int(os.environ.get('PORT', 5002))
     is_debug = app.config.get('DEBUG', True)
-    logging.info(f"Starting development server on http://127.0.0.1:{port}/ (Debug: {is_debug})")
-    app.run(host='127.0.0.1', port=port, debug=is_debug, use_reloader=False)
+    logging.info(f"Starting development server on http://0.0.0.0:{port}/ (Debug: {is_debug})")
+    app.run(host='0.0.0.0', port=port, debug=is_debug, use_reloader=False)
