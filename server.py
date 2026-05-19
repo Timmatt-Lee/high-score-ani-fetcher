@@ -131,7 +131,9 @@ def save_data(data):
     except IOError as e:  # pragma: no cover
         logging.error(f"Error saving data to {data_file}: {e}")  # pragma: no cover
     except Exception as e:  # pragma: no cover
-        logging.error(f"An unexpected error occurred during save: {e}")  # pragma: no cover
+        logging.error(
+            f"An unexpected error occurred during save: {e}"
+        )  # pragma: no cover
 
 
 # --- Helper Functions ---
@@ -201,7 +203,9 @@ def _make_request_with_retry(
                     logging.warning(  # pragma: no cover
                         f"{retry_msg} Invalid Retry-After header value. Waiting default 10s."
                     )
-                    time.sleep(10)  # Default wait if header is weird  # pragma: no cover
+                    time.sleep(
+                        10
+                    )  # Default wait if header is weird  # pragma: no cover
             else:  # Other HTTP errors
                 logging.error(f"{retry_msg} No retry. Error: {e}")
                 update_progress(message=f"HTTP Error {status_code} for {url}")
@@ -323,7 +327,9 @@ def scrape_anime_details(anime_link):
         )
         return score, rating_count, description
     except (AttributeError, ValueError, TypeError) as e:  # pragma: no cover
-        logging.warning(f"Error parsing details for {anime_link}: {e}")  # pragma: no cover
+        logging.warning(
+            f"Error parsing details for {anime_link}: {e}"
+        )  # pragma: no cover
         update_progress(message=f"Parsing Error for {anime_link}")  # pragma: no cover
         return 0.0, 0, "Error parsing details."  # pragma: no cover
 
@@ -413,7 +419,9 @@ def scrape_anime_data_task():
                 exc_info=True,
             )
             SCRAPING_STATE["is_running"] = False  # pragma: no cover
-            update_progress(status_message="Error: Could not load initial data.")  # pragma: no cover
+            update_progress(
+                status_message="Error: Could not load initial data."
+            )  # pragma: no cover
             return  # Cannot proceed without data  # pragma: no cover
 
         # Create sets for efficient lookups
@@ -428,7 +436,9 @@ def scrape_anime_data_task():
             update_progress(  # pragma: no cover
                 status_message="Scraping failed: Could not determine page count."
             )
-            logging.error("Scraping stopped: Failed to get total pages.")  # pragma: no cover
+            logging.error(
+                "Scraping stopped: Failed to get total pages."
+            )  # pragma: no cover
             return  # Exit function  # pragma: no cover
 
         anime_per_page_estimate = 28  # Rough estimate
@@ -444,7 +454,9 @@ def scrape_anime_data_task():
         # --- Page Loop ---
         for page_num in range(1, total_pages + 1):
             if SCRAPING_STATE["stop_requested"]:
-                logging.info("Scraping task stopped by user request during page loop.")  # pragma: no cover
+                logging.info(
+                    "Scraping task stopped by user request during page loop."
+                )  # pragma: no cover
                 break  # Exit page loop  # pragma: no cover
 
             page_url = ANIME_LIST_URL_TEMPLATE.format(page_num)
@@ -461,7 +473,9 @@ def scrape_anime_data_task():
                 purpose=f"fetch page {page_num}",
             )
             if page_response is None:
-                logging.warning(f"Skipping page {page_num} due to fetch errors.")  # pragma: no cover
+                logging.warning(
+                    f"Skipping page {page_num} due to fetch errors."
+                )  # pragma: no cover
                 # Ensure status reflects the skip if needed, though _make_request logs failure
                 update_progress(  # pragma: no cover
                     status_message=f"Skipped page {page_num} (fetch error)."
@@ -488,7 +502,9 @@ def scrape_anime_data_task():
                     # --- 1. Parse Basic Info ---
                     current_basic_info = _parse_card_basic_info(card)
                     if not current_basic_info:
-                        logging.warning("Skipping card: Failed to parse basic info.")  # pragma: no cover
+                        logging.warning(
+                            "Skipping card: Failed to parse basic info."
+                        )  # pragma: no cover
                         continue  # pragma: no cover
 
                     anime_link = current_basic_info["link"]
@@ -511,20 +527,28 @@ def scrape_anime_data_task():
                         cached_episode_count = parse_episode_count(  # pragma: no cover
                             cached_entry.get("episode_count")
                         )
-                        cached_watch_count = float(cached_entry.get("watch_count", 0))  # pragma: no cover
-                        current_episode_count_parsed_check = parse_episode_count(  # pragma: no cover
-                            current_basic_info.get("episode_count")
+                        cached_watch_count = float(
+                            cached_entry.get("watch_count", 0)
+                        )  # pragma: no cover
+                        current_episode_count_parsed_check = (
+                            parse_episode_count(  # pragma: no cover
+                                current_basic_info.get("episode_count")
+                            )
                         )
                         current_watch_count = float(  # pragma: no cover
                             current_basic_info.get("watch_count", 0)
                         )
 
-                        if current_episode_count_parsed_check > cached_episode_count:  # pragma: no cover
+                        if (
+                            current_episode_count_parsed_check > cached_episode_count
+                        ):  # pragma: no cover
                             needs_detail_refetch = True  # pragma: no cover
                             logging.debug(  # pragma: no cover
                                 f"  Update condition: Ep count {cached_episode_count} -> {current_episode_count_parsed_check} for '{title}'"
                             )
-                        if current_watch_count > (cached_watch_count * 1.1):  # pragma: no cover
+                        if current_watch_count > (
+                            cached_watch_count * 1.1
+                        ):  # pragma: no cover
                             needs_detail_refetch = True  # pragma: no cover
                             logging.debug(  # pragma: no cover
                                 f"  Update condition: Watch count {cached_watch_count:,.0f} -> {current_watch_count:,.0f} (>10% increase) for '{title}'"
@@ -609,7 +633,9 @@ def scrape_anime_data_task():
                                     for item in search_list
                                     if item["link"] != anime_link
                                 ]
-                                links_in_search_list.remove(anime_link)  # pragma: no cover
+                                links_in_search_list.remove(
+                                    anime_link
+                                )  # pragma: no cover
                                 item_changed_in_search_list = True  # pragma: no cover
                                 logging.info(  # pragma: no cover
                                     f"  Removing '{title}' from search list as it's now in Favorites."
@@ -628,7 +654,9 @@ def scrape_anime_data_task():
                                     for item in search_list
                                     if item["link"] != anime_link
                                 ]
-                                links_in_search_list.remove(anime_link)  # pragma: no cover
+                                links_in_search_list.remove(
+                                    anime_link
+                                )  # pragma: no cover
                                 item_changed_in_search_list = True  # pragma: no cover
                                 logging.info(  # pragma: no cover
                                     f"  Removing '{title}' from search list as it's now in Trash."
@@ -647,13 +675,19 @@ def scrape_anime_data_task():
                                     status_message=f"Added '{title}' to list."
                                 )  # Update Status
                             else:  # Check if update needed in search list
-                                for i, item in enumerate(search_list):  # pragma: no cover
+                                for i, item in enumerate(
+                                    search_list
+                                ):  # pragma: no cover
                                     if item["link"] == anime_link:  # pragma: no cover
                                         if (  # pragma: no cover
                                             item != final_anime_entry
                                         ):  # Update only if different
-                                            search_list[i] = final_anime_entry.copy()  # pragma: no cover
-                                            item_changed_in_search_list = True  # pragma: no cover
+                                            search_list[i] = (
+                                                final_anime_entry.copy()
+                                            )  # pragma: no cover
+                                            item_changed_in_search_list = (
+                                                True  # pragma: no cover
+                                            )
                                             logging.info(  # pragma: no cover
                                                 f"  Updating '{title}' in search list {log_suffix}"
                                             )
@@ -739,7 +773,9 @@ def scrape_anime_data_task():
                     f"Error processing page {page_num} content: {page_err}",
                     exc_info=True,
                 )
-                update_progress(message=f"Error processing page {page_num}")  # pragma: no cover
+                update_progress(
+                    message=f"Error processing page {page_num}"
+                )  # pragma: no cover
                 continue  # Skip to next page  # pragma: no cover
             # --- End Page Loop ---
             if SCRAPING_STATE["stop_requested"]:
@@ -771,7 +807,9 @@ def scrape_anime_data_task():
             anime_data_store["all_anime_cache"] = all_anime_cache
             save_data(anime_data_store)
         except Exception as final_save_err:  # pragma: no cover
-            logging.error(f"Error during final save: {final_save_err}")  # pragma: no cover
+            logging.error(
+                f"Error during final save: {final_save_err}"
+            )  # pragma: no cover
     # --- End App Context ---
 
 
@@ -784,7 +822,9 @@ def generate_progress():
     sent_final_message = False
     while SCRAPING_STATE["is_running"] or not SCRAPING_STATE["new_anime_queue"].empty():
         try:  # pragma: no cover
-            new_anime = SCRAPING_STATE["new_anime_queue"].get(timeout=0.05)  # pragma: no cover
+            new_anime = SCRAPING_STATE["new_anime_queue"].get(
+                timeout=0.05
+            )  # pragma: no cover
             anime_payload = {"type": "new_anime", "data": new_anime}  # pragma: no cover
             yield f"data: {json.dumps(anime_payload, ensure_ascii=False)}\n\n"  # pragma: no cover
             SCRAPING_STATE["new_anime_queue"].task_done()  # pragma: no cover
@@ -794,10 +834,17 @@ def generate_progress():
             logging.error(f"Error processing queue in SSE: {e}")  # pragma: no cover
         if SCRAPING_STATE["is_running"]:  # pragma: no cover
             current_state = SCRAPING_STATE["progress"].copy()  # pragma: no cover
-            current_state["is_running"] = SCRAPING_STATE["is_running"]  # pragma: no cover
-            current_state["stop_requested"] = SCRAPING_STATE["stop_requested"]  # pragma: no cover
+            current_state["is_running"] = SCRAPING_STATE[
+                "is_running"
+            ]  # pragma: no cover
+            current_state["stop_requested"] = SCRAPING_STATE[
+                "stop_requested"
+            ]  # pragma: no cover
             if current_state != last_state:  # pragma: no cover
-                progress_payload = {"type": "progress", **current_state}  # pragma: no cover
+                progress_payload = {
+                    "type": "progress",
+                    **current_state,
+                }  # pragma: no cover
                 yield f"data: {json.dumps(progress_payload, ensure_ascii=False)}\n\n"  # pragma: no cover
                 last_state = current_state  # pragma: no cover
         time.sleep(0.2)  # pragma: no cover
@@ -812,15 +859,21 @@ def generate_progress():
         try:
             yield f"data: {json.dumps(final_data_payload, ensure_ascii=False)}\n\n"
             sent_final_message = True  # pragma: no cover
-            logging.info("SSE stream: Sent final state message and closing.")  # pragma: no cover
+            logging.info(
+                "SSE stream: Sent final state message and closing."
+            )  # pragma: no cover
         except Exception as e:
-            logging.error(f"SSE stream: Error sending final state: {e}")  # pragma: no cover
+            logging.error(
+                f"SSE stream: Error sending final state: {e}"
+            )  # pragma: no cover
 
 
 @app.route("/progress")
 def progress():
     """Endpoint for the SSE progress stream."""
-    return Response(generate_progress(), mimetype="text/event-stream")  # pragma: no cover
+    return Response(
+        generate_progress(), mimetype="text/event-stream"
+    )  # pragma: no cover
 
 
 # --- Flask Routes & Other Logic ---
@@ -894,7 +947,9 @@ def start_scrape():
         SCRAPING_STATE["thread"].start()  # pragma: no cover
         logging.info("Scraping thread started.")  # pragma: no cover
     else:
-        logging.warning("Start scrape called but scraping is already running.")  # pragma: no cover
+        logging.warning(
+            "Start scrape called but scraping is already running."
+        )  # pragma: no cover
     return redirect(url_for("index"))  # pragma: no cover
 
 
@@ -904,9 +959,13 @@ def stop_scrape():
     if SCRAPING_STATE["is_running"]:  # pragma: no cover
         logging.info("Stop request received.")  # pragma: no cover
         SCRAPING_STATE["stop_requested"] = True  # pragma: no cover
-        update_progress(status_message="Stop requested, finishing current step...")  # pragma: no cover
+        update_progress(
+            status_message="Stop requested, finishing current step..."
+        )  # pragma: no cover
     else:
-        logging.warning("Stop scrape called but scraping is not running.")  # pragma: no cover
+        logging.warning(
+            "Stop scrape called but scraping is not running."
+        )  # pragma: no cover
     return redirect(url_for("index"))  # pragma: no cover
 
 
@@ -926,7 +985,9 @@ def _move_item_logic(link, source_list_name, target_list_name):
             item_index = i  # pragma: no cover
             break  # pragma: no cover
     if item_to_move:  # pragma: no cover
-        if not any(existing.get("link") == link for existing in target_list):  # pragma: no cover
+        if not any(
+            existing.get("link") == link for existing in target_list
+        ):  # pragma: no cover
             target_list.append(item_to_move)  # pragma: no cover
         del source_list[item_index]  # pragma: no cover
         save_data(data)  # pragma: no cover
@@ -958,9 +1019,13 @@ def add_to_favorites():
     # Determine source list
     data = load_data()  # pragma: no cover
     source = None  # pragma: no cover
-    if any(item.get("link") == link for item in data.get("search_list", [])):  # pragma: no cover
+    if any(
+        item.get("link") == link for item in data.get("search_list", [])
+    ):  # pragma: no cover
         source = "search_list"  # pragma: no cover
-    elif any(item.get("link") == link for item in data.get("trash", [])):  # pragma: no cover
+    elif any(
+        item.get("link") == link for item in data.get("trash", [])
+    ):  # pragma: no cover
         source = "trash"  # pragma: no cover
 
     if not source:  # pragma: no cover
@@ -977,9 +1042,13 @@ def add_to_favorites():
 
     if is_ajax:  # pragma: no cover
         if success:  # pragma: no cover
-            return jsonify(success=True, message=f"'{item_title}' added to Favorites.")  # pragma: no cover
+            return jsonify(
+                success=True, message=f"'{item_title}' added to Favorites."
+            )  # pragma: no cover
         else:
-            return jsonify(error=f"Failed to add '{item_title}' to Favorites."), 500  # pragma: no cover
+            return jsonify(
+                error=f"Failed to add '{item_title}' to Favorites."
+            ), 500  # pragma: no cover
     else:
         return redirect(request.referrer or url_for("index"))  # pragma: no cover
 
@@ -1000,9 +1069,13 @@ def move_to_trash():
     # Determine source list
     data = load_data()  # pragma: no cover
     source = None  # pragma: no cover
-    if any(item.get("link") == link for item in data.get("search_list", [])):  # pragma: no cover
+    if any(
+        item.get("link") == link for item in data.get("search_list", [])
+    ):  # pragma: no cover
         source = "search_list"  # pragma: no cover
-    elif any(item.get("link") == link for item in data.get("favorites", [])):  # pragma: no cover
+    elif any(
+        item.get("link") == link for item in data.get("favorites", [])
+    ):  # pragma: no cover
         source = "favorites"  # pragma: no cover
 
     if not source:  # pragma: no cover
@@ -1013,13 +1086,19 @@ def move_to_trash():
         return redirect(request.referrer or url_for("index"))  # pragma: no cover
 
     success = _move_item_logic(link, source, "trash")  # pragma: no cover
-    item_title = data.get("all_anime_cache", {}).get(link, {}).get("title", "Item")  # pragma: no cover
+    item_title = (
+        data.get("all_anime_cache", {}).get(link, {}).get("title", "Item")
+    )  # pragma: no cover
 
     if is_ajax:  # pragma: no cover
         if success:  # pragma: no cover
-            return jsonify(success=True, message=f"'{item_title}' moved to Trash.")  # pragma: no cover
+            return jsonify(
+                success=True, message=f"'{item_title}' moved to Trash."
+            )  # pragma: no cover
         else:
-            return jsonify(error=f"Failed to move '{item_title}' to Trash."), 500  # pragma: no cover
+            return jsonify(
+                error=f"Failed to move '{item_title}' to Trash."
+            ), 500  # pragma: no cover
     else:
         return redirect(request.referrer or url_for("index"))  # pragma: no cover
 
@@ -1106,7 +1185,9 @@ def _batch_move_items_logic(links, source_list_name, target_list_name):
     for item in source_list:  # pragma: no cover
         item_link = item.get("link")  # pragma: no cover
         if item_link in links_to_move_set:  # pragma: no cover
-            full_item_data = all_anime_cache.get(item_link, item).copy()  # pragma: no cover
+            full_item_data = all_anime_cache.get(
+                item_link, item
+            ).copy()  # pragma: no cover
             items_found_to_move.append(full_item_data)  # pragma: no cover
             moved_count += 1  # pragma: no cover
         else:
@@ -1128,39 +1209,61 @@ def _batch_move_items_logic(links, source_list_name, target_list_name):
 def batch_action():
     data = request.get_json()  # pragma: no cover
     if not data:  # pragma: no cover
-        return jsonify(error="Invalid request body. JSON expected."), 400  # pragma: no cover
+        return jsonify(
+            error="Invalid request body. JSON expected."
+        ), 400  # pragma: no cover
     links = data.get("links")  # pragma: no cover
     action = data.get("action")  # pragma: no cover
     if not isinstance(links, list) or not action:  # pragma: no cover
-        return jsonify(error="Missing 'links' list or 'action' parameter."), 400  # pragma: no cover
+        return jsonify(
+            error="Missing 'links' list or 'action' parameter."
+        ), 400  # pragma: no cover
     moved_count = 0  # pragma: no cover
     message = "Action completed."  # pragma: no cover
     try:  # pragma: no cover
         if action == "fav_from_search":  # pragma: no cover
-            moved_count = _batch_move_items_logic(links, "search_list", "favorites")  # pragma: no cover
+            moved_count = _batch_move_items_logic(
+                links, "search_list", "favorites"
+            )  # pragma: no cover
             message = f"Moved {moved_count} items to Favorites."  # pragma: no cover
         elif action == "trash_from_search":  # pragma: no cover
-            moved_count = _batch_move_items_logic(links, "search_list", "trash")  # pragma: no cover
+            moved_count = _batch_move_items_logic(
+                links, "search_list", "trash"
+            )  # pragma: no cover
             message = f"Moved {moved_count} items to Trash."  # pragma: no cover
         elif action == "fav_from_trash":  # pragma: no cover
-            moved_count = _batch_move_items_logic(links, "trash", "favorites")  # pragma: no cover
+            moved_count = _batch_move_items_logic(
+                links, "trash", "favorites"
+            )  # pragma: no cover
             message = f"Moved {moved_count} items to Favorites."  # pragma: no cover
         elif action == "remove_from_fav":  # pragma: no cover
-            moved_count = _batch_move_items_logic(links, "favorites", "search_list")  # pragma: no cover
+            moved_count = _batch_move_items_logic(
+                links, "favorites", "search_list"
+            )  # pragma: no cover
             message = (  # pragma: no cover
                 f"Removed {moved_count} items from Favorites (moved to main list)."
             )
         elif action == "trash_from_fav":  # pragma: no cover
-            moved_count = _batch_move_items_logic(links, "favorites", "trash")  # pragma: no cover
+            moved_count = _batch_move_items_logic(
+                links, "favorites", "trash"
+            )  # pragma: no cover
             message = f"Moved {moved_count} items from Favorites to Trash."  # pragma: no cover
         elif action == "restore_from_trash":  # pragma: no cover
-            moved_count = _batch_move_items_logic(links, "trash", "search_list")  # pragma: no cover
-            message = f"Restored {moved_count} items to the main list."  # pragma: no cover
+            moved_count = _batch_move_items_logic(
+                links, "trash", "search_list"
+            )  # pragma: no cover
+            message = (
+                f"Restored {moved_count} items to the main list."  # pragma: no cover
+            )
         else:
-            return jsonify(error=f"Unknown batch action: {action}"), 400  # pragma: no cover
+            return jsonify(
+                error=f"Unknown batch action: {action}"
+            ), 400  # pragma: no cover
         return jsonify(message=message, count=moved_count), 200  # pragma: no cover
     except Exception as e:  # pragma: no cover
-        logging.error(f"Error during batch action '{action}': {e}", exc_info=True)  # pragma: no cover
+        logging.error(
+            f"Error during batch action '{action}': {e}", exc_info=True
+        )  # pragma: no cover
         return jsonify(  # pragma: no cover
             error=f"An internal error occurred during batch action '{action}'."
         ), 500
@@ -1195,7 +1298,9 @@ def human_format_filter(value):
         formatted_num_str = f"{num:.1f}"  # pragma: no cover
         if formatted_num_str.endswith(".0"):  # pragma: no cover
             num_int_part = int(num)  # pragma: no cover
-            return f"{num_int_part:,}{['', 'K', 'M', 'B'][magnitude]}"  # pragma: no cover
+            return (
+                f"{num_int_part:,}{['', 'K', 'M', 'B'][magnitude]}"  # pragma: no cover
+            )
         else:
             return f"{formatted_num_str}{['', 'K', 'M', 'B'][magnitude]}"  # pragma: no cover
     except (ValueError, TypeError):  # pragma: no cover
@@ -1216,12 +1321,16 @@ def page_not_found(e):
 
 @app.errorhandler(500)
 def internal_server_error(e):
-    logging.error(f"Internal Server Error: {request.path} - {e}", exc_info=True)  # pragma: no cover
+    logging.error(
+        f"Internal Server Error: {request.path} - {e}", exc_info=True
+    )  # pragma: no cover
     if (  # pragma: no cover
         request.accept_mimetypes.accept_json
         and not request.accept_mimetypes.accept_html
     ):
-        return jsonify(error="Internal Server Error", description=str(e)), 500  # pragma: no cover
+        return jsonify(
+            error="Internal Server Error", description=str(e)
+        ), 500  # pragma: no cover
     return render_template("500.html"), 500  # pragma: no cover
 
 
@@ -1234,7 +1343,9 @@ if __name__ == "__main__":
         if data_dir:  # pragma: no cover
             os.makedirs(data_dir, exist_ok=True)  # pragma: no cover
         if not os.path.exists(data_file):  # pragma: no cover
-            logging.info(f"Data file not found at {data_file}. Creating empty file.")  # pragma: no cover
+            logging.info(
+                f"Data file not found at {data_file}. Creating empty file."
+            )  # pragma: no cover
             default_data = {  # pragma: no cover
                 "search_list": [],
                 "favorites": [],
@@ -1242,8 +1353,12 @@ if __name__ == "__main__":
                 "all_anime_cache": {},
             }
             with open(data_file, "w", encoding="utf-8") as f:  # pragma: no cover
-                json.dump(default_data, f, ensure_ascii=False, indent=4)  # pragma: no cover
-            logging.info(f"Successfully created empty data file at {data_file}")  # pragma: no cover
+                json.dump(
+                    default_data, f, ensure_ascii=False, indent=4
+                )  # pragma: no cover
+            logging.info(
+                f"Successfully created empty data file at {data_file}"
+            )  # pragma: no cover
     except Exception as e:  # pragma: no cover
         logging.error(  # pragma: no cover
             f"Failed during initial data file check/creation at {data_file}: {e}",
@@ -1258,4 +1373,6 @@ if __name__ == "__main__":
     logging.info(  # pragma: no cover
         f"Starting development server on http://0.0.0.0:{port}/ (Debug: {is_debug})"
     )
-    app.run(host="0.0.0.0", port=port, debug=is_debug, use_reloader=False)  # pragma: no cover
+    app.run(
+        host="0.0.0.0", port=port, debug=is_debug, use_reloader=False
+    )  # pragma: no cover
