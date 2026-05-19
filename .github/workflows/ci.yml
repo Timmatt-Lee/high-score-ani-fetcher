@@ -30,6 +30,10 @@ jobs:
         ruff format --check .
         ruff check .
         
+    - name: Type Check with Mypy
+      run: |
+        mypy --strict .
+        
     - name: Test with pytest and enforce 99% coverage
       run: |
         PYTHONPATH=. pytest --cov=server --cov-fail-under=99 --cov-report=term-missing

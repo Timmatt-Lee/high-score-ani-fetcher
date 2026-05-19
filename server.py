@@ -6,6 +6,18 @@ import queue
 import random
 import threading
 import time
+from typing import (
+    Any,
+    Dict,
+    List,
+    Optional,
+    Tuple,
+    Union,
+    cast,
+    TypedDict,
+    Generator,
+    Iterator,
+)
 from flask import (
     Flask,
     Response,
@@ -20,7 +32,7 @@ import requests
 from bs4 import BeautifulSoup
 
 # --- Core Application Configuration ---
-CONFIG = {
+CONFIG: Dict[str, Any] = {
     "SECRET_KEY": "dev-secret-key-for-local-use-only",  # Simple default for local ease
     # Store data file relative to this script file
     "DATA_FILE": os.path.join(
@@ -46,7 +58,7 @@ SCRAPE_RETRY_COUNT = 5
 # Cap the maximum wait time respected from Retry-After header (in seconds)
 MAX_RETRY_AFTER_CAP = 120  # Cap wait at 2 minutes for 429 errors
 
-USER_AGENTS = [
+USER_AGENTS: List[str] = [
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36",
     "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36",
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:124.0) Gecko/20100101 Firefox/124.0",
@@ -63,8 +75,25 @@ logging.basicConfig(
     format="%(asctime)s - %(levelname)s - [%(threadName)s] - %(message)s",
 )
 
+
+class ProgressDict(TypedDict):
+    percentage: float
+    loaded_count: int
+    total_estimated: int
+    current_anime: str
+    status_message: str
+
+
+class ScrapingStateDict(TypedDict):
+    is_running: bool
+    stop_requested: bool
+    progress: ProgressDict
+    thread: Optional[threading.Thread]
+    new_anime_queue: "queue.Queue[Dict[str, Any]]"
+
+
 # --- Global State (For Background Task) ---
-SCRAPING_STATE = {
+SCRAPING_STATE: ScrapingStateDict = {
     "is_running": False,
     "stop_requested": False,
     "progress": {
@@ -81,15 +110,15 @@ SCRAPING_STATE = {
 
 # --- Data Handling ---
 # (get_data_file_path, load_data, save_data remain the same as previous refactored version)
-def get_data_file_path():
+def get_data_file_path() -> Any:
     """Gets the configured data file path."""
     return current_app.config["DATA_FILE"]
 
 
-def load_data():
+def load_data() -> Any:
     """Loads data from the JSON file specified in config."""
     data_file = get_data_file_path()
-    default_data = {
+    default_data: Dict[str, Any] = {
         "search_list": [],
         "favorites": [],
         "trash": [],
@@ -118,7 +147,7 @@ def load_data():
         return default_data  # pragma: no cover
 
 
-def save_data(data):
+def save_data(data: Dict[str, Any]) -> None:
     """Saves the provided data dictionary to the JSON file."""
     data_file = get_data_file_path()
     try:
@@ -137,27 +166,27 @@ def save_data(data):
 
 
 # --- Helper Functions ---
-def get_random_user_agent():
+def get_random_user_agent() -> str:
     return random.choice(USER_AGENTS)
 
 
-def update_progress(message="", is_retry=False, **kwargs):
+def update_progress(message: str = "", is_retry: bool = False, **kwargs: Any) -> None:
     global SCRAPING_STATE
-    SCRAPING_STATE["progress"].update(kwargs)
+    cast(Dict[str, Any], SCRAPING_STATE["progress"]).update(kwargs)
     if message:
         prefix = "(Retry) " if is_retry else ""
         SCRAPING_STATE["progress"]["status_message"] = prefix + message
 
 
 def _make_request_with_retry(
-    url,
-    headers,
-    timeout=15,
-    retry_count=SCRAPE_RETRY_COUNT,
-    min_delay=0.1,
-    max_delay=0.5,
-    purpose="request",
-):
+    url: str,
+    headers: Dict[str, str],
+    timeout: int = 15,
+    retry_count: int = SCRAPE_RETRY_COUNT,
+    min_delay: float = 0.1,
+    max_delay: float = 0.5,
+    purpose: str = "request",
+) -> Optional[requests.Response]:
     """Internal helper to make GET request with retries, backoff, and 429 handling (with cap)."""
     current_min_delay = min_delay
     current_max_delay = max_delay
@@ -225,7 +254,7 @@ def _make_request_with_retry(
     return None
 
 
-def parse_episode_count(ep_count_value):
+def parse_episode_count(ep_count_value: Any) -> int:
     """Safely converts various episode count values to an integer for comparison."""
     if isinstance(ep_count_value, int):
         return ep_count_value  # pragma: no cover
@@ -238,7 +267,7 @@ def parse_episode_count(ep_count_value):
 # --- Scraping Logic ---
 
 
-def get_total_pages():
+def get_total_pages() -> int:
     # (Keep function as is)
     url = ANIME_LIST_URL_TEMPLATE.format(1)
     headers = {
@@ -256,9 +285,9 @@ def get_total_pages():
         soup = BeautifulSoup(response.content, "html.parser")
         page_control = soup.find("div", class_="page_control")
         if page_control:
-            page_number_div = page_control.find("div", class_="page_number")
+            page_number_div = cast(Any, page_control).find("div", class_="page_number")
             if page_number_div:
-                all_links = page_number_div.find_all("a")
+                all_links = cast(Any, page_number_div).find_all("a")
                 if all_links:
                     for link in reversed(all_links):
                         if link.text.isdigit():
@@ -276,7 +305,7 @@ def get_total_pages():
         return 0  # pragma: no cover
 
 
-def scrape_anime_details(anime_link):
+def scrape_anime_details(anime_link: str) -> Tuple[float, int, str]:
     # (Keep function as is, relies on _make_request_with_retry)
     headers = {
         "User-Agent": get_random_user_agent(),
@@ -300,13 +329,17 @@ def scrape_anime_details(anime_link):
         soup = BeautifulSoup(response.content, "html.parser")
         score_div = soup.find("div", class_="acg-score")
         score_num_div = (
-            score_div.find("div", class_="score-overall-number") if score_div else None
+            cast(Any, score_div).find("div", class_="score-overall-number")
+            if score_div
+            else None
         )
         score = (
             float(score_num_div.text) if score_num_div and score_num_div.text else 0.0
         )
         score_people_div = (
-            score_div.find("div", class_="score-overall-people") if score_div else None
+            cast(Any, score_div).find("div", class_="score-overall-people")
+            if score_div
+            else None
         )
         rating_count_str = (
             score_people_div.text.replace("人評價", "").strip()
@@ -319,7 +352,7 @@ def scrape_anime_details(anime_link):
             else 0
         )
         desc_div = soup.find("div", class_="data-intro")
-        desc_p = desc_div.find("p") if desc_div else None
+        desc_p = cast(Any, desc_div).find("p") if desc_div else None
         description = (
             desc_p.text.strip()[:200] + "..."
             if desc_p and desc_p.text.strip()
@@ -334,16 +367,16 @@ def scrape_anime_details(anime_link):
         return 0.0, 0, "Error parsing details."  # pragma: no cover
 
 
-def _parse_card_basic_info(card):
+def _parse_card_basic_info(card: Any) -> Optional[Dict[str, Any]]:
     # (Keep function as is, but ensure episode_count is returned directly, not parsed yet)
     relative_link = card.get("href")
     if not relative_link:
         return None
     anime_link = BASE_URL + relative_link.lstrip("/")
-    title_element = card.find("p", class_="theme-name")
+    title_element = cast(Any, card).find("p", class_="theme-name")
     title = title_element.text.strip() if title_element else "No Title Found"
-    watch_count = 0
-    watch_count_element = card.find("p")
+    watch_count = 0.0
+    watch_count_element = cast(Any, card).find("p")
     watch_count_str = watch_count_element.text.strip() if watch_count_element else "0"
     if "萬" in watch_count_str:
         try:  # pragma: no cover
@@ -358,12 +391,12 @@ def _parse_card_basic_info(card):
     upload_date = "N/A"
     detail_info_block = card.find("div", class_="theme-detail-info-block")
     if detail_info_block:
-        ep_el = detail_info_block.find("span", class_="theme-number")
+        ep_el = cast(Any, detail_info_block).find("span", class_="theme-number")
         # Store the raw string value from the page
         episode_count_str = (
             ep_el.text.replace("共", "").replace("集", "").strip() if ep_el else "N/A"
         )
-        time_el = detail_info_block.find("p", class_="theme-time")
+        time_el = cast(Any, detail_info_block).find("p", class_="theme-time")
         upload_date = time_el.text.replace("年份：", "").strip() if time_el else "N/A"
     # Return the raw string for episode_count
     return {
@@ -375,7 +408,7 @@ def _parse_card_basic_info(card):
     }
 
 
-def scrape_anime_data_task():
+def scrape_anime_data_task() -> None:
     """
     Background task to scrape anime data from ani.gamer.com.tw.
     Uses caching, checks Fav/Trash lists, and applies score/episode filters.
@@ -815,10 +848,10 @@ def scrape_anime_data_task():
 
 # --- SSE Progress Stream ---
 # (generate_progress function remains the same)
-def generate_progress():
+def generate_progress() -> Generator[str, None, None]:
     # ... (Function content remains the same) ...
     global SCRAPING_STATE
-    last_state = {}
+    last_state: Dict[str, Any] = {}
     sent_final_message = False
     while SCRAPING_STATE["is_running"] or not SCRAPING_STATE["new_anime_queue"].empty():
         try:  # pragma: no cover
@@ -833,7 +866,7 @@ def generate_progress():
         except Exception as e:  # pragma: no cover
             logging.error(f"Error processing queue in SSE: {e}")  # pragma: no cover
         if SCRAPING_STATE["is_running"]:  # pragma: no cover
-            current_state = SCRAPING_STATE["progress"].copy()  # pragma: no cover
+            current_state = dict(SCRAPING_STATE["progress"])  # pragma: no cover
             current_state["is_running"] = SCRAPING_STATE[
                 "is_running"
             ]  # pragma: no cover
@@ -846,10 +879,10 @@ def generate_progress():
                     **current_state,
                 }  # pragma: no cover
                 yield f"data: {json.dumps(progress_payload, ensure_ascii=False)}\n\n"  # pragma: no cover
-                last_state = current_state  # pragma: no cover
+                last_state = cast(Dict[str, Any], current_state)  # pragma: no cover
         time.sleep(0.2)  # pragma: no cover
     if not sent_final_message:
-        final_state = SCRAPING_STATE["progress"].copy()
+        final_state = dict(SCRAPING_STATE["progress"])
         final_state["is_running"] = False
         final_state["stop_requested"] = False
         if final_state.get("status_message") == "Scraping finished.":
@@ -869,7 +902,7 @@ def generate_progress():
 
 
 @app.route("/progress")
-def progress():
+def progress() -> Any:
     """Endpoint for the SSE progress stream."""
     return Response(
         generate_progress(), mimetype="text/event-stream"
@@ -878,7 +911,7 @@ def progress():
 
 # --- Flask Routes & Other Logic ---
 @app.route("/")
-def index():
+def index() -> Any:
     """Displays the main list of anime, sorted by score."""
     data = load_data()
     # Filter logic happens during scrape, search_list should be ready
@@ -903,7 +936,7 @@ def index():
 
 
 @app.route("/favorites")
-def favorites():
+def favorites() -> Any:
     """Displays the favorites list, sorted by score."""
     data = load_data()
     favorites_items = data.get("favorites", [])
@@ -917,7 +950,7 @@ def favorites():
 
 
 @app.route("/trash")
-def trash():
+def trash() -> Any:
     """Displays the trash list, sorted by score."""
     data = load_data()
     trash_items = data.get("trash", [])
@@ -929,7 +962,7 @@ def trash():
 
 
 @app.route("/start_scrape")
-def start_scrape():
+def start_scrape() -> Any:
     global SCRAPING_STATE
     if not SCRAPING_STATE["is_running"]:  # pragma: no cover
         SCRAPING_STATE["is_running"] = True  # pragma: no cover
@@ -944,7 +977,7 @@ def start_scrape():
         SCRAPING_STATE["thread"] = threading.Thread(  # pragma: no cover
             target=scrape_anime_data_task, name="ScrapingThread", daemon=True
         )
-        SCRAPING_STATE["thread"].start()  # pragma: no cover
+        cast(threading.Thread, SCRAPING_STATE["thread"]).start()  # pragma: no cover
         logging.info("Scraping thread started.")  # pragma: no cover
     else:
         logging.warning(
@@ -954,7 +987,7 @@ def start_scrape():
 
 
 @app.route("/stop_scrape")
-def stop_scrape():
+def stop_scrape() -> Any:
     global SCRAPING_STATE
     if SCRAPING_STATE["is_running"]:  # pragma: no cover
         logging.info("Stop request received.")  # pragma: no cover
@@ -970,7 +1003,7 @@ def stop_scrape():
 
 
 # --- Action Routes (Single Item Moves) ---
-def _move_item_logic(link, source_list_name, target_list_name):
+def _move_item_logic(link: str, source_list_name: str, target_list_name: str) -> Any:
     data = load_data()  # pragma: no cover
     source_list = data.get(source_list_name)  # pragma: no cover
     target_list = data.get(target_list_name)  # pragma: no cover
@@ -1003,7 +1036,7 @@ def _move_item_logic(link, source_list_name, target_list_name):
 
 
 @app.route("/add_to_favorites", methods=["POST"])
-def add_to_favorites():
+def add_to_favorites() -> Any:
     link = request.form.get("link")
     is_ajax = (
         request.accept_mimetypes.accept_json
@@ -1054,7 +1087,7 @@ def add_to_favorites():
 
 
 @app.route("/move_to_trash", methods=["POST"])
-def move_to_trash():
+def move_to_trash() -> Any:
     link = request.form.get("link")
     is_ajax = (
         request.accept_mimetypes.accept_json
@@ -1104,7 +1137,7 @@ def move_to_trash():
 
 
 @app.route("/restore_from_trash", methods=["POST"])
-def restore_from_trash():
+def restore_from_trash() -> Any:
     link = request.form.get("link")
     is_ajax = (
         request.accept_mimetypes.accept_json
@@ -1137,7 +1170,7 @@ def restore_from_trash():
 
 
 @app.route("/remove_from_favorites", methods=["POST"])
-def remove_from_favorites():
+def remove_from_favorites() -> Any:
     link = request.form.get("link")  # pragma: no cover
     is_ajax = (  # pragma: no cover
         request.accept_mimetypes.accept_json
@@ -1169,7 +1202,9 @@ def remove_from_favorites():
 
 
 # --- Action Routes (Batch Moves) ---
-def _batch_move_items_logic(links, source_list_name, target_list_name):
+def _batch_move_items_logic(
+    links: List[str], source_list_name: str, target_list_name: str
+) -> Any:
     if not links:  # pragma: no cover
         return 0  # pragma: no cover
     data = load_data()  # pragma: no cover
@@ -1206,7 +1241,7 @@ def _batch_move_items_logic(links, source_list_name, target_list_name):
 
 
 @app.route("/batch_action", methods=["POST"])
-def batch_action():
+def batch_action() -> Any:
     data = request.get_json()  # pragma: no cover
     if not data:  # pragma: no cover
         return jsonify(
@@ -1271,7 +1306,7 @@ def batch_action():
 
 # --- Custom Jinja Filter ---
 @app.template_filter("human_format")
-def human_format_filter(value):
+def human_format_filter(value: Any) -> Any:
     if value is None:  # pragma: no cover
         return "N/A"  # pragma: no cover
     if isinstance(value, str):  # pragma: no cover
@@ -1309,7 +1344,7 @@ def human_format_filter(value):
 
 # --- Error Handlers ---
 @app.errorhandler(404)
-def page_not_found(e):
+def page_not_found(e: Any) -> Any:
     logging.warning(f"Not Found error: {request.path} - {e}")  # pragma: no cover
     if (  # pragma: no cover
         request.accept_mimetypes.accept_json
@@ -1320,7 +1355,7 @@ def page_not_found(e):
 
 
 @app.errorhandler(500)
-def internal_server_error(e):
+def internal_server_error(e: Any) -> Any:
     logging.error(
         f"Internal Server Error: {request.path} - {e}", exc_info=True
     )  # pragma: no cover
@@ -1346,7 +1381,7 @@ if __name__ == "__main__":
             logging.info(
                 f"Data file not found at {data_file}. Creating empty file."
             )  # pragma: no cover
-            default_data = {  # pragma: no cover
+            default_data: Dict[str, Any] = {  # pragma: no cover
                 "search_list": [],
                 "favorites": [],
                 "trash": [],
