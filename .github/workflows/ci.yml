@@ -32,4 +32,4 @@ jobs:
         
     - name: Test with pytest and enforce 99% coverage
       run: |
-        pytest --cov=. --cov-fail-under=99 --cov-report=term-missing
+        PYTHONPATH=. pytest --cov=server --cov-fail-under=99 --cov-report=term-missing
