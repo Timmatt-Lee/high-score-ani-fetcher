@@ -42,15 +42,23 @@ The output will be generated in the `dist` folder. You can then load this unpack
 
 ## 🧪 Testing
 
-This project maintains a strictly 90%+ test coverage standard.
+This project maintains a strictly 90%+ test coverage standard and utilizes both Unit/Integration tests and End-to-End (E2E) tests.
 
-- **Run tests**:
+- **Run Unit & Integration Tests (Fast)**:
 
   ```sh
   npm run test
   ```
 
-_Tests are automatically executed before every commit using Husky._
+  _These tests run via Vitest, check coverage, and are automatically executed before every commit using Husky._
+
+- **Run End-to-End (E2E) Tests (Browser-based)**:
+
+  ```sh
+  npm run test:e2e
+  ```
+
+  _These tests run via Playwright in a real browser environment to ensure end-to-end functionality. To update visual snapshots, use `npm run test:e2e:update`._
 
 ## 📜 License
 
