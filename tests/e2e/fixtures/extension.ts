@@ -8,7 +8,7 @@ export const test = base.extend<{
 }>({
   // eslint-disable-next-line no-empty-pattern
   context: async ({}, use) => {
-    const pathToExtension = path.join(import.meta.dirname, "../../dist");
+    const pathToExtension = path.join(import.meta.dirname, "../../../dist");
     const context = await chromium.launchPersistentContext("", {
       headless: false, // extensions only work in non-headless mode or new headless mode
       args: [
@@ -21,8 +21,13 @@ export const test = base.extend<{
     await context.close();
   },
   extensionId: async ({ context }, use) => {
+    // Wait for the background service worker to be ready
     let [background] = context.serviceWorkers();
-    if (!background) background = await context.waitForEvent("serviceworker");
+    if (!background) {
+      background = await context.waitForEvent("serviceworker", {
+        timeout: 10000,
+      });
+    }
 
     const extensionId = background.url().split("/")[2];
     await use(extensionId);
