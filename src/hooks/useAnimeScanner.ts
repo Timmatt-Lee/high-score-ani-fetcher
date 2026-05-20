@@ -27,26 +27,40 @@ export function useAnimeScanner(
       setProgress({ percent: 100, message: "Fetching details..." });
 
       // Filter out trash and favorites, and filter by score & episode count
-      const newItems: AnimeItem[] = [];
       const trashLinks = new Set(trash.map((t) => t.link));
       const favLinks = new Set(favorites.map((f) => f.link));
 
-      for (const item of allItems) {
-        if (trashLinks.has(item.link) || favLinks.has(item.link)) continue;
-
+      const filteredItems = allItems.filter((item) => {
+        if (trashLinks.has(item.link) || favLinks.has(item.link)) return false;
         const epCount = parseInt(item.episode_count, 10);
-        if (isNaN(epCount) || epCount < 10) continue; // Episode threshold
-        if (item.title.includes("OVA")) continue;
+        if (isNaN(epCount) || epCount < 10) return false;
+        if (item.title.includes("OVA")) return false;
+        return true;
+      });
 
-        setProgress({
-          percent: 100,
-          message: `Fetching details for ${item.title}...`,
-        });
-
-        const details = await ScraperService.scrapeAnimeDetails(item.link);
-        if (details.score >= 4.8) {
-          newItems.push({ ...item, ...details });
+      const chunk = <T>(arr: T[], size: number): T[][] => {
+        const result = [];
+        for (let i = 0; i < arr.length; i += size) {
+          result.push(arr.slice(i, i + size));
         }
+        return result;
+      };
+
+      const detailBatches = chunk(filteredItems, 5);
+      const newItems: AnimeItem[] = [];
+
+      for (const batch of detailBatches) {
+        const batchResults = await Promise.all(
+          batch.map(async (item) => {
+            setProgress((prev) => ({
+              ...prev,
+              message: `Fetching details for ${item.title}...`,
+            }));
+            const details = await ScraperService.scrapeAnimeDetails(item.link);
+            return details.score >= 4.8 ? { ...item, ...details } : null;
+          }),
+        );
+        newItems.push(...(batchResults.filter(Boolean) as AnimeItem[]));
       }
 
       onScanComplete(newItems);
