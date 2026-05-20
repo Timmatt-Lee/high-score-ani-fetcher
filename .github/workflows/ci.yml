@@ -14,10 +14,25 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+        
+    - name: Install Frontend Dependencies
+      run: npm ci
+
+    - name: TS Lint and Build
+      run: |
+        npm run lint
+        npm run build
+
     - name: Set up Python 3.10
       uses: actions/setup-python@v5
       with:
         python-version: "3.10"
+
         
     - name: Install dependencies
       run: |

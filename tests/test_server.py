@@ -1,3 +1,5 @@
+import typing
+from typing import Any
 import os
 import pytest
 from unittest.mock import patch, MagicMock
@@ -6,7 +8,7 @@ import requests
 
 
 @pytest.fixture
-def client():
+def client() -> typing.Generator[Any, None, None]:
     server.app.config["TESTING"] = True
     test_db = "test_anime_data.json"
     server.app.config["DATA_FILE"] = test_db
@@ -18,7 +20,7 @@ def client():
         os.remove(test_db)
 
 
-def test_load_save_data(client):
+def test_load_save_data(client: Any) -> None:
     server.CONFIG["DATA_FILE"] = "invalid/path/that/does/not/exist.json"
     data = server.load_data()
     assert "search_list" in data
@@ -35,13 +37,13 @@ def test_load_save_data(client):
         os.remove("test_db.json")
 
 
-def test_routes(client):
+def test_routes(client: Any) -> None:
     assert client.get("/").status_code == 200
     assert client.get("/favorites").status_code == 200
     assert client.get("/trash").status_code == 200
 
 
-def test_action_routes_missing_data(client):
+def test_action_routes_missing_data(client: Any) -> None:
     assert client.post("/add_to_favorites").status_code == 302
     assert client.post("/move_to_trash").status_code == 302
     assert client.post("/restore_from_trash").status_code == 302
@@ -68,7 +70,7 @@ def test_action_routes_missing_data(client):
 
 
 @patch("requests.get")
-def test_make_request_with_retry(mock_get):
+def test_make_request_with_retry(mock_get: Any) -> None:
     # Success
     mock_resp = MagicMock()
     mock_resp.raise_for_status = MagicMock()
@@ -107,7 +109,7 @@ def test_make_request_with_retry(mock_get):
 
 
 @patch("server._make_request_with_retry")
-def test_get_total_pages(mock_make_req):
+def test_get_total_pages(mock_make_req: Any) -> None:
     # Success
     mock_resp = MagicMock()
     mock_resp.content = b'<div class="page_control"><div class="page_number"><a href="#">1</a><a href="#">2</a></div></div>'
@@ -125,7 +127,7 @@ def test_get_total_pages(mock_make_req):
 
 
 @patch("server._make_request_with_retry")
-def test_scrape_anime_details(mock_make_req):
+def test_scrape_anime_details(mock_make_req: Any) -> None:
     mock_resp = MagicMock()
     mock_resp.content = '<div class="acg-score"><div class="score-overall-number">9.5</div><div class="score-overall-people">1000人評價</div></div><div class="data-intro"><p>Test Description</p></div>'.encode(
         "utf-8"
@@ -153,7 +155,7 @@ def test_scrape_anime_details(mock_make_req):
     )
 
 
-def test_parse_card_basic_info():
+def test_parse_card_basic_info() -> None:
     from bs4 import BeautifulSoup
 
     html = """
@@ -169,6 +171,7 @@ def test_parse_card_basic_info():
     soup = BeautifulSoup(html, "html.parser")
     card = soup.find("a")
     info = server._parse_card_basic_info(card)
+    assert info is not None
     assert info["title"] == "Test Anime"
     assert (
         info["watch_count"] == 0
@@ -185,7 +188,9 @@ def test_parse_card_basic_info():
 @patch("server.get_total_pages", return_value=1)
 @patch("server._make_request_with_retry")
 @patch("server.scrape_anime_details", return_value=(9.5, 1000, "Desc"))
-def test_scrape_anime_data_task(mock_details, mock_make_req, mock_total_pages, client):
+def test_scrape_anime_data_task(
+    mock_details: Any, mock_make_req: Any, mock_total_pages: Any, client: Any
+) -> None:
     server.SCRAPING_STATE["new_anime_queue"].queue.clear()
 
     mock_resp = MagicMock()
@@ -206,7 +211,7 @@ def test_scrape_anime_data_task(mock_details, mock_make_req, mock_total_pages, c
     assert server.SCRAPING_STATE["is_running"] is False
 
 
-def test_sse_progress(client):
+def test_sse_progress(client: Any) -> None:
     server.SCRAPING_STATE["is_running"] = False
     server.SCRAPING_STATE["new_anime_queue"].queue.clear()
 

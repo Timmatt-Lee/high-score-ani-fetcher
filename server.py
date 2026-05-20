@@ -12,11 +12,9 @@ from typing import (
     List,
     Optional,
     Tuple,
-    Union,
     cast,
     TypedDict,
     Generator,
-    Iterator,
 )
 from flask import (
     Flask,
