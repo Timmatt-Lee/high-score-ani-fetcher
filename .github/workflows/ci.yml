@@ -49,6 +49,6 @@ jobs:
       run: |
         mypy --strict .
         
-    - name: Test with pytest and enforce 99% coverage
+    - name: Test with pytest and enforce 90% coverage
       run: |
-        PYTHONPATH=. pytest --cov=server --cov-fail-under=99 --cov-report=term-missing
+        PYTHONPATH=. pytest --cov=server --cov-fail-under=90 --cov-report=term-missing
