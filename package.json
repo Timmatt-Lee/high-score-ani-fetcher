@@ -7,6 +7,8 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
+    "lint:md": "markdownlint \"**/*.md\" --ignore node_modules",
+    "format": "prettier --write \"**/*.{ts,tsx,css,html,md,json}\"",
     "preview": "vite preview",
     "test": "vitest run --coverage",
     "prepare": "husky"
@@ -33,10 +35,24 @@
     "husky": "^9.1.7",
     "jsdom": "^27.0.1",
     "lint-staged": "^17.0.5",
+    "markdownlint-cli": "^0.48.0",
     "prettier": "^3.8.3",
     "typescript": "~6.0.2",
     "typescript-eslint": "^8.59.2",
     "vite": "^8.0.12",
     "vitest": "^3.2.4"
+  },
+  "lint-staged": {
+    "*.{ts,tsx}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "*.md": [
+      "markdownlint --fix",
+      "prettier --write"
+    ],
+    "*.{json,css,html}": [
+      "prettier --write"
+    ]
   }
 }

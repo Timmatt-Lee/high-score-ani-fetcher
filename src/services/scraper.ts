@@ -9,7 +9,7 @@ export interface AnimeItem {
   description: string;
 }
 
-const BASE_URL = 'https://ani.gamer.com.tw/';
+const BASE_URL = "https://ani.gamer.com.tw/";
 
 export class ScraperService {
   /**
@@ -21,14 +21,14 @@ export class ScraperService {
       const response = await fetch(url);
       if (!response.ok) throw new Error(`HTTP error: ${response.status}`);
       const text = await response.text();
-      const doc = new DOMParser().parseFromString(text, 'text/html');
-      const pageLinks = doc.querySelectorAll('.page_number a');
+      const doc = new DOMParser().parseFromString(text, "text/html");
+      const pageLinks = doc.querySelectorAll(".page_number a");
       if (pageLinks.length === 0) return 1;
-      
+
       const lastPageText = pageLinks[pageLinks.length - 1].textContent;
-      return parseInt(lastPageText || '1', 10);
+      return parseInt(lastPageText || "1", 10);
     } catch (error) {
-      console.error('Failed to fetch total pages:', error);
+      console.error("Failed to fetch total pages:", error);
       return 1;
     }
   }
@@ -39,42 +39,47 @@ export class ScraperService {
   static async scrapeListPage(pageNum: number): Promise<AnimeItem[]> {
     const url = `${BASE_URL}animeList.php?page=${pageNum}`;
     const items: AnimeItem[] = [];
-    
+
     try {
       const response = await fetch(url);
       if (!response.ok) throw new Error(`HTTP error: ${response.status}`);
       const text = await response.text();
-      const doc = new DOMParser().parseFromString(text, 'text/html');
-      
-      const cards = doc.querySelectorAll('a.theme-list-main');
+      const doc = new DOMParser().parseFromString(text, "text/html");
+
+      const cards = doc.querySelectorAll("a.theme-list-main");
       for (const card of Array.from(cards)) {
-        const href = card.getAttribute('href');
+        const href = card.getAttribute("href");
         if (!href) continue;
-        
-        const link = BASE_URL + href.replace(/^\//, '');
-        const titleEl = card.querySelector('.theme-name');
-        const title = titleEl ? titleEl.textContent?.trim() || '' : 'No Title';
-        
-        const watchCountEl = card.querySelector('p:not(.theme-time)');
+
+        const link = BASE_URL + href.replace(/^\//, "");
+        const titleEl = card.querySelector(".theme-name");
+        const title = titleEl ? titleEl.textContent?.trim() || "" : "No Title";
+
+        const watchCountEl = card.querySelector("p:not(.theme-time)");
         let watchCount = 0;
         if (watchCountEl && watchCountEl.textContent) {
           const str = watchCountEl.textContent.trim();
-          if (str.includes('萬')) {
-            watchCount = parseFloat(str.replace('萬', '')) * 10000;
+          if (str.includes("萬")) {
+            watchCount = parseFloat(str.replace("萬", "")) * 10000;
           } else {
-            watchCount = parseInt(str.replace(/,/g, ''), 10) || 0;
+            watchCount = parseInt(str.replace(/,/g, ""), 10) || 0;
           }
         }
-        
-        let episode_count = 'N/A';
-        let upload_date = 'N/A';
-        const detailBlock = card.querySelector('.theme-detail-info-block');
+
+        let episode_count = "N/A";
+        let upload_date = "N/A";
+        const detailBlock = card.querySelector(".theme-detail-info-block");
         if (detailBlock) {
-          const epEl = detailBlock.querySelector('.theme-number');
-          if (epEl) episode_count = epEl.textContent?.replace('共', '').replace('集', '').trim() || 'N/A';
-          
-          const timeEl = detailBlock.querySelector('.theme-time');
-          if (timeEl) upload_date = timeEl.textContent?.replace('年份：', '').trim() || 'N/A';
+          const epEl = detailBlock.querySelector(".theme-number");
+          if (epEl)
+            episode_count =
+              epEl.textContent?.replace("共", "").replace("集", "").trim() ||
+              "N/A";
+
+          const timeEl = detailBlock.querySelector(".theme-time");
+          if (timeEl)
+            upload_date =
+              timeEl.textContent?.replace("年份：", "").trim() || "N/A";
         }
 
         items.push({
@@ -85,42 +90,58 @@ export class ScraperService {
           upload_date,
           score: 0, // Fetched later
           rating_count: 0, // Fetched later
-          description: '', // Fetched later
+          description: "", // Fetched later
         });
       }
     } catch (error) {
       console.error(`Failed to fetch page ${pageNum}:`, error);
     }
-    
+
     return items;
   }
 
   /**
    * Scrapes details for a single anime item.
    */
-  static async scrapeAnimeDetails(link: string): Promise<{ score: number, rating_count: number, description: string }> {
+  static async scrapeAnimeDetails(
+    link: string,
+  ): Promise<{ score: number; rating_count: number; description: string }> {
     try {
       const response = await fetch(link);
       if (!response.ok) throw new Error(`HTTP error: ${response.status}`);
       const text = await response.text();
-      const doc = new DOMParser().parseFromString(text, 'text/html');
-      
-      const scoreNumDiv = doc.querySelector('.score-overall-number');
-      const score = scoreNumDiv && scoreNumDiv.textContent ? parseFloat(scoreNumDiv.textContent) : 0;
-      
-      const scorePeopleDiv = doc.querySelector('.score-overall-people');
+      const doc = new DOMParser().parseFromString(text, "text/html");
+
+      const scoreNumDiv = doc.querySelector(".score-overall-number");
+      const score =
+        scoreNumDiv && scoreNumDiv.textContent
+          ? parseFloat(scoreNumDiv.textContent)
+          : 0;
+
+      const scorePeopleDiv = doc.querySelector(".score-overall-people");
       let rating_count = 0;
       if (scorePeopleDiv && scorePeopleDiv.textContent) {
-        rating_count = parseInt(scorePeopleDiv.textContent.replace('人評價', '').replace(/,/g, ''), 10) || 0;
+        rating_count =
+          parseInt(
+            scorePeopleDiv.textContent.replace("人評價", "").replace(/,/g, ""),
+            10,
+          ) || 0;
       }
-      
-      const descDiv = doc.querySelector('.data-intro p');
-      const description = descDiv && descDiv.textContent ? descDiv.textContent.trim().substring(0, 200) + '...' : 'No description found.';
-      
+
+      const descDiv = doc.querySelector(".data-intro p");
+      const description =
+        descDiv && descDiv.textContent
+          ? descDiv.textContent.trim().substring(0, 200) + "..."
+          : "No description found.";
+
       return { score, rating_count, description };
     } catch (error) {
       console.error(`Failed to fetch details for ${link}:`, error);
-      return { score: 0, rating_count: 0, description: 'Error fetching details' };
+      return {
+        score: 0,
+        rating_count: 0,
+        description: "Error fetching details",
+      };
     }
   }
 
@@ -128,23 +149,29 @@ export class ScraperService {
    * Fetch all pages with concurrency control.
    */
   static async fetchAllWithConcurrency(
-    totalPages: number, 
-    concurrency: number, 
-    onProgress: (percent: number, msg: string) => void
+    totalPages: number,
+    concurrency: number,
+    onProgress: (percent: number, msg: string) => void,
   ): Promise<AnimeItem[]> {
     const results: AnimeItem[] = [];
     let completed = 0;
-    
+
     const fetchPage = async (page: number) => {
-      onProgress(Math.floor((completed / totalPages) * 100), `Fetching page ${page}...`);
+      onProgress(
+        Math.floor((completed / totalPages) * 100),
+        `Fetching page ${page}...`,
+      );
       const items = await this.scrapeListPage(page);
       results.push(...items);
       completed++;
-      onProgress(Math.floor((completed / totalPages) * 100), `Completed page ${page}`);
+      onProgress(
+        Math.floor((completed / totalPages) * 100),
+        `Completed page ${page}`,
+      );
     };
 
     const queue = Array.from({ length: totalPages }, (_, i) => i + 1);
-    
+
     // Simple concurrency executor
     const runWorker = async () => {
       while (queue.length > 0) {
@@ -152,10 +179,10 @@ export class ScraperService {
         if (page) await fetchPage(page);
       }
     };
-    
+
     const workers = Array.from({ length: concurrency }, () => runWorker());
     await Promise.all(workers);
-    
+
     return results;
   }
 }
