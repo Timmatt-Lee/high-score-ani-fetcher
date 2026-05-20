@@ -1,41 +1,42 @@
 {
-  "name": "high-score-ani-fetcher",
-  "version": "1.0.0",
-  "description": "A Flask-based web application to fetch and track high-scoring anime from <https://ani.gamer.com.tw>. It provides a simple web interface to view filtered anime, manage favorites and trash lists, and caches data locally to optimize fetching.",
-  "main": "index.js",
-  "directories": {
-    "test": "tests"
-  },
+  "name": "temp-vite",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
   "scripts": {
-    "build": "tsc",
-    "watch": "tsc -w",
-    "lint": "eslint src/ts/**/*.ts",
-    "format": "prettier --write 'src/ts/**/*.ts'",
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "lint": "eslint .",
+    "preview": "vite preview",
+    "test": "vitest run --coverage",
     "prepare": "husky"
   },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/Timmatt-Lee/high-score-ani-fetcher.git"
+  "dependencies": {
+    "react": "^19.2.6",
+    "react-dom": "^19.2.6"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "bugs": {
-    "url": "https://github.com/Timmatt-Lee/high-score-ani-fetcher/issues"
-  },
-  "homepage": "https://github.com/Timmatt-Lee/high-score-ani-fetcher#readme",
   "devDependencies": {
-    "@types/bootstrap": "^5.2.10",
-    "@types/jquery": "^4.0.0",
-    "@types/tablesorter": "^2.31.8",
-    "@typescript-eslint/eslint-plugin": "^8.59.4",
-    "@typescript-eslint/parser": "^8.59.4",
-    "eslint": "^9.39.4",
+    "@crxjs/vite-plugin": "^2.0.0-beta.33",
+    "@eslint/js": "^10.0.1",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
+    "@types/chrome": "^0.1.42",
+    "@types/node": "^24.12.3",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^6.0.1",
+    "@vitest/coverage-v8": "^3.2.4",
+    "eslint": "^10.3.0",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "eslint-plugin-react-refresh": "^0.5.2",
+    "globals": "^17.6.0",
     "husky": "^9.1.7",
+    "jsdom": "^27.0.1",
     "lint-staged": "^17.0.5",
     "prettier": "^3.8.3",
-    "tslint": "^5.20.1",
-    "typescript": "^6.0.3",
-    "typescript-eslint": "^8.59.4"
+    "typescript": "~6.0.2",
+    "typescript-eslint": "^8.59.2",
+    "vite": "^8.0.12",
+    "vitest": "^3.2.4"
   }
 }
