@@ -6,7 +6,8 @@ export const test = base.extend<{
   context: BrowserContext;
   extensionId: string;
 }>({
-  context: async (_args, use) => {
+  // eslint-disable-next-line no-empty-pattern
+  context: async ({}, use) => {
     const pathToExtension = path.join(import.meta.dirname, "../../dist");
     const context = await chromium.launchPersistentContext("", {
       headless: false, // extensions only work in non-headless mode or new headless mode

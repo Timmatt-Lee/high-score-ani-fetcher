@@ -295,10 +295,12 @@ describe("Scan functionality", () => {
     await act(async () => {
       render(<App />);
     });
-    fireEvent.click(screen.getByText("Scan Bahamut"));
+    await act(async () => {
+      fireEvent.click(screen.getByText("Scan Bahamut"));
+    });
 
     await waitFor(() => expect(screen.getByText("Scanning...")).toBeDefined());
-    act(() => {
+    await act(async () => {
       resolveScrape();
     });
   });
