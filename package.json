@@ -1,0 +1,41 @@
+{
+  "name": "high-score-ani-fetcher",
+  "version": "1.0.0",
+  "description": "A Flask-based web application to fetch and track high-scoring anime from <https://ani.gamer.com.tw>. It provides a simple web interface to view filtered anime, manage favorites and trash lists, and caches data locally to optimize fetching.",
+  "main": "index.js",
+  "directories": {
+    "test": "tests"
+  },
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc -w",
+    "lint": "eslint src/ts/**/*.ts",
+    "format": "prettier --write 'src/ts/**/*.ts'",
+    "prepare": "husky"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Timmatt-Lee/high-score-ani-fetcher.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Timmatt-Lee/high-score-ani-fetcher/issues"
+  },
+  "homepage": "https://github.com/Timmatt-Lee/high-score-ani-fetcher#readme",
+  "devDependencies": {
+    "@types/bootstrap": "^5.2.10",
+    "@types/jquery": "^4.0.0",
+    "@types/tablesorter": "^2.31.8",
+    "@typescript-eslint/eslint-plugin": "^8.59.4",
+    "@typescript-eslint/parser": "^8.59.4",
+    "eslint": "^9.39.4",
+    "husky": "^9.1.7",
+    "lint-staged": "^17.0.5",
+    "prettier": "^3.8.3",
+    "tslint": "^5.20.1",
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.59.4"
+  }
+}
