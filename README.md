@@ -12,17 +12,20 @@ A modern Chrome Extension built with React, TypeScript, and Vite that fetches an
 ## 🛠️ Installation & Setup
 
 1. **Clone the repository**:
+
    ```sh
    git clone https://github.com/Timmatt-Lee/high-score-ani-fetcher.git
    cd high-score-ani-fetcher
    ```
 
 2. **Install dependencies**:
+
    ```sh
    npm install
    ```
 
 3. **Start the development server (HMR enabled)**:
+
    ```sh
    npm run dev
    ```
@@ -42,11 +45,12 @@ The output will be generated in the `dist` folder. You can then load this unpack
 This project maintains a strictly 90%+ test coverage standard.
 
 - **Run tests**:
+
   ```sh
   npm run test
   ```
 
-*Tests are automatically executed before every commit using Husky.*
+_Tests are automatically executed before every commit using Husky._
 
 ## 📜 License
 
