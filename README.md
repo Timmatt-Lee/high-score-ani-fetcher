@@ -1,73 +1,53 @@
-# React + TypeScript + Vite
+# High Score Ani Fetcher
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A modern Chrome Extension built with React, TypeScript, and Vite that fetches and filters high-score anime from Bahamut (動畫瘋 - ani.gamer.com.tw).
 
-Currently, two official plugins are available:
+## 🚀 Features
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- **Fetch High Scores**: Automatically retrieves anime data from Bahamut.
+- **Filter & Sort**: Easily sort and filter through anime lists based on user ratings.
+- **Modern Tech Stack**: Built with React 19, TypeScript, and Vite for blazing fast development.
+- **Robust Quality Control**: Includes strict ESLint rules, Vitest for unit/coverage testing, and Husky for pre-commit hooks.
 
-## React Compiler
+## 🛠️ Installation & Setup
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+1. **Clone the repository**:
+   ```sh
+   git clone https://github.com/Timmatt-Lee/high-score-ani-fetcher.git
+   cd high-score-ani-fetcher
+   ```
 
-## Expanding the ESLint configuration
+2. **Install dependencies**:
+   ```sh
+   npm install
+   ```
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+3. **Start the development server (HMR enabled)**:
+   ```sh
+   npm run dev
+   ```
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+## 📦 Building for Production
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+To build the extension for production (e.g., to upload to the Chrome Web Store):
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```sh
+npm run build
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+The output will be generated in the `dist` folder. You can then load this unpacked folder into Chrome via `chrome://extensions/`.
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+## 🧪 Testing
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+This project maintains a strictly 90%+ test coverage standard.
+
+- **Run tests**:
+  ```sh
+  npm run test
+  ```
+
+*Tests are automatically executed before every commit using Husky.*
+
+## 📜 License
+
+This project is licensed under the terms specified in the `LICENSE` file.
