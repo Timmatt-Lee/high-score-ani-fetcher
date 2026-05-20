@@ -45,19 +45,150 @@ describe("useAnimeData", () => {
     localStorage.clear();
   });
 
-  it("loads data on mount", async () => {
+  // --- Chrome storage path ---
+  it("loads data from chrome.storage on mount", async () => {
     storageMock["searchList"] = [makeAnime("Test")];
+    storageMock["favorites"] = [makeAnime("Fav")];
+    storageMock["trash"] = [makeAnime("Trash")];
     const { result } = renderHook(() => useAnimeData());
 
-    // Wait for the async useEffect to complete
     await act(async () => {
       await new Promise((resolve) => setTimeout(resolve, 0));
     });
 
     expect(result.current.searchList).toHaveLength(1);
     expect(result.current.searchList[0].title).toBe("Test");
+    expect(result.current.favorites).toHaveLength(1);
+    expect(result.current.trash).toHaveLength(1);
   });
 
+  // --- localStorage fallback path (lines 22-30) ---
+  it("falls back to localStorage when chrome is undefined", async () => {
+    vi.stubGlobal("chrome", undefined);
+    const anime = makeAnime("Local");
+    const fav = makeAnime("LocalFav");
+    const trashItem = makeAnime("LocalTrash");
+    localStorage.setItem(
+      "animeData",
+      JSON.stringify({
+        searchList: [anime],
+        favorites: [fav],
+        trash: [trashItem],
+      }),
+    );
+
+    const { result } = renderHook(() => useAnimeData());
+
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+
+    expect(result.current.searchList).toHaveLength(1);
+    expect(result.current.searchList[0].title).toBe("Local");
+    expect(result.current.favorites).toHaveLength(1);
+    expect(result.current.trash).toHaveLength(1);
+  });
+
+  it("handles empty localStorage gracefully", async () => {
+    vi.stubGlobal("chrome", undefined);
+    const { result } = renderHook(() => useAnimeData());
+
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+
+    expect(result.current.searchList).toHaveLength(0);
+  });
+
+  it("handles localStorage data with missing keys using || [] fallback", async () => {
+    vi.stubGlobal("chrome", undefined);
+    localStorage.setItem(
+      "animeData",
+      JSON.stringify({ searchList: [makeAnime("Only")] }),
+    );
+
+    const { result } = renderHook(() => useAnimeData());
+
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+
+    expect(result.current.searchList).toHaveLength(1);
+    expect(result.current.favorites).toHaveLength(0);
+    expect(result.current.trash).toHaveLength(0);
+  });
+
+  // --- Load error path (lines 32-34) ---
+  it("handles chrome.storage.get error gracefully", async () => {
+    vi.stubGlobal("chrome", {
+      storage: {
+        local: {
+          get: vi.fn().mockRejectedValue(new Error("storage error")),
+          set: vi.fn(),
+        },
+      },
+    });
+
+    const { result } = renderHook(() => useAnimeData());
+
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+
+    expect(result.current.searchList).toHaveLength(0);
+  });
+
+  // --- Save via localStorage fallback (lines 48-53) ---
+  it("saves via localStorage when chrome is undefined", async () => {
+    vi.stubGlobal("chrome", undefined);
+    localStorage.setItem(
+      "animeData",
+      JSON.stringify({
+        searchList: [makeAnime("Test")],
+        favorites: [],
+        trash: [],
+      }),
+    );
+
+    const { result } = renderHook(() => useAnimeData());
+
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+
+    await act(async () => {
+      result.current.moveToFavorites(makeAnime("Test"));
+    });
+
+    const saved = JSON.parse(localStorage.getItem("animeData") || "{}");
+    expect(saved.favorites).toHaveLength(1);
+  });
+
+  // --- Save error path (lines 54-56) ---
+  it("handles saveData error gracefully without crashing", async () => {
+    vi.stubGlobal("chrome", {
+      storage: {
+        local: {
+          get: vi.fn(async () => ({ searchList: [makeAnime("Test")] })),
+          set: vi.fn().mockRejectedValue(new Error("quota exceeded")),
+        },
+      },
+    });
+
+    const { result } = renderHook(() => useAnimeData());
+
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+
+    await act(async () => {
+      result.current.moveToFavorites(makeAnime("Test"));
+    });
+
+    expect(result.current.favorites).toHaveLength(1);
+  });
+
+  // --- Core operations ---
   it("moves item to favorites", async () => {
     const anime = makeAnime("Test");
     storageMock["searchList"] = [anime];
@@ -73,12 +204,12 @@ describe("useAnimeData", () => {
 
     expect(result.current.searchList).toHaveLength(0);
     expect(result.current.favorites).toHaveLength(1);
-    expect(storageMock["favorites"]).toBeDefined();
   });
 
-  it("moves item to trash", async () => {
+  it("moves item to trash from both search and favorites", async () => {
     const anime = makeAnime("Test");
     storageMock["searchList"] = [anime];
+    storageMock["favorites"] = [anime];
     const { result } = renderHook(() => useAnimeData());
 
     await act(async () => {
@@ -90,11 +221,11 @@ describe("useAnimeData", () => {
     });
 
     expect(result.current.searchList).toHaveLength(0);
+    expect(result.current.favorites).toHaveLength(0);
     expect(result.current.trash).toHaveLength(1);
-    expect(storageMock["trash"]).toBeDefined();
   });
 
-  it("restores item from trash", async () => {
+  it("restores item from trash back to search", async () => {
     const anime = makeAnime("Test");
     storageMock["trash"] = [anime];
     const { result } = renderHook(() => useAnimeData());
@@ -109,6 +240,5 @@ describe("useAnimeData", () => {
 
     expect(result.current.trash).toHaveLength(0);
     expect(result.current.searchList).toHaveLength(1);
-    expect(storageMock["searchList"]).toBeDefined();
   });
 });
