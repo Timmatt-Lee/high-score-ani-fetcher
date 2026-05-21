@@ -14,7 +14,7 @@ describe("ProgressBar", () => {
     render(<ProgressBar isScanning={true} percent={50} message="Halfway" />);
     expect(screen.getByText("Halfway")).toBeDefined();
     // Assuming you have styles that set width, we can check for percent
-    const fill = document.querySelector(".progress-fill") as HTMLElement;
+    const fill = screen.getByTestId("progress-fill");
     expect(fill.style.width).toBe("50%");
   });
 });

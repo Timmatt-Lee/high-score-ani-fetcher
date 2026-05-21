@@ -1,3 +1,5 @@
+import styles from "./ProgressBar.module.css";
+
 interface ProgressBarProps {
   isScanning: boolean;
   percent: number;
@@ -12,11 +14,15 @@ export function ProgressBar({
   if (!isScanning) return null;
 
   return (
-    <div className="progress-container">
-      <div className="progress-bar">
-        <div className="progress-fill" style={{ width: `${percent}%` }}></div>
+    <div className={styles.progressContainer}>
+      <div className={styles.progressBar}>
+        <div
+          className={styles.progressFill}
+          style={{ width: `${percent}%` }}
+          data-testid="progress-fill"
+        ></div>
       </div>
-      <div className="status-text">{message}</div>
+      <div className={styles.statusText}>{message}</div>
     </div>
   );
 }

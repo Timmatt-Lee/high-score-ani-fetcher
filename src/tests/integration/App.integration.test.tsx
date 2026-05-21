@@ -81,7 +81,9 @@ describe("App Integration Test", () => {
     ).toBeInTheDocument();
 
     // 3. Trigger Scan
-    const scanButton = screen.getByRole("button", { name: "Scan Bahamut" });
+    const scanButton = screen.getByRole("button", {
+      name: "Scan 巴哈姆特動漫瘋",
+    });
     fireEvent.click(scanButton);
 
     // 4. Wait for scan to complete and show results

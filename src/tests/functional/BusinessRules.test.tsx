@@ -99,7 +99,9 @@ describe("Business Logic Functional Test", () => {
 
     render(<App />);
 
-    fireEvent.click(screen.getByRole("button", { name: "Scan Bahamut" }));
+    fireEvent.click(
+      screen.getByRole("button", { name: "Scan 巴哈姆特動漫瘋" }),
+    );
 
     await waitFor(
       () => {

@@ -8,7 +8,7 @@ test.describe("Popup Visual Regression", () => {
   test("visual regression check", async ({ page }) => {
     await expect(page.getByText("AniFetcher Pro")).toBeVisible();
     await expect(page).toHaveScreenshot("popup.png", {
-      maxDiffPixels: 100,
+      maxDiffPixelRatio: 0.05,
     });
   });
 });

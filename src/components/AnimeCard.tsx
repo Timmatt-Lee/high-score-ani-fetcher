@@ -1,4 +1,5 @@
 import { type AnimeItem } from "../services/scraper";
+import styles from "./AnimeCard.module.css";
 
 interface AnimeCardProps {
   item: AnimeItem;
@@ -16,24 +17,24 @@ export function AnimeCard({
   onRestoreFromTrash,
 }: AnimeCardProps) {
   return (
-    <div className="anime-card">
-      <div className="anime-title">
+    <div className={styles.animeCard} data-testid="anime-card">
+      <div className={styles.animeTitle}>
         <a href={item.link} target="_blank" rel="noreferrer">
           {item.title}
         </a>
-        <span className="score-badge">★ {item.score.toFixed(1)}</span>
+        <span className={styles.scoreBadge}>★ {item.score.toFixed(1)}</span>
       </div>
-      <div className="anime-meta">
+      <div className={styles.animeMeta}>
         <span>{item.episode_count} Episodes</span>
         <span>{item.watch_count.toLocaleString()} Views</span>
         <span>{item.upload_date}</span>
       </div>
-      <div className="anime-desc">{item.description}</div>
+      <div className={styles.animeDesc}>{item.description}</div>
 
-      <div className="card-actions">
+      <div className={styles.cardActions}>
         {activeTab !== "favorites" && activeTab !== "trash" && (
           <button
-            className="action-btn fav"
+            className={`${styles.actionBtn} ${styles.fav}`}
             onClick={() => onMoveToFavorites(item)}
           >
             ❤ Favorite
@@ -41,7 +42,7 @@ export function AnimeCard({
         )}
         {activeTab !== "trash" && (
           <button
-            className="action-btn trash"
+            className={`${styles.actionBtn} ${styles.trash}`}
             onClick={() => onMoveToTrash(item)}
           >
             🗑 Trash
@@ -49,7 +50,7 @@ export function AnimeCard({
         )}
         {activeTab === "trash" && (
           <button
-            className="action-btn"
+            className={styles.actionBtn}
             onClick={() => onRestoreFromTrash(item)}
           >
             ↺ Restore

@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "High Score Ani Fetcher",
   "version": "1.0.0",
-  "description": "Fetch and filter high score anime from Bahamut.",
+  "description": "Fetch and filter high score anime from 巴哈姆特動漫瘋.",
   "action": {
     "default_popup": "index.html"
   },

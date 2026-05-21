@@ -9,18 +9,18 @@ test.describe("Popup Scanning & Interaction", () => {
   test.beforeAll(() => {
     const listMockPath = path.join(
       import.meta.dirname,
-      "../../fixtures/mocks/bahamut.html",
+      "../../fixtures/mocks/ani_gamer.html",
     );
     const detailMockPath = path.join(
       import.meta.dirname,
-      "../../fixtures/mocks/bahamut_details.html",
+      "../../fixtures/mocks/ani_gamer_details.html",
     );
     listHtml = fs.readFileSync(listMockPath, "utf-8");
     detailHtml = fs.readFileSync(detailMockPath, "utf-8");
   });
 
   test.beforeEach(async ({ page, extensionId }) => {
-    // Setup network mocking for Bahamut
+    // Setup network mocking for 巴哈姆特動漫瘋
     await page.route(
       "https://ani.gamer.com.tw/animeList.php*",
       async (route) => {
@@ -47,7 +47,9 @@ test.describe("Popup Scanning & Interaction", () => {
   });
 
   test("should scan and display mocked results", async ({ page }) => {
-    const scanButton = page.getByRole("button", { name: "Scan Bahamut" });
+    const scanButton = page.getByRole("button", {
+      name: "Scan 巴哈姆特動漫瘋",
+    });
     await scanButton.click();
 
     // Verify results are rendered (from our mock)
@@ -59,11 +61,11 @@ test.describe("Popup Scanning & Interaction", () => {
   });
 
   test("should handle favorite and trash workflow", async ({ page }) => {
-    await page.getByRole("button", { name: "Scan Bahamut" }).click();
+    await page.getByRole("button", { name: "Scan 巴哈姆特動漫瘋" }).click();
 
     // Wait for the card to be fully rendered
     const firstCard = page
-      .locator(".anime-card")
+      .getByTestId("anime-card")
       .filter({ hasText: "測試動畫第一季" });
     await expect(firstCard).toBeVisible({ timeout: 15000 });
 
@@ -73,26 +75,26 @@ test.describe("Popup Scanning & Interaction", () => {
     // Verify in Favorites tab
     await page.getByRole("button", { name: /Favorites/ }).click();
     await expect(
-      page.locator(".list-container").getByText("測試動畫第一季"),
+      page.getByTestId("list-container").getByText("測試動畫第一季"),
     ).toBeVisible();
 
     // Move to Trash
     const favCard = page
-      .locator(".anime-card")
+      .getByTestId("anime-card")
       .filter({ hasText: "測試動畫第一季" });
     await favCard.getByRole("button", { name: "🗑 Trash" }).click();
 
     // Verify in Trash tab
     await page.getByRole("button", { name: /Trash/ }).click();
     await expect(
-      page.locator(".list-container").getByText("測試動畫第一季"),
+      page.getByTestId("list-container").getByText("測試動畫第一季"),
     ).toBeVisible();
   });
 
   test("should persist data after reload", async ({ page }) => {
-    await page.getByRole("button", { name: "Scan Bahamut" }).click();
+    await page.getByRole("button", { name: "Scan 巴哈姆特動漫瘋" }).click();
     const firstCard = page
-      .locator(".anime-card")
+      .getByTestId("anime-card")
       .filter({ hasText: "測試動畫第一季" });
     await expect(firstCard).toBeVisible({ timeout: 15000 });
 
@@ -105,7 +107,7 @@ test.describe("Popup Scanning & Interaction", () => {
     // Check if still in Favorites
     await page.getByRole("button", { name: /Favorites/ }).click();
     await expect(
-      page.locator(".list-container").getByText("測試動畫第一季"),
+      page.getByTestId("list-container").getByText("測試動畫第一季"),
     ).toBeVisible();
   });
 });
