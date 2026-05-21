@@ -1,13 +1,108 @@
 import { test, expect } from "../../fixtures/extension";
+import path from "path";
+import fs from "fs";
 
 test.describe("Popup Visual Regression", () => {
+  let listHtml: string;
+  let detailHtml: string;
+
+  test.beforeAll(() => {
+    const listMockPath = path.join(
+      import.meta.dirname,
+      "../../fixtures/mocks/ani_gamer.html",
+    );
+    const detailMockPath = path.join(
+      import.meta.dirname,
+      "../../fixtures/mocks/ani_gamer_details.html",
+    );
+    listHtml = fs.readFileSync(listMockPath, "utf-8");
+    detailHtml = fs.readFileSync(detailMockPath, "utf-8");
+  });
+
   test.beforeEach(async ({ page, extensionId }) => {
     await page.goto(`chrome-extension://${extensionId}/index.html`);
   });
 
-  test("visual regression check", async ({ page }) => {
+  test("should match visual snapshot for initial state", async ({ page }) => {
     await expect(page.getByText("AniFetcher Pro")).toBeVisible();
-    await expect(page).toHaveScreenshot("popup.png", {
+    await expect(page).toHaveScreenshot("popup-initial.png", {
+      maxDiffPixelRatio: 0.05,
+    });
+  });
+
+  test("should match visual snapshot for scanning state", async ({ page }) => {
+    // Mock anime list endpoint with a 3-second delay to capture scanning state
+    await page.route(
+      "https://ani.gamer.com.tw/animeList.php*",
+      async (route) => {
+        await new Promise((resolve) => setTimeout(resolve, 3000));
+        await route.fulfill({
+          status: 200,
+          contentType: "text/html",
+          body: listHtml,
+        });
+      },
+    );
+
+    await page.route(
+      "https://ani.gamer.com.tw/animeVideo.php*",
+      async (route) => {
+        await route.fulfill({
+          status: 200,
+          contentType: "text/html",
+          body: detailHtml,
+        });
+      },
+    );
+
+    // Click scan to transition to scanning state
+    await page.getByRole("button", { name: "Scan 巴哈姆特動漫瘋" }).click();
+
+    // Verify loading indicator/progress is visible before screenshot
+    await expect(
+      page.getByRole("button", { name: "Scanning..." }),
+    ).toBeVisible();
+
+    // Take screenshot of scanning state
+    await expect(page).toHaveScreenshot("popup-scanning.png", {
+      maxDiffPixelRatio: 0.05,
+    });
+  });
+
+  test("should match visual snapshot for results state", async ({ page }) => {
+    // Instant fulfillment
+    await page.route(
+      "https://ani.gamer.com.tw/animeList.php*",
+      async (route) => {
+        await route.fulfill({
+          status: 200,
+          contentType: "text/html",
+          body: listHtml,
+        });
+      },
+    );
+
+    await page.route(
+      "https://ani.gamer.com.tw/animeVideo.php*",
+      async (route) => {
+        await route.fulfill({
+          status: 200,
+          contentType: "text/html",
+          body: detailHtml,
+        });
+      },
+    );
+
+    // Click scan
+    await page.getByRole("button", { name: "Scan 巴哈姆特動漫瘋" }).click();
+
+    // Wait for the mock results cards to appear
+    await expect(page.getByText("測試動畫第一季")).toBeVisible({
+      timeout: 15000,
+    });
+
+    // Take screenshot of the populated result state
+    await expect(page).toHaveScreenshot("popup-results.png", {
       maxDiffPixelRatio: 0.05,
     });
   });
