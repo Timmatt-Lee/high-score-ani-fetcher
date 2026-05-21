@@ -34,7 +34,7 @@ function App() {
       <div className="header">
         <h1>AniFetcher Pro</h1>
         <button className="btn" onClick={handleScan} disabled={isScanning}>
-          {isScanning ? "Scanning..." : "Scan Bahamut"}
+          {isScanning ? "Scanning..." : "Scan 巴哈姆特動漫瘋"}
         </button>
       </div>
 

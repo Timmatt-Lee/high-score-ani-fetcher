@@ -296,7 +296,7 @@ describe("Scan functionality", () => {
       render(<App />);
     });
     await act(async () => {
-      fireEvent.click(screen.getByText("Scan Bahamut"));
+      fireEvent.click(screen.getByText("Scan 巴哈姆特動漫瘋"));
     });
 
     await waitFor(() => expect(screen.getByText("Scanning...")).toBeDefined());
@@ -338,7 +338,7 @@ describe("Scan functionality", () => {
       render(<App />);
     });
     await act(async () => {
-      fireEvent.click(screen.getByText("Scan Bahamut"));
+      fireEvent.click(screen.getByText("Scan 巴哈姆特動漫瘋"));
     });
     await waitFor(() => expect(screen.queryByText("Scanning...")).toBeNull());
     expect(screen.getByText("High Score")).toBeDefined();
@@ -366,7 +366,7 @@ describe("Scan functionality", () => {
       render(<App />);
     });
     await act(async () => {
-      fireEvent.click(screen.getByText("Scan Bahamut"));
+      fireEvent.click(screen.getByText("Scan 巴哈姆特動漫瘋"));
     });
     await waitFor(() => expect(screen.queryByText("Scanning...")).toBeNull());
     expect(screen.queryByText("Short Show")).toBeNull();
@@ -392,7 +392,7 @@ describe("Scan functionality", () => {
       render(<App />);
     });
     await act(async () => {
-      fireEvent.click(screen.getByText("Scan Bahamut"));
+      fireEvent.click(screen.getByText("Scan 巴哈姆特動漫瘋"));
     });
     await waitFor(() => expect(screen.queryByText("Scanning...")).toBeNull());
     expect(screen.queryByText("Great Show OVA Special")).toBeNull();
@@ -419,7 +419,7 @@ describe("Scan functionality", () => {
       render(<App />);
     });
     await act(async () => {
-      fireEvent.click(screen.getByText("Scan Bahamut"));
+      fireEvent.click(screen.getByText("Scan 巴哈姆特動漫瘋"));
     });
     await waitFor(() => expect(screen.queryByText("Scanning...")).toBeNull());
     expect(screen.queryByText("In Trash")).toBeNull();
@@ -446,7 +446,7 @@ describe("Scan functionality", () => {
       render(<App />);
     });
     await act(async () => {
-      fireEvent.click(screen.getByText("Scan Bahamut"));
+      fireEvent.click(screen.getByText("Scan 巴哈姆特動漫瘋"));
     });
     await waitFor(() => expect(screen.queryByText("Scanning...")).toBeNull());
     expect(screen.queryByText("In Fav")).toBeNull();
@@ -472,7 +472,7 @@ describe("Scan functionality", () => {
       render(<App />);
     });
     await act(async () => {
-      fireEvent.click(screen.getByText("Scan Bahamut"));
+      fireEvent.click(screen.getByText("Scan 巴哈姆特動漫瘋"));
     });
     await waitFor(() => expect(screen.queryByText("Scanning...")).toBeNull());
     expect(screen.queryByText("NA Ep")).toBeNull();
