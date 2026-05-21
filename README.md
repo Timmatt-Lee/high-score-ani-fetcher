@@ -52,13 +52,20 @@ This project maintains a strictly 90%+ test coverage standard and utilizes both 
 
   _These tests run via Vitest, check coverage, and are automatically executed before every commit using Husky._
 
-- **Run End-to-End (E2E) Tests (Browser-based)**:
+- **Run End-to-End (E2E) Tests (Docker-based locally, Native in CI)**:
+
+  > [!IMPORTANT]
+  > **Prerequisite**: You must have **Docker Desktop** installed and running on your local machine. Locally, the E2E tests will automatically run inside Playwright's official Linux Docker container to guarantee consistent visual regression snapshot comparisons (preventing macOS vs. Linux font rendering discrepancies). In the CI/CD pipeline, tests run natively on the Linux runner.
 
   ```sh
   npm run test:e2e
   ```
 
-  _These tests run via Playwright in a real browser environment to ensure end-to-end functionality. To update visual snapshots, use `npm run test:e2e:update`._
+  To update visual snapshots (inside Docker), run:
+
+  ```sh
+  npm run test:e2e:update
+  ```
 
 ## 📜 License
 
