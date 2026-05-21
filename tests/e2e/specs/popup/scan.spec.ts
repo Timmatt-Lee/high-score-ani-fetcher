@@ -65,7 +65,7 @@ test.describe("Popup Scanning & Interaction", () => {
 
     // Wait for the card to be fully rendered
     const firstCard = page
-      .locator(".anime-card")
+      .getByTestId("anime-card")
       .filter({ hasText: "測試動畫第一季" });
     await expect(firstCard).toBeVisible({ timeout: 15000 });
 
@@ -75,26 +75,26 @@ test.describe("Popup Scanning & Interaction", () => {
     // Verify in Favorites tab
     await page.getByRole("button", { name: /Favorites/ }).click();
     await expect(
-      page.locator(".list-container").getByText("測試動畫第一季"),
+      page.getByTestId("list-container").getByText("測試動畫第一季"),
     ).toBeVisible();
 
     // Move to Trash
     const favCard = page
-      .locator(".anime-card")
+      .getByTestId("anime-card")
       .filter({ hasText: "測試動畫第一季" });
     await favCard.getByRole("button", { name: "🗑 Trash" }).click();
 
     // Verify in Trash tab
     await page.getByRole("button", { name: /Trash/ }).click();
     await expect(
-      page.locator(".list-container").getByText("測試動畫第一季"),
+      page.getByTestId("list-container").getByText("測試動畫第一季"),
     ).toBeVisible();
   });
 
   test("should persist data after reload", async ({ page }) => {
     await page.getByRole("button", { name: "Scan 巴哈姆特動漫瘋" }).click();
     const firstCard = page
-      .locator(".anime-card")
+      .getByTestId("anime-card")
       .filter({ hasText: "測試動畫第一季" });
     await expect(firstCard).toBeVisible({ timeout: 15000 });
 
@@ -107,7 +107,7 @@ test.describe("Popup Scanning & Interaction", () => {
     // Check if still in Favorites
     await page.getByRole("button", { name: /Favorites/ }).click();
     await expect(
-      page.locator(".list-container").getByText("測試動畫第一季"),
+      page.getByTestId("list-container").getByText("測試動畫第一季"),
     ).toBeVisible();
   });
 });

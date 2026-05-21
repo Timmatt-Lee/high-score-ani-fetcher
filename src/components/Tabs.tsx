@@ -1,3 +1,5 @@
+import styles from "./Tabs.module.css";
+
 export type TabType = "search" | "favorites" | "trash";
 
 interface TabsProps {
@@ -16,21 +18,21 @@ export function Tabs({
   trashCount,
 }: TabsProps) {
   return (
-    <div className="tabs">
+    <div className={styles.tabs}>
       <button
-        className={`tab ${activeTab === "search" ? "active" : ""}`}
+        className={`${styles.tab} ${activeTab === "search" ? styles.active : ""}`}
         onClick={() => setActiveTab("search")}
       >
         Results ({searchCount})
       </button>
       <button
-        className={`tab ${activeTab === "favorites" ? "active" : ""}`}
+        className={`${styles.tab} ${activeTab === "favorites" ? styles.active : ""}`}
         onClick={() => setActiveTab("favorites")}
       >
         Favorites ({favoritesCount})
       </button>
       <button
-        className={`tab ${activeTab === "trash" ? "active" : ""}`}
+        className={`${styles.tab} ${activeTab === "trash" ? styles.active : ""}`}
         onClick={() => setActiveTab("trash")}
       >
         Trash ({trashCount})

@@ -1,5 +1,6 @@
 import { AnimeCard } from "./AnimeCard";
 import { type AnimeItem } from "../services/scraper";
+import styles from "./AnimeList.module.css";
 
 interface AnimeListProps {
   activeTab: "search" | "favorites" | "trash";
@@ -26,11 +27,13 @@ export function AnimeList({
   if (activeTab === "trash") list = trash;
 
   if (list.length === 0) {
-    return <div className="empty-state">No anime found in this list.</div>;
+    return (
+      <div className={styles.emptyState}>No anime found in this list.</div>
+    );
   }
 
   return (
-    <div className="list-container">
+    <div className={styles.listContainer} data-testid="list-container">
       {list.map((item) => (
         <AnimeCard
           key={item.link}

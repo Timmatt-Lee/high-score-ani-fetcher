@@ -4,6 +4,7 @@ import { useAnimeScanner } from "./hooks/useAnimeScanner";
 import { AnimeList } from "./components/AnimeList";
 import { ProgressBar } from "./components/ProgressBar";
 import { Tabs, type TabType } from "./components/Tabs";
+import styles from "./App.module.css";
 import "./index.css";
 
 function App() {
@@ -30,10 +31,14 @@ function App() {
   );
 
   return (
-    <div className="app-container">
-      <div className="header">
+    <div className={styles.appContainer}>
+      <div className={styles.header}>
         <h1>AniFetcher Pro</h1>
-        <button className="btn" onClick={handleScan} disabled={isScanning}>
+        <button
+          className={styles.btn}
+          onClick={handleScan}
+          disabled={isScanning}
+        >
           {isScanning ? "Scanning..." : "Scan 巴哈姆特動漫瘋"}
         </button>
       </div>
