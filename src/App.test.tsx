@@ -6,8 +6,8 @@ import {
   waitFor,
   act,
 } from "@testing-library/react";
-import App from "../App";
-import { ScraperService, type AnimeItem } from "../services/scraper";
+import App from "./App";
+import { ScraperService, type AnimeItem } from "./services/scraper";
 
 // --- Chrome storage mock (default) ---
 const storageMock: Record<string, unknown> = {};
