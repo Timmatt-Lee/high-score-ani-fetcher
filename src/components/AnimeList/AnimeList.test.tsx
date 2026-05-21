@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
-import { AnimeList } from "../../components/AnimeList";
+import { AnimeList } from "./AnimeList";
 import { type AnimeItem } from "../../services/scraper";
 
 const makeAnime = (title: string): AnimeItem => ({

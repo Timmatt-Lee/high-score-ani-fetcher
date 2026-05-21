@@ -1,5 +1,5 @@
-import { AnimeCard } from "./AnimeCard";
-import { type AnimeItem } from "../services/scraper";
+import { AnimeCard } from "../AnimeCard";
+import { type AnimeItem } from "../../services/scraper";
 import styles from "./AnimeList.module.css";
 
 interface AnimeListProps {

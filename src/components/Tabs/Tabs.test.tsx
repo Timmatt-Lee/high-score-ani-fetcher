@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
-import { Tabs } from "../../components/Tabs";
+import { Tabs } from "./Tabs";
 
 describe("Tabs", () => {
   it("renders all tabs with correct counts", () => {
