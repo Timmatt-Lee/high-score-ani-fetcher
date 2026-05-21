@@ -11,8 +11,8 @@
     "format": "prettier --write \"**/*.{ts,tsx,css,html,md,json}\"",
     "preview": "vite preview",
     "test": "vitest run --coverage",
-    "test:e2e": "if [ \"$CI\" = \"true\" ]; then playwright test; else docker run --rm --ipc=host -v $(pwd):/work -w /work mcr.microsoft.com/playwright:v1.60.0-noble npx playwright test; fi",
-    "test:e2e:update": "if [ \"$CI\" = \"true\" ]; then playwright test --update-snapshots; else docker run --rm --ipc=host -v $(pwd):/work -w /work mcr.microsoft.com/playwright:v1.60.0-noble npx playwright test --update-snapshots; fi",
+    "test:e2e": "./scripts/test-e2e.sh",
+    "test:e2e:update": "./scripts/test-e2e.sh --update-snapshots",
     "prepare": "husky"
   },
   "dependencies": {
