@@ -31,7 +31,7 @@ export class ScraperPipeline {
   private scraper: {
     scrapeListPage: (
       page: number,
-    ) => Promise<{ items: AnimeItem[]; errors: ScraperParseError[] }>;
+    ) => Promise<{ items: AnimeItem[]; parseErrors: ScraperParseError[] }>;
     scrapeAnimeDetails: (link: string) => Promise<{
       score: number;
       rating_count: number;
@@ -54,7 +54,7 @@ export class ScraperPipeline {
     scraper: {
       scrapeListPage: (
         page: number,
-      ) => Promise<{ items: AnimeItem[]; errors: ScraperParseError[] }>;
+      ) => Promise<{ items: AnimeItem[]; parseErrors: ScraperParseError[] }>;
       scrapeAnimeDetails: (link: string) => Promise<{
         score: number;
         rating_count: number;
@@ -104,7 +104,7 @@ export class ScraperPipeline {
 
   private async fetchPage(page: number): Promise<void> {
     try {
-      const { items: pageItems, errors: pageErrors } =
+      const { items: pageItems, parseErrors: pageErrors } =
         await this.scraper.scrapeListPage(page);
       this.parseErrors.push(...pageErrors);
 
