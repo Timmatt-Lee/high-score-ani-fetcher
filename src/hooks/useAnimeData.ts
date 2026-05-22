@@ -22,17 +22,23 @@ export function useAnimeData() {
             "favorites",
             "trash",
           ]);
-          if (data.searchList) setSearchList(reviveData(data.searchList));
-          if (data.favorites) setFavorites(reviveData(data.favorites));
-          if (data.trash) setTrash(reviveData(data.trash));
+          if (Array.isArray(data.searchList)) {
+            setSearchList(reviveData(data.searchList as AnimeItem[]));
+          }
+          if (Array.isArray(data.favorites)) {
+            setFavorites(reviveData(data.favorites as AnimeItem[]));
+          }
+          if (Array.isArray(data.trash)) {
+            setTrash(reviveData(data.trash as AnimeItem[]));
+          }
         } else {
           // Fallback for local web dev without extension context
           const localData = localStorage.getItem("animeData");
           if (localData) {
             const parsed = JSON.parse(localData);
-            setSearchList(reviveData(parsed.searchList || []));
-            setFavorites(reviveData(parsed.favorites || []));
-            setTrash(reviveData(parsed.trash || []));
+            setSearchList(reviveData((parsed.searchList || []) as AnimeItem[]));
+            setFavorites(reviveData((parsed.favorites || []) as AnimeItem[]));
+            setTrash(reviveData((parsed.trash || []) as AnimeItem[]));
           }
         }
       } catch (err) {
