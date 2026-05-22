@@ -1,4 +1,4 @@
-import { ScraperHttpError, ScraperParseError } from "./errors";
+import { ScraperHttpError, ScraperParseError } from "../errors";
 
 export interface AnimeDetails {
   score: number;

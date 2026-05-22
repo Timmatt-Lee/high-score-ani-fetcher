@@ -8,7 +8,7 @@ import {
   ScraperErrorSource,
   ScraperHttpError,
   ScraperParseError,
-} from "../types/errors";
+} from "../errors";
 import { AsyncQueue } from "../concurrency/asyncQueue";
 
 const BASE_URL = "https://ani.gamer.com.tw";
