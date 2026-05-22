@@ -4,7 +4,7 @@ import { useAnimeScanner } from "./useAnimeScanner";
 import { scraperService } from "../services/scraper";
 import { type AnimeItem } from "../types/anime";
 import { ServiceProvider } from "../contexts/ServiceContext";
-import { ScraperHttpError } from "../types/errors";
+import { ScraperHttpError } from "../errors";
 
 const makeAnime = (title: string): AnimeItem => ({
   link: `http://${title}`,

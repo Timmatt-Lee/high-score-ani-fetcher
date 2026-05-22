@@ -4,7 +4,7 @@ import {
   ScraperErrorSource,
   ScraperHttpError,
   ScraperParseError,
-} from "../types/errors";
+} from "../errors";
 import { type AnimeItem } from "../types/anime";
 
 // --- Helpers ---

@@ -8,8 +8,8 @@ import {
   ScraperErrorSource,
   ScraperHttpError,
   ScraperParseError,
-} from "../types/errors";
-import { AsyncQueue } from "../concurrency/asyncQueue";
+} from "../errors";
+import { ScraperPipeline } from "./scraperPipeline";
 
 const BASE_URL = "https://ani.gamer.com.tw";
 
@@ -65,9 +65,6 @@ export class ScraperService {
     return totalPages;
   }
 
-  /**
-   * Scrapes basic info for all items on a single page.
-   */
   /**
    * Parses a single anime card element into an AnimeItem.
    * Throws ScraperParseError if parsing of required fields fails.
@@ -399,118 +396,15 @@ export class ScraperService {
       currentTitle: string,
     ) => void,
   ): Promise<ScanResult> {
-    const results: AnimeItem[] = [];
-    const errors: (ScraperHttpError | ScraperParseError)[] = [];
-
-    const queue = new AsyncQueue<AnimeItem>();
-    let pagesCompleted = 0;
-    let detailsCompleted = 0;
-    let detailsTotal = 0;
-
-    const pageQueue = Array.from({ length: totalPages }, (_, i) => i + 1);
-
-    const fetchPageAction = async (page: number) => {
-      try {
-        const { items: pageItems, errors: pageErrors } =
-          await this.scrapeListPage(page);
-        errors.push(...pageErrors);
-
-        pageItems.forEach((item) => {
-          if (filterItem(item)) {
-            detailsTotal++;
-            queue.push(item);
-          }
-        });
-      } catch (err) {
-        if (
-          err instanceof ScraperHttpError ||
-          err instanceof ScraperParseError
-        ) {
-          errors.push(err);
-        } else {
-          errors.push(
-            new ScraperHttpError(
-              `${BASE_URL}/animeList.php?page=${page}`,
-              err instanceof Error ? err.message : String(err),
-              500,
-            ),
-          );
-        }
-      }
-      pagesCompleted++;
-      onProgress(
-        pagesCompleted,
-        totalPages,
-        detailsCompleted,
-        detailsTotal,
-        "",
-      );
-    };
-
-    const runPageWorker = async () => {
-      while (true) {
-        const page = pageQueue.shift();
-        if (page === undefined) break;
-        await fetchPageAction(page);
-      }
-    };
-
-    const runDetailWorker = async () => {
-      while (true) {
-        const item = await queue.next();
-        if (item === undefined) break;
-
-        onProgress(
-          pagesCompleted,
-          totalPages,
-          detailsCompleted,
-          detailsTotal,
-          item.title,
-        );
-        try {
-          const details = await this.scrapeAnimeDetails(item.link);
-          results.push({ ...item, ...details });
-        } catch (err) {
-          if (
-            err instanceof ScraperHttpError ||
-            err instanceof ScraperParseError
-          ) {
-            errors.push(err);
-          } else {
-            errors.push(
-              new ScraperHttpError(
-                item.link,
-                err instanceof Error ? err.message : String(err),
-                500,
-              ),
-            );
-          }
-        }
-        detailsCompleted++;
-        onProgress(
-          pagesCompleted,
-          totalPages,
-          detailsCompleted,
-          detailsTotal,
-          item.title,
-        );
-      }
-    };
-
-    const pageWorkers = Array.from(
-      { length: Math.min(pageConcurrency, totalPages) },
-      () => runPageWorker(),
+    const pipeline = new ScraperPipeline(
+      totalPages,
+      pageConcurrency,
+      detailConcurrency,
+      filterItem,
+      onProgress,
+      this,
     );
-    const detailWorkers = Array.from({ length: detailConcurrency }, () =>
-      runDetailWorker(),
-    );
-
-    // Run both stages concurrently
-    await Promise.all(pageWorkers);
-    queue.close();
-    await Promise.all(detailWorkers);
-
-    return { items: results, errors };
+    return pipeline.execute();
   }
 }
 

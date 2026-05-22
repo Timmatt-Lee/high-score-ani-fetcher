@@ -10,7 +10,7 @@ import { ServiceProvider } from "./contexts/ServiceContext";
 import App from "./App";
 import { scraperService } from "./services/scraper";
 import { type AnimeItem, type ScanResult } from "./types/anime";
-import { ScraperHttpError } from "./types/errors";
+import { ScraperHttpError } from "./errors";
 
 // --- Chrome storage mock (default) ---
 const storageMock: Record<string, unknown> = {};

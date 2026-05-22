@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { type AnimeItem } from "../types/anime";
 import { useServices } from "../contexts/ServiceContext";
-import { ScraperHttpError, ScraperParseError } from "../types/errors";
+import { ScraperHttpError, ScraperParseError } from "../errors";
 
 export function useAnimeScanner(
   favorites: AnimeItem[],
