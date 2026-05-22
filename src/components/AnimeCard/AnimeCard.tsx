@@ -27,7 +27,11 @@ export function AnimeCard({
       <div className={styles.animeMeta}>
         <span>{item.episode_count} Episodes</span>
         <span>{item.watch_count.toLocaleString()} Views</span>
-        <span>{item.upload_date}</span>
+        <span>
+          {isNaN(item.upload_date.getTime())
+            ? "N/A"
+            : item.upload_date.getFullYear()}
+        </span>
       </div>
       <div className={styles.animeDesc}>{item.description}</div>
 

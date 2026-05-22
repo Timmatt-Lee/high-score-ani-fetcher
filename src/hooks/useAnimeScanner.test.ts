@@ -1,14 +1,14 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { renderHook, act } from "@testing-library/react";
 import { useAnimeScanner } from "./useAnimeScanner";
-import { ScraperService, type AnimeItem } from "../services/scraper";
+import { scraperService, type AnimeItem } from "../services/scraper";
 
 const makeAnime = (title: string): AnimeItem => ({
   link: `http://${title}`,
   title,
   watch_count: 100,
-  episode_count: "12",
-  upload_date: "2024",
+  episode_count: 12,
+  upload_date: new Date("2024-01-01"),
   score: 8.5,
   rating_count: 50,
   description: "Desc",
@@ -21,11 +21,11 @@ describe("useAnimeScanner", () => {
 
   it("scans and calls onScanComplete with filtered results", async () => {
     const mockAnime = makeAnime("Test");
-    vi.spyOn(ScraperService, "getTotalPages").mockResolvedValue(1);
-    vi.spyOn(ScraperService, "fetchAllWithConcurrency").mockResolvedValue([
+    vi.spyOn(scraperService, "getTotalPages").mockResolvedValue(1);
+    vi.spyOn(scraperService, "fetchAllWithConcurrency").mockResolvedValue([
       mockAnime,
     ]);
-    vi.spyOn(ScraperService, "scrapeAnimeDetails").mockResolvedValue({
+    vi.spyOn(scraperService, "scrapeAnimeDetails").mockResolvedValue({
       score: 9.0,
       rating_count: 100,
       description: "x",
@@ -47,14 +47,14 @@ describe("useAnimeScanner", () => {
   // --- Progress callback path (lines 22-24) ---
   it("fires the progress callback from fetchAllWithConcurrency", async () => {
     const mockAnime = makeAnime("ProgressTest");
-    vi.spyOn(ScraperService, "getTotalPages").mockResolvedValue(1);
-    vi.spyOn(ScraperService, "fetchAllWithConcurrency").mockImplementation(
+    vi.spyOn(scraperService, "getTotalPages").mockResolvedValue(1);
+    vi.spyOn(scraperService, "fetchAllWithConcurrency").mockImplementation(
       async (_pages, _concurrency, onProgress) => {
         onProgress(50, "halfway");
         return [mockAnime];
       },
     );
-    vi.spyOn(ScraperService, "scrapeAnimeDetails").mockResolvedValue({
+    vi.spyOn(scraperService, "scrapeAnimeDetails").mockResolvedValue({
       score: 5.0,
       rating_count: 100,
       description: "x",
@@ -72,7 +72,7 @@ describe("useAnimeScanner", () => {
 
   // --- Error catch path (lines 53-55) ---
   it("handles scan failure gracefully", async () => {
-    vi.spyOn(ScraperService, "getTotalPages").mockRejectedValue(
+    vi.spyOn(scraperService, "getTotalPages").mockRejectedValue(
       new Error("network down"),
     );
 
@@ -90,8 +90,8 @@ describe("useAnimeScanner", () => {
   it("skips items already in trash or favorites", async () => {
     const trashItem = makeAnime("InTrash");
     const favItem = makeAnime("InFav");
-    vi.spyOn(ScraperService, "getTotalPages").mockResolvedValue(1);
-    vi.spyOn(ScraperService, "fetchAllWithConcurrency").mockResolvedValue([
+    vi.spyOn(scraperService, "getTotalPages").mockResolvedValue(1);
+    vi.spyOn(scraperService, "fetchAllWithConcurrency").mockResolvedValue([
       trashItem,
       favItem,
     ]);
@@ -110,16 +110,16 @@ describe("useAnimeScanner", () => {
 
   it("skips items with < 10 episodes, OVA, or non-numeric episode count", async () => {
     const shortShow = makeAnime("Short");
-    shortShow.episode_count = "5";
+    shortShow.episode_count = 5;
 
     const ovaShow = makeAnime("OVA Special");
-    ovaShow.episode_count = "12";
+    ovaShow.episode_count = 12;
 
     const naShow = makeAnime("NAEp");
-    naShow.episode_count = "N/A";
+    naShow.episode_count = NaN;
 
-    vi.spyOn(ScraperService, "getTotalPages").mockResolvedValue(1);
-    vi.spyOn(ScraperService, "fetchAllWithConcurrency").mockResolvedValue([
+    vi.spyOn(scraperService, "getTotalPages").mockResolvedValue(1);
+    vi.spyOn(scraperService, "fetchAllWithConcurrency").mockResolvedValue([
       shortShow,
       ovaShow,
       naShow,
@@ -137,11 +137,11 @@ describe("useAnimeScanner", () => {
 
   it("filters out items with score below 4.8", async () => {
     const lowScore = makeAnime("LowScore");
-    vi.spyOn(ScraperService, "getTotalPages").mockResolvedValue(1);
-    vi.spyOn(ScraperService, "fetchAllWithConcurrency").mockResolvedValue([
+    vi.spyOn(scraperService, "getTotalPages").mockResolvedValue(1);
+    vi.spyOn(scraperService, "fetchAllWithConcurrency").mockResolvedValue([
       lowScore,
     ]);
-    vi.spyOn(ScraperService, "scrapeAnimeDetails").mockResolvedValue({
+    vi.spyOn(scraperService, "scrapeAnimeDetails").mockResolvedValue({
       score: 4.0,
       rating_count: 10,
       description: "Meh",

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ScraperService, type AnimeItem } from "../services/scraper";
+import { scraperService, type AnimeItem } from "../services/scraper";
 
 export function useAnimeScanner(
   favorites: AnimeItem[],
@@ -14,9 +14,9 @@ export function useAnimeScanner(
     setProgress({ percent: 0, message: "Getting total pages..." });
 
     try {
-      const totalPages = await ScraperService.getTotalPages();
+      const totalPages = await scraperService.getTotalPages();
 
-      const allItems = await ScraperService.fetchAllWithConcurrency(
+      const allItems = await scraperService.fetchAllWithConcurrency(
         totalPages,
         5,
         (percent, msg) => {
@@ -32,8 +32,7 @@ export function useAnimeScanner(
 
       const filteredItems = allItems.filter((item) => {
         if (trashLinks.has(item.link) || favLinks.has(item.link)) return false;
-        const epCount = parseInt(item.episode_count, 10);
-        if (isNaN(epCount) || epCount < 10) return false;
+        if (isNaN(item.episode_count) || item.episode_count < 10) return false;
         if (item.title.includes("OVA")) return false;
         return true;
       });
@@ -56,7 +55,7 @@ export function useAnimeScanner(
               ...prev,
               message: `Fetching details for ${item.title}...`,
             }));
-            const details = await ScraperService.scrapeAnimeDetails(item.link);
+            const details = await scraperService.scrapeAnimeDetails(item.link);
             return details.score >= 4.8 ? { ...item, ...details } : null;
           }),
         );

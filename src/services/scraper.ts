@@ -2,54 +2,61 @@ export interface AnimeItem {
   link: string;
   title: string;
   watch_count: number;
-  episode_count: string;
-  upload_date: string;
+  episode_count: number;
+  upload_date: Date;
   score: number;
   rating_count: number;
   description: string;
 }
 
-const BASE_URL = "https://ani.gamer.com.tw/";
+const BASE_URL = "https://ani.gamer.com.tw";
 
 export class ScraperService {
+  private async fetchText(url: string): Promise<string> {
+    const response = await fetch(url);
+    if (!response.ok) {
+      throw new Error(
+        `Failed to fetch ${url}: ${response.status} ${response.statusText}`,
+      );
+    }
+    return response.text();
+  }
+
   /**
    * Fetches the total number of pages from the anime list.
    */
-  static async getTotalPages(): Promise<number> {
-    const url = `${BASE_URL}animeList.php?page=1`;
-    let text: string;
-    try {
-      const response = await fetch(url);
-      if (!response.ok) throw new Error(`HTTP error: ${response.status}`);
-      text = await response.text();
-    } catch (error) {
-      console.error("Failed to fetch total pages:", error);
-      throw error;
-    }
+  async getTotalPages(): Promise<number> {
+    const url = `${BASE_URL}/animeList.php?page=1`;
+    const text = await this.fetchText(url);
 
     const doc = new DOMParser().parseFromString(text, "text/html");
     const pageLinks = doc.querySelectorAll(".page_number a");
-    if (pageLinks.length === 0) return 1;
+
+    if (pageLinks.length === 0) {
+      throw new Error(
+        "Pagination element not found. Page structure might have changed.",
+      );
+    }
 
     const lastPageText = pageLinks[pageLinks.length - 1].textContent;
-    return parseInt(lastPageText || "1", 10);
+    if (!lastPageText) {
+      throw new Error("Last page link has no text content.");
+    }
+
+    const totalPages = parseInt(lastPageText, 10);
+    if (isNaN(totalPages)) {
+      throw new Error(`Invalid total pages parsed: "${lastPageText}"`);
+    }
+
+    return totalPages;
   }
 
   /**
    * Scrapes basic info for all items on a single page.
    */
-  static async scrapeListPage(pageNum: number): Promise<AnimeItem[]> {
-    const url = `${BASE_URL}animeList.php?page=${pageNum}`;
-    let text: string;
-
-    try {
-      const response = await fetch(url);
-      if (!response.ok) throw new Error(`HTTP error: ${response.status}`);
-      text = await response.text();
-    } catch (error) {
-      console.error(`Failed to fetch page ${pageNum}:`, error);
-      return [];
-    }
+  async scrapeListPage(pageNum: number): Promise<AnimeItem[]> {
+    const url = `${BASE_URL}/animeList.php?page=${pageNum}`;
+    const text = await this.fetchText(url);
 
     const items: AnimeItem[] = [];
     const doc = new DOMParser().parseFromString(text, "text/html");
@@ -59,35 +66,39 @@ export class ScraperService {
       const href = card.getAttribute("href");
       if (!href) continue;
 
-      const link = BASE_URL + href.replace(/^\//, "");
+      const link = `${BASE_URL}/${href.replace(/^\//, "")}`;
       const titleEl = card.querySelector(".theme-name");
-      const title = titleEl ? titleEl.textContent?.trim() || "" : "No Title";
+      const title = titleEl?.textContent?.trim() || "";
 
       const watchCountEl = card.querySelector("p:not(.theme-time)");
-      let watchCount = 0;
+      let watchCount = NaN;
       if (watchCountEl && watchCountEl.textContent) {
         const str = watchCountEl.textContent.trim();
         if (str.includes("萬")) {
           watchCount = parseFloat(str.replace("萬", "")) * 10000;
         } else {
-          watchCount = parseInt(str.replace(/,/g, ""), 10) || 0;
+          watchCount = parseInt(str.replace(/,/g, ""), 10);
         }
       }
 
-      let episode_count = "N/A";
-      let upload_date = "N/A";
+      let episode_count = NaN;
+      let upload_date = new Date(NaN);
+
       const detailBlock = card.querySelector(".theme-detail-info-block");
       if (detailBlock) {
         const epEl = detailBlock.querySelector(".theme-number");
-        if (epEl)
-          episode_count =
-            epEl.textContent?.replace("共", "").replace("集", "").trim() ||
-            "N/A";
+        if (epEl && epEl.textContent) {
+          episode_count = parseInt(
+            epEl.textContent.replace("共", "").replace("集", "").trim(),
+            10,
+          );
+        }
 
         const timeEl = detailBlock.querySelector(".theme-time");
-        if (timeEl)
-          upload_date =
-            timeEl.textContent?.replace("年份：", "").trim() || "N/A";
+        if (timeEl && timeEl.textContent) {
+          const yearStr = timeEl.textContent.replace("年份：", "").trim();
+          upload_date = new Date(`${yearStr}-01-01T00:00:00Z`);
+        }
       }
 
       items.push({
@@ -108,46 +119,30 @@ export class ScraperService {
   /**
    * Scrapes details for a single anime item.
    */
-  static async scrapeAnimeDetails(
+  async scrapeAnimeDetails(
     link: string,
   ): Promise<{ score: number; rating_count: number; description: string }> {
-    let text: string;
-    try {
-      const response = await fetch(link);
-      if (!response.ok) throw new Error(`HTTP error: ${response.status}`);
-      text = await response.text();
-    } catch (error) {
-      console.error(`Failed to fetch details for ${link}:`, error);
-      return {
-        score: 0,
-        rating_count: 0,
-        description: "Error fetching details",
-      };
-    }
-
+    const text = await this.fetchText(link);
     const doc = new DOMParser().parseFromString(text, "text/html");
 
     const scoreNumDiv = doc.querySelector(".score-overall-number");
     const score =
       scoreNumDiv && scoreNumDiv.textContent
         ? parseFloat(scoreNumDiv.textContent)
-        : 0;
+        : NaN;
 
     const scorePeopleDiv = doc.querySelector(".score-overall-people");
-    let rating_count = 0;
+    let rating_count = NaN;
     if (scorePeopleDiv && scorePeopleDiv.textContent) {
-      rating_count =
-        parseInt(
-          scorePeopleDiv.textContent.replace("人評價", "").replace(/,/g, ""),
-          10,
-        ) || 0;
+      rating_count = parseInt(
+        scorePeopleDiv.textContent.replace("人評價", "").replace(/,/g, ""),
+        10,
+      );
     }
 
     const descDiv = doc.querySelector(".data-intro p");
     const description =
-      descDiv && descDiv.textContent
-        ? descDiv.textContent.trim().substring(0, 200) + "..."
-        : "No description found.";
+      descDiv && descDiv.textContent ? descDiv.textContent.trim() : "";
 
     return { score, rating_count, description };
   }
@@ -155,7 +150,7 @@ export class ScraperService {
   /**
    * Fetch all pages with concurrency control.
    */
-  static async fetchAllWithConcurrency(
+  async fetchAllWithConcurrency(
     totalPages: number,
     concurrency: number,
     onProgress: (percent: number, msg: string) => void,
@@ -163,7 +158,7 @@ export class ScraperService {
     const results: AnimeItem[] = [];
     let completed = 0;
 
-    const fetchPage = async (page: number) => {
+    const fetchPageAction = async (page: number) => {
       onProgress(
         Math.floor((completed / totalPages) * 100),
         `Fetching page ${page}...`,
@@ -179,11 +174,10 @@ export class ScraperService {
 
     const queue = Array.from({ length: totalPages }, (_, i) => i + 1);
 
-    // Simple concurrency executor
     const runWorker = async () => {
       while (queue.length > 0) {
         const page = queue.shift();
-        if (page) await fetchPage(page);
+        if (page !== undefined) await fetchPageAction(page);
       }
     };
 
@@ -193,3 +187,5 @@ export class ScraperService {
     return results;
   }
 }
+
+export const scraperService = new ScraperService();

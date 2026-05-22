@@ -8,6 +8,12 @@ export function useAnimeData() {
 
   // Load data on mount
   useEffect(() => {
+    const reviveData = (items: AnimeItem[]): AnimeItem[] =>
+      items.map((item) => ({
+        ...item,
+        upload_date: new Date(item.upload_date),
+      }));
+
     const loadData = async () => {
       try {
         if (typeof chrome !== "undefined" && chrome.storage) {
@@ -16,17 +22,23 @@ export function useAnimeData() {
             "favorites",
             "trash",
           ]);
-          if (data.searchList) setSearchList(data.searchList as AnimeItem[]);
-          if (data.favorites) setFavorites(data.favorites as AnimeItem[]);
-          if (data.trash) setTrash(data.trash as AnimeItem[]);
+          if (Array.isArray(data.searchList)) {
+            setSearchList(reviveData(data.searchList as AnimeItem[]));
+          }
+          if (Array.isArray(data.favorites)) {
+            setFavorites(reviveData(data.favorites as AnimeItem[]));
+          }
+          if (Array.isArray(data.trash)) {
+            setTrash(reviveData(data.trash as AnimeItem[]));
+          }
         } else {
           // Fallback for local web dev without extension context
           const localData = localStorage.getItem("animeData");
           if (localData) {
             const parsed = JSON.parse(localData);
-            setSearchList(parsed.searchList || []);
-            setFavorites(parsed.favorites || []);
-            setTrash(parsed.trash || []);
+            setSearchList(reviveData((parsed.searchList || []) as AnimeItem[]));
+            setFavorites(reviveData((parsed.favorites || []) as AnimeItem[]));
+            setTrash(reviveData((parsed.trash || []) as AnimeItem[]));
           }
         }
       } catch (err) {

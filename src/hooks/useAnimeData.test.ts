@@ -26,8 +26,8 @@ const makeAnime = (title: string): AnimeItem => ({
   link: `http://${title}`,
   title,
   watch_count: 100,
-  episode_count: "12",
-  upload_date: "2024",
+  episode_count: 12,
+  upload_date: new Date("2024-01-01"),
   score: 8.5,
   rating_count: 50,
   description: "Desc",
@@ -114,6 +114,21 @@ describe("useAnimeData", () => {
     });
 
     expect(result.current.searchList).toHaveLength(1);
+    expect(result.current.favorites).toHaveLength(0);
+    expect(result.current.trash).toHaveLength(0);
+  });
+
+  it("handles localStorage with empty object using || [] fallbacks", async () => {
+    vi.stubGlobal("chrome", undefined);
+    localStorage.setItem("animeData", JSON.stringify({}));
+
+    const { result } = renderHook(() => useAnimeData());
+
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+
+    expect(result.current.searchList).toHaveLength(0);
     expect(result.current.favorites).toHaveLength(0);
     expect(result.current.trash).toHaveLength(0);
   });

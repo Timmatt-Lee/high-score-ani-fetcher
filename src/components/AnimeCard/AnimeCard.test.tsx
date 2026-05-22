@@ -7,8 +7,8 @@ const makeAnime = (): AnimeItem => ({
   link: "http://test",
   title: "Test Anime",
   watch_count: 100,
-  episode_count: "12",
-  upload_date: "2024",
+  episode_count: 12,
+  upload_date: new Date("2024-01-01"),
   score: 8.5,
   rating_count: 50,
   description: "Desc",
@@ -27,6 +27,22 @@ describe("AnimeCard", () => {
     );
     expect(screen.getByText("Test Anime")).toBeDefined();
     expect(screen.getByText("12 Episodes")).toBeDefined();
+    expect(screen.getByText("2024")).toBeDefined();
+  });
+
+  it("renders N/A for invalid upload date", () => {
+    const item = makeAnime();
+    item.upload_date = new Date(NaN);
+    render(
+      <AnimeCard
+        item={item}
+        activeTab="search"
+        onMoveToFavorites={vi.fn()}
+        onMoveToTrash={vi.fn()}
+        onRestoreFromTrash={vi.fn()}
+      />,
+    );
+    expect(screen.getByText("N/A")).toBeDefined();
   });
 
   it("shows favorite and trash buttons in search tab", () => {
