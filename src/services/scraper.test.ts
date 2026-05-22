@@ -44,14 +44,16 @@ describe("ScraperService.getTotalPages", () => {
     expect(await ScraperService.getTotalPages()).toBe(1);
   });
 
-  it("returns 1 when fetch fails", async () => {
+  it("throws error when fetch fails", async () => {
     vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("network")));
-    expect(await ScraperService.getTotalPages()).toBe(1);
+    await expect(ScraperService.getTotalPages()).rejects.toThrow("network");
   });
 
-  it("returns 1 when response is not ok", async () => {
+  it("throws error when response is not ok", async () => {
     mockFetch("", false);
-    expect(await ScraperService.getTotalPages()).toBe(1);
+    await expect(ScraperService.getTotalPages()).rejects.toThrow(
+      "HTTP error: 404",
+    );
   });
 });
 
