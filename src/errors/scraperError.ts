@@ -1,4 +1,4 @@
-import { ScraperErrorSource } from "./scraper-error-source";
+import { ScraperErrorSource } from "./scraperErrorSource";
 
 /**
  * Represents failures during HTTP communication with the target site (e.g. status code >= 400).
