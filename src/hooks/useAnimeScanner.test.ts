@@ -286,4 +286,31 @@ describe("useAnimeScanner", () => {
 
     expect(result.current.progress.percent).toBe(0);
   });
+
+  it("sorts high-award items by score descending, then title ascending", async () => {
+    const itemA = { ...makeAnime("Z_Anime"), score: 9.0 };
+    const itemB = { ...makeAnime("A_Anime"), score: 9.0 };
+    const itemC = { ...makeAnime("M_Anime"), score: 9.5 };
+
+    vi.spyOn(scraperService, "getTotalPages").mockResolvedValue(1);
+    vi.spyOn(scraperService, "scanAllWithPipeline").mockResolvedValue({
+      items: [itemA, itemB, itemC],
+      errors: [],
+    });
+
+    const onComplete = vi.fn();
+    const { result } = renderHook(() => useAnimeScanner([], [], onComplete), {
+      wrapper: ServiceProvider,
+    });
+
+    await act(async () => {
+      await result.current.handleScan();
+    });
+
+    expect(onComplete).toHaveBeenCalled();
+    const completedItems = onComplete.mock.calls[0][0] as AnimeItem[];
+    expect(completedItems[0].title).toBe("M_Anime");
+    expect(completedItems[1].title).toBe("A_Anime");
+    expect(completedItems[2].title).toBe("Z_Anime");
+  });
 });

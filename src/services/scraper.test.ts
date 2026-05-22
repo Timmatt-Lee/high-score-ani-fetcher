@@ -534,7 +534,7 @@ describe("scraperService.scanAllWithPipeline", () => {
       description: "",
     }) as AnimeItem;
 
-  it("scrapes page items, filters them, fetches details concurrently and preserves original layout order", async () => {
+  it("scrapes page items, filters them, fetches details concurrently and returns results", async () => {
     const listSpy = vi
       .spyOn(scraperService, "scrapeListPage")
       .mockImplementation(async (page) => {
@@ -577,13 +577,16 @@ describe("scraperService.scanAllWithPipeline", () => {
     expect(errors).toHaveLength(0);
     expect(items).toHaveLength(3);
 
-    expect(items[0].title).toBe("A");
-    expect(items[1].title).toBe("C");
-    expect(items[2].title).toBe("D");
+    const sortedItems = [...items].sort((a, b) =>
+      a.title.localeCompare(b.title),
+    );
+    expect(sortedItems[0].title).toBe("A");
+    expect(sortedItems[1].title).toBe("C");
+    expect(sortedItems[2].title).toBe("D");
 
-    expect(items[0].description).toBe("Desc A");
-    expect(items[1].description).toBe("Desc C");
-    expect(items[2].description).toBe("Desc D");
+    expect(sortedItems[0].description).toBe("Desc A");
+    expect(sortedItems[1].description).toBe("Desc C");
+    expect(sortedItems[2].description).toBe("Desc D");
 
     expect(onProgress).toHaveBeenCalled();
   });
@@ -653,7 +656,7 @@ describe("scraperService.scanAllWithPipeline", () => {
     expect((errors[0] as ScraperHttpError).html).toBe("String Page Failure");
   });
 
-  it("covers remaining error branches and sort ranking fallback in scanAllWithPipeline", async () => {
+  it("covers remaining error branches in scanAllWithPipeline", async () => {
     vi.spyOn(scraperService, "scrapeListPage").mockImplementation(
       async (page) => {
         if (page === 1) {
@@ -674,27 +677,18 @@ describe("scraperService.scanAllWithPipeline", () => {
 
     vi.spyOn(scraperService, "scrapeAnimeDetails").mockImplementation(
       async (link) => {
-        if (link === "http://not-in-map-a" || link === "http://not-in-map-b") {
+        if (link === "http://a" || link === "http://b") {
           return { score: 9.0, rating_count: 100, description: "OK" };
         }
         throw "Raw Detail Error String";
       },
     );
 
-    const filterItem = (item: AnimeItem) => {
-      if (item.title === "A") {
-        item.link = "http://not-in-map-a";
-      } else if (item.title === "B") {
-        item.link = "http://not-in-map-b";
-      }
-      return true;
-    };
-
     const { items, errors } = await scraperService.scanAllWithPipeline(
       3,
       1,
       1,
-      filterItem,
+      () => true,
       vi.fn(),
     );
 
