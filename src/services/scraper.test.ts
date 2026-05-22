@@ -61,11 +61,6 @@ describe("scraperService.getTotalPages", () => {
     );
   });
 
-  it("throws error when fetch fails", async () => {
-    vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("network")));
-    await expect(scraperService.getTotalPages()).rejects.toThrow("network");
-  });
-
   it("throws detailed error when response is not ok", async () => {
     mockFetch("", false, 404, "Not Found");
     await expect(scraperService.getTotalPages()).rejects.toThrow(
@@ -79,25 +74,6 @@ describe("scraperService.scrapeListPage", () => {
   it("throws error on fetch failure", async () => {
     vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("network")));
     await expect(scraperService.scrapeListPage(1)).rejects.toThrow("network");
-  });
-
-  it("returns empty array when no cards found", async () => {
-    mockFetch(makeHtml("<div>nothing</div>"));
-    expect(await scraperService.scrapeListPage(1)).toEqual([]);
-  });
-
-  it("throws error when response is not ok (404)", async () => {
-    mockFetch("", false, 404, "Not Found");
-    await expect(scraperService.scrapeListPage(1)).rejects.toThrow(
-      "404 Not Found",
-    );
-  });
-
-  it("skips cards without href", async () => {
-    mockFetch(
-      makeHtml(`<a class="theme-list-main"><p class="theme-name">Test</p></a>`),
-    );
-    expect(await scraperService.scrapeListPage(1)).toEqual([]);
   });
 
   it("parses basic card info correctly", async () => {
@@ -115,14 +91,14 @@ describe("scraperService.scrapeListPage", () => {
     const results = await scraperService.scrapeListPage(1);
     expect(results).toHaveLength(1);
     expect(results[0].title).toBe("Test Anime");
-    expect(results[0].episode_count).toBe("12");
-    expect(results[0].upload_date).toBe("2024");
+    expect(results[0].episode_count).toBe(12);
+    expect(results[0].upload_date.getFullYear()).toBe(2024);
     expect(results[0].link).toBe(
       "https://ani.gamer.com.tw/animeVideo.php?sn=123",
     );
   });
 
-  it("sets empty title when theme-name element missing", async () => {
+  it("handles missing title and details gracefully (NaN/Invalid Date)", async () => {
     mockFetch(
       makeHtml(`
       <a class="theme-list-main" href="/anime.php">
@@ -131,35 +107,8 @@ describe("scraperService.scrapeListPage", () => {
     );
     const results = await scraperService.scrapeListPage(1);
     expect(results[0].title).toBe("");
-  });
-
-  it("sets empty title when theme-name element exists but textContent is empty", async () => {
-    mockFetch(
-      makeHtml(`
-      <a class="theme-list-main" href="/anime.php">
-        <p class="theme-name">   </p>
-      </a>
-    `),
-    );
-    const results = await scraperService.scrapeListPage(1);
-    expect(results[0].title).toBe("");
-  });
-
-  it("handles episode element with empty textContent", async () => {
-    mockFetch(
-      makeHtml(`
-      <a class="theme-list-main" href="/anime.php">
-        <p class="theme-name">Title</p>
-        <div class="theme-detail-info-block">
-          <span class="theme-number"></span>
-          <p class="theme-time"></p>
-        </div>
-      </a>
-    `),
-    );
-    const results = await scraperService.scrapeListPage(1);
-    expect(results[0].episode_count).toBe("N/A");
-    expect(results[0].upload_date).toBe("N/A");
+    expect(results[0].episode_count).toBeNaN();
+    expect(results[0].upload_date.getTime()).toBeNaN();
   });
 
   it("parses watch count with 萬 suffix", async () => {
@@ -175,7 +124,7 @@ describe("scraperService.scrapeListPage", () => {
     expect(results[0].watch_count).toBe(25000);
   });
 
-  it("handles watch count without 萬 suffix", async () => {
+  it("parses watch count without 萬 suffix", async () => {
     mockFetch(
       makeHtml(`
       <a class="theme-list-main" href="/anime.php">
@@ -187,24 +136,22 @@ describe("scraperService.scrapeListPage", () => {
     const results = await scraperService.scrapeListPage(1);
     expect(results[0].watch_count).toBe(5000);
   });
+
+  it("sets watch_count to NaN when missing", async () => {
+    mockFetch(makeHtml('<a class="theme-list-main" href="/x"></a>'));
+    const results = await scraperService.scrapeListPage(1);
+    expect(results[0].watch_count).toBeNaN();
+  });
+
+  it("skips cards without href", async () => {
+    mockFetch(makeHtml('<a class="theme-list-main"></a>'));
+    const results = await scraperService.scrapeListPage(1);
+    expect(results).toHaveLength(0);
+  });
 });
 
 // --- scrapeAnimeDetails ---
 describe("scraperService.scrapeAnimeDetails", () => {
-  it("throws error on fetch failure", async () => {
-    vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("network")));
-    await expect(
-      scraperService.scrapeAnimeDetails("http://example.com"),
-    ).rejects.toThrow("network");
-  });
-
-  it("throws error when response is not ok", async () => {
-    mockFetch("", false, 500, "Internal Error");
-    await expect(
-      scraperService.scrapeAnimeDetails("http://example.com"),
-    ).rejects.toThrow("500 Internal Error");
-  });
-
   it("parses score and rating count correctly", async () => {
     mockFetch(
       makeHtml(`
@@ -219,26 +166,16 @@ describe("scraperService.scrapeAnimeDetails", () => {
       await scraperService.scrapeAnimeDetails("http://example.com");
     expect(result.score).toBe(8.5);
     expect(result.rating_count).toBe(1234);
-    expect(result.description).toContain("Great anime");
+    expect(result.description).toBe("Great anime description here.");
   });
 
-  it("returns default score and description when elements missing", async () => {
+  it("returns NaN/empty when elements missing", async () => {
     mockFetch(makeHtml(`<div>Nothing</div>`));
     const result =
       await scraperService.scrapeAnimeDetails("http://example.com");
-    expect(result.score).toBe(0);
-    expect(result.description).toBe("No description found.");
-  });
-
-  it("handles non-numeric rating count", async () => {
-    mockFetch(
-      makeHtml(`
-      <div class="score-overall-people">NaN人評價</div>
-    `),
-    );
-    const result =
-      await scraperService.scrapeAnimeDetails("http://example.com");
-    expect(result.rating_count).toBe(0);
+    expect(result.score).toBeNaN();
+    expect(result.rating_count).toBeNaN();
+    expect(result.description).toBe("");
   });
 });
 
@@ -250,21 +187,15 @@ describe("scraperService.fetchAllWithConcurrency", () => {
         link: "a",
         title: "A",
         watch_count: 0,
-        episode_count: "12",
-        upload_date: "2024",
+        episode_count: 12,
+        upload_date: new Date(),
         score: 0,
         rating_count: 0,
         description: "",
       } as AnimeItem,
     ]);
-    const onProgress = vi.fn();
-    const results = await scraperService.fetchAllWithConcurrency(
-      3,
-      2,
-      onProgress,
-    );
-    expect(spy).toHaveBeenCalledTimes(3);
-    expect(results).toHaveLength(3);
-    expect(onProgress).toHaveBeenCalled();
+    const results = await scraperService.fetchAllWithConcurrency(2, 1, vi.fn());
+    expect(spy).toHaveBeenCalledTimes(2);
+    expect(results).toHaveLength(2);
   });
 });

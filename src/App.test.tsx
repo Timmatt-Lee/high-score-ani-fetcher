@@ -36,8 +36,8 @@ const makeAnime = (overrides: Partial<AnimeItem> = {}): AnimeItem => ({
   link: "https://ani.gamer.com.tw/anime.php?sn=1",
   title: "Test Anime",
   watch_count: 10000,
-  episode_count: "12",
-  upload_date: "2024",
+  episode_count: 12,
+  upload_date: new Date("2024-01-01"),
   score: 8.5,
   rating_count: 500,
   description: "A great show.",
@@ -309,12 +309,12 @@ describe("Scan functionality", () => {
     const highScore = makeAnime({
       title: "High Score",
       score: 5.0,
-      episode_count: "12",
+      episode_count: 12,
     });
     const lowScore = makeAnime({
       title: "Low Score",
       score: 4.0,
-      episode_count: "12",
+      episode_count: 12,
       link: "http://other",
     });
 
@@ -349,7 +349,7 @@ describe("Scan functionality", () => {
   it("skips items with less than 10 episodes", async () => {
     const shortShow = makeAnime({
       title: "Short Show",
-      episode_count: "5",
+      episode_count: 5,
       score: 9.0,
     });
     vi.spyOn(scraperService, "getTotalPages").mockResolvedValue(1);
@@ -375,7 +375,7 @@ describe("Scan functionality", () => {
   it("skips OVA titles", async () => {
     const ova = makeAnime({
       title: "Great Show OVA Special",
-      episode_count: "12",
+      episode_count: 12,
       score: 9.0,
     });
     vi.spyOn(scraperService, "getTotalPages").mockResolvedValue(1);
@@ -401,7 +401,7 @@ describe("Scan functionality", () => {
   it("skips items already in trash", async () => {
     const trashItem = makeAnime({
       title: "In Trash",
-      episode_count: "12",
+      episode_count: 12,
       score: 9.0,
     });
     storageMock["trash"] = [trashItem];
@@ -428,7 +428,7 @@ describe("Scan functionality", () => {
   it("skips items already in favorites", async () => {
     const favItem = makeAnime({
       title: "In Fav",
-      episode_count: "12",
+      episode_count: 12,
       score: 9.0,
     });
     storageMock["favorites"] = [favItem];
@@ -455,7 +455,7 @@ describe("Scan functionality", () => {
   it("handles non-numeric episode count by skipping item", async () => {
     const naEp = makeAnime({
       title: "NA Ep",
-      episode_count: "N/A",
+      episode_count: NaN,
       score: 9.0,
     });
     vi.spyOn(scraperService, "getTotalPages").mockResolvedValue(1);

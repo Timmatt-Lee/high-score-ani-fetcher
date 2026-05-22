@@ -2,8 +2,8 @@ export interface AnimeItem {
   link: string;
   title: string;
   watch_count: number;
-  episode_count: string;
-  upload_date: string;
+  episode_count: number;
+  upload_date: Date;
   score: number;
   rating_count: number;
   description: string;
@@ -70,37 +70,35 @@ export class ScraperService {
       const titleEl = card.querySelector(".theme-name");
       const title = titleEl?.textContent?.trim() || "";
 
-      if (!title) {
-        // We could throw here if we expect every card MUST have a title.
-        // For now, let's keep it empty as requested ("if it's no title, just no title")
-        // but maybe we should warn or throw if it's a structural failure.
-      }
-
       const watchCountEl = card.querySelector("p:not(.theme-time)");
-      let watchCount = 0;
+      let watchCount = NaN;
       if (watchCountEl && watchCountEl.textContent) {
         const str = watchCountEl.textContent.trim();
         if (str.includes("萬")) {
           watchCount = parseFloat(str.replace("萬", "")) * 10000;
         } else {
-          watchCount = parseInt(str.replace(/,/g, ""), 10) || 0;
+          watchCount = parseInt(str.replace(/,/g, ""), 10);
         }
       }
 
-      let episode_count = "N/A";
-      let upload_date = "N/A";
+      let episode_count = NaN;
+      let upload_date = new Date(NaN);
+
       const detailBlock = card.querySelector(".theme-detail-info-block");
       if (detailBlock) {
         const epEl = detailBlock.querySelector(".theme-number");
-        if (epEl)
-          episode_count =
-            epEl.textContent?.replace("共", "").replace("集", "").trim() ||
-            "N/A";
+        if (epEl && epEl.textContent) {
+          episode_count = parseInt(
+            epEl.textContent.replace("共", "").replace("集", "").trim(),
+            10,
+          );
+        }
 
         const timeEl = detailBlock.querySelector(".theme-time");
-        if (timeEl)
-          upload_date =
-            timeEl.textContent?.replace("年份：", "").trim() || "N/A";
+        if (timeEl && timeEl.textContent) {
+          const yearStr = timeEl.textContent.replace("年份：", "").trim();
+          upload_date = new Date(`${yearStr}-01-01T00:00:00Z`);
+        }
       }
 
       items.push({
@@ -131,23 +129,20 @@ export class ScraperService {
     const score =
       scoreNumDiv && scoreNumDiv.textContent
         ? parseFloat(scoreNumDiv.textContent)
-        : 0;
+        : NaN;
 
     const scorePeopleDiv = doc.querySelector(".score-overall-people");
-    let rating_count = 0;
+    let rating_count = NaN;
     if (scorePeopleDiv && scorePeopleDiv.textContent) {
-      rating_count =
-        parseInt(
-          scorePeopleDiv.textContent.replace("人評價", "").replace(/,/g, ""),
-          10,
-        ) || 0;
+      rating_count = parseInt(
+        scorePeopleDiv.textContent.replace("人評價", "").replace(/,/g, ""),
+        10,
+      );
     }
 
     const descDiv = doc.querySelector(".data-intro p");
     const description =
-      descDiv && descDiv.textContent
-        ? descDiv.textContent.trim().substring(0, 200) + "..."
-        : "No description found.";
+      descDiv && descDiv.textContent ? descDiv.textContent.trim() : "";
 
     return { score, rating_count, description };
   }

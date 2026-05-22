@@ -32,8 +32,7 @@ export function useAnimeScanner(
 
       const filteredItems = allItems.filter((item) => {
         if (trashLinks.has(item.link) || favLinks.has(item.link)) return false;
-        const epCount = parseInt(item.episode_count, 10);
-        if (isNaN(epCount) || epCount < 10) return false;
+        if (isNaN(item.episode_count) || item.episode_count < 10) return false;
         if (item.title.includes("OVA")) return false;
         return true;
       });
