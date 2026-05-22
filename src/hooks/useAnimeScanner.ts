@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { type AnimeItem } from "../types/anime";
 import { useServices } from "../contexts/ServiceContext";
+import { ScraperHttpError, ScraperParseError } from "../types/errors";
 
 export function useAnimeScanner(
   favorites: AnimeItem[],
@@ -10,21 +11,53 @@ export function useAnimeScanner(
   const { scraperService } = useServices();
   const [isScanning, setIsScanning] = useState(false);
   const [progress, setProgress] = useState({ percent: 0, message: "" });
+  const [errors, setErrors] = useState<
+    (ScraperHttpError | ScraperParseError)[]
+  >([]);
 
   const handleScan = async () => {
+    setErrors([]);
     setIsScanning(true);
     setProgress({ percent: 0, message: "Getting total pages..." });
 
-    try {
-      const totalPages = await scraperService.getTotalPages();
+    const collectedErrors: (ScraperHttpError | ScraperParseError)[] = [];
 
-      const allItems = await scraperService.fetchAllWithConcurrency(
-        totalPages,
-        5,
-        (percent, msg) => {
-          setProgress({ percent, message: msg });
-        },
-      );
+    let totalPages: number;
+    try {
+      totalPages = await scraperService.getTotalPages();
+    } catch (error) {
+      console.error("Scan failed", error);
+      setProgress({ percent: 0, message: "Scan failed" });
+      if (
+        error instanceof ScraperHttpError ||
+        error instanceof ScraperParseError
+      ) {
+        setErrors([error]);
+      } else {
+        setErrors([
+          new ScraperHttpError(
+            "",
+            error instanceof Error ? error.message : String(error),
+            500,
+          ),
+        ]);
+      }
+      setIsScanning(false);
+      setProgress({ percent: 0, message: "" });
+      return;
+    }
+
+    try {
+      const { items: allItems, errors: scanErrors } =
+        await scraperService.fetchAllWithConcurrency(
+          totalPages,
+          5,
+          (percent, msg) => {
+            setProgress({ percent, message: msg });
+          },
+        );
+
+      collectedErrors.push(...scanErrors);
 
       setProgress({ percent: 100, message: "Fetching details..." });
 
@@ -57,17 +90,35 @@ export function useAnimeScanner(
               ...prev,
               message: `Fetching details for ${item.title}...`,
             }));
-            const details = await scraperService.scrapeAnimeDetails(item.link);
-            return details.score >= 4.8 ? { ...item, ...details } : null;
+            try {
+              const details = await scraperService.scrapeAnimeDetails(
+                item.link,
+              );
+              return details.score >= 4.8 ? { ...item, ...details } : null;
+            } catch (err) {
+              if (
+                err instanceof ScraperHttpError ||
+                err instanceof ScraperParseError
+              ) {
+                collectedErrors.push(err);
+              } else {
+                collectedErrors.push(
+                  new ScraperHttpError(
+                    item.link,
+                    err instanceof Error ? err.message : String(err),
+                    500,
+                  ),
+                );
+              }
+              return null;
+            }
           }),
         );
         newItems.push(...(batchResults.filter(Boolean) as AnimeItem[]));
       }
 
+      setErrors(collectedErrors);
       onScanComplete(newItems);
-    } catch (error) {
-      console.error("Scan failed", error);
-      setProgress({ percent: 0, message: "Scan failed" });
     } finally {
       setIsScanning(false);
       setProgress({ percent: 0, message: "" });
@@ -77,6 +128,7 @@ export function useAnimeScanner(
   return {
     isScanning,
     progress,
+    errors,
     handleScan,
   };
 }

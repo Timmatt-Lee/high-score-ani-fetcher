@@ -1,3 +1,5 @@
+import { ScraperHttpError, ScraperParseError } from "./errors";
+
 export interface AnimeDetails {
   score: number;
   rating_count: number;
@@ -10,4 +12,14 @@ export interface AnimeItem extends AnimeDetails {
   watch_count: number;
   episode_count: number;
   upload_date: Date;
+}
+
+export interface ScrapeListResult {
+  items: AnimeItem[];
+  errors: ScraperParseError[];
+}
+
+export interface ScanResult {
+  items: AnimeItem[];
+  errors: (ScraperHttpError | ScraperParseError)[];
 }
