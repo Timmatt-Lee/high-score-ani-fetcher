@@ -1,2 +1,2 @@
-export * from "./scraper-error-source";
-export * from "./scraper-error";
+export * from "./scraperErrorSource";
+export * from "./scraperError";
