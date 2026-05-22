@@ -4,7 +4,11 @@ import { useAnimeScanner } from "./useAnimeScanner";
 import { scraperService } from "../services/scraper";
 import { type AnimeItem } from "../types/anime";
 import { ServiceProvider } from "../contexts/ServiceContext";
-import { ScraperHttpError } from "../errors";
+import {
+  ScraperHttpError,
+  ScraperParseError,
+  ScraperErrorSource,
+} from "../errors";
 
 const makeAnime = (title: string): AnimeItem => ({
   link: `http://${title}`,
@@ -33,10 +37,11 @@ describe("useAnimeScanner", () => {
             items: [
               { ...mockAnime, score: 9.0, rating_count: 100, description: "x" },
             ],
-            errors: [],
+            httpErrors: [],
+            parseErrors: [],
           };
         }
-        return { items: [], errors: [] };
+        return { items: [], httpErrors: [], parseErrors: [] };
       },
     );
 
@@ -61,7 +66,7 @@ describe("useAnimeScanner", () => {
       async (_pages, _pc, _dc, _filterItem, onProgress) => {
         onProgress(1, 1, 5, 5, "");
         onProgress(1, 1, 5, 5, "Halfway");
-        return { items: [mockAnime], errors: [] };
+        return { items: [mockAnime], httpErrors: [], parseErrors: [] };
       },
     );
 
@@ -108,7 +113,8 @@ describe("useAnimeScanner", () => {
             rating_count: 100,
             description: "x",
           })),
-          errors: [],
+          httpErrors: [],
+          parseErrors: [],
         };
       },
     );
@@ -147,7 +153,8 @@ describe("useAnimeScanner", () => {
             rating_count: 100,
             description: "x",
           })),
-          errors: [],
+          httpErrors: [],
+          parseErrors: [],
         };
       },
     );
@@ -171,7 +178,8 @@ describe("useAnimeScanner", () => {
       items: [
         { ...lowScore, score: 4.0, rating_count: 10, description: "Meh" },
       ],
-      errors: [],
+      httpErrors: [],
+      parseErrors: [],
     });
 
     const onComplete = vi.fn();
@@ -188,10 +196,10 @@ describe("useAnimeScanner", () => {
 
   it("aggregates errors from scanAllWithPipeline", async () => {
     const mockAnime1 = makeAnime("SuccessAnime");
-    const pageError = new ScraperHttpError(
+    const pageError = new ScraperParseError(
+      ScraperErrorSource.TITLE,
       "http://err-page",
       "Page error",
-      500,
     );
     const detailError = new ScraperHttpError(
       "http://err-detail",
@@ -209,7 +217,8 @@ describe("useAnimeScanner", () => {
           description: "Success",
         },
       ],
-      errors: [pageError, detailError],
+      httpErrors: [detailError],
+      parseErrors: [pageError],
     });
 
     const onComplete = vi.fn();
@@ -224,9 +233,10 @@ describe("useAnimeScanner", () => {
     expect(onComplete).toHaveBeenCalledWith([
       { ...mockAnime1, score: 9.0, rating_count: 100, description: "Success" },
     ]);
-    expect(result.current.errors).toHaveLength(2);
-    expect(result.current.errors[0]).toBe(pageError);
-    expect(result.current.errors[1]).toBe(detailError);
+    expect(result.current.httpErrors).toHaveLength(1);
+    expect(result.current.httpErrors[0]).toBe(detailError);
+    expect(result.current.parseErrors).toHaveLength(1);
+    expect(result.current.parseErrors[0]).toBe(pageError);
   });
 
   it("handles ScraperHttpError scan failure in catch block", async () => {
@@ -242,8 +252,31 @@ describe("useAnimeScanner", () => {
       await result.current.handleScan();
     });
 
-    expect(result.current.errors).toHaveLength(1);
-    expect(result.current.errors[0]).toBe(error);
+    expect(result.current.httpErrors).toHaveLength(1);
+    expect(result.current.httpErrors[0]).toBe(error);
+    expect(result.current.parseErrors).toHaveLength(0);
+  });
+
+  it("handles ScraperParseError scan failure in catch block", async () => {
+    const error = new ScraperParseError(
+      ScraperErrorSource.TITLE,
+      "http://err",
+      "Failed page",
+    );
+    vi.spyOn(scraperService, "getTotalPages").mockRejectedValue(error);
+
+    const onComplete = vi.fn();
+    const { result } = renderHook(() => useAnimeScanner([], [], onComplete), {
+      wrapper: ServiceProvider,
+    });
+
+    await act(async () => {
+      await result.current.handleScan();
+    });
+
+    expect(result.current.parseErrors).toHaveLength(1);
+    expect(result.current.parseErrors[0]).toBe(error);
+    expect(result.current.httpErrors).toHaveLength(0);
   });
 
   it("handles non-Error thrown during scan in catch block", async () => {
@@ -258,11 +291,10 @@ describe("useAnimeScanner", () => {
       await result.current.handleScan();
     });
 
-    expect(result.current.errors).toHaveLength(1);
-    expect(result.current.errors[0]).toBeInstanceOf(ScraperHttpError);
-    expect((result.current.errors[0] as ScraperHttpError).html).toBe(
-      "string error",
-    );
+    expect(result.current.httpErrors).toHaveLength(1);
+    expect(result.current.httpErrors[0]).toBeInstanceOf(ScraperHttpError);
+    expect(result.current.httpErrors[0].html).toBe("string error");
+    expect(result.current.parseErrors).toHaveLength(0);
   });
 
   it("handles progress calculation with zero totalPages or zero detailsTotal", async () => {
@@ -271,7 +303,7 @@ describe("useAnimeScanner", () => {
     vi.spyOn(scraperService, "scanAllWithPipeline").mockImplementation(
       async (_pages, _pc, _dc, _filterItem, onProgress) => {
         onProgress(0, 0, 0, 0, "");
-        return { items: [mockAnime], errors: [] };
+        return { items: [mockAnime], httpErrors: [], parseErrors: [] };
       },
     );
 
@@ -295,7 +327,8 @@ describe("useAnimeScanner", () => {
     vi.spyOn(scraperService, "getTotalPages").mockResolvedValue(1);
     vi.spyOn(scraperService, "scanAllWithPipeline").mockResolvedValue({
       items: [itemA, itemB, itemC],
-      errors: [],
+      httpErrors: [],
+      parseErrors: [],
     });
 
     const onComplete = vi.fn();

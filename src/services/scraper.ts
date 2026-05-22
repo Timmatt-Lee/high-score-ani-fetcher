@@ -329,7 +329,8 @@ export class ScraperService {
     onProgress: (percent: number, msg: string) => void,
   ): Promise<ScanResult> {
     const results: AnimeItem[][] = Array.from({ length: totalPages }, () => []);
-    const errors: (ScraperHttpError | ScraperParseError)[] = [];
+    const httpErrors: ScraperHttpError[] = [];
+    const parseErrors: ScraperParseError[] = [];
     let completed = 0;
 
     const fetchPageAction = async (page: number) => {
@@ -340,15 +341,14 @@ export class ScraperService {
       try {
         const { items, errors: pageErrors } = await this.scrapeListPage(page);
         results[page - 1] = items;
-        errors.push(...pageErrors);
+        parseErrors.push(...pageErrors);
       } catch (err) {
-        if (
-          err instanceof ScraperHttpError ||
-          err instanceof ScraperParseError
-        ) {
-          errors.push(err);
+        if (err instanceof ScraperHttpError) {
+          httpErrors.push(err);
+        } else if (err instanceof ScraperParseError) {
+          parseErrors.push(err);
         } else {
-          errors.push(
+          httpErrors.push(
             new ScraperHttpError(
               `${BASE_URL}/animeList.php?page=${page}`,
               err instanceof Error ? err.message : String(err),
@@ -377,7 +377,7 @@ export class ScraperService {
     const workers = Array.from({ length: concurrency }, () => runWorker());
     await Promise.all(workers);
 
-    return { items: results.flat(), errors };
+    return { items: results.flat(), httpErrors, parseErrors };
   }
 
   /**

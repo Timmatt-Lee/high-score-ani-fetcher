@@ -9,7 +9,8 @@ import { AsyncQueue } from "../concurrency/asyncQueue";
  */
 export class ScraperPipeline {
   private results: AnimeItem[] = [];
-  private errors: (ScraperHttpError | ScraperParseError)[] = [];
+  private httpErrors: ScraperHttpError[] = [];
+  private parseErrors: ScraperParseError[] = [];
   private queue = new AsyncQueue<AnimeItem>();
   private pagesCompleted = 0;
   private detailsCompleted = 0;
@@ -86,7 +87,11 @@ export class ScraperPipeline {
     this.queue.close();
     await Promise.all(detailWorkers);
 
-    return { items: this.results, errors: this.errors };
+    return {
+      items: this.results,
+      httpErrors: this.httpErrors,
+      parseErrors: this.parseErrors,
+    };
   }
 
   private async runPageWorker(): Promise<void> {
@@ -101,7 +106,7 @@ export class ScraperPipeline {
     try {
       const { items: pageItems, errors: pageErrors } =
         await this.scraper.scrapeListPage(page);
-      this.errors.push(...pageErrors);
+      this.parseErrors.push(...pageErrors);
 
       pageItems.forEach((item) => {
         if (this.filterItem(item)) {
@@ -140,10 +145,12 @@ export class ScraperPipeline {
   }
 
   private captureError(err: unknown, url: string): void {
-    if (err instanceof ScraperHttpError || err instanceof ScraperParseError) {
-      this.errors.push(err);
+    if (err instanceof ScraperHttpError) {
+      this.httpErrors.push(err);
+    } else if (err instanceof ScraperParseError) {
+      this.parseErrors.push(err);
     } else {
-      this.errors.push(
+      this.httpErrors.push(
         new ScraperHttpError(
           url,
           err instanceof Error ? err.message : String(err),

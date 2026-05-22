@@ -11,16 +11,14 @@ export function useAnimeScanner(
   const { scraperService } = useServices();
   const [isScanning, setIsScanning] = useState(false);
   const [progress, setProgress] = useState({ percent: 0, message: "" });
-  const [errors, setErrors] = useState<
-    (ScraperHttpError | ScraperParseError)[]
-  >([]);
+  const [httpErrors, setHttpErrors] = useState<ScraperHttpError[]>([]);
+  const [parseErrors, setParseErrors] = useState<ScraperParseError[]>([]);
 
   const handleScan = async () => {
-    setErrors([]);
+    setHttpErrors([]);
+    setParseErrors([]);
     setIsScanning(true);
     setProgress({ percent: 0, message: "Getting total pages..." });
-
-    const collectedErrors: (ScraperHttpError | ScraperParseError)[] = [];
 
     let totalPages: number;
     try {
@@ -28,13 +26,12 @@ export function useAnimeScanner(
     } catch (error) {
       console.error("Scan failed", error);
       setProgress({ percent: 0, message: "Scan failed" });
-      if (
-        error instanceof ScraperHttpError ||
-        error instanceof ScraperParseError
-      ) {
-        setErrors([error]);
+      if (error instanceof ScraperHttpError) {
+        setHttpErrors([error]);
+      } else if (error instanceof ScraperParseError) {
+        setParseErrors([error]);
       } else {
-        setErrors([
+        setHttpErrors([
           new ScraperHttpError(
             "",
             error instanceof Error ? error.message : String(error),
@@ -58,43 +55,43 @@ export function useAnimeScanner(
         return true;
       };
 
-      const { items: detailedItems, errors: scanErrors } =
-        await scraperService.scanAllWithPipeline(
-          totalPages,
-          5,
-          10,
-          filterItem,
-          (
-            pagesCompleted,
-            pagesTotal,
-            detailsCompleted,
-            detailsTotal,
-            currentTitle,
-          ) => {
-            const pagesPercent =
-              totalPages > 0 ? pagesCompleted / totalPages : 0;
-            const detailsPercent =
-              detailsTotal > 0 ? detailsCompleted / detailsTotal : 0;
-            const rawPercent = Math.floor(
-              (pagesPercent * 0.3 + detailsPercent * 0.7) * 100,
-            );
-            const percent = Math.min(99, rawPercent);
+      const {
+        items: detailedItems,
+        httpErrors: scanHttpErrors,
+        parseErrors: scanParseErrors,
+      } = await scraperService.scanAllWithPipeline(
+        totalPages,
+        5,
+        10,
+        filterItem,
+        (
+          pagesCompleted,
+          pagesTotal,
+          detailsCompleted,
+          detailsTotal,
+          currentTitle,
+        ) => {
+          const pagesPercent = totalPages > 0 ? pagesCompleted / totalPages : 0;
+          const detailsPercent =
+            detailsTotal > 0 ? detailsCompleted / detailsTotal : 0;
+          const rawPercent = Math.floor(
+            (pagesPercent * 0.3 + detailsPercent * 0.7) * 100,
+          );
+          const percent = Math.min(99, rawPercent);
 
-            let msg = `Scanning pages (${pagesCompleted}/${pagesTotal})`;
-            if (detailsTotal > 0) {
-              msg += ` and details (${detailsCompleted}/${detailsTotal})`;
-            }
-            if (currentTitle) {
-              msg += `... [${currentTitle}]`;
-            } else {
-              msg += "...";
-            }
+          let msg = `Scanning pages (${pagesCompleted}/${pagesTotal})`;
+          if (detailsTotal > 0) {
+            msg += ` and details (${detailsCompleted}/${detailsTotal})`;
+          }
+          if (currentTitle) {
+            msg += `... [${currentTitle}]`;
+          } else {
+            msg += "...";
+          }
 
-            setProgress({ percent, message: msg });
-          },
-        );
-
-      collectedErrors.push(...scanErrors);
+          setProgress({ percent, message: msg });
+        },
+      );
 
       const filteredItems = detailedItems.filter((item) => item.score >= 4.8);
       const sortedItems = filteredItems.sort((a, b) => {
@@ -104,7 +101,8 @@ export function useAnimeScanner(
         return a.title.localeCompare(b.title);
       });
 
-      setErrors(collectedErrors);
+      setHttpErrors(scanHttpErrors);
+      setParseErrors(scanParseErrors);
       onScanComplete(sortedItems);
     } finally {
       setIsScanning(false);
@@ -115,7 +113,8 @@ export function useAnimeScanner(
   return {
     isScanning,
     progress,
-    errors,
+    httpErrors,
+    parseErrors,
     handleScan,
   };
 }

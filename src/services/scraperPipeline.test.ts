@@ -51,11 +51,12 @@ describe("ScraperPipeline", () => {
       scrapeAnimeDetails: detailSpy,
     });
 
-    const { items, errors } = await pipeline.execute();
+    const { items, httpErrors, parseErrors } = await pipeline.execute();
 
     expect(listSpy).toHaveBeenCalledTimes(2);
     expect(detailSpy).toHaveBeenCalledTimes(3);
-    expect(errors).toHaveLength(0);
+    expect(httpErrors).toHaveLength(0);
+    expect(parseErrors).toHaveLength(0);
     expect(items).toHaveLength(3);
 
     const sortedItems = [...items].sort((a, b) =>
@@ -93,7 +94,11 @@ describe("ScraperPipeline", () => {
       if (link === "http://a") {
         throw new ScraperHttpError("http://a", "http err detail", 500);
       }
-      throw new Error("unexpected detail failure");
+      throw new ScraperParseError(
+        ScraperErrorSource.SCORE,
+        "http://b",
+        "parse err detail",
+      );
     });
 
     const pipeline = new ScraperPipeline(2, 1, 1, () => true, vi.fn(), {
@@ -101,18 +106,20 @@ describe("ScraperPipeline", () => {
       scrapeAnimeDetails: detailSpy,
     });
 
-    const { items, errors } = await pipeline.execute();
+    const { items, httpErrors, parseErrors } = await pipeline.execute();
 
     expect(listSpy).toHaveBeenCalledTimes(2);
     expect(items).toHaveLength(0);
-    expect(errors).toHaveLength(4);
-    expect(errors[0]).toBeInstanceOf(ScraperParseError);
-    expect(errors[1]).toBeInstanceOf(ScraperHttpError);
-    expect((errors[1] as ScraperHttpError).status).toBe(404);
-    expect(errors[2]).toBeInstanceOf(ScraperHttpError);
-    expect((errors[2] as ScraperHttpError).status).toBe(500);
-    expect(errors[3]).toBeInstanceOf(ScraperHttpError);
-    expect((errors[3] as ScraperHttpError).status).toBe(500);
+    expect(parseErrors).toHaveLength(2);
+    expect(httpErrors).toHaveLength(2);
+    expect(parseErrors[0]).toBeInstanceOf(ScraperParseError);
+    expect(parseErrors[0].source).toBe(ScraperErrorSource.TITLE);
+    expect(parseErrors[1]).toBeInstanceOf(ScraperParseError);
+    expect(parseErrors[1].source).toBe(ScraperErrorSource.SCORE);
+    expect(httpErrors[0]).toBeInstanceOf(ScraperHttpError);
+    expect(httpErrors[0].status).toBe(404);
+    expect(httpErrors[1]).toBeInstanceOf(ScraperHttpError);
+    expect(httpErrors[1].status).toBe(500);
   });
 
   it("wraps non-Error page and detail failures", async () => {
@@ -124,11 +131,12 @@ describe("ScraperPipeline", () => {
       scrapeAnimeDetails: detailSpy,
     });
 
-    const { items, errors } = await pipeline.execute();
+    const { items, httpErrors, parseErrors } = await pipeline.execute();
     expect(items).toHaveLength(0);
-    expect(errors).toHaveLength(1);
-    expect(errors[0]).toBeInstanceOf(ScraperHttpError);
-    expect((errors[0] as ScraperHttpError).html).toBe("String Page Failure");
+    expect(parseErrors).toHaveLength(0);
+    expect(httpErrors).toHaveLength(1);
+    expect(httpErrors[0]).toBeInstanceOf(ScraperHttpError);
+    expect(httpErrors[0].html).toBe("String Page Failure");
   });
 
   it("covers remaining error branches", async () => {
@@ -160,17 +168,16 @@ describe("ScraperPipeline", () => {
       scrapeAnimeDetails: detailSpy,
     });
 
-    const { items, errors } = await pipeline.execute();
+    const { items, httpErrors, parseErrors } = await pipeline.execute();
 
     expect(items).toHaveLength(2);
-    expect(errors).toHaveLength(2);
+    expect(parseErrors).toHaveLength(0);
+    expect(httpErrors).toHaveLength(2);
 
-    expect(errors[0]).toBeInstanceOf(ScraperHttpError);
-    expect((errors[0] as ScraperHttpError).html).toBe("Normal Page Error");
+    expect(httpErrors[0]).toBeInstanceOf(ScraperHttpError);
+    expect(httpErrors[0].html).toBe("Normal Page Error");
 
-    expect(errors[1]).toBeInstanceOf(ScraperHttpError);
-    expect((errors[1] as ScraperHttpError).html).toBe(
-      "Raw Detail Error String",
-    );
+    expect(httpErrors[1]).toBeInstanceOf(ScraperHttpError);
+    expect(httpErrors[1].html).toBe("Raw Detail Error String");
   });
 });
