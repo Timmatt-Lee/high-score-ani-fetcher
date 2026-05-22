@@ -118,6 +118,21 @@ describe("useAnimeData", () => {
     expect(result.current.trash).toHaveLength(0);
   });
 
+  it("handles localStorage with empty object using || [] fallbacks", async () => {
+    vi.stubGlobal("chrome", undefined);
+    localStorage.setItem("animeData", JSON.stringify({}));
+
+    const { result } = renderHook(() => useAnimeData());
+
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+
+    expect(result.current.searchList).toHaveLength(0);
+    expect(result.current.favorites).toHaveLength(0);
+    expect(result.current.trash).toHaveLength(0);
+  });
+
   // --- Load error path (lines 32-34) ---
   it("handles chrome.storage.get error gracefully", async () => {
     vi.stubGlobal("chrome", {
