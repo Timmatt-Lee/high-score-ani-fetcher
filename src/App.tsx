@@ -22,14 +22,13 @@ function App() {
     saveData,
   } = useAnimeData();
 
-  const { isScanning, progress, errors, handleScan } = useAnimeScanner(
-    favorites,
-    trash,
-    (newItems) => {
+  const { isScanning, progress, httpErrors, parseErrors, handleScan } =
+    useAnimeScanner(favorites, trash, (newItems) => {
       setSearchList(newItems);
       saveData(newItems, favorites, trash);
-    },
-  );
+    });
+
+  const totalErrors = httpErrors.length + parseErrors.length;
 
   return (
     <div className={styles.appContainer}>
@@ -50,11 +49,11 @@ function App() {
         message={progress.message}
       />
 
-      {errors.length > 0 && (
+      {totalErrors > 0 && (
         <div className={styles.warningAlert}>
           <div className={styles.warningHeader}>
             <span>
-              ⚠️ Scan completed with {errors.length} parsing/network errors.
+              ⚠️ Scan completed with {totalErrors} parsing/network errors.
               Remaining items were loaded.
             </span>
             <button
@@ -66,14 +65,14 @@ function App() {
           </div>
           {showErrorDetails && (
             <ul className={styles.warningList}>
-              {errors.slice(0, 10).map((err, i) => (
+              {[...httpErrors, ...parseErrors].slice(0, 10).map((err, i) => (
                 <li key={i} className={styles.warningItem}>
                   {err.name} (URL: {err.url || "unknown"}) — {err.message}
                 </li>
               ))}
-              {errors.length > 10 && (
+              {totalErrors > 10 && (
                 <li className={styles.warningItem}>
-                  And {errors.length - 10} more errors...
+                  And {totalErrors - 10} more errors...
                 </li>
               )}
             </ul>

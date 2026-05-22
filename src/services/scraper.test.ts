@@ -336,14 +336,12 @@ describe("scraperService.fetchAllWithConcurrency", () => {
       ],
       errors: [],
     });
-    const { items, errors } = await scraperService.fetchAllWithConcurrency(
-      2,
-      1,
-      vi.fn(),
-    );
+    const { items, httpErrors, parseErrors } =
+      await scraperService.fetchAllWithConcurrency(2, 1, vi.fn());
     expect(spy).toHaveBeenCalledTimes(2);
     expect(items).toHaveLength(2);
-    expect(errors).toHaveLength(0);
+    expect(httpErrors).toHaveLength(0);
+    expect(parseErrors).toHaveLength(0);
   });
 
   it("aggregates page-level fetch errors in fetchAllWithConcurrency", async () => {
@@ -353,15 +351,13 @@ describe("scraperService.fetchAllWithConcurrency", () => {
     ).mockRejectedValue(
       new ScraperHttpError("http://error", "Error text", 404),
     );
-    const { items, errors } = await scraperService.fetchAllWithConcurrency(
-      1,
-      1,
-      vi.fn(),
-    );
+    const { items, httpErrors, parseErrors } =
+      await scraperService.fetchAllWithConcurrency(1, 1, vi.fn());
     expect(items).toHaveLength(0);
-    expect(errors).toHaveLength(1);
-    expect(errors[0]).toBeInstanceOf(ScraperHttpError);
-    expect((errors[0] as ScraperHttpError).status).toBe(404);
+    expect(httpErrors).toHaveLength(1);
+    expect(parseErrors).toHaveLength(0);
+    expect(httpErrors[0]).toBeInstanceOf(ScraperHttpError);
+    expect(httpErrors[0].status).toBe(404);
   });
 
   it("wraps unexpected page-level errors in fetchAllWithConcurrency", async () => {
@@ -369,17 +365,13 @@ describe("scraperService.fetchAllWithConcurrency", () => {
       scraperService as unknown as { fetchText: () => Promise<string> },
       "fetchText",
     ).mockRejectedValue(new Error("Generic Network Error"));
-    const { items, errors } = await scraperService.fetchAllWithConcurrency(
-      1,
-      1,
-      vi.fn(),
-    );
+    const { items, httpErrors, parseErrors } =
+      await scraperService.fetchAllWithConcurrency(1, 1, vi.fn());
     expect(items).toHaveLength(0);
-    expect(errors).toHaveLength(1);
-    expect(errors[0]).toBeInstanceOf(ScraperHttpError);
-    expect((errors[0] as ScraperHttpError).html).toContain(
-      "Generic Network Error",
-    );
+    expect(httpErrors).toHaveLength(1);
+    expect(parseErrors).toHaveLength(0);
+    expect(httpErrors[0]).toBeInstanceOf(ScraperHttpError);
+    expect(httpErrors[0].html).toContain("Generic Network Error");
   });
 
   it("wraps non-Error page-level errors in fetchAllWithConcurrency", async () => {
@@ -387,15 +379,33 @@ describe("scraperService.fetchAllWithConcurrency", () => {
       scraperService as unknown as { fetchText: () => Promise<string> },
       "fetchText",
     ).mockRejectedValue("String Network Error");
-    const { items, errors } = await scraperService.fetchAllWithConcurrency(
-      1,
-      1,
-      vi.fn(),
-    );
+    const { items, httpErrors, parseErrors } =
+      await scraperService.fetchAllWithConcurrency(1, 1, vi.fn());
     expect(items).toHaveLength(0);
-    expect(errors).toHaveLength(1);
-    expect(errors[0]).toBeInstanceOf(ScraperHttpError);
-    expect((errors[0] as ScraperHttpError).html).toBe("String Network Error");
+    expect(httpErrors).toHaveLength(1);
+    expect(parseErrors).toHaveLength(0);
+    expect(httpErrors[0]).toBeInstanceOf(ScraperHttpError);
+    expect(httpErrors[0].html).toBe("String Network Error");
+  });
+
+  it("handles ScraperParseError page-level errors in fetchAllWithConcurrency", async () => {
+    vi.spyOn(
+      scraperService as unknown as { fetchText: () => Promise<string> },
+      "fetchText",
+    ).mockRejectedValue(
+      new ScraperParseError(
+        ScraperErrorSource.TITLE,
+        "http://error",
+        "parse error",
+      ),
+    );
+    const { items, httpErrors, parseErrors } =
+      await scraperService.fetchAllWithConcurrency(1, 1, vi.fn());
+    expect(items).toHaveLength(0);
+    expect(httpErrors).toHaveLength(0);
+    expect(parseErrors).toHaveLength(1);
+    expect(parseErrors[0]).toBeInstanceOf(ScraperParseError);
+    expect(parseErrors[0].source).toBe(ScraperErrorSource.TITLE);
   });
 });
 
@@ -534,6 +544,6 @@ describe("scraperService.scanAllWithPipeline", () => {
       () => true,
       vi.fn(),
     );
-    expect(result).toEqual({ items: [], errors: [] });
+    expect(result).toEqual({ items: [], httpErrors: [], parseErrors: [] });
   });
 });
