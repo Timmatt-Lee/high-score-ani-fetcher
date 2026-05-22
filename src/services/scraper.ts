@@ -3,6 +3,7 @@ import {
   type AnimeDetails,
   type ScrapeListResult,
   type ScanResult,
+  type AnimeScraper,
 } from "../types/anime";
 import {
   ScraperErrorSource,
@@ -13,7 +14,7 @@ import { ScraperPipeline } from "./scraperPipeline";
 
 const BASE_URL = "https://ani.gamer.com.tw";
 
-export class ScraperService {
+export class ScraperService implements AnimeScraper {
   private async fetchText(url: string): Promise<string> {
     const response = await fetch(url);
     if (!response.ok) {

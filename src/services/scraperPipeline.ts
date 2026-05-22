@@ -1,4 +1,8 @@
-import { type AnimeItem, type ScanResult } from "../types/anime";
+import {
+  type AnimeItem,
+  type ScanResult,
+  type AnimeScraper,
+} from "../types/anime";
 import { ScraperHttpError, ScraperParseError } from "../errors";
 import PQueue from "p-queue";
 
@@ -18,8 +22,6 @@ export class ScraperPipeline {
   private detailsTotal = 0;
 
   private totalPages: number;
-  private pageConcurrency: number;
-  private detailConcurrency: number;
   private filterItem: (item: AnimeItem) => boolean;
   private onProgress: (
     pagesCompleted: number,
@@ -28,16 +30,7 @@ export class ScraperPipeline {
     detailsTotal: number,
     currentTitle: string,
   ) => void;
-  private scraper: {
-    scrapeListPage: (
-      page: number,
-    ) => Promise<{ items: AnimeItem[]; parseErrors: ScraperParseError[] }>;
-    scrapeAnimeDetails: (link: string) => Promise<{
-      score: number;
-      rating_count: number;
-      description: string;
-    }>;
-  };
+  private scraper: AnimeScraper;
 
   constructor(
     totalPages: number,
@@ -51,20 +44,9 @@ export class ScraperPipeline {
       detailsTotal: number,
       currentTitle: string,
     ) => void,
-    scraper: {
-      scrapeListPage: (
-        page: number,
-      ) => Promise<{ items: AnimeItem[]; parseErrors: ScraperParseError[] }>;
-      scrapeAnimeDetails: (link: string) => Promise<{
-        score: number;
-        rating_count: number;
-        description: string;
-      }>;
-    },
+    scraper: AnimeScraper,
   ) {
     this.totalPages = totalPages;
-    this.pageConcurrency = pageConcurrency;
-    this.detailConcurrency = detailConcurrency;
     this.filterItem = filterItem;
     this.onProgress = onProgress;
     this.scraper = scraper;
