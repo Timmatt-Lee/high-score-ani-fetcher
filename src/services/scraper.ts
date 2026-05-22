@@ -9,6 +9,7 @@ import {
   ScraperHttpError,
   ScraperParseError,
 } from "../types/errors";
+import { AsyncQueue } from "../concurrency/asyncQueue";
 
 const BASE_URL = "https://ani.gamer.com.tw";
 
@@ -252,6 +253,77 @@ export class ScraperService {
   }
 
   /**
+   * Fetches details for multiple anime items concurrently with concurrency control.
+   */
+  async fetchDetailsWithConcurrency(
+    items: AnimeItem[],
+    concurrency: number,
+    onProgress: (
+      completed: number,
+      total: number,
+      currentTitle: string,
+    ) => void,
+  ): Promise<{
+    items: AnimeItem[];
+    errors: (ScraperHttpError | ScraperParseError)[];
+  }> {
+    const results: (AnimeItem | null)[] = new Array(items.length).fill(null);
+    const errors: (ScraperHttpError | ScraperParseError)[] = [];
+    let completed = 0;
+    const total = items.length;
+
+    if (total === 0) {
+      return { items: [], errors: [] };
+    }
+
+    const queue = items.map((item, index) => ({ item, index }));
+
+    const fetchDetailsAction = async (item: AnimeItem, index: number) => {
+      onProgress(completed, total, item.title);
+      try {
+        const details = await this.scrapeAnimeDetails(item.link);
+        results[index] = { ...item, ...details };
+      } catch (err) {
+        if (
+          err instanceof ScraperHttpError ||
+          err instanceof ScraperParseError
+        ) {
+          errors.push(err);
+        } else {
+          errors.push(
+            new ScraperHttpError(
+              item.link,
+              err instanceof Error ? err.message : String(err),
+              500,
+            ),
+          );
+        }
+      }
+      completed++;
+      onProgress(completed, total, item.title);
+    };
+
+    const runWorker = async () => {
+      while (true) {
+        const task = queue.shift();
+        if (task === undefined) break;
+        await fetchDetailsAction(task.item, task.index);
+      }
+    };
+
+    const workers = Array.from({ length: Math.min(concurrency, total) }, () =>
+      runWorker(),
+    );
+    await Promise.all(workers);
+
+    const successfulItems = results.filter(
+      (item): item is AnimeItem => item !== null,
+    );
+
+    return { items: successfulItems, errors };
+  }
+
+  /**
    * Fetch all pages with concurrency control.
    */
   async fetchAllWithConcurrency(
@@ -259,7 +331,7 @@ export class ScraperService {
     concurrency: number,
     onProgress: (percent: number, msg: string) => void,
   ): Promise<ScanResult> {
-    const results: AnimeItem[] = [];
+    const results: AnimeItem[][] = Array.from({ length: totalPages }, () => []);
     const errors: (ScraperHttpError | ScraperParseError)[] = [];
     let completed = 0;
 
@@ -270,7 +342,7 @@ export class ScraperService {
       );
       try {
         const { items, errors: pageErrors } = await this.scrapeListPage(page);
-        results.push(...items);
+        results[page - 1] = items;
         errors.push(...pageErrors);
       } catch (err) {
         if (
@@ -307,6 +379,147 @@ export class ScraperService {
 
     const workers = Array.from({ length: concurrency }, () => runWorker());
     await Promise.all(workers);
+
+    return { items: results.flat(), errors };
+  }
+
+  /**
+   * Pipeline scraping where stage 1 page fetching feeds items dynamically to stage 2 details fetching.
+   */
+  async scanAllWithPipeline(
+    totalPages: number,
+    pageConcurrency: number,
+    detailConcurrency: number,
+    filterItem: (item: AnimeItem) => boolean,
+    onProgress: (
+      pagesCompleted: number,
+      pagesTotal: number,
+      detailsCompleted: number,
+      detailsTotal: number,
+      currentTitle: string,
+    ) => void,
+  ): Promise<ScanResult> {
+    const results: AnimeItem[] = [];
+    const errors: (ScraperHttpError | ScraperParseError)[] = [];
+    const itemOrderMap = new Map<string, number>();
+
+    const queue = new AsyncQueue<AnimeItem>();
+    let pagesCompleted = 0;
+    let detailsCompleted = 0;
+    let detailsTotal = 0;
+
+    const pageQueue = Array.from({ length: totalPages }, (_, i) => i + 1);
+
+    const fetchPageAction = async (page: number) => {
+      try {
+        const { items: pageItems, errors: pageErrors } =
+          await this.scrapeListPage(page);
+        errors.push(...pageErrors);
+
+        pageItems.forEach((item, cardIndex) => {
+          const rank = page * 1000 + cardIndex;
+          itemOrderMap.set(item.link, rank);
+
+          if (filterItem(item)) {
+            detailsTotal++;
+            queue.push(item);
+          }
+        });
+      } catch (err) {
+        if (
+          err instanceof ScraperHttpError ||
+          err instanceof ScraperParseError
+        ) {
+          errors.push(err);
+        } else {
+          errors.push(
+            new ScraperHttpError(
+              `${BASE_URL}/animeList.php?page=${page}`,
+              err instanceof Error ? err.message : String(err),
+              500,
+            ),
+          );
+        }
+      }
+      pagesCompleted++;
+      onProgress(
+        pagesCompleted,
+        totalPages,
+        detailsCompleted,
+        detailsTotal,
+        "",
+      );
+    };
+
+    const runPageWorker = async () => {
+      while (true) {
+        const page = pageQueue.shift();
+        if (page === undefined) break;
+        await fetchPageAction(page);
+      }
+    };
+
+    const runDetailWorker = async () => {
+      while (true) {
+        const item = await queue.next();
+        if (item === undefined) break;
+
+        onProgress(
+          pagesCompleted,
+          totalPages,
+          detailsCompleted,
+          detailsTotal,
+          item.title,
+        );
+        try {
+          const details = await this.scrapeAnimeDetails(item.link);
+          results.push({ ...item, ...details });
+        } catch (err) {
+          if (
+            err instanceof ScraperHttpError ||
+            err instanceof ScraperParseError
+          ) {
+            errors.push(err);
+          } else {
+            errors.push(
+              new ScraperHttpError(
+                item.link,
+                err instanceof Error ? err.message : String(err),
+                500,
+              ),
+            );
+          }
+        }
+        detailsCompleted++;
+        onProgress(
+          pagesCompleted,
+          totalPages,
+          detailsCompleted,
+          detailsTotal,
+          item.title,
+        );
+      }
+    };
+
+    const pageWorkers = Array.from(
+      { length: Math.min(pageConcurrency, totalPages) },
+      () => runPageWorker(),
+    );
+    const detailWorkers = Array.from({ length: detailConcurrency }, () =>
+      runDetailWorker(),
+    );
+
+    // Run both stages concurrently
+    await Promise.all(pageWorkers);
+    queue.close();
+    await Promise.all(detailWorkers);
+
+    // Sort final results based on their original placement order
+    results.sort((a, b) => {
+      const rankA = itemOrderMap.get(a.link) ?? 0;
+      const rankB = itemOrderMap.get(b.link) ?? 0;
+      return rankA - rankB;
+    });
 
     return { items: results, errors };
   }
