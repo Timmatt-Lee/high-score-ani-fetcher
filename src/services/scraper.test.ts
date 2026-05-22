@@ -398,3 +398,315 @@ describe("scraperService.fetchAllWithConcurrency", () => {
     expect((errors[0] as ScraperHttpError).html).toBe("String Network Error");
   });
 });
+
+// --- fetchDetailsWithConcurrency ---
+describe("scraperService.fetchDetailsWithConcurrency", () => {
+  const makeItem = (title: string, link: string): AnimeItem =>
+    ({
+      link,
+      title,
+      watch_count: 100,
+      episode_count: 12,
+      upload_date: new Date(),
+      score: 0,
+      rating_count: 0,
+      description: "",
+    }) as AnimeItem;
+
+  it("returns empty result if items is empty", async () => {
+    const { items, errors } = await scraperService.fetchDetailsWithConcurrency(
+      [],
+      5,
+      vi.fn(),
+    );
+    expect(items).toHaveLength(0);
+    expect(errors).toHaveLength(0);
+  });
+
+  it("calls scrapeAnimeDetails and aggregates detailed results", async () => {
+    const spy = vi
+      .spyOn(scraperService, "scrapeAnimeDetails")
+      .mockResolvedValue({
+        score: 9.0,
+        rating_count: 100,
+        description: "Desc",
+      });
+
+    const item1 = makeItem("A", "http://a");
+    const item2 = makeItem("B", "http://b");
+
+    const onProgress = vi.fn();
+    const { items, errors } = await scraperService.fetchDetailsWithConcurrency(
+      [item1, item2],
+      2,
+      onProgress,
+    );
+
+    expect(spy).toHaveBeenCalledTimes(2);
+    expect(items).toHaveLength(2);
+    expect(errors).toHaveLength(0);
+
+    expect(items[0]).toEqual({
+      ...item1,
+      score: 9.0,
+      rating_count: 100,
+      description: "Desc",
+    });
+
+    // progress callback is called at least once per start and completion
+    expect(onProgress).toHaveBeenCalled();
+  });
+
+  it("aggregates custom scraper errors from scrapeAnimeDetails", async () => {
+    const customError = new ScraperHttpError("http://b", "Failed page", 404);
+    vi.spyOn(scraperService, "scrapeAnimeDetails").mockImplementation(
+      async (link) => {
+        if (link === "http://a") {
+          return { score: 8.0, rating_count: 50, description: "A" };
+        }
+        throw customError;
+      },
+    );
+
+    const item1 = makeItem("A", "http://a");
+    const item2 = makeItem("B", "http://b");
+
+    const { items, errors } = await scraperService.fetchDetailsWithConcurrency(
+      [item1, item2],
+      2,
+      vi.fn(),
+    );
+
+    expect(items).toHaveLength(1);
+    expect(items[0].title).toBe("A");
+    expect(errors).toHaveLength(1);
+    expect(errors[0]).toBe(customError);
+  });
+
+  it("wraps unexpected errors in ScraperHttpError", async () => {
+    vi.spyOn(scraperService, "scrapeAnimeDetails").mockRejectedValue(
+      new Error("Unexpected error"),
+    );
+
+    const item = makeItem("A", "http://a");
+    const { items, errors } = await scraperService.fetchDetailsWithConcurrency(
+      [item],
+      1,
+      vi.fn(),
+    );
+
+    expect(items).toHaveLength(0);
+    expect(errors).toHaveLength(1);
+    expect(errors[0]).toBeInstanceOf(ScraperHttpError);
+    expect((errors[0] as ScraperHttpError).html).toBe("Unexpected error");
+  });
+
+  it("wraps non-Error thrown errors in ScraperHttpError", async () => {
+    vi.spyOn(scraperService, "scrapeAnimeDetails").mockRejectedValue(
+      "string error",
+    );
+
+    const item = makeItem("A", "http://a");
+    const { items, errors } = await scraperService.fetchDetailsWithConcurrency(
+      [item],
+      1,
+      vi.fn(),
+    );
+
+    expect(items).toHaveLength(0);
+    expect(errors).toHaveLength(1);
+    expect(errors[0]).toBeInstanceOf(ScraperHttpError);
+    expect((errors[0] as ScraperHttpError).html).toBe("string error");
+  });
+});
+
+// --- scanAllWithPipeline ---
+describe("scraperService.scanAllWithPipeline", () => {
+  const makeItem = (title: string, link: string): AnimeItem =>
+    ({
+      link,
+      title,
+      watch_count: 100,
+      episode_count: 12,
+      upload_date: new Date(),
+      score: 0,
+      rating_count: 0,
+      description: "",
+    }) as AnimeItem;
+
+  it("scrapes page items, filters them, fetches details concurrently and preserves original layout order", async () => {
+    const listSpy = vi
+      .spyOn(scraperService, "scrapeListPage")
+      .mockImplementation(async (page) => {
+        if (page === 1) {
+          return {
+            items: [makeItem("A", "http://a"), makeItem("B", "http://b")],
+            errors: [],
+          };
+        }
+        return {
+          items: [makeItem("C", "http://c"), makeItem("D", "http://d")],
+          errors: [],
+        };
+      });
+
+    const detailSpy = vi
+      .spyOn(scraperService, "scrapeAnimeDetails")
+      .mockImplementation(async (link) => {
+        const char = link.replace("http://", "");
+        return {
+          score: 9.0,
+          rating_count: 100,
+          description: `Desc ${char.toUpperCase()}`,
+        };
+      });
+
+    const onProgress = vi.fn();
+    const filterItem = (item: AnimeItem) => item.title !== "B";
+
+    const { items, errors } = await scraperService.scanAllWithPipeline(
+      2,
+      2,
+      2,
+      filterItem,
+      onProgress,
+    );
+
+    expect(listSpy).toHaveBeenCalledTimes(2);
+    expect(detailSpy).toHaveBeenCalledTimes(3);
+    expect(errors).toHaveLength(0);
+    expect(items).toHaveLength(3);
+
+    expect(items[0].title).toBe("A");
+    expect(items[1].title).toBe("C");
+    expect(items[2].title).toBe("D");
+
+    expect(items[0].description).toBe("Desc A");
+    expect(items[1].description).toBe("Desc C");
+    expect(items[2].description).toBe("Desc D");
+
+    expect(onProgress).toHaveBeenCalled();
+  });
+
+  it("aggregates page-level and detail-level errors in scanAllWithPipeline", async () => {
+    const listSpy = vi
+      .spyOn(scraperService, "scrapeListPage")
+      .mockImplementation(async (page) => {
+        if (page === 1) {
+          return {
+            items: [makeItem("A", "http://a"), makeItem("B", "http://b")],
+            errors: [
+              new ScraperParseError(
+                ScraperErrorSource.TITLE,
+                "http://a",
+                "parse err",
+              ),
+            ],
+          };
+        }
+        throw new ScraperHttpError("http://page2", "http err", 404);
+      });
+
+    vi.spyOn(scraperService, "scrapeAnimeDetails").mockImplementation(
+      async (link) => {
+        if (link === "http://a") {
+          throw new ScraperHttpError("http://a", "http err detail", 500);
+        }
+        throw new Error("unexpected detail failure");
+      },
+    );
+
+    const { items, errors } = await scraperService.scanAllWithPipeline(
+      2,
+      1,
+      1,
+      () => true,
+      vi.fn(),
+    );
+
+    expect(listSpy).toHaveBeenCalledTimes(2);
+    expect(items).toHaveLength(0);
+    expect(errors).toHaveLength(4);
+    expect(errors[0]).toBeInstanceOf(ScraperParseError);
+    expect(errors[1]).toBeInstanceOf(ScraperHttpError);
+    expect((errors[1] as ScraperHttpError).status).toBe(404);
+    expect(errors[2]).toBeInstanceOf(ScraperHttpError);
+    expect((errors[2] as ScraperHttpError).status).toBe(500);
+    expect(errors[3]).toBeInstanceOf(ScraperHttpError);
+    expect((errors[3] as ScraperHttpError).status).toBe(500);
+  });
+
+  it("wraps non-Error page and detail failures in scanAllWithPipeline", async () => {
+    vi.spyOn(scraperService, "scrapeListPage").mockRejectedValue(
+      "String Page Failure",
+    );
+    const { items, errors } = await scraperService.scanAllWithPipeline(
+      1,
+      1,
+      1,
+      () => true,
+      vi.fn(),
+    );
+    expect(items).toHaveLength(0);
+    expect(errors).toHaveLength(1);
+    expect(errors[0]).toBeInstanceOf(ScraperHttpError);
+    expect((errors[0] as ScraperHttpError).html).toBe("String Page Failure");
+  });
+
+  it("covers remaining error branches and sort ranking fallback in scanAllWithPipeline", async () => {
+    vi.spyOn(scraperService, "scrapeListPage").mockImplementation(
+      async (page) => {
+        if (page === 1) {
+          throw new Error("Normal Page Error");
+        } else if (page === 2) {
+          return {
+            items: [makeItem("A", "http://a"), makeItem("B", "http://b")],
+            errors: [],
+          };
+        } else {
+          return {
+            items: [makeItem("C", "http://c")],
+            errors: [],
+          };
+        }
+      },
+    );
+
+    vi.spyOn(scraperService, "scrapeAnimeDetails").mockImplementation(
+      async (link) => {
+        if (link === "http://not-in-map-a" || link === "http://not-in-map-b") {
+          return { score: 9.0, rating_count: 100, description: "OK" };
+        }
+        throw "Raw Detail Error String";
+      },
+    );
+
+    const filterItem = (item: AnimeItem) => {
+      if (item.title === "A") {
+        item.link = "http://not-in-map-a";
+      } else if (item.title === "B") {
+        item.link = "http://not-in-map-b";
+      }
+      return true;
+    };
+
+    const { items, errors } = await scraperService.scanAllWithPipeline(
+      3,
+      1,
+      1,
+      filterItem,
+      vi.fn(),
+    );
+
+    expect(items).toHaveLength(2);
+    expect(errors).toHaveLength(2);
+
+    expect(errors[0]).toBeInstanceOf(ScraperHttpError);
+    expect((errors[0] as ScraperHttpError).html).toBe("Normal Page Error");
+
+    expect(errors[1]).toBeInstanceOf(ScraperHttpError);
+    expect((errors[1] as ScraperHttpError).html).toBe(
+      "Raw Detail Error String",
+    );
+  });
+});
