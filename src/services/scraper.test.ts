@@ -1,6 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { scraperService } from "./scraper";
-import { ScraperError } from "../errors/scraper-error";
+import {
+  ScraperErrorSource,
+  ScraperHttpError,
+  ScraperParseError,
+} from "../types/errors";
 import { type AnimeItem } from "../types/anime";
 
 // --- Helpers ---
@@ -23,11 +27,17 @@ beforeEach(() => {
 
 // --- getTotalPages ---
 describe("scraperService.getTotalPages", () => {
-  it("throws ScraperError when no page links found", async () => {
+  it("throws ScraperParseError when no page links found", async () => {
     mockFetch(makeHtml('<div class="page_number"></div>'));
-    await expect(scraperService.getTotalPages()).rejects.toThrow(
-      "Pagination element not found",
-    );
+    try {
+      await scraperService.getTotalPages();
+      expect.fail("Should have thrown ScraperParseError");
+    } catch (err) {
+      const parseErr = err as ScraperParseError;
+      expect(parseErr).toBeInstanceOf(ScraperParseError);
+      expect(parseErr.source).toBe(ScraperErrorSource.PAGINATION);
+      expect(parseErr.message).toContain("Parsing failed at PAGINATION");
+    }
   });
 
   it("parses the last page number from links", async () => {
@@ -43,29 +53,41 @@ describe("scraperService.getTotalPages", () => {
     expect(await scraperService.getTotalPages()).toBe(5);
   });
 
-  it("throws ScraperError when last page link has no text content", async () => {
+  it("throws ScraperParseError when last page link has no text content", async () => {
     mockFetch(makeHtml(`<div class="page_number"><a></a></div>`));
-    await expect(scraperService.getTotalPages()).rejects.toThrow(
-      "Last page link has no text content",
-    );
+    try {
+      await scraperService.getTotalPages();
+      expect.fail("Should have thrown ScraperParseError");
+    } catch (err) {
+      const parseErr = err as ScraperParseError;
+      expect(parseErr).toBeInstanceOf(ScraperParseError);
+      expect(parseErr.source).toBe(ScraperErrorSource.PAGINATION);
+    }
   });
 
-  it("throws ScraperError when last page text is not a number", async () => {
+  it("throws ScraperParseError when last page text is not a number", async () => {
     mockFetch(makeHtml(`<div class="page_number"><a>NaN</a></div>`));
-    await expect(scraperService.getTotalPages()).rejects.toThrow(
-      "Invalid total pages parsed",
-    );
+    try {
+      await scraperService.getTotalPages();
+      expect.fail("Should have thrown ScraperParseError");
+    } catch (err) {
+      const parseErr = err as ScraperParseError;
+      expect(parseErr).toBeInstanceOf(ScraperParseError);
+      expect(parseErr.source).toBe(ScraperErrorSource.PAGINATION);
+    }
   });
 
-  it("throws ScraperError when response is not ok", async () => {
+  it("throws ScraperHttpError when response is not ok", async () => {
     mockFetch("Error Page Content", false, 404);
     try {
       await scraperService.getTotalPages();
+      expect.fail("Should have thrown ScraperHttpError");
     } catch (err) {
-      const scraperErr = err as ScraperError;
-      expect(scraperErr).toBeInstanceOf(ScraperError);
-      expect(scraperErr.message).toContain("HTTP Request Failed");
-      expect(scraperErr.htmlSnippet).toBe("Error Page Content");
+      const httpErr = err as ScraperHttpError;
+      expect(httpErr).toBeInstanceOf(ScraperHttpError);
+      expect(httpErr.message).toContain("HTTP request failed with status 404");
+      expect(httpErr.html).toBe("Error Page Content");
+      expect(httpErr.status).toBe(404);
     }
   });
 
@@ -98,11 +120,16 @@ describe("scraperService.scrapeListPage", () => {
     expect(results[0].upload_date.getFullYear()).toBe(2024);
   });
 
-  it("throws ScraperError when title is missing", async () => {
+  it("throws ScraperParseError when title is missing", async () => {
     mockFetch(makeHtml('<a class="theme-list-main" href="/x"></a>'));
-    await expect(scraperService.scrapeListPage(1)).rejects.toThrow(
-      "Anime title missing",
-    );
+    try {
+      await scraperService.scrapeListPage(1);
+      expect.fail("Should have thrown ScraperParseError");
+    } catch (err) {
+      const parseErr = err as ScraperParseError;
+      expect(parseErr).toBeInstanceOf(ScraperParseError);
+      expect(parseErr.source).toBe(ScraperErrorSource.TITLE);
+    }
   });
 
   it("skips cards without href", async () => {
@@ -111,7 +138,7 @@ describe("scraperService.scrapeListPage", () => {
     expect(results).toHaveLength(0);
   });
 
-  it("throws ScraperError when watch count parsing fails", async () => {
+  it("throws ScraperParseError when watch count parsing fails", async () => {
     mockFetch(
       makeHtml(`
       <a class="theme-list-main" href="/x">
@@ -120,12 +147,17 @@ describe("scraperService.scrapeListPage", () => {
       </a>
     `),
     );
-    await expect(scraperService.scrapeListPage(1)).rejects.toThrow(
-      "Failed to parse watch count",
-    );
+    try {
+      await scraperService.scrapeListPage(1);
+      expect.fail("Should have thrown ScraperParseError");
+    } catch (err) {
+      const parseErr = err as ScraperParseError;
+      expect(parseErr).toBeInstanceOf(ScraperParseError);
+      expect(parseErr.source).toBe(ScraperErrorSource.WATCH_COUNT);
+    }
   });
 
-  it("throws ScraperError when episode count parsing fails", async () => {
+  it("throws ScraperParseError when episode count parsing fails", async () => {
     mockFetch(
       makeHtml(`
       <a class="theme-list-main" href="/x">
@@ -138,12 +170,17 @@ describe("scraperService.scrapeListPage", () => {
       </a>
     `),
     );
-    await expect(scraperService.scrapeListPage(1)).rejects.toThrow(
-      "Failed to parse episode count",
-    );
+    try {
+      await scraperService.scrapeListPage(1);
+      expect.fail("Should have thrown ScraperParseError");
+    } catch (err) {
+      const parseErr = err as ScraperParseError;
+      expect(parseErr).toBeInstanceOf(ScraperParseError);
+      expect(parseErr.source).toBe(ScraperErrorSource.EPISODE_COUNT);
+    }
   });
 
-  it("throws ScraperError when upload date parsing fails", async () => {
+  it("throws ScraperParseError when upload date parsing fails", async () => {
     mockFetch(
       makeHtml(`
       <a class="theme-list-main" href="/x">
@@ -156,9 +193,14 @@ describe("scraperService.scrapeListPage", () => {
       </a>
     `),
     );
-    await expect(scraperService.scrapeListPage(1)).rejects.toThrow(
-      "Failed to parse upload date",
-    );
+    try {
+      await scraperService.scrapeListPage(1);
+      expect.fail("Should have thrown ScraperParseError");
+    } catch (err) {
+      const parseErr = err as ScraperParseError;
+      expect(parseErr).toBeInstanceOf(ScraperParseError);
+      expect(parseErr.source).toBe(ScraperErrorSource.UPLOAD_DATE);
+    }
   });
 
   it("handles watch count with 萬 suffix", async () => {
@@ -196,47 +238,72 @@ describe("scraperService.scrapeAnimeDetails", () => {
     expect(result.description).toBe("Great show");
   });
 
-  it("throws ScraperError when score is missing", async () => {
+  it("throws ScraperParseError when score is missing", async () => {
     mockFetch(makeHtml("<div>No score</div>"));
-    await expect(scraperService.scrapeAnimeDetails("http://x")).rejects.toThrow(
-      "Score element missing",
-    );
+    try {
+      await scraperService.scrapeAnimeDetails("http://x");
+      expect.fail("Should have thrown ScraperParseError");
+    } catch (err) {
+      const parseErr = err as ScraperParseError;
+      expect(parseErr).toBeInstanceOf(ScraperParseError);
+      expect(parseErr.source).toBe(ScraperErrorSource.SCORE);
+    }
   });
 
-  it("throws ScraperError when score is NaN", async () => {
+  it("throws ScraperParseError when score is NaN", async () => {
     mockFetch(makeHtml('<div class="score-overall-number">ABC</div>'));
-    await expect(scraperService.scrapeAnimeDetails("http://x")).rejects.toThrow(
-      "Failed to parse score",
-    );
+    try {
+      await scraperService.scrapeAnimeDetails("http://x");
+      expect.fail("Should have thrown ScraperParseError");
+    } catch (err) {
+      const parseErr = err as ScraperParseError;
+      expect(parseErr).toBeInstanceOf(ScraperParseError);
+      expect(parseErr.source).toBe(ScraperErrorSource.SCORE);
+    }
   });
 
-  it("throws ScraperError when rating count element missing", async () => {
+  it("throws ScraperParseError when rating count element missing", async () => {
     mockFetch(makeHtml('<div class="score-overall-number">8.5</div>'));
-    await expect(scraperService.scrapeAnimeDetails("http://x")).rejects.toThrow(
-      "Rating count element missing",
-    );
+    try {
+      await scraperService.scrapeAnimeDetails("http://x");
+      expect.fail("Should have thrown ScraperParseError");
+    } catch (err) {
+      const parseErr = err as ScraperParseError;
+      expect(parseErr).toBeInstanceOf(ScraperParseError);
+      expect(parseErr.source).toBe(ScraperErrorSource.RATING_COUNT);
+    }
   });
 
-  it("throws ScraperError when rating count is NaN", async () => {
+  it("throws ScraperParseError when rating count is NaN", async () => {
     mockFetch(
       makeHtml(
         '<div class="score-overall-number">8.5</div><div class="score-overall-people">NaN人評價</div>',
       ),
     );
-    await expect(scraperService.scrapeAnimeDetails("http://x")).rejects.toThrow(
-      "Failed to parse rating count",
-    );
+    try {
+      await scraperService.scrapeAnimeDetails("http://x");
+      expect.fail("Should have thrown ScraperParseError");
+    } catch (err) {
+      const parseErr = err as ScraperParseError;
+      expect(parseErr).toBeInstanceOf(ScraperParseError);
+      expect(parseErr.source).toBe(ScraperErrorSource.RATING_COUNT);
+    }
   });
 
-  it("throws ScraperError when description is missing", async () => {
+  it("throws ScraperParseError when description is missing", async () => {
     mockFetch(
       makeHtml(
         '<div class="score-overall-number">8.5</div><div class="score-overall-people">100人評價</div>',
       ),
     );
-    await expect(scraperService.scrapeAnimeDetails("http://x")).rejects.toThrow(
-      "Description missing",
-    );
+    try {
+      await scraperService.scrapeAnimeDetails("http://x");
+      expect.fail("Should have thrown ScraperParseError");
+    } catch (err) {
+      const parseErr = err as ScraperParseError;
+      expect(parseErr).toBeInstanceOf(ScraperParseError);
+      expect(parseErr.source).toBe(ScraperErrorSource.DESCRIPTION);
+    }
   });
 });
 
