@@ -68,7 +68,7 @@ export class ScraperPipeline {
     this.filterItem = filterItem;
     this.onProgress = onProgress;
     this.scraper = scraper;
-    this.pageQueue = Array.from({ length: totalPages }, (_, i) => i + 1);
+    this.pageQueue = [...Array(totalPages).keys()].map((i) => i + 1);
   }
 
   /**
