@@ -1,49 +1,20 @@
 import { type AnimeItem, type AnimeDetails } from "../types/anime";
+import { ScraperError } from "../errors/scraper-error";
 
 const BASE_URL = "https://ani.gamer.com.tw";
-
-/**
- * Custom error class for Scraper failures to provide better debugging context.
- */
-export class ScraperError extends Error {
-  url: string;
-  status?: number;
-  statusText?: string;
-  htmlSnippet?: string;
-
-  constructor(
-    message: string,
-    url: string,
-    status?: number,
-    statusText?: string,
-    htmlSnippet?: string,
-  ) {
-    super(
-      `${message} (URL: ${url}${status ? `, Status: ${status} ${statusText}` : ""})`,
-    );
-    this.name = "ScraperError";
-    this.url = url;
-    this.status = status;
-    this.statusText = statusText;
-    this.htmlSnippet = htmlSnippet;
-  }
-}
 
 export class ScraperService {
   private async fetchText(url: string): Promise<string> {
     const response = await fetch(url);
     if (!response.ok) {
-      // For debugging "exactly what error that response is NOT ok",
-      // we could potentially read a snippet of the response body.
       const snippet = await response
         .text()
-        .then((t) => t.substring(0, 500))
-        .catch(() => "");
+        .catch(() => "")
+        .then((t) => t.slice(0, 200));
       throw new ScraperError(
         "HTTP Request Failed",
         url,
         response.status,
-        response.statusText,
         snippet,
       );
     }
@@ -101,7 +72,6 @@ export class ScraperService {
         throw new ScraperError(
           "Anime title missing in card",
           url,
-          undefined,
           undefined,
           card.outerHTML.substring(0, 500),
         );

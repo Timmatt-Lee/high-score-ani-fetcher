@@ -1,22 +1,17 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { scraperService, ScraperError } from "./scraper";
+import { scraperService } from "./scraper";
+import { ScraperError } from "../errors/scraper-error";
 import { type AnimeItem } from "../types/anime";
 
 // --- Helpers ---
 const makeHtml = (content: string) => `<html><body>${content}</body></html>`;
 
-const mockFetch = (
-  html: string,
-  ok = true,
-  status = 200,
-  statusText = "OK",
-) => {
+const mockFetch = (html: string, ok = true, status = 200) => {
   vi.stubGlobal(
     "fetch",
     vi.fn().mockResolvedValue({
       ok,
       status,
-      statusText,
       text: async () => html,
     }),
   );
@@ -63,7 +58,7 @@ describe("scraperService.getTotalPages", () => {
   });
 
   it("throws ScraperError when response is not ok", async () => {
-    mockFetch("Error Page Content", false, 404, "Not Found");
+    mockFetch("Error Page Content", false, 404);
     try {
       await scraperService.getTotalPages();
     } catch (err) {
