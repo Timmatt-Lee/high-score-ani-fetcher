@@ -16,11 +16,9 @@ export interface AnimeItem extends AnimeDetails {
 
 export interface ScrapeListResult {
   items: AnimeItem[];
-  errors: ScraperParseError[];
+  parseErrors: ScraperParseError[];
 }
 
-export interface ScanResult {
-  items: AnimeItem[];
+export interface ScanResult extends ScrapeListResult {
   httpErrors: ScraperHttpError[];
-  parseErrors: ScraperParseError[];
 }
