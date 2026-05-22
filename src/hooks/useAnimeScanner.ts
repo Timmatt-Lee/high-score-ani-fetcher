@@ -48,77 +48,58 @@ export function useAnimeScanner(
     }
 
     try {
-      const { items: allItems, errors: scanErrors } =
-        await scraperService.fetchAllWithConcurrency(
+      const trashLinks = new Set(trash.map((t) => t.link));
+      const favLinks = new Set(favorites.map((f) => f.link));
+
+      const filterItem = (item: AnimeItem) => {
+        if (trashLinks.has(item.link) || favLinks.has(item.link)) return false;
+        if (isNaN(item.episode_count) || item.episode_count < 10) return false;
+        if (item.title.includes("OVA")) return false;
+        return true;
+      };
+
+      const { items: detailedItems, errors: scanErrors } =
+        await scraperService.scanAllWithPipeline(
           totalPages,
           5,
-          (percent, msg) => {
+          10,
+          filterItem,
+          (
+            pagesCompleted,
+            pagesTotal,
+            detailsCompleted,
+            detailsTotal,
+            currentTitle,
+          ) => {
+            const pagesPercent =
+              totalPages > 0 ? pagesCompleted / totalPages : 0;
+            const detailsPercent =
+              detailsTotal > 0 ? detailsCompleted / detailsTotal : 0;
+            const rawPercent = Math.floor(
+              (pagesPercent * 0.3 + detailsPercent * 0.7) * 100,
+            );
+            const percent = Math.min(99, rawPercent);
+
+            let msg = `Scanning pages (${pagesCompleted}/${pagesTotal})`;
+            if (detailsTotal > 0) {
+              msg += ` and details (${detailsCompleted}/${detailsTotal})`;
+            }
+            if (currentTitle) {
+              msg += `... [${currentTitle}]`;
+            } else {
+              msg += "...";
+            }
+
             setProgress({ percent, message: msg });
           },
         );
 
       collectedErrors.push(...scanErrors);
 
-      setProgress({ percent: 100, message: "Fetching details..." });
-
-      // Filter out trash and favorites, and filter by score & episode count
-      const trashLinks = new Set(trash.map((t) => t.link));
-      const favLinks = new Set(favorites.map((f) => f.link));
-
-      const filteredItems = allItems.filter((item) => {
-        if (trashLinks.has(item.link) || favLinks.has(item.link)) return false;
-        if (isNaN(item.episode_count) || item.episode_count < 10) return false;
-        if (item.title.includes("OVA")) return false;
-        return true;
-      });
-
-      const chunk = <T>(arr: T[], size: number): T[][] => {
-        const result = [];
-        for (let i = 0; i < arr.length; i += size) {
-          result.push(arr.slice(i, i + size));
-        }
-        return result;
-      };
-
-      const detailBatches = chunk(filteredItems, 5);
-      const newItems: AnimeItem[] = [];
-
-      for (const batch of detailBatches) {
-        const batchResults = await Promise.all(
-          batch.map(async (item) => {
-            setProgress((prev) => ({
-              ...prev,
-              message: `Fetching details for ${item.title}...`,
-            }));
-            try {
-              const details = await scraperService.scrapeAnimeDetails(
-                item.link,
-              );
-              return details.score >= 4.8 ? { ...item, ...details } : null;
-            } catch (err) {
-              if (
-                err instanceof ScraperHttpError ||
-                err instanceof ScraperParseError
-              ) {
-                collectedErrors.push(err);
-              } else {
-                collectedErrors.push(
-                  new ScraperHttpError(
-                    item.link,
-                    err instanceof Error ? err.message : String(err),
-                    500,
-                  ),
-                );
-              }
-              return null;
-            }
-          }),
-        );
-        newItems.push(...(batchResults.filter(Boolean) as AnimeItem[]));
-      }
+      const highAwardItems = detailedItems.filter((item) => item.score >= 4.8);
 
       setErrors(collectedErrors);
-      onScanComplete(newItems);
+      onScanComplete(highAwardItems);
     } finally {
       setIsScanning(false);
       setProgress({ percent: 0, message: "" });

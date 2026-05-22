@@ -25,15 +25,20 @@ describe("useAnimeScanner", () => {
   it("scans and calls onScanComplete with filtered results", async () => {
     const mockAnime = makeAnime("Test");
     vi.spyOn(scraperService, "getTotalPages").mockResolvedValue(1);
-    vi.spyOn(scraperService, "fetchAllWithConcurrency").mockResolvedValue({
-      items: [mockAnime],
-      errors: [],
-    });
-    vi.spyOn(scraperService, "scrapeAnimeDetails").mockResolvedValue({
-      score: 9.0,
-      rating_count: 100,
-      description: "x",
-    });
+    vi.spyOn(scraperService, "scanAllWithPipeline").mockImplementation(
+      async (_pages, _pc, _dc, filterItem, onProgress) => {
+        if (filterItem(mockAnime)) {
+          onProgress(1, 1, 1, 1, mockAnime.title);
+          return {
+            items: [
+              { ...mockAnime, score: 9.0, rating_count: 100, description: "x" },
+            ],
+            errors: [],
+          };
+        }
+        return { items: [], errors: [] };
+      },
+    );
 
     const onComplete = vi.fn();
     const { result } = renderHook(() => useAnimeScanner([], [], onComplete), {
@@ -49,20 +54,16 @@ describe("useAnimeScanner", () => {
     ]);
   });
 
-  it("fires the progress callback from fetchAllWithConcurrency", async () => {
+  it("fires the progress callback from scanAllWithPipeline", async () => {
     const mockAnime = makeAnime("ProgressTest");
     vi.spyOn(scraperService, "getTotalPages").mockResolvedValue(1);
-    vi.spyOn(scraperService, "fetchAllWithConcurrency").mockImplementation(
-      async (_pages, _concurrency, onProgress) => {
-        onProgress(50, "Halfway");
+    vi.spyOn(scraperService, "scanAllWithPipeline").mockImplementation(
+      async (_pages, _pc, _dc, _filterItem, onProgress) => {
+        onProgress(1, 1, 5, 5, "");
+        onProgress(1, 1, 5, 5, "Halfway");
         return { items: [mockAnime], errors: [] };
       },
     );
-    vi.spyOn(scraperService, "scrapeAnimeDetails").mockResolvedValue({
-      score: 9.0,
-      rating_count: 100,
-      description: "x",
-    });
 
     const onComplete = vi.fn();
     const { result } = renderHook(() => useAnimeScanner([], [], onComplete), {
@@ -76,7 +77,6 @@ describe("useAnimeScanner", () => {
     expect(result.current.progress.message).toBe(""); // Reset at end
   });
 
-  // --- Error catch path (lines 53-55) ---
   it("handles scan failure gracefully", async () => {
     vi.spyOn(scraperService, "getTotalPages").mockRejectedValue(
       new Error("network down"),
@@ -98,10 +98,20 @@ describe("useAnimeScanner", () => {
     const trashItem = makeAnime("InTrash");
     const favItem = makeAnime("InFav");
     vi.spyOn(scraperService, "getTotalPages").mockResolvedValue(1);
-    vi.spyOn(scraperService, "fetchAllWithConcurrency").mockResolvedValue({
-      items: [trashItem, favItem],
-      errors: [],
-    });
+    vi.spyOn(scraperService, "scanAllWithPipeline").mockImplementation(
+      async (_pages, _pc, _dc, filterItem) => {
+        const items = [trashItem, favItem].filter(filterItem);
+        return {
+          items: items.map((item) => ({
+            ...item,
+            score: 9.0,
+            rating_count: 100,
+            description: "x",
+          })),
+          errors: [],
+        };
+      },
+    );
 
     const onComplete = vi.fn();
     const { result } = renderHook(
@@ -127,10 +137,20 @@ describe("useAnimeScanner", () => {
     naShow.episode_count = NaN;
 
     vi.spyOn(scraperService, "getTotalPages").mockResolvedValue(1);
-    vi.spyOn(scraperService, "fetchAllWithConcurrency").mockResolvedValue({
-      items: [shortShow, ovaShow, naShow],
-      errors: [],
-    });
+    vi.spyOn(scraperService, "scanAllWithPipeline").mockImplementation(
+      async (_pages, _pc, _dc, filterItem) => {
+        const items = [shortShow, ovaShow, naShow].filter(filterItem);
+        return {
+          items: items.map((item) => ({
+            ...item,
+            score: 9.0,
+            rating_count: 100,
+            description: "x",
+          })),
+          errors: [],
+        };
+      },
+    );
 
     const onComplete = vi.fn();
     const { result } = renderHook(() => useAnimeScanner([], [], onComplete), {
@@ -147,14 +167,11 @@ describe("useAnimeScanner", () => {
   it("filters out items with score below 4.8", async () => {
     const lowScore = makeAnime("LowScore");
     vi.spyOn(scraperService, "getTotalPages").mockResolvedValue(1);
-    vi.spyOn(scraperService, "fetchAllWithConcurrency").mockResolvedValue({
-      items: [lowScore],
+    vi.spyOn(scraperService, "scanAllWithPipeline").mockResolvedValue({
+      items: [
+        { ...lowScore, score: 4.0, rating_count: 10, description: "Meh" },
+      ],
       errors: [],
-    });
-    vi.spyOn(scraperService, "scrapeAnimeDetails").mockResolvedValue({
-      score: 4.0,
-      rating_count: 10,
-      description: "Meh",
     });
 
     const onComplete = vi.fn();
@@ -169,9 +186,8 @@ describe("useAnimeScanner", () => {
     expect(onComplete).toHaveBeenCalledWith([]);
   });
 
-  it("aggregates errors from fetchAllWithConcurrency and scrapeAnimeDetails", async () => {
+  it("aggregates errors from scanAllWithPipeline", async () => {
     const mockAnime1 = makeAnime("SuccessAnime");
-    const mockAnime2 = makeAnime("FailDetailAnime");
     const pageError = new ScraperHttpError(
       "http://err-page",
       "Page error",
@@ -184,19 +200,17 @@ describe("useAnimeScanner", () => {
     );
 
     vi.spyOn(scraperService, "getTotalPages").mockResolvedValue(1);
-    vi.spyOn(scraperService, "fetchAllWithConcurrency").mockResolvedValue({
-      items: [mockAnime1, mockAnime2],
-      errors: [pageError],
+    vi.spyOn(scraperService, "scanAllWithPipeline").mockResolvedValue({
+      items: [
+        {
+          ...mockAnime1,
+          score: 9.0,
+          rating_count: 100,
+          description: "Success",
+        },
+      ],
+      errors: [pageError, detailError],
     });
-
-    vi.spyOn(scraperService, "scrapeAnimeDetails").mockImplementation(
-      async (link) => {
-        if (link === mockAnime1.link) {
-          return { score: 9.0, rating_count: 100, description: "Success" };
-        }
-        throw detailError;
-      },
-    );
 
     const onComplete = vi.fn();
     const { result } = renderHook(() => useAnimeScanner([], [], onComplete), {
@@ -213,35 +227,6 @@ describe("useAnimeScanner", () => {
     expect(result.current.errors).toHaveLength(2);
     expect(result.current.errors[0]).toBe(pageError);
     expect(result.current.errors[1]).toBe(detailError);
-  });
-
-  it("wraps generic details errors as ScraperHttpError", async () => {
-    const mockAnime = makeAnime("GenericErrorAnime");
-    vi.spyOn(scraperService, "getTotalPages").mockResolvedValue(1);
-    vi.spyOn(scraperService, "fetchAllWithConcurrency").mockResolvedValue({
-      items: [mockAnime],
-      errors: [],
-    });
-
-    vi.spyOn(scraperService, "scrapeAnimeDetails").mockRejectedValue(
-      new Error("Generic Network Error"),
-    );
-
-    const onComplete = vi.fn();
-    const { result } = renderHook(() => useAnimeScanner([], [], onComplete), {
-      wrapper: ServiceProvider,
-    });
-
-    await act(async () => {
-      await result.current.handleScan();
-    });
-
-    expect(onComplete).toHaveBeenCalledWith([]);
-    expect(result.current.errors).toHaveLength(1);
-    expect(result.current.errors[0]).toBeInstanceOf(ScraperHttpError);
-    expect((result.current.errors[0] as ScraperHttpError).html).toBe(
-      "Generic Network Error",
-    );
   });
 
   it("handles ScraperHttpError scan failure in catch block", async () => {
@@ -280,16 +265,14 @@ describe("useAnimeScanner", () => {
     );
   });
 
-  it("wraps non-Error detail failure as ScraperHttpError", async () => {
-    const mockAnime = makeAnime("NonErrorDetailAnime");
-    vi.spyOn(scraperService, "getTotalPages").mockResolvedValue(1);
-    vi.spyOn(scraperService, "fetchAllWithConcurrency").mockResolvedValue({
-      items: [mockAnime],
-      errors: [],
-    });
-
-    vi.spyOn(scraperService, "scrapeAnimeDetails").mockRejectedValue(
-      "Detail string error",
+  it("handles progress calculation with zero totalPages or zero detailsTotal", async () => {
+    const mockAnime = makeAnime("ZeroProgress");
+    vi.spyOn(scraperService, "getTotalPages").mockResolvedValue(0);
+    vi.spyOn(scraperService, "scanAllWithPipeline").mockImplementation(
+      async (_pages, _pc, _dc, _filterItem, onProgress) => {
+        onProgress(0, 0, 0, 0, "");
+        return { items: [mockAnime], errors: [] };
+      },
     );
 
     const onComplete = vi.fn();
@@ -301,11 +284,6 @@ describe("useAnimeScanner", () => {
       await result.current.handleScan();
     });
 
-    expect(onComplete).toHaveBeenCalledWith([]);
-    expect(result.current.errors).toHaveLength(1);
-    expect(result.current.errors[0]).toBeInstanceOf(ScraperHttpError);
-    expect((result.current.errors[0] as ScraperHttpError).html).toBe(
-      "Detail string error",
-    );
+    expect(result.current.progress.percent).toBe(0);
   });
 });
