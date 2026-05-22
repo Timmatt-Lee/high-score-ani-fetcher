@@ -1,22 +1,62 @@
-export interface AnimeItem {
-  link: string;
-  title: string;
-  watch_count: number;
-  episode_count: number;
-  upload_date: Date;
+export interface AnimeDetails {
   score: number;
   rating_count: number;
   description: string;
 }
 
+export interface AnimeItem extends AnimeDetails {
+  link: string;
+  title: string;
+  watch_count: number;
+  episode_count: number;
+  upload_date: Date;
+}
+
 const BASE_URL = "https://ani.gamer.com.tw";
+
+/**
+ * Custom error class for Scraper failures to provide better debugging context.
+ */
+export class ScraperError extends Error {
+  url: string;
+  status?: number;
+  statusText?: string;
+  htmlSnippet?: string;
+
+  constructor(
+    message: string,
+    url: string,
+    status?: number,
+    statusText?: string,
+    htmlSnippet?: string,
+  ) {
+    super(
+      `${message} (URL: ${url}${status ? `, Status: ${status} ${statusText}` : ""})`,
+    );
+    this.name = "ScraperError";
+    this.url = url;
+    this.status = status;
+    this.statusText = statusText;
+    this.htmlSnippet = htmlSnippet;
+  }
+}
 
 export class ScraperService {
   private async fetchText(url: string): Promise<string> {
     const response = await fetch(url);
     if (!response.ok) {
-      throw new Error(
-        `Failed to fetch ${url}: ${response.status} ${response.statusText}`,
+      // For debugging "exactly what error that response is NOT ok",
+      // we could potentially read a snippet of the response body.
+      const snippet = await response
+        .text()
+        .then((t) => t.substring(0, 500))
+        .catch(() => "");
+      throw new ScraperError(
+        "HTTP Request Failed",
+        url,
+        response.status,
+        response.statusText,
+        snippet,
       );
     }
     return response.text();
@@ -33,19 +73,20 @@ export class ScraperService {
     const pageLinks = doc.querySelectorAll(".page_number a");
 
     if (pageLinks.length === 0) {
-      throw new Error(
-        "Pagination element not found. Page structure might have changed.",
-      );
+      throw new ScraperError("Pagination element not found", url);
     }
 
     const lastPageText = pageLinks[pageLinks.length - 1].textContent;
     if (!lastPageText) {
-      throw new Error("Last page link has no text content.");
+      throw new ScraperError("Last page link has no text content", url);
     }
 
     const totalPages = parseInt(lastPageText, 10);
     if (isNaN(totalPages)) {
-      throw new Error(`Invalid total pages parsed: "${lastPageText}"`);
+      throw new ScraperError(
+        `Invalid total pages parsed: "${lastPageText}"`,
+        url,
+      );
     }
 
     return totalPages;
@@ -68,17 +109,37 @@ export class ScraperService {
 
       const link = `${BASE_URL}/${href.replace(/^\//, "")}`;
       const titleEl = card.querySelector(".theme-name");
-      const title = titleEl?.textContent?.trim() || "";
+      if (!titleEl || !titleEl.textContent?.trim()) {
+        throw new ScraperError(
+          "Anime title missing in card",
+          url,
+          undefined,
+          undefined,
+          card.outerHTML.substring(0, 500),
+        );
+      }
+      const title = titleEl.textContent.trim();
 
-      const watchCountEl = card.querySelector("p:not(.theme-time)");
+      const watchCountEl = card.querySelector(
+        "p:not(.theme-name):not(.theme-time)",
+      );
       let watchCount = NaN;
       if (watchCountEl && watchCountEl.textContent) {
         const str = watchCountEl.textContent.trim();
         if (str.includes("萬")) {
-          watchCount = parseFloat(str.replace("萬", "")) * 10000;
+          // parseFloat is necessary for "2.5萬" -> 25000.
+          // We wrap in Math.floor to ensure we return an integer.
+          watchCount = Math.floor(parseFloat(str.replace("萬", "")) * 10000);
         } else {
           watchCount = parseInt(str.replace(/,/g, ""), 10);
         }
+      }
+
+      if (isNaN(watchCount)) {
+        throw new ScraperError(
+          `Failed to parse watch count for "${title}"`,
+          url,
+        );
       }
 
       let episode_count = NaN;
@@ -101,6 +162,19 @@ export class ScraperService {
         }
       }
 
+      if (isNaN(episode_count)) {
+        throw new ScraperError(
+          `Failed to parse episode count for "${title}"`,
+          url,
+        );
+      }
+      if (isNaN(upload_date.getTime())) {
+        throw new ScraperError(
+          `Failed to parse upload date for "${title}"`,
+          url,
+        );
+      }
+
       items.push({
         link,
         title,
@@ -119,30 +193,36 @@ export class ScraperService {
   /**
    * Scrapes details for a single anime item.
    */
-  async scrapeAnimeDetails(
-    link: string,
-  ): Promise<{ score: number; rating_count: number; description: string }> {
+  async scrapeAnimeDetails(link: string): Promise<AnimeDetails> {
     const text = await this.fetchText(link);
     const doc = new DOMParser().parseFromString(text, "text/html");
 
     const scoreNumDiv = doc.querySelector(".score-overall-number");
-    const score =
-      scoreNumDiv && scoreNumDiv.textContent
-        ? parseFloat(scoreNumDiv.textContent)
-        : NaN;
+    if (!scoreNumDiv || !scoreNumDiv.textContent) {
+      throw new ScraperError("Score element missing in details page", link);
+    }
+    const score = parseFloat(scoreNumDiv.textContent);
+    if (isNaN(score)) {
+      throw new ScraperError("Failed to parse score", link);
+    }
 
     const scorePeopleDiv = doc.querySelector(".score-overall-people");
-    let rating_count = NaN;
-    if (scorePeopleDiv && scorePeopleDiv.textContent) {
-      rating_count = parseInt(
-        scorePeopleDiv.textContent.replace("人評價", "").replace(/,/g, ""),
-        10,
-      );
+    if (!scorePeopleDiv || !scorePeopleDiv.textContent) {
+      throw new ScraperError("Rating count element missing", link);
+    }
+    const rating_count = parseInt(
+      scorePeopleDiv.textContent.replace("人評價", "").replace(/,/g, ""),
+      10,
+    );
+    if (isNaN(rating_count)) {
+      throw new ScraperError("Failed to parse rating count", link);
     }
 
     const descDiv = doc.querySelector(".data-intro p");
-    const description =
-      descDiv && descDiv.textContent ? descDiv.textContent.trim() : "";
+    if (!descDiv || !descDiv.textContent?.trim()) {
+      throw new ScraperError("Description missing in details page", link);
+    }
+    const description = descDiv.textContent.trim();
 
     return { score, rating_count, description };
   }

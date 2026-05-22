@@ -6,6 +6,7 @@ import {
   waitFor,
   act,
 } from "@testing-library/react";
+import { ServiceProvider } from "./contexts/ServiceContext";
 import App from "./App";
 import { scraperService, type AnimeItem } from "./services/scraper";
 
@@ -60,14 +61,22 @@ afterEach(() => {
 describe("App rendering", () => {
   it("renders the header", async () => {
     await act(async () => {
-      render(<App />);
+      render(
+        <ServiceProvider>
+          <App />
+        </ServiceProvider>,
+      );
     });
     expect(screen.getByText("AniFetcher Pro")).toBeDefined();
   });
 
   it("renders all three tabs", async () => {
     await act(async () => {
-      render(<App />);
+      render(
+        <ServiceProvider>
+          <App />
+        </ServiceProvider>,
+      );
     });
     expect(screen.getByText(/Results/)).toBeDefined();
     expect(screen.getByText(/Favorites/)).toBeDefined();
@@ -76,7 +85,11 @@ describe("App rendering", () => {
 
   it("shows empty state when no results", async () => {
     await act(async () => {
-      render(<App />);
+      render(
+        <ServiceProvider>
+          <App />
+        </ServiceProvider>,
+      );
     });
     expect(screen.getByText("No anime found in this list.")).toBeDefined();
   });
@@ -85,7 +98,11 @@ describe("App rendering", () => {
     const anime = makeAnime();
     storageMock["searchList"] = [anime];
     await act(async () => {
-      render(<App />);
+      render(
+        <ServiceProvider>
+          <App />
+        </ServiceProvider>,
+      );
     });
     expect(screen.getByText("Test Anime")).toBeDefined();
   });
@@ -104,7 +121,11 @@ describe("App rendering", () => {
       }),
     );
     await act(async () => {
-      render(<App />);
+      render(
+        <ServiceProvider>
+          <App />
+        </ServiceProvider>,
+      );
     });
     expect(screen.getByText("LocalStorage Anime")).toBeDefined();
     fireEvent.click(screen.getByText(/Favorites/));
@@ -116,7 +137,11 @@ describe("App rendering", () => {
   it("handles empty localStorage gracefully", async () => {
     vi.stubGlobal("chrome", undefined);
     await act(async () => {
-      render(<App />);
+      render(
+        <ServiceProvider>
+          <App />
+        </ServiceProvider>,
+      );
     });
     expect(screen.getByText("No anime found in this list.")).toBeDefined();
   });
@@ -127,7 +152,11 @@ describe("App rendering", () => {
     // Deliberately omit favorites and trash to trigger the || [] fallback
     localStorage.setItem("animeData", JSON.stringify({ searchList: [anime] }));
     await act(async () => {
-      render(<App />);
+      render(
+        <ServiceProvider>
+          <App />
+        </ServiceProvider>,
+      );
     });
     expect(screen.getByText("Only Search")).toBeDefined();
     // Tabs should show 0 for favorites and trash
@@ -145,7 +174,11 @@ describe("App rendering", () => {
       },
     });
     await act(async () => {
-      render(<App />);
+      render(
+        <ServiceProvider>
+          <App />
+        </ServiceProvider>,
+      );
     });
     expect(screen.getByText("No anime found in this list.")).toBeDefined();
   });
@@ -160,7 +193,11 @@ describe("Tab switching", () => {
     });
     storageMock["favorites"] = [fav];
     await act(async () => {
-      render(<App />);
+      render(
+        <ServiceProvider>
+          <App />
+        </ServiceProvider>,
+      );
     });
     fireEvent.click(screen.getByText(/Favorites/));
     expect(screen.getByText("Fav Anime")).toBeDefined();
@@ -173,7 +210,11 @@ describe("Tab switching", () => {
     });
     storageMock["trash"] = [trashItem];
     await act(async () => {
-      render(<App />);
+      render(
+        <ServiceProvider>
+          <App />
+        </ServiceProvider>,
+      );
     });
     fireEvent.click(screen.getByText(/Trash/));
     expect(screen.getByText("Trash Anime")).toBeDefined();
@@ -181,7 +222,11 @@ describe("Tab switching", () => {
 
   it("shows empty state on empty Favorites tab", async () => {
     await act(async () => {
-      render(<App />);
+      render(
+        <ServiceProvider>
+          <App />
+        </ServiceProvider>,
+      );
     });
     fireEvent.click(screen.getByText(/Favorites/));
     expect(screen.getByText("No anime found in this list.")).toBeDefined();
@@ -189,7 +234,11 @@ describe("Tab switching", () => {
 
   it("shows empty state on empty Trash tab", async () => {
     await act(async () => {
-      render(<App />);
+      render(
+        <ServiceProvider>
+          <App />
+        </ServiceProvider>,
+      );
     });
     fireEvent.click(screen.getByText(/Trash/));
     expect(screen.getByText("No anime found in this list.")).toBeDefined();
@@ -201,7 +250,11 @@ describe("Card actions", () => {
   it("moves item to Favorites", async () => {
     storageMock["searchList"] = [makeAnime()];
     await act(async () => {
-      render(<App />);
+      render(
+        <ServiceProvider>
+          <App />
+        </ServiceProvider>,
+      );
     });
     fireEvent.click(screen.getByText("❤ Favorite"));
     expect(screen.queryByText("Test Anime")).toBeNull();
@@ -216,7 +269,11 @@ describe("Card actions", () => {
       JSON.stringify({ searchList: [makeAnime()], favorites: [], trash: [] }),
     );
     await act(async () => {
-      render(<App />);
+      render(
+        <ServiceProvider>
+          <App />
+        </ServiceProvider>,
+      );
     });
     fireEvent.click(screen.getByText("❤ Favorite"));
     const saved = JSON.parse(localStorage.getItem("animeData") || "{}");
@@ -233,7 +290,11 @@ describe("Card actions", () => {
       },
     });
     await act(async () => {
-      render(<App />);
+      render(
+        <ServiceProvider>
+          <App />
+        </ServiceProvider>,
+      );
     });
     // Should not throw - just log the error
     fireEvent.click(screen.getByText("❤ Favorite"));
@@ -244,7 +305,11 @@ describe("Card actions", () => {
   it("moves item to Trash from Results", async () => {
     storageMock["searchList"] = [makeAnime()];
     await act(async () => {
-      render(<App />);
+      render(
+        <ServiceProvider>
+          <App />
+        </ServiceProvider>,
+      );
     });
     fireEvent.click(screen.getByText("🗑 Trash"));
     expect(screen.queryByText("Test Anime")).toBeNull();
@@ -259,7 +324,11 @@ describe("Card actions", () => {
     });
     storageMock["favorites"] = [fav];
     await act(async () => {
-      render(<App />);
+      render(
+        <ServiceProvider>
+          <App />
+        </ServiceProvider>,
+      );
     });
     fireEvent.click(screen.getByText(/Favorites/));
     fireEvent.click(screen.getByText("🗑 Trash"));
@@ -270,7 +339,11 @@ describe("Card actions", () => {
   it("restores item from Trash", async () => {
     storageMock["trash"] = [makeAnime()];
     await act(async () => {
-      render(<App />);
+      render(
+        <ServiceProvider>
+          <App />
+        </ServiceProvider>,
+      );
     });
     fireEvent.click(screen.getByText(/Trash/));
     fireEvent.click(screen.getByText("↺ Restore"));
@@ -293,7 +366,11 @@ describe("Scan functionality", () => {
     );
 
     await act(async () => {
-      render(<App />);
+      render(
+        <ServiceProvider>
+          <App />
+        </ServiceProvider>,
+      );
     });
     await act(async () => {
       fireEvent.click(screen.getByText("Scan 巴哈姆特動漫瘋"));
@@ -335,7 +412,11 @@ describe("Scan functionality", () => {
     );
 
     await act(async () => {
-      render(<App />);
+      render(
+        <ServiceProvider>
+          <App />
+        </ServiceProvider>,
+      );
     });
     await act(async () => {
       fireEvent.click(screen.getByText("Scan 巴哈姆特動漫瘋"));
@@ -363,7 +444,11 @@ describe("Scan functionality", () => {
     });
 
     await act(async () => {
-      render(<App />);
+      render(
+        <ServiceProvider>
+          <App />
+        </ServiceProvider>,
+      );
     });
     await act(async () => {
       fireEvent.click(screen.getByText("Scan 巴哈姆特動漫瘋"));
@@ -389,7 +474,11 @@ describe("Scan functionality", () => {
     });
 
     await act(async () => {
-      render(<App />);
+      render(
+        <ServiceProvider>
+          <App />
+        </ServiceProvider>,
+      );
     });
     await act(async () => {
       fireEvent.click(screen.getByText("Scan 巴哈姆特動漫瘋"));
@@ -416,7 +505,11 @@ describe("Scan functionality", () => {
     });
 
     await act(async () => {
-      render(<App />);
+      render(
+        <ServiceProvider>
+          <App />
+        </ServiceProvider>,
+      );
     });
     await act(async () => {
       fireEvent.click(screen.getByText("Scan 巴哈姆特動漫瘋"));
@@ -443,7 +536,11 @@ describe("Scan functionality", () => {
     });
 
     await act(async () => {
-      render(<App />);
+      render(
+        <ServiceProvider>
+          <App />
+        </ServiceProvider>,
+      );
     });
     await act(async () => {
       fireEvent.click(screen.getByText("Scan 巴哈姆特動漫瘋"));
@@ -469,7 +566,11 @@ describe("Scan functionality", () => {
     });
 
     await act(async () => {
-      render(<App />);
+      render(
+        <ServiceProvider>
+          <App />
+        </ServiceProvider>,
+      );
     });
     await act(async () => {
       fireEvent.click(screen.getByText("Scan 巴哈姆特動漫瘋"));

@@ -1,11 +1,13 @@
 import { useState } from "react";
-import { scraperService, type AnimeItem } from "../services/scraper";
+import { type AnimeItem } from "../services/scraper";
+import { useServices } from "../contexts/ServiceContext";
 
 export function useAnimeScanner(
   favorites: AnimeItem[],
   trash: AnimeItem[],
   onScanComplete: (newItems: AnimeItem[]) => void,
 ) {
+  const { scraperService } = useServices();
   const [isScanning, setIsScanning] = useState(false);
   const [progress, setProgress] = useState({ percent: 0, message: "" });
 
