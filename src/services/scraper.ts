@@ -1,4 +1,9 @@
-import { type AnimeItem, type AnimeDetails } from "../types/anime";
+import {
+  type AnimeItem,
+  type AnimeDetails,
+  type ScrapeListResult,
+  type ScanResult,
+} from "../types/anime";
 import {
   ScraperErrorSource,
   ScraperHttpError,
@@ -62,100 +67,131 @@ export class ScraperService {
   /**
    * Scrapes basic info for all items on a single page.
    */
-  async scrapeListPage(pageNum: number): Promise<AnimeItem[]> {
+  /**
+   * Parses a single anime card element into an AnimeItem.
+   * Throws ScraperParseError if parsing of required fields fails.
+   */
+  private parseAnimeCard(card: Element, url: string): AnimeItem {
+    const href = card.getAttribute("href");
+    if (!href) {
+      throw new ScraperParseError(
+        ScraperErrorSource.TITLE,
+        url,
+        card.outerHTML.substring(0, 500),
+      );
+    }
+
+    const link = `${BASE_URL}/${href.replace(/^\//, "")}`;
+    const titleEl = card.querySelector(".theme-name");
+    if (!titleEl || !titleEl.textContent?.trim()) {
+      throw new ScraperParseError(
+        ScraperErrorSource.TITLE,
+        url,
+        card.outerHTML.substring(0, 500),
+      );
+    }
+    const title = titleEl.textContent.trim();
+
+    const watchCountEl = card.querySelector(
+      "p:not(.theme-name):not(.theme-time)",
+    );
+    let watchCount = NaN;
+    if (watchCountEl && watchCountEl.textContent) {
+      const str = watchCountEl.textContent.trim();
+      if (str.includes("萬")) {
+        watchCount = Math.floor(parseFloat(str.replace("萬", "")) * 10000);
+      } else {
+        watchCount = parseInt(str.replace(/,/g, ""), 10);
+      }
+    }
+
+    if (isNaN(watchCount)) {
+      throw new ScraperParseError(
+        ScraperErrorSource.WATCH_COUNT,
+        url,
+        card.outerHTML.substring(0, 500),
+      );
+    }
+
+    let episode_count = NaN;
+    let upload_date = new Date(NaN);
+
+    const detailBlock = card.querySelector(".theme-detail-info-block");
+    if (detailBlock) {
+      const epEl = detailBlock.querySelector(".theme-number");
+      if (epEl && epEl.textContent) {
+        episode_count = parseInt(
+          epEl.textContent.replace("共", "").replace("集", "").trim(),
+          10,
+        );
+      }
+
+      const timeEl = detailBlock.querySelector(".theme-time");
+      if (timeEl && timeEl.textContent) {
+        const yearStr = timeEl.textContent.replace("年份：", "").trim();
+        upload_date = new Date(`${yearStr}-01-01T00:00:00Z`);
+      }
+    }
+
+    if (isNaN(episode_count)) {
+      throw new ScraperParseError(
+        ScraperErrorSource.EPISODE_COUNT,
+        url,
+        card.outerHTML.substring(0, 500),
+      );
+    }
+    if (isNaN(upload_date.getTime())) {
+      throw new ScraperParseError(
+        ScraperErrorSource.UPLOAD_DATE,
+        url,
+        card.outerHTML.substring(0, 500),
+      );
+    }
+
+    return {
+      link,
+      title,
+      watch_count: watchCount,
+      episode_count,
+      upload_date,
+      score: 0,
+      rating_count: 0,
+      description: "",
+    };
+  }
+
+  /**
+   * Scrapes basic info for all items on a single page.
+   */
+  async scrapeListPage(pageNum: number): Promise<ScrapeListResult> {
     const url = `${BASE_URL}/animeList.php?page=${pageNum}`;
     const text = await this.fetchText(url);
 
     const items: AnimeItem[] = [];
+    const errors: ScraperParseError[] = [];
     const doc = new DOMParser().parseFromString(text, "text/html");
     const cards = doc.querySelectorAll("a.theme-list-main");
 
     for (const card of Array.from(cards)) {
-      const href = card.getAttribute("href");
-      if (!href) continue;
-
-      const link = `${BASE_URL}/${href.replace(/^\//, "")}`;
-      const titleEl = card.querySelector(".theme-name");
-      if (!titleEl || !titleEl.textContent?.trim()) {
-        throw new ScraperParseError(
-          ScraperErrorSource.TITLE,
-          url,
-          card.outerHTML.substring(0, 500),
-        );
-      }
-      const title = titleEl.textContent.trim();
-
-      const watchCountEl = card.querySelector(
-        "p:not(.theme-name):not(.theme-time)",
-      );
-      let watchCount = NaN;
-      if (watchCountEl && watchCountEl.textContent) {
-        const str = watchCountEl.textContent.trim();
-        if (str.includes("萬")) {
-          // parseFloat is necessary for "2.5萬" -> 25000.
-          // We wrap in Math.floor to ensure we return an integer.
-          watchCount = Math.floor(parseFloat(str.replace("萬", "")) * 10000);
+      try {
+        const item = this.parseAnimeCard(card, url);
+        items.push(item);
+      } catch (error) {
+        if (error instanceof ScraperParseError) {
+          errors.push(error);
         } else {
-          watchCount = parseInt(str.replace(/,/g, ""), 10);
-        }
-      }
-
-      if (isNaN(watchCount)) {
-        throw new ScraperParseError(
-          ScraperErrorSource.WATCH_COUNT,
-          url,
-          card.outerHTML.substring(0, 500),
-        );
-      }
-
-      let episode_count = NaN;
-      let upload_date = new Date(NaN);
-
-      const detailBlock = card.querySelector(".theme-detail-info-block");
-      if (detailBlock) {
-        const epEl = detailBlock.querySelector(".theme-number");
-        if (epEl && epEl.textContent) {
-          episode_count = parseInt(
-            epEl.textContent.replace("共", "").replace("集", "").trim(),
-            10,
+          errors.push(
+            new ScraperParseError(
+              ScraperErrorSource.TITLE,
+              url,
+              card.outerHTML.substring(0, 500),
+            ),
           );
         }
-
-        const timeEl = detailBlock.querySelector(".theme-time");
-        if (timeEl && timeEl.textContent) {
-          const yearStr = timeEl.textContent.replace("年份：", "").trim();
-          upload_date = new Date(`${yearStr}-01-01T00:00:00Z`);
-        }
       }
-
-      if (isNaN(episode_count)) {
-        throw new ScraperParseError(
-          ScraperErrorSource.EPISODE_COUNT,
-          url,
-          card.outerHTML.substring(0, 500),
-        );
-      }
-      if (isNaN(upload_date.getTime())) {
-        throw new ScraperParseError(
-          ScraperErrorSource.UPLOAD_DATE,
-          url,
-          card.outerHTML.substring(0, 500),
-        );
-      }
-
-      items.push({
-        link,
-        title,
-        watch_count: watchCount,
-        episode_count,
-        upload_date,
-        score: 0,
-        rating_count: 0,
-        description: "",
-      });
     }
 
-    return items;
+    return { items, errors };
   }
 
   /**
@@ -222,8 +258,9 @@ export class ScraperService {
     totalPages: number,
     concurrency: number,
     onProgress: (percent: number, msg: string) => void,
-  ): Promise<AnimeItem[]> {
+  ): Promise<ScanResult> {
     const results: AnimeItem[] = [];
+    const errors: (ScraperHttpError | ScraperParseError)[] = [];
     let completed = 0;
 
     const fetchPageAction = async (page: number) => {
@@ -231,8 +268,26 @@ export class ScraperService {
         Math.floor((completed / totalPages) * 100),
         `Fetching page ${page}...`,
       );
-      const items = await this.scrapeListPage(page);
-      results.push(...items);
+      try {
+        const { items, errors: pageErrors } = await this.scrapeListPage(page);
+        results.push(...items);
+        errors.push(...pageErrors);
+      } catch (err) {
+        if (
+          err instanceof ScraperHttpError ||
+          err instanceof ScraperParseError
+        ) {
+          errors.push(err);
+        } else {
+          errors.push(
+            new ScraperHttpError(
+              `${BASE_URL}/animeList.php?page=${page}`,
+              err instanceof Error ? err.message : String(err),
+              500,
+            ),
+          );
+        }
+      }
       completed++;
       onProgress(
         Math.floor((completed / totalPages) * 100),
@@ -243,16 +298,17 @@ export class ScraperService {
     const queue = Array.from({ length: totalPages }, (_, i) => i + 1);
 
     const runWorker = async () => {
-      while (queue.length > 0) {
+      while (true) {
         const page = queue.shift();
-        if (page !== undefined) await fetchPageAction(page);
+        if (page === undefined) break;
+        await fetchPageAction(page);
       }
     };
 
     const workers = Array.from({ length: concurrency }, () => runWorker());
     await Promise.all(workers);
 
-    return results;
+    return { items: results, errors };
   }
 }
 

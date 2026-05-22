@@ -9,7 +9,8 @@ import {
 import { ServiceProvider } from "./contexts/ServiceContext";
 import App from "./App";
 import { scraperService } from "./services/scraper";
-import { type AnimeItem } from "./types/anime";
+import { type AnimeItem, type ScanResult } from "./types/anime";
+import { ScraperHttpError } from "./types/errors";
 
 // --- Chrome storage mock (default) ---
 const storageMock: Record<string, unknown> = {};
@@ -361,8 +362,8 @@ describe("Scan functionality", () => {
     let resolveScrape!: () => void;
     vi.spyOn(scraperService, "getTotalPages").mockResolvedValue(1);
     vi.spyOn(scraperService, "fetchAllWithConcurrency").mockReturnValue(
-      new Promise<AnimeItem[]>((resolve) => {
-        resolveScrape = () => resolve([]);
+      new Promise<ScanResult>((resolve) => {
+        resolveScrape = () => resolve({ items: [], errors: [] });
       }),
     );
 
@@ -401,7 +402,7 @@ describe("Scan functionality", () => {
     vi.spyOn(scraperService, "fetchAllWithConcurrency").mockImplementation(
       async (_pages, _concurrency, onProgress) => {
         onProgress(50, "halfway");
-        return [highScore, lowScore];
+        return { items: [highScore, lowScore], errors: [] };
       },
     );
     vi.spyOn(scraperService, "scrapeAnimeDetails").mockImplementation(
@@ -435,9 +436,10 @@ describe("Scan functionality", () => {
       score: 9.0,
     });
     vi.spyOn(scraperService, "getTotalPages").mockResolvedValue(1);
-    vi.spyOn(scraperService, "fetchAllWithConcurrency").mockResolvedValue([
-      shortShow,
-    ]);
+    vi.spyOn(scraperService, "fetchAllWithConcurrency").mockResolvedValue({
+      items: [shortShow],
+      errors: [],
+    });
     vi.spyOn(scraperService, "scrapeAnimeDetails").mockResolvedValue({
       score: 9.0,
       rating_count: 100,
@@ -465,9 +467,10 @@ describe("Scan functionality", () => {
       score: 9.0,
     });
     vi.spyOn(scraperService, "getTotalPages").mockResolvedValue(1);
-    vi.spyOn(scraperService, "fetchAllWithConcurrency").mockResolvedValue([
-      ova,
-    ]);
+    vi.spyOn(scraperService, "fetchAllWithConcurrency").mockResolvedValue({
+      items: [ova],
+      errors: [],
+    });
     vi.spyOn(scraperService, "scrapeAnimeDetails").mockResolvedValue({
       score: 9.0,
       rating_count: 100,
@@ -496,9 +499,10 @@ describe("Scan functionality", () => {
     });
     storageMock["trash"] = [trashItem];
     vi.spyOn(scraperService, "getTotalPages").mockResolvedValue(1);
-    vi.spyOn(scraperService, "fetchAllWithConcurrency").mockResolvedValue([
-      trashItem,
-    ]);
+    vi.spyOn(scraperService, "fetchAllWithConcurrency").mockResolvedValue({
+      items: [trashItem],
+      errors: [],
+    });
     vi.spyOn(scraperService, "scrapeAnimeDetails").mockResolvedValue({
       score: 9.0,
       rating_count: 100,
@@ -527,9 +531,10 @@ describe("Scan functionality", () => {
     });
     storageMock["favorites"] = [favItem];
     vi.spyOn(scraperService, "getTotalPages").mockResolvedValue(1);
-    vi.spyOn(scraperService, "fetchAllWithConcurrency").mockResolvedValue([
-      favItem,
-    ]);
+    vi.spyOn(scraperService, "fetchAllWithConcurrency").mockResolvedValue({
+      items: [favItem],
+      errors: [],
+    });
     vi.spyOn(scraperService, "scrapeAnimeDetails").mockResolvedValue({
       score: 9.0,
       rating_count: 100,
@@ -557,9 +562,10 @@ describe("Scan functionality", () => {
       score: 9.0,
     });
     vi.spyOn(scraperService, "getTotalPages").mockResolvedValue(1);
-    vi.spyOn(scraperService, "fetchAllWithConcurrency").mockResolvedValue([
-      naEp,
-    ]);
+    vi.spyOn(scraperService, "fetchAllWithConcurrency").mockResolvedValue({
+      items: [naEp],
+      errors: [],
+    });
     vi.spyOn(scraperService, "scrapeAnimeDetails").mockResolvedValue({
       score: 9.0,
       rating_count: 100,
@@ -578,5 +584,93 @@ describe("Scan functionality", () => {
     });
     await waitFor(() => expect(screen.queryByText("Scanning...")).toBeNull());
     expect(screen.queryByText("NA Ep")).toBeNull();
+  });
+
+  it("renders warning alert when scan encounters errors and supports details toggle", async () => {
+    const anime = makeAnime({ title: "Partial Success", score: 9.0 });
+    const mockError = new ScraperHttpError("", "HTTP 502", 502);
+
+    vi.spyOn(scraperService, "getTotalPages").mockResolvedValue(2);
+    vi.spyOn(scraperService, "fetchAllWithConcurrency").mockResolvedValue({
+      items: [anime],
+      errors: [mockError],
+    });
+    vi.spyOn(scraperService, "scrapeAnimeDetails").mockResolvedValue({
+      score: 9.0,
+      rating_count: 100,
+      description: "x",
+    });
+
+    await act(async () => {
+      render(
+        <ServiceProvider>
+          <App />
+        </ServiceProvider>,
+      );
+    });
+
+    await act(async () => {
+      fireEvent.click(screen.getByText("Scan 巴哈姆特動漫瘋"));
+    });
+
+    await waitFor(() => expect(screen.queryByText("Scanning...")).toBeNull());
+
+    // Expect warning alert to be rendered
+    expect(screen.getByText(/1 parsing\/network errors/)).toBeDefined();
+    expect(screen.queryByText(/status 502/)).toBeNull();
+
+    // Toggle to show details
+    fireEvent.click(screen.getByText("Show Details"));
+    expect(screen.getByText(/URL: unknown/)).toBeDefined();
+    expect(screen.getByText(/status 502/)).toBeDefined();
+
+    // Toggle to hide details
+    fireEvent.click(screen.getByText("Hide Details"));
+    expect(screen.queryByText(/status 502/)).toBeNull();
+  });
+
+  it("renders more than 10 errors text when errors count > 10", async () => {
+    const anime = makeAnime({ title: "Partial Success", score: 9.0 });
+    const errorsList = Array.from(
+      { length: 11 },
+      (_, i) =>
+        new ScraperHttpError(
+          `https://ani.gamer.com.tw/animeList.php?page=${i}`,
+          `Error ${i}`,
+          500,
+        ),
+    );
+
+    vi.spyOn(scraperService, "getTotalPages").mockResolvedValue(1);
+    vi.spyOn(scraperService, "fetchAllWithConcurrency").mockResolvedValue({
+      items: [anime],
+      errors: errorsList,
+    });
+    vi.spyOn(scraperService, "scrapeAnimeDetails").mockResolvedValue({
+      score: 9.0,
+      rating_count: 100,
+      description: "x",
+    });
+
+    await act(async () => {
+      render(
+        <ServiceProvider>
+          <App />
+        </ServiceProvider>,
+      );
+    });
+
+    await act(async () => {
+      fireEvent.click(screen.getByText("Scan 巴哈姆特動漫瘋"));
+    });
+
+    await waitFor(() => expect(screen.queryByText("Scanning...")).toBeNull());
+
+    // Expect warning alert to be rendered
+    expect(screen.getByText(/11 parsing\/network errors/)).toBeDefined();
+
+    // Toggle to show details
+    fireEvent.click(screen.getByText("Show Details"));
+    expect(screen.getByText(/And 1 more errors.../)).toBeDefined();
   });
 });

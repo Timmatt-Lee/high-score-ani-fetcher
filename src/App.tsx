@@ -9,6 +9,7 @@ import "./index.css";
 
 function App() {
   const [activeTab, setActiveTab] = useState<TabType>("search");
+  const [showErrorDetails, setShowErrorDetails] = useState(false);
 
   const {
     searchList,
@@ -21,7 +22,7 @@ function App() {
     saveData,
   } = useAnimeData();
 
-  const { isScanning, progress, handleScan } = useAnimeScanner(
+  const { isScanning, progress, errors, handleScan } = useAnimeScanner(
     favorites,
     trash,
     (newItems) => {
@@ -48,6 +49,37 @@ function App() {
         percent={progress.percent}
         message={progress.message}
       />
+
+      {errors.length > 0 && (
+        <div className={styles.warningAlert}>
+          <div className={styles.warningHeader}>
+            <span>
+              ⚠️ Scan completed with {errors.length} parsing/network errors.
+              Remaining items were loaded.
+            </span>
+            <button
+              className={styles.toggleDetailsBtn}
+              onClick={() => setShowErrorDetails(!showErrorDetails)}
+            >
+              {showErrorDetails ? "Hide Details" : "Show Details"}
+            </button>
+          </div>
+          {showErrorDetails && (
+            <ul className={styles.warningList}>
+              {errors.slice(0, 10).map((err, i) => (
+                <li key={i} className={styles.warningItem}>
+                  {err.name} (URL: {err.url || "unknown"}) — {err.message}
+                </li>
+              ))}
+              {errors.length > 10 && (
+                <li className={styles.warningItem}>
+                  And {errors.length - 10} more errors...
+                </li>
+              )}
+            </ul>
+          )}
+        </div>
+      )}
 
       <Tabs
         activeTab={activeTab}

@@ -112,33 +112,34 @@ describe("scraperService.scrapeListPage", () => {
       </a>
     `),
     );
-    const results = await scraperService.scrapeListPage(1);
-    expect(results).toHaveLength(1);
-    expect(results[0].title).toBe("Test Anime");
-    expect(results[0].episode_count).toBe(12);
-    expect(results[0].watch_count).toBe(25000);
-    expect(results[0].upload_date.getFullYear()).toBe(2024);
+    const { items, errors } = await scraperService.scrapeListPage(1);
+    expect(errors).toHaveLength(0);
+    expect(items).toHaveLength(1);
+    expect(items[0].title).toBe("Test Anime");
+    expect(items[0].episode_count).toBe(12);
+    expect(items[0].watch_count).toBe(25000);
+    expect(items[0].upload_date.getFullYear()).toBe(2024);
   });
 
-  it("throws ScraperParseError when title is missing", async () => {
+  it("collects ScraperParseError when title is missing", async () => {
     mockFetch(makeHtml('<a class="theme-list-main" href="/x"></a>'));
-    try {
-      await scraperService.scrapeListPage(1);
-      expect.fail("Should have thrown ScraperParseError");
-    } catch (err) {
-      const parseErr = err as ScraperParseError;
-      expect(parseErr).toBeInstanceOf(ScraperParseError);
-      expect(parseErr.source).toBe(ScraperErrorSource.TITLE);
-    }
+    const { items, errors } = await scraperService.scrapeListPage(1);
+    expect(items).toHaveLength(0);
+    expect(errors).toHaveLength(1);
+    expect(errors[0]).toBeInstanceOf(ScraperParseError);
+    expect(errors[0].source).toBe(ScraperErrorSource.TITLE);
   });
 
-  it("skips cards without href", async () => {
+  it("collects ScraperParseError when card has no href", async () => {
     mockFetch(makeHtml('<a class="theme-list-main"></a>'));
-    const results = await scraperService.scrapeListPage(1);
-    expect(results).toHaveLength(0);
+    const { items, errors } = await scraperService.scrapeListPage(1);
+    expect(items).toHaveLength(0);
+    expect(errors).toHaveLength(1);
+    expect(errors[0]).toBeInstanceOf(ScraperParseError);
+    expect(errors[0].source).toBe(ScraperErrorSource.TITLE);
   });
 
-  it("throws ScraperParseError when watch count parsing fails", async () => {
+  it("collects ScraperParseError when watch count parsing fails", async () => {
     mockFetch(
       makeHtml(`
       <a class="theme-list-main" href="/x">
@@ -147,17 +148,14 @@ describe("scraperService.scrapeListPage", () => {
       </a>
     `),
     );
-    try {
-      await scraperService.scrapeListPage(1);
-      expect.fail("Should have thrown ScraperParseError");
-    } catch (err) {
-      const parseErr = err as ScraperParseError;
-      expect(parseErr).toBeInstanceOf(ScraperParseError);
-      expect(parseErr.source).toBe(ScraperErrorSource.WATCH_COUNT);
-    }
+    const { items, errors } = await scraperService.scrapeListPage(1);
+    expect(items).toHaveLength(0);
+    expect(errors).toHaveLength(1);
+    expect(errors[0]).toBeInstanceOf(ScraperParseError);
+    expect(errors[0].source).toBe(ScraperErrorSource.WATCH_COUNT);
   });
 
-  it("throws ScraperParseError when episode count parsing fails", async () => {
+  it("collects ScraperParseError when episode count parsing fails", async () => {
     mockFetch(
       makeHtml(`
       <a class="theme-list-main" href="/x">
@@ -170,17 +168,14 @@ describe("scraperService.scrapeListPage", () => {
       </a>
     `),
     );
-    try {
-      await scraperService.scrapeListPage(1);
-      expect.fail("Should have thrown ScraperParseError");
-    } catch (err) {
-      const parseErr = err as ScraperParseError;
-      expect(parseErr).toBeInstanceOf(ScraperParseError);
-      expect(parseErr.source).toBe(ScraperErrorSource.EPISODE_COUNT);
-    }
+    const { items, errors } = await scraperService.scrapeListPage(1);
+    expect(items).toHaveLength(0);
+    expect(errors).toHaveLength(1);
+    expect(errors[0]).toBeInstanceOf(ScraperParseError);
+    expect(errors[0].source).toBe(ScraperErrorSource.EPISODE_COUNT);
   });
 
-  it("throws ScraperParseError when upload date parsing fails", async () => {
+  it("collects ScraperParseError when upload date parsing fails", async () => {
     mockFetch(
       makeHtml(`
       <a class="theme-list-main" href="/x">
@@ -193,14 +188,11 @@ describe("scraperService.scrapeListPage", () => {
       </a>
     `),
     );
-    try {
-      await scraperService.scrapeListPage(1);
-      expect.fail("Should have thrown ScraperParseError");
-    } catch (err) {
-      const parseErr = err as ScraperParseError;
-      expect(parseErr).toBeInstanceOf(ScraperParseError);
-      expect(parseErr.source).toBe(ScraperErrorSource.UPLOAD_DATE);
-    }
+    const { items, errors } = await scraperService.scrapeListPage(1);
+    expect(items).toHaveLength(0);
+    expect(errors).toHaveLength(1);
+    expect(errors[0]).toBeInstanceOf(ScraperParseError);
+    expect(errors[0].source).toBe(ScraperErrorSource.UPLOAD_DATE);
   });
 
   it("handles watch count with 萬 suffix", async () => {
@@ -216,8 +208,27 @@ describe("scraperService.scrapeListPage", () => {
       </a>
     `),
     );
-    const results = await scraperService.scrapeListPage(1);
-    expect(results[0].watch_count).toBe(25000);
+    const { items, errors } = await scraperService.scrapeListPage(1);
+    expect(errors).toHaveLength(0);
+    expect(items[0].watch_count).toBe(25000);
+  });
+
+  it("wraps unexpected parsing errors into ScraperParseError", async () => {
+    mockFetch(
+      makeHtml(`
+      <a class="theme-list-main" href="/anime.php">
+        <p class="theme-name">Title</p>
+      </a>
+    `),
+    );
+    // Force querySelector to throw an error during execution
+    vi.spyOn(Element.prototype, "querySelector").mockImplementation(() => {
+      throw new Error("unexpected DOM query failure");
+    });
+    const { items, errors } = await scraperService.scrapeListPage(1);
+    expect(items).toHaveLength(0);
+    expect(errors).toHaveLength(1);
+    expect(errors[0]).toBeInstanceOf(ScraperParseError);
   });
 });
 
@@ -310,20 +321,80 @@ describe("scraperService.scrapeAnimeDetails", () => {
 // --- fetchAllWithConcurrency ---
 describe("scraperService.fetchAllWithConcurrency", () => {
   it("calls scrapeListPage for each page and aggregates results", async () => {
-    const spy = vi.spyOn(scraperService, "scrapeListPage").mockResolvedValue([
-      {
-        link: "a",
-        title: "A",
-        watch_count: 100,
-        episode_count: 12,
-        upload_date: new Date(),
-        score: 0,
-        rating_count: 0,
-        description: "",
-      } as AnimeItem,
-    ]);
-    const results = await scraperService.fetchAllWithConcurrency(2, 1, vi.fn());
+    const spy = vi.spyOn(scraperService, "scrapeListPage").mockResolvedValue({
+      items: [
+        {
+          link: "a",
+          title: "A",
+          watch_count: 100,
+          episode_count: 12,
+          upload_date: new Date(),
+          score: 0,
+          rating_count: 0,
+          description: "",
+        } as AnimeItem,
+      ],
+      errors: [],
+    });
+    const { items, errors } = await scraperService.fetchAllWithConcurrency(
+      2,
+      1,
+      vi.fn(),
+    );
     expect(spy).toHaveBeenCalledTimes(2);
-    expect(results).toHaveLength(2);
+    expect(items).toHaveLength(2);
+    expect(errors).toHaveLength(0);
+  });
+
+  it("aggregates page-level fetch errors in fetchAllWithConcurrency", async () => {
+    vi.spyOn(
+      scraperService as unknown as { fetchText: () => Promise<string> },
+      "fetchText",
+    ).mockRejectedValue(
+      new ScraperHttpError("http://error", "Error text", 404),
+    );
+    const { items, errors } = await scraperService.fetchAllWithConcurrency(
+      1,
+      1,
+      vi.fn(),
+    );
+    expect(items).toHaveLength(0);
+    expect(errors).toHaveLength(1);
+    expect(errors[0]).toBeInstanceOf(ScraperHttpError);
+    expect((errors[0] as ScraperHttpError).status).toBe(404);
+  });
+
+  it("wraps unexpected page-level errors in fetchAllWithConcurrency", async () => {
+    vi.spyOn(
+      scraperService as unknown as { fetchText: () => Promise<string> },
+      "fetchText",
+    ).mockRejectedValue(new Error("Generic Network Error"));
+    const { items, errors } = await scraperService.fetchAllWithConcurrency(
+      1,
+      1,
+      vi.fn(),
+    );
+    expect(items).toHaveLength(0);
+    expect(errors).toHaveLength(1);
+    expect(errors[0]).toBeInstanceOf(ScraperHttpError);
+    expect((errors[0] as ScraperHttpError).html).toContain(
+      "Generic Network Error",
+    );
+  });
+
+  it("wraps non-Error page-level errors in fetchAllWithConcurrency", async () => {
+    vi.spyOn(
+      scraperService as unknown as { fetchText: () => Promise<string> },
+      "fetchText",
+    ).mockRejectedValue("String Network Error");
+    const { items, errors } = await scraperService.fetchAllWithConcurrency(
+      1,
+      1,
+      vi.fn(),
+    );
+    expect(items).toHaveLength(0);
+    expect(errors).toHaveLength(1);
+    expect(errors[0]).toBeInstanceOf(ScraperHttpError);
+    expect((errors[0] as ScraperHttpError).html).toBe("String Network Error");
   });
 });
