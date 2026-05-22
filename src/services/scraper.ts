@@ -18,17 +18,26 @@ const BASE_URL = "https://ani.gamer.com.tw";
  * Custom error class for Scraper failures to provide better debugging context.
  */
 export class ScraperError extends Error {
+  url: string;
+  status?: number;
+  statusText?: string;
+  htmlSnippet?: string;
+
   constructor(
     message: string,
-    public url: string,
-    public status?: number,
-    public statusText?: string,
-    public htmlSnippet?: string,
+    url: string,
+    status?: number,
+    statusText?: string,
+    htmlSnippet?: string,
   ) {
     super(
       `${message} (URL: ${url}${status ? `, Status: ${status} ${statusText}` : ""})`,
     );
     this.name = "ScraperError";
+    this.url = url;
+    this.status = status;
+    this.statusText = statusText;
+    this.htmlSnippet = htmlSnippet;
   }
 }
 

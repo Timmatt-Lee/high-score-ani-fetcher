@@ -1,4 +1,4 @@
-import { createContext, useContext, ReactNode } from "react";
+import { createContext, useContext, type ReactNode } from "react";
 import { scraperService, ScraperService } from "../services/scraper";
 
 interface ServiceContextType {

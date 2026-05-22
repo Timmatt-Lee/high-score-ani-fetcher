@@ -1,7 +1,7 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import { renderHook } from "@testing-library/react";
 import { useServices, ServiceProvider } from "./ServiceContext";
-import { ReactNode } from "react";
+import { type ReactNode } from "react";
 
 describe("ServiceContext", () => {
   it("throws error when useServices is used outside ServiceProvider", () => {
