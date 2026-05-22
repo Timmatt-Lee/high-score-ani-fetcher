@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { type AnimeItem } from "../services/scraper";
+import { type AnimeItem } from "../types/anime";
 
 export function useAnimeData() {
   const [searchList, setSearchList] = useState<AnimeItem[]>([]);

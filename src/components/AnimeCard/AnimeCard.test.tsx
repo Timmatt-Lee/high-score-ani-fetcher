@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
 import { AnimeCard } from "./AnimeCard";
-import { type AnimeItem } from "../../services/scraper";
+import { type AnimeItem } from "../../types/anime";
 
 const makeAnime = (): AnimeItem => ({
   link: "http://test",

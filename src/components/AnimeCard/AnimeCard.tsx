@@ -1,4 +1,4 @@
-import { type AnimeItem } from "../../services/scraper";
+import { type AnimeItem } from "../../types/anime";
 import styles from "./AnimeCard.module.css";
 
 interface AnimeCardProps {

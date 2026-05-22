@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { scraperService, type AnimeItem, ScraperError } from "./scraper";
+import { scraperService, ScraperError } from "./scraper";
+import { type AnimeItem } from "../types/anime";
 
 // --- Helpers ---
 const makeHtml = (content: string) => `<html><body>${content}</body></html>`;

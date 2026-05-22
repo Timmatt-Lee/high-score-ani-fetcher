@@ -1,7 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { renderHook, act } from "@testing-library/react";
 import { useAnimeScanner } from "./useAnimeScanner";
-import { scraperService, type AnimeItem } from "../services/scraper";
+import { scraperService } from "../services/scraper";
+import { type AnimeItem } from "../types/anime";
 import { ServiceProvider } from "../contexts/ServiceContext";
 
 const makeAnime = (title: string): AnimeItem => ({
