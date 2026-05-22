@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { type AnimeItem } from "../services/scraper";
+import { type AnimeItem } from "../types/anime";
 import { useServices } from "../contexts/ServiceContext";
 
 export function useAnimeScanner(

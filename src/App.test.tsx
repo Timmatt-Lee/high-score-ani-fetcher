@@ -8,7 +8,8 @@ import {
 } from "@testing-library/react";
 import { ServiceProvider } from "./contexts/ServiceContext";
 import App from "./App";
-import { scraperService, type AnimeItem } from "./services/scraper";
+import { scraperService } from "./services/scraper";
+import { type AnimeItem } from "./types/anime";
 
 // --- Chrome storage mock (default) ---
 const storageMock: Record<string, unknown> = {};
