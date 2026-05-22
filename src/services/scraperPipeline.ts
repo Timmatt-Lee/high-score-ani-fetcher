@@ -16,31 +16,57 @@ export class ScraperPipeline {
   private detailsTotal = 0;
   private pageQueue: number[];
 
+  private totalPages: number;
+  private pageConcurrency: number;
+  private detailConcurrency: number;
+  private filterItem: (item: AnimeItem) => boolean;
+  private onProgress: (
+    pagesCompleted: number,
+    pagesTotal: number,
+    detailsCompleted: number,
+    detailsTotal: number,
+    currentTitle: string,
+  ) => void;
+  private scraper: {
+    scrapeListPage: (
+      page: number,
+    ) => Promise<{ items: AnimeItem[]; errors: ScraperParseError[] }>;
+    scrapeAnimeDetails: (link: string) => Promise<{
+      score: number;
+      rating_count: number;
+      description: string;
+    }>;
+  };
+
   constructor(
-    private totalPages: number,
-    private pageConcurrency: number,
-    private detailConcurrency: number,
-    private filterItem: (item: AnimeItem) => boolean,
-    private onProgress: (
+    totalPages: number,
+    pageConcurrency: number,
+    detailConcurrency: number,
+    filterItem: (item: AnimeItem) => boolean,
+    onProgress: (
       pagesCompleted: number,
       pagesTotal: number,
       detailsCompleted: number,
       detailsTotal: number,
       currentTitle: string,
     ) => void,
-    private scraper: {
+    scraper: {
       scrapeListPage: (
         page: number,
       ) => Promise<{ items: AnimeItem[]; errors: ScraperParseError[] }>;
-      scrapeAnimeDetails: (
-        link: string,
-      ) => Promise<{
+      scrapeAnimeDetails: (link: string) => Promise<{
         score: number;
         rating_count: number;
         description: string;
       }>;
     },
   ) {
+    this.totalPages = totalPages;
+    this.pageConcurrency = pageConcurrency;
+    this.detailConcurrency = detailConcurrency;
+    this.filterItem = filterItem;
+    this.onProgress = onProgress;
+    this.scraper = scraper;
     this.pageQueue = Array.from({ length: totalPages }, (_, i) => i + 1);
   }
 
