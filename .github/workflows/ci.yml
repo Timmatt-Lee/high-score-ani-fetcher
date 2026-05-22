@@ -6,12 +6,17 @@ on:
   pull_request:
     branches: ["main"]
 
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -34,8 +39,14 @@ jobs:
       - name: Install Playwright Browsers
         run: npx playwright install --with-deps chromium
 
-      - name: Run E2E and Visual Regression Tests
-        run: npm run test:e2e
+      - name: Run E2E and Update Visual Regression Tests
+        run: npm run test:e2e -- --update-snapshots
+
+      - name: Auto-commit updated snapshots
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "chore(tests): auto-update Linux E2E visual snapshots from CI"
+          file_pattern: "tests/e2e/specs/popup/visual.spec.ts-snapshots/*.png"
 
       - uses: actions/upload-artifact@v4
         if: ${{ !cancelled() }}
