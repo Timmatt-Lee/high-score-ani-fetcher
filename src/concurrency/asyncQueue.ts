@@ -25,6 +25,15 @@ export class AsyncQueue<T> {
    * - If closed, resolves immediately with `undefined`.
    * - Otherwise, returns a promise that resolves when a new item is pushed
    *   or when the queue is closed.
+   *
+   * NOTE ON DESIGN CHOICE:
+   * We return `T | undefined` and use `undefined` as the EOF (End-Of-File/Queue) signal.
+   * Alternative approaches were considered:
+   * 1. Rejecting the pending promises: Thrown exceptions for normal workflow termination
+   *    is an anti-pattern (control flow via exceptions) and risks uncaught rejection crashes.
+   * 2. Using a Symbol sentinel value: Provides strict ambiguity resolution if T could contain
+   *    undefined. However, since T (AnimeItem) is a non-null object type, returning `undefined`
+   *    avoids redundant imports and provides a simpler, idiomatic TypeScript developer experience.
    */
   async next(): Promise<T | undefined> {
     if (this.queue.length > 0) {
