@@ -1,45 +1,48 @@
-# Implementation Plan - Scraper Refactoring & Error Handling Improvements
+# Implementation Plan - Scraper Infrastructure & Strictness Upgrade
 
 ## Goal
 
-Refactor `ScraperService` to align with high-quality engineering standards: move from static methods to an instance-based singleton (DI-ready), improve error transparency by throwing explicit errors instead of masking them with defaults, and strictly follow user-specified URL construction.
+Elevate the project to L5 engineering standards by implementing Dependency Injection (DI) for services, enhancing error transparency with custom error types and HTML snippets, refactoring data models for better separation of concerns, and enforcing absolute strictness in parsing to prevent silent failures.
 
 ## Tasks
 
-### 1. Refactor `ScraperService`
+### 1. Refactor Data Models & Interfaces
 
-- [x] Change `BASE_URL` to `https://ani.gamer.com.tw` (no trailing slash).
-- [x] Convert `ScraperService` from a class with static methods to a class that is instantiated.
-- [x] Export a singleton instance of `ScraperService`.
-- [x] Improve `fetch` error handling:
-  - Include the URL and status code in the thrown Error.
-  - [x] `getTotalPages`: Throw if `!response.ok`.
-  - [x] `scrapeListPage`: Throw if `!response.ok` (stop returning `[]`).
-  - [x] `scrapeAnimeDetails`: Throw if `!response.ok`.
-- [x] Increase strictness in parsing:
-  - [x] `getTotalPages`: Throw if `.page_number a` elements are missing.
-  - [x] `getTotalPages`: Throw if the last page text is not a valid number.
-  - [x] `scrapeListPage`: Throw or keep empty if `title` is missing (avoid "No Title").
-  - [x] `scrapeListPage`: Throw if mandatory elements for an `AnimeItem` are missing or invalid (if deemed critical).
+- [x] Create `AnimeDetails` interface for specific detail fields (`score`, `rating_count`, `description`).
+- [x] Refactor `AnimeItem` to inherit from `AnimeDetails`.
+- [x] Ensure all fields use correct types (`number` for counts/scores, `Date` for dates).
 
-### 2. Update Hooks & Components
+### 2. Advanced Error Handling
 
-- [x] Update `useAnimeScanner` to use the `scraperService` instance.
-- [x] Ensure `useAnimeScanner` handles the new thrown errors properly (it already has a `try/catch` block).
+- [x] Implement `ScraperError` custom class.
+- [x] Include `url`, `status`, `statusText`, and `htmlSnippet` in the error context.
+- [x] Implement "Snippet Capture": When a fetch fails, capture the first 500 characters of the response body to facilitate debugging.
+- [x] Enforce "Parsing Strictness":
+  - [x] Throw if `title` is missing (no "No Title" defaults).
+  - [x] Throw if `score` is missing or invalid.
+  - [x] Throw if `description` is missing or empty.
+  - [x] Throw if numeric parsing for watch/episode counts results in `NaN`.
 
-### 3. Update Tests
+### 3. Dependency Injection (DI) Architecture
 
-- [x] Update `src/services/scraper.test.ts` to match the new instance-based API.
-- [x] Update tests to expect thrown errors instead of default/fallback values.
-- [x] Ensure test coverage remains ≥ 99% (Achieved 100%).
+- [x] Create `ServiceProvider` and `ServiceContext` to manage service instances.
+- [x] Use `useServices` hook for service access in components/hooks.
+- [x] Wrap the application entry point with `ServiceProvider`.
+- [x] Update existing hooks (`useAnimeScanner`) to use DI instead of direct imports.
 
-### 4. Verification
+### 4. Refining Logic
 
-- [x] Run `npm run test` (Vitest) to verify unit tests.
-- [x] Run `npm run lint` and `npm run type-check`.
-- [x] (Optional) Run E2E tests if relevant changes affect UI flow.
+- [x] Improve `watchCount` parsing to correctly handle decimal strings like "2.5萬" and ensure integer results via `Math.floor`.
+- [x] Refine CSS selectors to prevent accidental matching of titles instead of meta-data.
+
+### 5. Verification & Quality
+
+- [x] Maintain 100% unit test coverage across all new infrastructure.
+- [x] Add tests for `ServiceContext` and its error boundaries.
+- [x] Ensure all lint rules and type checks pass.
 
 ## Design Decisions
 
-- **Singleton Pattern:** Moving away from `static` allows for easier mocking and aligns better with DI patterns in React (e.g., providing the service via Context).
-- **Fail Fast:** Throwing errors instead of returning "No Title" or "1" (for pages) ensures that scraping failures are noticed and diagnosed immediately rather than producing silent data corruption.
+- **DI for Singleton**: Direct export of a singleton is a "quick fix"; using React Context for DI is the "institutional standard" as it allows for clean mocking in tests and facilitates future growth (e.g., swapping implementations or providing different services per environment).
+- **Hard Error Boundaries**: By throwing on _any_ missing expected data, we ensure that changes in the source site's structure are detected immediately. This is far superior to "best-effort" parsing which leads to hard-to-debug data corruption.
+- **Contextual Errors**: Including the HTML snippet in the error object allows us to see exactly what the scraper was looking at when it failed, without needing to manually reproduce the fetch in a browser.

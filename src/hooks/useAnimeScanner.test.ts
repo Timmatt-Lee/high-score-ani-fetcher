@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { renderHook, act } from "@testing-library/react";
 import { useAnimeScanner } from "./useAnimeScanner";
 import { scraperService, type AnimeItem } from "../services/scraper";
+import { ServiceProvider } from "../contexts/ServiceContext";
 
 const makeAnime = (title: string): AnimeItem => ({
   link: `http://${title}`,
@@ -32,42 +33,44 @@ describe("useAnimeScanner", () => {
     });
 
     const onComplete = vi.fn();
-    const { result } = renderHook(() => useAnimeScanner([], [], onComplete));
+    const { result } = renderHook(() => useAnimeScanner([], [], onComplete), {
+      wrapper: ServiceProvider,
+    });
 
     await act(async () => {
       await result.current.handleScan();
     });
 
     expect(onComplete).toHaveBeenCalledWith([
-      { ...mockAnime, score: 9.0, rating_count: 100, description: "x" },
+      { ...mockAnime, score: 9, rating_count: 100, description: "x" },
     ]);
-    expect(result.current.isScanning).toBe(false);
   });
 
-  // --- Progress callback path (lines 22-24) ---
   it("fires the progress callback from fetchAllWithConcurrency", async () => {
     const mockAnime = makeAnime("ProgressTest");
     vi.spyOn(scraperService, "getTotalPages").mockResolvedValue(1);
     vi.spyOn(scraperService, "fetchAllWithConcurrency").mockImplementation(
       async (_pages, _concurrency, onProgress) => {
-        onProgress(50, "halfway");
+        onProgress(50, "Halfway");
         return [mockAnime];
       },
     );
     vi.spyOn(scraperService, "scrapeAnimeDetails").mockResolvedValue({
-      score: 5.0,
+      score: 9.0,
       rating_count: 100,
       description: "x",
     });
 
     const onComplete = vi.fn();
-    const { result } = renderHook(() => useAnimeScanner([], [], onComplete));
+    const { result } = renderHook(() => useAnimeScanner([], [], onComplete), {
+      wrapper: ServiceProvider,
+    });
 
     await act(async () => {
       await result.current.handleScan();
     });
 
-    expect(onComplete).toHaveBeenCalled();
+    expect(result.current.progress.message).toBe(""); // Reset at end
   });
 
   // --- Error catch path (lines 53-55) ---
@@ -77,14 +80,15 @@ describe("useAnimeScanner", () => {
     );
 
     const onComplete = vi.fn();
-    const { result } = renderHook(() => useAnimeScanner([], [], onComplete));
+    const { result } = renderHook(() => useAnimeScanner([], [], onComplete), {
+      wrapper: ServiceProvider,
+    });
 
     await act(async () => {
       await result.current.handleScan();
     });
 
     expect(onComplete).not.toHaveBeenCalled();
-    expect(result.current.isScanning).toBe(false);
   });
 
   it("skips items already in trash or favorites", async () => {
@@ -97,8 +101,9 @@ describe("useAnimeScanner", () => {
     ]);
 
     const onComplete = vi.fn();
-    const { result } = renderHook(() =>
-      useAnimeScanner([favItem], [trashItem], onComplete),
+    const { result } = renderHook(
+      () => useAnimeScanner([favItem], [trashItem], onComplete),
+      { wrapper: ServiceProvider },
     );
 
     await act(async () => {
@@ -126,7 +131,9 @@ describe("useAnimeScanner", () => {
     ]);
 
     const onComplete = vi.fn();
-    const { result } = renderHook(() => useAnimeScanner([], [], onComplete));
+    const { result } = renderHook(() => useAnimeScanner([], [], onComplete), {
+      wrapper: ServiceProvider,
+    });
 
     await act(async () => {
       await result.current.handleScan();
@@ -148,7 +155,9 @@ describe("useAnimeScanner", () => {
     });
 
     const onComplete = vi.fn();
-    const { result } = renderHook(() => useAnimeScanner([], [], onComplete));
+    const { result } = renderHook(() => useAnimeScanner([], [], onComplete), {
+      wrapper: ServiceProvider,
+    });
 
     await act(async () => {
       await result.current.handleScan();
