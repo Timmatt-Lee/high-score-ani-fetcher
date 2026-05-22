@@ -25,7 +25,7 @@ test.describe("Popup Visual Regression", () => {
 
   test("should match visual snapshot for initial state", async ({ page }) => {
     await expect(page.getByText("AniFetcher Pro")).toBeVisible();
-    await expect(page).toHaveScreenshot("popup-initial.png");
+    await expect(page.locator("body")).toHaveScreenshot("popup-initial.png");
   });
 
   test("should match visual snapshot for scanning state", async ({ page }) => {
@@ -62,7 +62,7 @@ test.describe("Popup Visual Regression", () => {
     ).toBeVisible();
 
     // Take screenshot of scanning state
-    await expect(page).toHaveScreenshot("popup-scanning.png");
+    await expect(page.locator("body")).toHaveScreenshot("popup-scanning.png");
   });
 
   test("should match visual snapshot for results state", async ({ page }) => {
@@ -98,6 +98,6 @@ test.describe("Popup Visual Regression", () => {
     });
 
     // Take screenshot of the populated result state
-    await expect(page).toHaveScreenshot("popup-results.png");
+    await expect(page.locator("body")).toHaveScreenshot("popup-results.png");
   });
 });
