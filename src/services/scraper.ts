@@ -401,7 +401,6 @@ export class ScraperService {
   ): Promise<ScanResult> {
     const results: AnimeItem[] = [];
     const errors: (ScraperHttpError | ScraperParseError)[] = [];
-    const itemOrderMap = new Map<string, number>();
 
     const queue = new AsyncQueue<AnimeItem>();
     let pagesCompleted = 0;
@@ -416,10 +415,7 @@ export class ScraperService {
           await this.scrapeListPage(page);
         errors.push(...pageErrors);
 
-        pageItems.forEach((item, cardIndex) => {
-          const rank = page * 1000 + cardIndex;
-          itemOrderMap.set(item.link, rank);
-
+        pageItems.forEach((item) => {
           if (filterItem(item)) {
             detailsTotal++;
             queue.push(item);
@@ -513,13 +509,6 @@ export class ScraperService {
     await Promise.all(pageWorkers);
     queue.close();
     await Promise.all(detailWorkers);
-
-    // Sort final results based on their original placement order
-    results.sort((a, b) => {
-      const rankA = itemOrderMap.get(a.link) ?? 0;
-      const rankB = itemOrderMap.get(b.link) ?? 0;
-      return rankA - rankB;
-    });
 
     return { items: results, errors };
   }

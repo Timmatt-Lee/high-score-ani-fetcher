@@ -96,10 +96,16 @@ export function useAnimeScanner(
 
       collectedErrors.push(...scanErrors);
 
-      const highAwardItems = detailedItems.filter((item) => item.score >= 4.8);
+      const filteredItems = detailedItems.filter((item) => item.score >= 4.8);
+      const sortedItems = filteredItems.sort((a, b) => {
+        if (b.score !== a.score) {
+          return b.score - a.score;
+        }
+        return a.title.localeCompare(b.title);
+      });
 
       setErrors(collectedErrors);
-      onScanComplete(highAwardItems);
+      onScanComplete(sortedItems);
     } finally {
       setIsScanning(false);
       setProgress({ percent: 0, message: "" });
