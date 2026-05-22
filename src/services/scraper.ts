@@ -166,7 +166,7 @@ export class ScraperService {
     const text = await this.fetchText(url);
 
     const items: AnimeItem[] = [];
-    const errors: ScraperParseError[] = [];
+    const parseErrors: ScraperParseError[] = [];
     const doc = new DOMParser().parseFromString(text, "text/html");
     const cards = doc.querySelectorAll("a.theme-list-main");
 
@@ -176,9 +176,9 @@ export class ScraperService {
         items.push(item);
       } catch (error) {
         if (error instanceof ScraperParseError) {
-          errors.push(error);
+          parseErrors.push(error);
         } else {
-          errors.push(
+          parseErrors.push(
             new ScraperParseError(
               ScraperErrorSource.TITLE,
               url,
@@ -189,7 +189,7 @@ export class ScraperService {
       }
     }
 
-    return { items, errors };
+    return { items, parseErrors };
   }
 
   /**
@@ -339,7 +339,8 @@ export class ScraperService {
         `Fetching page ${page}...`,
       );
       try {
-        const { items, errors: pageErrors } = await this.scrapeListPage(page);
+        const { items, parseErrors: pageErrors } =
+          await this.scrapeListPage(page);
         results[page - 1] = items;
         parseErrors.push(...pageErrors);
       } catch (err) {

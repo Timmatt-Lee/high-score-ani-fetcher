@@ -25,12 +25,12 @@ describe("ScraperPipeline", () => {
       if (page === 1) {
         return {
           items: [makeItem("A", "http://a"), makeItem("B", "http://b")],
-          errors: [],
+          parseErrors: [],
         };
       }
       return {
         items: [makeItem("C", "http://c"), makeItem("D", "http://d")],
-        errors: [],
+        parseErrors: [],
       };
     });
 
@@ -78,7 +78,7 @@ describe("ScraperPipeline", () => {
       if (page === 1) {
         return {
           items: [makeItem("A", "http://a"), makeItem("B", "http://b")],
-          errors: [
+          parseErrors: [
             new ScraperParseError(
               ScraperErrorSource.TITLE,
               "http://a",
@@ -146,12 +146,12 @@ describe("ScraperPipeline", () => {
       } else if (page === 2) {
         return {
           items: [makeItem("A", "http://a"), makeItem("B", "http://b")],
-          errors: [],
+          parseErrors: [],
         };
       } else {
         return {
           items: [makeItem("C", "http://c")],
-          errors: [],
+          parseErrors: [],
         };
       }
     });
