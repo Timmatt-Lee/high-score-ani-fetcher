@@ -4,6 +4,7 @@ import {
   type ScrapeListResult,
   type ScanResult,
   type AnimeScraper,
+  type ScanProgressCallback,
 } from "../types/anime";
 import {
   ScraperErrorSource,
@@ -390,13 +391,7 @@ export class ScraperService implements AnimeScraper {
     pageConcurrency: number,
     detailConcurrency: number,
     filterItem: (item: AnimeItem) => boolean,
-    onProgress: (
-      pagesCompleted: number,
-      pagesTotal: number,
-      detailsCompleted: number,
-      detailsTotal: number,
-      currentTitle: string,
-    ) => void,
+    onProgress: ScanProgressCallback,
   ): Promise<ScanResult> {
     const pipeline = new ScraperPipeline(
       totalPages,

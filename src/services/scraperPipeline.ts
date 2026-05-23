@@ -2,6 +2,7 @@ import {
   type AnimeItem,
   type ScanResult,
   type AnimeScraper,
+  type ScanProgressCallback,
 } from "../types/anime";
 import { ScraperHttpError, ScraperParseError } from "../errors";
 import PQueue from "p-queue";
@@ -23,13 +24,7 @@ export class ScraperPipeline {
 
   private totalPages: number;
   private filterItem: (item: AnimeItem) => boolean;
-  private onProgress: (
-    pagesCompleted: number,
-    pagesTotal: number,
-    detailsCompleted: number,
-    detailsTotal: number,
-    currentTitle: string,
-  ) => void;
+  private onProgress: ScanProgressCallback;
   private scraper: AnimeScraper;
 
   constructor(
@@ -37,13 +32,7 @@ export class ScraperPipeline {
     pageConcurrency: number,
     detailConcurrency: number,
     filterItem: (item: AnimeItem) => boolean,
-    onProgress: (
-      pagesCompleted: number,
-      pagesTotal: number,
-      detailsCompleted: number,
-      detailsTotal: number,
-      currentTitle: string,
-    ) => void,
+    onProgress: ScanProgressCallback,
     scraper: AnimeScraper,
   ) {
     this.totalPages = totalPages;

@@ -27,3 +27,11 @@ export interface AnimeScraper {
   scrapeListPage(pageNum: number): Promise<ScrapeListResult>;
   scrapeAnimeDetails(link: string): Promise<AnimeDetails>;
 }
+
+export type ScanProgressCallback = (
+  pagesCompleted: number,
+  pagesTotal: number,
+  detailsCompleted: number,
+  detailsTotal: number,
+  currentTitle: string,
+) => void;
