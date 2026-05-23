@@ -7,6 +7,9 @@ import {
 import { ScraperHttpError, ScraperParseError } from "../errors";
 import PQueue from "p-queue";
 
+// Core pipeline orchestration
+// trigger
+
 /**
  * Encapsulates the state and logic for a two-stage concurrent scraping pipeline.
  * Stage 1: Fetches list pages and enqueues items.
@@ -71,11 +74,9 @@ export class ScraperPipeline {
         await this.scraper.scrapeListPage(page);
       this.parseErrors.push(...pageErrors);
 
-      pageItems.forEach((item) => {
-        if (this.filterItem(item)) {
-          this.detailsTotal++;
-          this.detailQueue.add(() => this.fetchDetail(item));
-        }
+      pageItems.filter(this.filterItem).forEach((item) => {
+        this.detailsTotal++;
+        this.detailQueue.add(() => this.fetchDetail(item));
       });
     } catch (err) {
       this.captureError(
