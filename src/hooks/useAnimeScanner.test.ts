@@ -30,7 +30,7 @@ describe("useAnimeScanner", () => {
     const mockAnime = makeAnime("Test");
     vi.spyOn(scraperService, "getTotalPages").mockResolvedValue({
       isSuccess: true,
-      items: 1,
+      value: 1,
       error: undefined,
     });
     vi.spyOn(scraperService, "scanAllWithPipeline").mockImplementation(
@@ -66,7 +66,7 @@ describe("useAnimeScanner", () => {
     const mockAnime = makeAnime("ProgressTest");
     vi.spyOn(scraperService, "getTotalPages").mockResolvedValue({
       isSuccess: true,
-      items: 1,
+      value: 1,
       error: undefined,
     });
     vi.spyOn(scraperService, "scanAllWithPipeline").mockImplementation(
@@ -92,7 +92,7 @@ describe("useAnimeScanner", () => {
   it("handles scan failure gracefully", async () => {
     vi.spyOn(scraperService, "getTotalPages").mockResolvedValue({
       isSuccess: false,
-      items: undefined,
+      value: undefined,
       error: new ScraperHttpError("", "network down", 500),
     });
 
@@ -113,7 +113,7 @@ describe("useAnimeScanner", () => {
     const favItem = makeAnime("InFav");
     vi.spyOn(scraperService, "getTotalPages").mockResolvedValue({
       isSuccess: true,
-      items: 1,
+      value: 1,
       error: undefined,
     });
     vi.spyOn(scraperService, "scanAllWithPipeline").mockImplementation(
@@ -156,7 +156,7 @@ describe("useAnimeScanner", () => {
 
     vi.spyOn(scraperService, "getTotalPages").mockResolvedValue({
       isSuccess: true,
-      items: 1,
+      value: 1,
       error: undefined,
     });
     vi.spyOn(scraperService, "scanAllWithPipeline").mockImplementation(
@@ -190,7 +190,7 @@ describe("useAnimeScanner", () => {
     const lowScore = makeAnime("LowScore");
     vi.spyOn(scraperService, "getTotalPages").mockResolvedValue({
       isSuccess: true,
-      items: 1,
+      value: 1,
       error: undefined,
     });
     vi.spyOn(scraperService, "scanAllWithPipeline").mockResolvedValue({
@@ -225,7 +225,7 @@ describe("useAnimeScanner", () => {
 
     vi.spyOn(scraperService, "getTotalPages").mockResolvedValue({
       isSuccess: true,
-      items: 1,
+      value: 1,
       error: undefined,
     });
     vi.spyOn(scraperService, "scanAllWithPipeline").mockResolvedValue({
@@ -262,7 +262,7 @@ describe("useAnimeScanner", () => {
     const error = new ScraperHttpError("http://err", "Failed page", 500);
     vi.spyOn(scraperService, "getTotalPages").mockResolvedValue({
       isSuccess: false,
-      items: undefined,
+      value: undefined,
       error: error,
     });
 
@@ -288,7 +288,7 @@ describe("useAnimeScanner", () => {
     );
     vi.spyOn(scraperService, "getTotalPages").mockResolvedValue({
       isSuccess: false,
-      items: undefined,
+      value: undefined,
       error: error,
     });
 
@@ -309,7 +309,7 @@ describe("useAnimeScanner", () => {
   it("handles non-Error thrown during scan in catch block", async () => {
     vi.spyOn(scraperService, "getTotalPages").mockResolvedValue({
       isSuccess: false,
-      items: undefined,
+      value: undefined,
       error: "string error" as unknown as ScraperHttpError,
     });
 
@@ -332,7 +332,7 @@ describe("useAnimeScanner", () => {
     const error = new Error("generic error");
     vi.spyOn(scraperService, "getTotalPages").mockResolvedValue({
       isSuccess: false,
-      items: undefined,
+      value: undefined,
       error: error as unknown as ScraperHttpError,
     });
 
@@ -355,7 +355,7 @@ describe("useAnimeScanner", () => {
     const mockAnime = makeAnime("ZeroProgress");
     vi.spyOn(scraperService, "getTotalPages").mockResolvedValue({
       isSuccess: true,
-      items: 0,
+      value: 0,
       error: undefined,
     });
     vi.spyOn(scraperService, "scanAllWithPipeline").mockImplementation(
@@ -384,7 +384,7 @@ describe("useAnimeScanner", () => {
 
     vi.spyOn(scraperService, "getTotalPages").mockResolvedValue({
       isSuccess: true,
-      items: 1,
+      value: 1,
       error: undefined,
     });
     vi.spyOn(scraperService, "scanAllWithPipeline").mockResolvedValue({

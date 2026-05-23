@@ -5,7 +5,7 @@ describe("Result helpers", () => {
   it("correctly identifies success results", () => {
     const res: Result<number, string> = {
       isSuccess: true,
-      items: 123,
+      value: 123,
       error: undefined,
     };
     expect(isSuccess(res)).toBe(true);
@@ -15,7 +15,7 @@ describe("Result helpers", () => {
   it("correctly identifies failure results", () => {
     const res: Result<number, string> = {
       isSuccess: false,
-      items: undefined,
+      value: undefined,
       error: "error",
     };
     expect(isSuccess(res)).toBe(false);

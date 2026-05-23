@@ -90,7 +90,7 @@ export class ScraperPipeline {
     try {
       const detailsResult = await this.scraper.scrapeAnimeDetails(item.link);
       if (detailsResult.isSuccess) {
-        this.results.push({ ...item, ...detailsResult.items });
+        this.results.push({ ...item, ...detailsResult.value });
       } else {
         this.errors.push(detailsResult.error);
       }

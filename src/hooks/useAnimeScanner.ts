@@ -43,7 +43,7 @@ export function useAnimeScanner(
       setProgress({ percent: 0, message: "" });
       return;
     }
-    const totalPages = totalPagesResult.items;
+    const totalPages = totalPagesResult.value;
 
     try {
       const trashLinks = new Set(trash.map((t) => t.link));
