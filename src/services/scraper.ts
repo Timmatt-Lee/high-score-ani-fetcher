@@ -29,15 +29,19 @@ export class ScraperService implements AnimeScraper {
           .then((t) => t.slice(0, 200));
         return {
           isSuccess: false,
-          items: null,
+          items: undefined,
           error: new ScraperHttpError(url, snippet, response.status),
         };
       }
-      return { isSuccess: true, items: await response.text(), error: null };
+      return {
+        isSuccess: true,
+        items: await response.text(),
+        error: undefined,
+      };
     } catch (err) {
       return {
         isSuccess: false,
-        items: null,
+        items: undefined,
         error: new ScraperHttpError(
           url,
           err instanceof Error ? err.message : String(err),
@@ -63,11 +67,11 @@ export class ScraperService implements AnimeScraper {
       text = textResult.items;
     } catch (err) {
       if (err instanceof ScraperHttpError || err instanceof ScraperParseError) {
-        return { isSuccess: false, items: null, error: err };
+        return { isSuccess: false, items: undefined, error: err };
       }
       return {
         isSuccess: false,
-        items: null,
+        items: undefined,
         error: new ScraperHttpError(
           url,
           err instanceof Error ? err.message : String(err),
@@ -83,7 +87,7 @@ export class ScraperService implements AnimeScraper {
       if (pageLinks.length === 0) {
         return {
           isSuccess: false,
-          items: null,
+          items: undefined,
           error: new ScraperParseError(
             ScraperErrorSource.PAGINATION,
             url,
@@ -96,7 +100,7 @@ export class ScraperService implements AnimeScraper {
       if (!lastPageText) {
         return {
           isSuccess: false,
-          items: null,
+          items: undefined,
           error: new ScraperParseError(
             ScraperErrorSource.PAGINATION,
             url,
@@ -109,7 +113,7 @@ export class ScraperService implements AnimeScraper {
       if (isNaN(totalPages)) {
         return {
           isSuccess: false,
-          items: null,
+          items: undefined,
           error: new ScraperParseError(
             ScraperErrorSource.PAGINATION,
             url,
@@ -118,14 +122,14 @@ export class ScraperService implements AnimeScraper {
         };
       }
 
-      return { isSuccess: true, items: totalPages, error: null };
+      return { isSuccess: true, items: totalPages, error: undefined };
     } catch (err) {
       if (err instanceof ScraperHttpError || err instanceof ScraperParseError) {
-        return { isSuccess: false, items: null, error: err };
+        return { isSuccess: false, items: undefined, error: err };
       }
       return {
         isSuccess: false,
-        items: null,
+        items: undefined,
         error: new ScraperParseError(
           ScraperErrorSource.PAGINATION,
           url,
@@ -146,7 +150,7 @@ export class ScraperService implements AnimeScraper {
     if (!href) {
       return {
         isSuccess: false,
-        items: null,
+        items: undefined,
         error: new ScraperParseError(
           ScraperErrorSource.TITLE,
           url,
@@ -160,7 +164,7 @@ export class ScraperService implements AnimeScraper {
     if (!titleEl || !titleEl.textContent?.trim()) {
       return {
         isSuccess: false,
-        items: null,
+        items: undefined,
         error: new ScraperParseError(
           ScraperErrorSource.TITLE,
           url,
@@ -186,7 +190,7 @@ export class ScraperService implements AnimeScraper {
     if (isNaN(watchCount)) {
       return {
         isSuccess: false,
-        items: null,
+        items: undefined,
         error: new ScraperParseError(
           ScraperErrorSource.WATCH_COUNT,
           url,
@@ -218,7 +222,7 @@ export class ScraperService implements AnimeScraper {
     if (isNaN(episodeCount)) {
       return {
         isSuccess: false,
-        items: null,
+        items: undefined,
         error: new ScraperParseError(
           ScraperErrorSource.EPISODE_COUNT,
           url,
@@ -229,7 +233,7 @@ export class ScraperService implements AnimeScraper {
     if (isNaN(uploadDate.getTime())) {
       return {
         isSuccess: false,
-        items: null,
+        items: undefined,
         error: new ScraperParseError(
           ScraperErrorSource.UPLOAD_DATE,
           url,
@@ -250,7 +254,7 @@ export class ScraperService implements AnimeScraper {
         ratingCount: 0,
         description: "",
       },
-      error: null,
+      error: undefined,
     };
   }
 
@@ -332,11 +336,11 @@ export class ScraperService implements AnimeScraper {
       text = textResult.items;
     } catch (err) {
       if (err instanceof ScraperHttpError || err instanceof ScraperParseError) {
-        return { isSuccess: false, items: null, error: err };
+        return { isSuccess: false, items: undefined, error: err };
       }
       return {
         isSuccess: false,
-        items: null,
+        items: undefined,
         error: new ScraperHttpError(
           link,
           err instanceof Error ? err.message : String(err),
@@ -352,7 +356,7 @@ export class ScraperService implements AnimeScraper {
       if (!scoreNumDiv || !scoreNumDiv.textContent) {
         return {
           isSuccess: false,
-          items: null,
+          items: undefined,
           error: new ScraperParseError(
             ScraperErrorSource.SCORE,
             link,
@@ -364,7 +368,7 @@ export class ScraperService implements AnimeScraper {
       if (isNaN(score)) {
         return {
           isSuccess: false,
-          items: null,
+          items: undefined,
           error: new ScraperParseError(
             ScraperErrorSource.SCORE,
             link,
@@ -377,7 +381,7 @@ export class ScraperService implements AnimeScraper {
       if (!scorePeopleDiv || !scorePeopleDiv.textContent) {
         return {
           isSuccess: false,
-          items: null,
+          items: undefined,
           error: new ScraperParseError(
             ScraperErrorSource.RATING_COUNT,
             link,
@@ -392,7 +396,7 @@ export class ScraperService implements AnimeScraper {
       if (isNaN(ratingCount)) {
         return {
           isSuccess: false,
-          items: null,
+          items: undefined,
           error: new ScraperParseError(
             ScraperErrorSource.RATING_COUNT,
             link,
@@ -405,7 +409,7 @@ export class ScraperService implements AnimeScraper {
       if (!descDiv || !descDiv.textContent?.trim()) {
         return {
           isSuccess: false,
-          items: null,
+          items: undefined,
           error: new ScraperParseError(
             ScraperErrorSource.DESCRIPTION,
             link,
@@ -418,15 +422,15 @@ export class ScraperService implements AnimeScraper {
       return {
         isSuccess: true,
         items: { score, ratingCount, description },
-        error: null,
+        error: undefined,
       };
     } catch (err) {
       if (err instanceof ScraperHttpError || err instanceof ScraperParseError) {
-        return { isSuccess: false, items: null, error: err };
+        return { isSuccess: false, items: undefined, error: err };
       }
       return {
         isSuccess: false,
-        items: null,
+        items: undefined,
         error: new ScraperParseError(
           ScraperErrorSource.DESCRIPTION,
           link,

@@ -43,7 +43,7 @@ describe("ScraperPipeline", () => {
           ratingCount: 100,
           description: `Desc ${char.toUpperCase()}`,
         },
-        error: null,
+        error: undefined,
       };
     });
 
@@ -193,7 +193,7 @@ describe("ScraperPipeline", () => {
         return {
           isSuccess: true,
           items: { score: 9.0, ratingCount: 100, description: "OK" },
-          error: null,
+          error: undefined,
         };
       }
       throw "Raw Detail Error String";
@@ -235,7 +235,7 @@ describe("ScraperPipeline", () => {
 
     const detailSpy = vi.fn().mockResolvedValue({
       isSuccess: false,
-      items: null,
+      items: undefined,
       error: new ScraperHttpError("http://a", "http err returned", 500),
     });
 

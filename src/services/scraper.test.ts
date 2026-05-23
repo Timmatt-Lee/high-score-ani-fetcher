@@ -614,7 +614,7 @@ describe("scraperService.scrapeAnimeDetails", () => {
       "fetchText",
     ).mockResolvedValue({
       isSuccess: false,
-      items: null,
+      items: undefined,
       error: new ScraperHttpError("http://x", "Not Found", 404),
     });
     const result = await scraperService.scrapeAnimeDetails("http://x");
@@ -689,7 +689,7 @@ describe("scraperService.fetchAllWithConcurrency", () => {
       "fetchText",
     ).mockResolvedValue({
       isSuccess: false,
-      items: null,
+      items: undefined,
       error: new ScraperHttpError("http://error", "Error text", 404),
     });
     const { items: items, errors } =
@@ -787,7 +787,7 @@ describe("scraperService.fetchDetailsWithConcurrency", () => {
           ratingCount: 100,
           description: "Desc",
         },
-        error: null,
+        error: undefined,
       });
 
     const item1 = makeItem("A", "http://a");
@@ -824,12 +824,12 @@ describe("scraperService.fetchDetailsWithConcurrency", () => {
           return {
             isSuccess: true,
             items: { score: 8.0, ratingCount: 50, description: "A" },
-            error: null,
+            error: undefined,
           };
         }
         return {
           isSuccess: false,
-          items: null,
+          items: undefined,
           error: customError,
         };
       },
