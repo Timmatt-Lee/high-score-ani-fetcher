@@ -38,7 +38,7 @@ describe("ScraperPipeline", () => {
       const char = link.replace("http://", "");
       return {
         isSuccess: true,
-        items: {
+        value: {
           score: 9.0,
           ratingCount: 100,
           description: `Desc ${char.toUpperCase()}`,
@@ -192,7 +192,7 @@ describe("ScraperPipeline", () => {
       if (link === "http://a" || link === "http://b") {
         return {
           isSuccess: true,
-          items: { score: 9.0, ratingCount: 100, description: "OK" },
+          value: { score: 9.0, ratingCount: 100, description: "OK" },
           error: undefined,
         };
       }
@@ -235,7 +235,7 @@ describe("ScraperPipeline", () => {
 
     const detailSpy = vi.fn().mockResolvedValue({
       isSuccess: false,
-      items: undefined,
+      value: undefined,
       error: new ScraperHttpError("http://a", "http err returned", 500),
     });
 

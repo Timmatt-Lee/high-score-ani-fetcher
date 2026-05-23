@@ -56,7 +56,7 @@ describe("scraperService.getTotalPages", () => {
     const result = await scraperService.getTotalPages();
     expect(result.isSuccess).toBe(true);
     if (result.isSuccess) {
-      expect(result.items).toBe(5);
+      expect(result.value).toBe(5);
     }
   });
 
@@ -101,15 +101,15 @@ describe("scraperService.getTotalPages", () => {
     }
   });
 
-  it("returns isSuccess: false and wraps generic Error thrown inside fetchText in ScraperHttpError", async () => {
+  it("returns isSuccess: false and wraps generic Error thrown inside fetchHtml in ScraperHttpError", async () => {
     vi.spyOn(
       scraperService as unknown as {
-        fetchText: (url: string) => Promise<unknown>;
+        fetchHtml: (url: string) => Promise<unknown>;
       },
-      "fetchText",
+      "fetchHtml",
     ).mockResolvedValue({
       isSuccess: false,
-      items: undefined,
+      value: undefined,
       error: new ScraperHttpError("http://x", "fetch total pages crash", 500),
     });
     const result = await scraperService.getTotalPages();
@@ -135,16 +135,16 @@ describe("scraperService.getTotalPages", () => {
     }
   });
 
-  it("returns isSuccess: false and passes through ScraperHttpError thrown by fetchText in getTotalPages", async () => {
+  it("returns isSuccess: false and passes through ScraperHttpError thrown by fetchHtml in getTotalPages", async () => {
     const error = new ScraperHttpError("http://x", "http error", 502);
     vi.spyOn(
       scraperService as unknown as {
-        fetchText: (url: string) => Promise<unknown>;
+        fetchHtml: (url: string) => Promise<unknown>;
       },
-      "fetchText",
+      "fetchHtml",
     ).mockResolvedValue({
       isSuccess: false,
-      items: undefined,
+      value: undefined,
       error: error,
     });
     const result = await scraperService.getTotalPages();
@@ -152,7 +152,7 @@ describe("scraperService.getTotalPages", () => {
     expect(result.error).toBe(error);
   });
 
-  it("returns isSuccess: false and wraps non-Error thrown by fetchText in getTotalPages in ScraperHttpError", async () => {
+  it("returns isSuccess: false and wraps non-Error thrown by fetchHtml in getTotalPages in ScraperHttpError", async () => {
     vi.stubGlobal("fetch", vi.fn().mockRejectedValue("network string error"));
     const result = await scraperService.getTotalPages();
     expect(result.isSuccess).toBe(false);
@@ -177,16 +177,16 @@ describe("scraperService.getTotalPages", () => {
     }
   });
 
-  it("returns isSuccess: false and wraps generic Error thrown by fetchText in getTotalPages in ScraperHttpError", async () => {
+  it("returns isSuccess: false and wraps generic Error thrown by fetchHtml in getTotalPages in ScraperHttpError", async () => {
     const error = new Error("network issue");
     vi.spyOn(
       scraperService as unknown as {
-        fetchText: (url: string) => Promise<unknown>;
+        fetchHtml: (url: string) => Promise<unknown>;
       },
-      "fetchText",
+      "fetchHtml",
     ).mockResolvedValue({
       isSuccess: false,
-      items: undefined,
+      value: undefined,
       error: new ScraperHttpError("http://x", error.message, 500),
     });
     const result = await scraperService.getTotalPages();
@@ -196,21 +196,6 @@ describe("scraperService.getTotalPages", () => {
       expect(result.error.status).toBe(500);
       expect(result.error.html).toBe("network issue");
     }
-  });
-
-  it("returns isSuccess: false and passes through ScraperParseError thrown during parsing phase in getTotalPages", async () => {
-    mockFetch("Some HTML");
-    const error = new ScraperParseError(
-      ScraperErrorSource.PAGINATION,
-      "http://x",
-      "parse fail",
-    );
-    vi.spyOn(DOMParser.prototype, "parseFromString").mockImplementation(() => {
-      throw error;
-    });
-    const result = await scraperService.getTotalPages();
-    expect(result.isSuccess).toBe(false);
-    expect(result.error).toBe(error);
   });
 
   it("returns isSuccess: false and wraps generic Error thrown during parsing phase in getTotalPages in ScraperParseError", async () => {
@@ -228,15 +213,15 @@ describe("scraperService.getTotalPages", () => {
     }
   });
 
-  it("returns isSuccess: false and wraps non-Error thrown by fetchText in getTotalPages in ScraperHttpError", async () => {
+  it("returns isSuccess: false and wraps non-Error thrown by fetchHtml in getTotalPages in ScraperHttpError", async () => {
     vi.spyOn(
       scraperService as unknown as {
-        fetchText: (url: string) => Promise<unknown>;
+        fetchHtml: (url: string) => Promise<unknown>;
       },
-      "fetchText",
+      "fetchHtml",
     ).mockResolvedValue({
       isSuccess: false,
-      items: undefined,
+      value: undefined,
       error: new ScraperHttpError("http://x", "network issue string", 500),
     });
     const result = await scraperService.getTotalPages();
@@ -503,7 +488,7 @@ describe("scraperService.scrapeListPage", () => {
         parseAnimeCard: () => unknown;
       },
       "parseAnimeCard",
-    ).mockReturnValue({ isSuccess: false, items: undefined, error });
+    ).mockReturnValue({ isSuccess: false, value: undefined, error });
 
     const result = await scraperService.scrapeListPage(1);
     expect(result.errors).toHaveLength(1);
@@ -530,21 +515,36 @@ describe("scraperService.scrapeListPage", () => {
     expect(result.errors).toHaveLength(1);
     expect(result.errors[0].html).toBe("unexpected DOM query failure string");
   });
-  it("returns errors when fetchText fails in scrapeListPage", async () => {
+  it("returns errors when fetchHtml fails in scrapeListPage", async () => {
     vi.spyOn(
       scraperService as unknown as {
-        fetchText: (url: string) => Promise<unknown>;
+        fetchHtml: (url: string) => Promise<unknown>;
       },
-      "fetchText",
+      "fetchHtml",
     ).mockResolvedValue({
       isSuccess: false,
-      items: undefined,
+      value: undefined,
       error: new ScraperHttpError("http://x", "fail", 404),
     });
     const result = await scraperService.scrapeListPage(1);
     expect(result.items).toHaveLength(0);
     expect(result.errors).toHaveLength(1);
     expect(result.errors[0]).toBeInstanceOf(ScraperHttpError);
+  });
+
+  it("returns empty items and error when parseHtml fails in scrapeListPage", async () => {
+    mockFetch("Some HTML");
+    vi.spyOn(DOMParser.prototype, "parseFromString").mockImplementation(() => {
+      throw new Error("unexpected parsing crash");
+    });
+    const result = await scraperService.scrapeListPage(1);
+    expect(result.items).toHaveLength(0);
+    expect(result.errors).toHaveLength(1);
+    expect(result.errors[0]).toBeInstanceOf(ScraperParseError);
+    if (result.errors[0] instanceof ScraperParseError) {
+      expect(result.errors[0].source).toBe(ScraperErrorSource.TITLE);
+      expect(result.errors[0].html).toBe("unexpected parsing crash");
+    }
   });
 });
 
@@ -562,9 +562,9 @@ describe("scraperService.scrapeAnimeDetails", () => {
       await scraperService.scrapeAnimeDetails("http://example.com");
     expect(result.isSuccess).toBe(true);
     if (result.isSuccess) {
-      expect(result.items.score).toBe(8.5);
-      expect(result.items.ratingCount).toBe(1234);
-      expect(result.items.description).toBe("Great show");
+      expect(result.value.score).toBe(8.5);
+      expect(result.value.ratingCount).toBe(1234);
+      expect(result.value.description).toBe("Great show");
     }
   });
 
@@ -635,12 +635,12 @@ describe("scraperService.scrapeAnimeDetails", () => {
     const error = new ScraperHttpError("http://x", "http error", 502);
     vi.spyOn(
       scraperService as unknown as {
-        fetchText: (url: string) => Promise<unknown>;
+        fetchHtml: (url: string) => Promise<unknown>;
       },
-      "fetchText",
+      "fetchHtml",
     ).mockResolvedValue({
       isSuccess: false,
-      items: undefined,
+      value: undefined,
       error: error,
     });
     const result =
@@ -665,16 +665,16 @@ describe("scraperService.scrapeAnimeDetails", () => {
     }
   });
 
-  it("returns isSuccess: false and wraps generic Error thrown by fetchText inside scrapeAnimeDetails in ScraperHttpError", async () => {
+  it("returns isSuccess: false and wraps generic Error thrown by fetchHtml inside scrapeAnimeDetails in ScraperHttpError", async () => {
     const error = new Error("network issue");
     vi.spyOn(
       scraperService as unknown as {
-        fetchText: (url: string) => Promise<unknown>;
+        fetchHtml: (url: string) => Promise<unknown>;
       },
-      "fetchText",
+      "fetchHtml",
     ).mockResolvedValue({
       isSuccess: false,
-      items: undefined,
+      value: undefined,
       error: new ScraperHttpError("http://x", error.message, 500),
     });
     const result =
@@ -687,30 +687,14 @@ describe("scraperService.scrapeAnimeDetails", () => {
     }
   });
 
-  it("returns isSuccess: false and passes through ScraperParseError thrown during parsing phase in scrapeAnimeDetails", async () => {
-    mockFetch("Some HTML");
-    const error = new ScraperParseError(
-      ScraperErrorSource.SCORE,
-      "http://x",
-      "parse fail",
-    );
-    vi.spyOn(DOMParser.prototype, "parseFromString").mockImplementation(() => {
-      throw error;
-    });
-    const result =
-      await scraperService.scrapeAnimeDetails("http://example.com");
-    expect(result.isSuccess).toBe(false);
-    expect(result.error).toBe(error);
-  });
-
-  it("returns isSuccess: false and ScraperHttpError when fetchText returns failure in scrapeAnimeDetails", async () => {
+  it("returns isSuccess: false and ScraperHttpError when fetchHtml returns failure in scrapeAnimeDetails", async () => {
     const error = new ScraperHttpError("http://x", "fail", 404);
     vi.spyOn(
       scraperService as unknown as {
-        fetchText: (url: string) => Promise<unknown>;
+        fetchHtml: (url: string) => Promise<unknown>;
       },
-      "fetchText",
-    ).mockResolvedValue({ isSuccess: false, items: undefined, error });
+      "fetchHtml",
+    ).mockResolvedValue({ isSuccess: false, value: undefined, error });
     const result =
       await scraperService.scrapeAnimeDetails("http://example.com");
     expect(result.isSuccess).toBe(false);
@@ -732,15 +716,15 @@ describe("scraperService.scrapeAnimeDetails", () => {
     }
   });
 
-  it("returns isSuccess: false and wraps non-Error thrown by fetchText inside scrapeAnimeDetails in ScraperHttpError", async () => {
+  it("returns isSuccess: false and wraps non-Error thrown by fetchHtml inside scrapeAnimeDetails in ScraperHttpError", async () => {
     vi.spyOn(
       scraperService as unknown as {
-        fetchText: (url: string) => Promise<unknown>;
+        fetchHtml: (url: string) => Promise<unknown>;
       },
-      "fetchText",
+      "fetchHtml",
     ).mockResolvedValue({
       isSuccess: false,
-      items: undefined,
+      value: undefined,
       error: new ScraperHttpError(
         "http://x",
         "details network string error",
@@ -852,7 +836,7 @@ describe("scraperService.fetchDetailsWithConcurrency", () => {
     const details = { score: 9.0, ratingCount: 100, description: "OK" };
     vi.spyOn(scraperService, "scrapeAnimeDetails").mockResolvedValue({
       isSuccess: true,
-      items: details,
+      value: details,
       error: undefined,
     });
 
@@ -869,7 +853,7 @@ describe("scraperService.fetchDetailsWithConcurrency", () => {
     const error = new ScraperHttpError("http://a", "fail", 404);
     vi.spyOn(scraperService, "scrapeAnimeDetails").mockResolvedValue({
       isSuccess: false,
-      items: undefined,
+      value: undefined,
       error,
     });
 

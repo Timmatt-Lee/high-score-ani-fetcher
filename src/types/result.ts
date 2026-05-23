@@ -1,6 +1,6 @@
 export type Result<T, E = Error> =
-  | { isSuccess: true; items: T; error: undefined }
-  | { isSuccess: false; items: undefined; error: E };
+  | { isSuccess: true; value: T; error: undefined }
+  | { isSuccess: false; value: undefined; error: E };
 
 export interface BatchResult<T, E = Error> {
   items: T[];
@@ -9,12 +9,12 @@ export interface BatchResult<T, E = Error> {
 
 export function isSuccess<T, E>(
   result: Result<T, E>,
-): result is { isSuccess: true; items: T; error: undefined } {
+): result is { isSuccess: true; value: T; error: undefined } {
   return result.isSuccess;
 }
 
 export function isFailure<T, E>(
   result: Result<T, E>,
-): result is { isSuccess: false; items: undefined; error: E } {
+): result is { isSuccess: false; value: undefined; error: E } {
   return !result.isSuccess;
 }
