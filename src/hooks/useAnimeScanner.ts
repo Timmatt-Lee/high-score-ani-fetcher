@@ -2,6 +2,7 @@ import { useState } from "react";
 import { type AnimeItem } from "../types/anime";
 import { useServices } from "../contexts/ServiceContext";
 import { ScraperHttpError, ScraperParseError } from "../errors";
+import { isError } from "../types/result";
 
 export function useAnimeScanner(
   favorites: AnimeItem[],
@@ -21,8 +22,8 @@ export function useAnimeScanner(
     setProgress({ percent: 0, message: "Getting total pages..." });
 
     const totalPagesResult = await scraperService.getTotalPages();
-    if (!totalPagesResult.isSuccess) {
-      const error = totalPagesResult.error;
+    if (isError(totalPagesResult)) {
+      const error = totalPagesResult;
       console.error("Scan failed", error);
       setProgress({ percent: 0, message: "Scan failed" });
       if (error instanceof ScraperHttpError) {
@@ -43,7 +44,7 @@ export function useAnimeScanner(
       setProgress({ percent: 0, message: "" });
       return;
     }
-    const totalPages = totalPagesResult.value;
+    const totalPages = totalPagesResult;
 
     try {
       const trashLinks = new Set(trash.map((t) => t.link));
@@ -90,7 +91,7 @@ export function useAnimeScanner(
         },
       );
 
-      const detailedItems = scanResult.items;
+      const detailedItems = scanResult.value;
       const scanHttpErrors = scanResult.errors.filter(
         (err): err is ScraperHttpError => err instanceof ScraperHttpError,
       );

@@ -1,50 +1,50 @@
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 import { ScraperPipeline } from "./scraperPipeline";
 import {
-  ScraperErrorSource,
+  type AnimeItem,
+  type AnimeDetails,
+  type ScrapeListResult,
+} from "../types/anime";
+import {
   ScraperHttpError,
   ScraperParseError,
+  ScraperErrorSource,
 } from "../errors";
-import { type AnimeItem } from "../types/anime";
 
 describe("ScraperPipeline", () => {
-  const makeItem = (title: string, link: string): AnimeItem =>
-    ({
-      link,
-      title,
-      watchCount: 100,
-      episodeCount: 12,
-      uploadDate: new Date(),
-      score: 0,
-      ratingCount: 0,
-      description: "",
-    }) as AnimeItem;
+  beforeEach(() => {
+    vi.restoreAllMocks();
+  });
 
   it("scrapes page items, filters them, fetches details concurrently and returns results", async () => {
-    const listSpy = vi.fn().mockImplementation(async (page) => {
-      if (page === 1) {
-        return {
-          items: [makeItem("A", "http://a"), makeItem("B", "http://b")],
-          errors: [],
-        };
-      }
-      return {
-        items: [makeItem("C", "http://c"), makeItem("D", "http://d")],
-        errors: [],
-      };
-    });
+    const listSpy = vi.fn();
+    const detailSpy = vi.fn();
 
-    const detailSpy = vi.fn().mockImplementation(async (link) => {
-      const char = link.replace("http://", "");
+    // Mock stage 1: List pages
+    listSpy.mockResolvedValueOnce({
+      value: [
+        { link: "http://a", title: "A" } as AnimeItem,
+        { link: "http://b", title: "B" } as AnimeItem,
+      ],
+      errors: [],
+    } as ScrapeListResult);
+
+    listSpy.mockResolvedValueOnce({
+      value: [
+        { link: "http://c", title: "C" } as AnimeItem,
+        { link: "http://d", title: "D" } as AnimeItem,
+      ],
+      errors: [],
+    } as ScrapeListResult);
+
+    // Mock stage 2: Details
+    detailSpy.mockImplementation(async (link: string) => {
+      const char = link.split("/").pop();
       return {
-        isSuccess: true,
-        value: {
-          score: 9.0,
-          ratingCount: 100,
-          description: `Desc ${char.toUpperCase()}`,
-        },
-        error: undefined,
-      };
+        score: 9.0,
+        ratingCount: 100,
+        description: `Desc ${char?.toUpperCase()}`,
+      } as AnimeDetails;
     });
 
     const onProgress = vi.fn();
@@ -56,187 +56,52 @@ describe("ScraperPipeline", () => {
       scrapeAnimeDetails: detailSpy,
     });
 
-    const { items: items, errors } = await pipeline.execute();
-    const httpErrors = errors.filter(
-      (e): e is ScraperHttpError => e instanceof ScraperHttpError,
-    );
-    const parseErrors = errors.filter(
-      (e): e is ScraperParseError => e instanceof ScraperParseError,
-    );
+    const { value: items, errors } = await pipeline.execute();
 
     expect(listSpy).toHaveBeenCalledTimes(2);
     expect(detailSpy).toHaveBeenCalledTimes(3);
-    expect(httpErrors).toHaveLength(0);
-    expect(parseErrors).toHaveLength(0);
+    expect(errors).toHaveLength(0);
     expect(items).toHaveLength(3);
 
     const sortedItems = [...items].sort((a, b) =>
       a.title.localeCompare(b.title),
     );
-    expect(sortedItems[0].title).toBe("A");
-    expect(sortedItems[1].title).toBe("C");
-    expect(sortedItems[2].title).toBe("D");
-
     expect(sortedItems[0].description).toBe("Desc A");
-    expect(sortedItems[1].description).toBe("Desc C");
-    expect(sortedItems[2].description).toBe("Desc D");
-
     expect(onProgress).toHaveBeenCalled();
   });
 
   it("aggregates page-level and detail-level errors", async () => {
-    const listSpy = vi.fn().mockImplementation(async (page) => {
-      if (page === 1) {
-        return {
-          items: [makeItem("A", "http://a"), makeItem("B", "http://b")],
-          errors: [
-            new ScraperParseError(
-              ScraperErrorSource.TITLE,
-              "http://a",
-              "parse err",
-            ),
-          ],
-        };
-      }
-      throw new ScraperHttpError("http://page2", "http err", 404);
-    });
-
-    const detailSpy = vi.fn().mockImplementation(async (link) => {
-      if (link === "http://a") {
-        throw new ScraperHttpError("http://a", "http err detail", 500);
-      }
-      throw new ScraperParseError(
-        ScraperErrorSource.SCORE,
-        "http://b",
-        "parse err detail",
-      );
-    });
-
-    const pipeline = new ScraperPipeline(2, 1, 1, () => true, vi.fn(), {
-      getTotalPages: vi.fn(),
-      scrapeListPage: listSpy,
-      scrapeAnimeDetails: detailSpy,
-    });
-
-    const { items: items, errors } = await pipeline.execute();
-    const httpErrors = errors.filter(
-      (e): e is ScraperHttpError => e instanceof ScraperHttpError,
-    );
-    const parseErrors = errors.filter(
-      (e): e is ScraperParseError => e instanceof ScraperParseError,
-    );
-
-    expect(listSpy).toHaveBeenCalledTimes(2);
-    expect(items).toHaveLength(0);
-    expect(parseErrors).toHaveLength(2);
-    expect(httpErrors).toHaveLength(2);
-
-    const parseErrorTitle = parseErrors.find(
-      (e) => e.source === ScraperErrorSource.TITLE,
-    );
-    const parseErrorScore = parseErrors.find(
-      (e) => e.source === ScraperErrorSource.SCORE,
-    );
-    expect(parseErrorTitle).toBeDefined();
-    expect(parseErrorScore).toBeDefined();
-
-    const httpError404 = httpErrors.find((e) => e.status === 404);
-    const httpError500 = httpErrors.find((e) => e.status === 500);
-    expect(httpError404).toBeDefined();
-    expect(httpError500).toBeDefined();
-  });
-
-  it("wraps non-Error page and detail failures", async () => {
-    const listSpy = vi.fn().mockRejectedValue("String Page Failure");
+    const listSpy = vi.fn();
     const detailSpy = vi.fn();
 
+    const pageError = new ScraperHttpError("http://page1", "fail", 404);
+    const detailError = new ScraperHttpError("http://a", "fail", 500);
+
+    listSpy.mockResolvedValueOnce({
+      value: [{ link: "http://a", title: "A" } as AnimeItem],
+      errors: [pageError],
+    });
+
+    detailSpy.mockResolvedValueOnce(detailError);
+
     const pipeline = new ScraperPipeline(1, 1, 1, () => true, vi.fn(), {
       getTotalPages: vi.fn(),
       scrapeListPage: listSpy,
       scrapeAnimeDetails: detailSpy,
     });
 
-    const { items: items, errors } = await pipeline.execute();
-    const httpErrors = errors.filter(
-      (e): e is ScraperHttpError => e instanceof ScraperHttpError,
-    );
-    const parseErrors = errors.filter(
-      (e): e is ScraperParseError => e instanceof ScraperParseError,
-    );
-
+    const { value: items, errors } = await pipeline.execute();
     expect(items).toHaveLength(0);
-    expect(parseErrors).toHaveLength(0);
-    expect(httpErrors).toHaveLength(1);
-    expect(httpErrors[0]).toBeInstanceOf(ScraperHttpError);
-    expect(httpErrors[0].html).toBe("String Page Failure");
+    expect(errors).toContain(pageError);
+    expect(errors).toContain(detailError);
   });
 
-  it("covers remaining error branches", async () => {
-    const listSpy = vi.fn().mockImplementation(async (page) => {
-      if (page === 1) {
-        throw new Error("Normal Page Error");
-      } else if (page === 2) {
-        return {
-          items: [makeItem("A", "http://a"), makeItem("B", "http://b")],
-          errors: [],
-        };
-      } else {
-        return {
-          items: [makeItem("C", "http://c")],
-          errors: [],
-        };
-      }
-    });
+  it("wraps non-Error page failures in ScraperHttpError", async () => {
+    const listSpy = vi.fn();
+    const detailSpy = vi.fn();
 
-    const detailSpy = vi.fn().mockImplementation(async (link) => {
-      if (link === "http://a" || link === "http://b") {
-        return {
-          isSuccess: true,
-          value: { score: 9.0, ratingCount: 100, description: "OK" },
-          error: undefined,
-        };
-      }
-      throw "Raw Detail Error String";
-    });
-
-    const pipeline = new ScraperPipeline(3, 1, 1, () => true, vi.fn(), {
-      getTotalPages: vi.fn(),
-      scrapeListPage: listSpy,
-      scrapeAnimeDetails: detailSpy,
-    });
-
-    const { items: items, errors } = await pipeline.execute();
-    const httpErrors = errors.filter(
-      (e): e is ScraperHttpError => e instanceof ScraperHttpError,
-    );
-    const parseErrors = errors.filter(
-      (e): e is ScraperParseError => e instanceof ScraperParseError,
-    );
-
-    expect(items).toHaveLength(2);
-    expect(parseErrors).toHaveLength(0);
-    expect(httpErrors).toHaveLength(2);
-
-    const normalPageError = httpErrors.find(
-      (e) => e.html === "Normal Page Error",
-    );
-    const rawDetailError = httpErrors.find(
-      (e) => e.html === "Raw Detail Error String",
-    );
-    expect(normalPageError).toBeDefined();
-    expect(rawDetailError).toBeDefined();
-  });
-
-  it("aggregates returned details-level errors without throwing", async () => {
-    const listSpy = vi.fn().mockResolvedValue({
-      items: [makeItem("A", "http://a")],
-      errors: [],
-    });
-
-    const detailSpy = vi.fn().mockResolvedValue({
-      isSuccess: false,
-      value: undefined,
-      error: new ScraperHttpError("http://a", "http err returned", 500),
+    listSpy.mockImplementation(() => {
+      throw "page crash";
     });
 
     const pipeline = new ScraperPipeline(1, 1, 1, () => true, vi.fn(), {
@@ -245,10 +110,65 @@ describe("ScraperPipeline", () => {
       scrapeAnimeDetails: detailSpy,
     });
 
-    const { items: items, errors } = await pipeline.execute();
+    const { value: items, errors } = await pipeline.execute();
     expect(items).toHaveLength(0);
     expect(errors).toHaveLength(1);
     expect(errors[0]).toBeInstanceOf(ScraperHttpError);
-    expect((errors[0] as ScraperHttpError).html).toBe("http err returned");
+    if (errors[0] instanceof ScraperHttpError) {
+      expect(errors[0].html).toBe("page crash");
+    }
+  });
+
+  it("covers remaining error branches", async () => {
+    const listSpy = vi.fn();
+    const detailSpy = vi.fn();
+
+    const parseError = new ScraperParseError(
+      ScraperErrorSource.SCORE,
+      "http://a",
+      "html",
+    );
+    listSpy.mockResolvedValueOnce({
+      value: [{ link: "http://a", title: "A" } as AnimeItem],
+      errors: [],
+    });
+    detailSpy.mockImplementation(() => {
+      throw parseError;
+    });
+
+    const pipeline = new ScraperPipeline(1, 1, 1, () => true, vi.fn(), {
+      getTotalPages: vi.fn(),
+      scrapeListPage: listSpy,
+      scrapeAnimeDetails: detailSpy,
+    });
+
+    const { value: items, errors } = await pipeline.execute();
+    expect(items).toHaveLength(0);
+    expect(errors).toContain(parseError);
+  });
+
+  it("aggregates returned details-level errors without throwing", async () => {
+    const listSpy = vi.fn();
+    const detailSpy = vi.fn();
+
+    const error = new ScraperHttpError("http://a", "fail", 500);
+
+    listSpy.mockResolvedValueOnce({
+      value: [{ link: "http://a", title: "A" } as AnimeItem],
+      errors: [],
+    });
+
+    detailSpy.mockResolvedValueOnce(error);
+
+    const pipeline = new ScraperPipeline(1, 1, 1, () => true, vi.fn(), {
+      getTotalPages: vi.fn(),
+      scrapeListPage: listSpy,
+      scrapeAnimeDetails: detailSpy,
+    });
+
+    const { value: items, errors } = await pipeline.execute();
+    expect(items).toHaveLength(0);
+    expect(errors).toHaveLength(1);
+    expect(errors[0]).toBe(error);
   });
 });

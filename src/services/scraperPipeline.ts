@@ -5,6 +5,7 @@ import {
   type ScanProgressCallback,
 } from "../types/anime";
 import { ScraperHttpError, ScraperParseError } from "../errors";
+import { isError } from "../types/result";
 import PQueue from "p-queue";
 
 /**
@@ -59,7 +60,7 @@ export class ScraperPipeline {
     await this.detailQueue.onIdle();
 
     return {
-      items: this.results,
+      value: this.results,
       errors: this.errors,
     };
   }
@@ -69,7 +70,7 @@ export class ScraperPipeline {
       const pageResult = await this.scraper.scrapeListPage(page);
       this.errors.push(...pageResult.errors);
 
-      pageResult.items.forEach((item) => {
+      pageResult.value.forEach((item) => {
         if (this.filterItem(item)) {
           this.detailsTotalCount++;
           this.detailQueue.add(() => this.fetchDetail(item));
@@ -88,11 +89,11 @@ export class ScraperPipeline {
   private async fetchDetail(item: AnimeItem): Promise<void> {
     this.reportProgress(item.title);
     try {
-      const detailsResult = await this.scraper.scrapeAnimeDetails(item.link);
-      if (detailsResult.isSuccess) {
-        this.results.push({ ...item, ...detailsResult.value });
+      const res = await this.scraper.scrapeAnimeDetails(item.link);
+      if (isError(res)) {
+        this.errors.push(res);
       } else {
-        this.errors.push(detailsResult.error);
+        this.results.push({ ...item, ...res });
       }
     } catch (err) {
       this.captureError(err, item.link);
