@@ -286,7 +286,12 @@ describe("scraperService.scrapeListPage", () => {
     mockFetch(makeHtml('<a class="theme-list-main"></a>'));
     const result = await scraperService.scrapeListPage(1);
     expect(result.items).toHaveLength(0);
-    expect(result.errors).toHaveLength(0); // Currently skipped
+    expect(result.errors).toHaveLength(1);
+    expect(result.errors[0]).toBeInstanceOf(ScraperParseError);
+    if (result.errors[0] instanceof ScraperParseError) {
+      expect(result.errors[0].source).toBe(ScraperErrorSource.TITLE);
+      expect(result.errors[0].message).toContain("Missing href attribute");
+    }
   });
 
   it("collects ScraperParseError when watch count element is missing", async () => {
