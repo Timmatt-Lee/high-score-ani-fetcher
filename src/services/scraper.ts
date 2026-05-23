@@ -1,8 +1,7 @@
 import {
   type AnimeItem,
   type AnimeDetails,
-  type ScrapeListResult,
-  type ScanResult,
+  type ScraperResult,
   type AnimeScraper,
   type ScanProgressCallback,
 } from "../types/anime";
@@ -229,7 +228,7 @@ export class ScraperService implements AnimeScraper {
   /**
    * Scrapes basic info for all items on a single page.
    */
-  async scrapeListPage(pageNum: number): Promise<ScrapeListResult> {
+  async scrapeListPage(pageNum: number): Promise<ScraperResult> {
     const url = `${BASE_URL}/animeList.php?page=${pageNum}`;
     const text = await this.fetchText(url);
     if (isError(text)) {
@@ -363,7 +362,7 @@ export class ScraperService implements AnimeScraper {
     detailConcurrency: number,
     filterItem: (item: AnimeItem) => boolean,
     onProgress: ScanProgressCallback,
-  ): Promise<ScanResult> {
+  ): Promise<ScraperResult> {
     const pipeline = new ScraperPipeline(
       totalPages,
       pageConcurrency,

@@ -1,6 +1,6 @@
 import {
   type AnimeItem,
-  type ScanResult,
+  type ScraperResult,
   type AnimeScraper,
   type ScanProgressCallback,
 } from "../types/anime";
@@ -47,7 +47,7 @@ export class ScraperPipeline {
   /**
    * Orchestrates the execution of both pipeline stages.
    */
-  async execute(): Promise<ScanResult> {
+  async execute(): Promise<ScraperResult> {
     const pagePromises = [];
     for (let page = 1; page <= this.totalPages; page++) {
       pagePromises.push(this.pageQueue.add(() => this.fetchPage(page)));

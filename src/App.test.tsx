@@ -9,7 +9,7 @@ import {
 import { ServiceProvider } from "./contexts/ServiceContext";
 import App from "./App";
 import { scraperService } from "./services/scraper";
-import { type AnimeItem, type ScanResult } from "./types/anime";
+import { type AnimeItem, type ScraperResult } from "./types/anime";
 import { ScraperHttpError } from "./errors";
 
 // --- Chrome storage mock (default) ---
@@ -358,10 +358,10 @@ describe("Card actions", () => {
 // --- Scan ---
 describe("Scan functionality", () => {
   it("shows Scanning... and progress bar while running", async () => {
-    let resolveScrape!: (res: ScanResult) => void;
+    let resolveScrape!: (res: ScraperResult) => void;
     vi.spyOn(scraperService, "getTotalPages").mockResolvedValue(1);
     vi.spyOn(scraperService, "scanAllWithPipeline").mockReturnValue(
-      new Promise<ScanResult>((resolve) => {
+      new Promise<ScraperResult>((resolve) => {
         resolveScrape = resolve;
       }),
     );

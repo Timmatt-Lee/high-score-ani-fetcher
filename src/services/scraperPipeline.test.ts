@@ -3,7 +3,7 @@ import { ScraperPipeline } from "./scraperPipeline";
 import {
   type AnimeItem,
   type AnimeDetails,
-  type ScrapeListResult,
+  type ScraperResult,
 } from "../types/anime";
 import {
   ScraperHttpError,
@@ -28,7 +28,7 @@ describe("ScraperPipeline", () => {
       ],
       httpErrors: [],
       parseErrors: [],
-    } as ScrapeListResult);
+    } as ScraperResult);
 
     listSpy.mockResolvedValueOnce({
       items: [
@@ -37,7 +37,7 @@ describe("ScraperPipeline", () => {
       ],
       httpErrors: [],
       parseErrors: [],
-    } as ScrapeListResult);
+    } as ScraperResult);
 
     // Mock stage 2: Details
     detailSpy.mockImplementation(async (link: string) => {
