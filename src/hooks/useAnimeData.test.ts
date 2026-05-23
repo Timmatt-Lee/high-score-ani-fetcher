@@ -15,8 +15,8 @@ const chromeStorageMock = {
         });
         return result;
       }),
-      set: vi.fn(async (items: Record<string, unknown>) => {
-        Object.assign(storageMock, items);
+      set: vi.fn(async (value: Record<string, unknown>) => {
+        Object.assign(storageMock, value);
       }),
     },
   },
