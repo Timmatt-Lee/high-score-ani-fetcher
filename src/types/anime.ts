@@ -20,10 +20,7 @@ export interface ScrapeListResult {
   errors: (ScraperHttpError | ScraperParseError)[];
 }
 
-export interface ScanResult {
-  items: AnimeItem[];
-  errors: (ScraperHttpError | ScraperParseError)[];
-}
+export type ScanResult = ScrapeListResult;
 
 export type ScanProgressCallback = (
   pagesCompleted: number,

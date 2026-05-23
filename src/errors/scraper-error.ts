@@ -1,4 +1,4 @@
-import { ScraperErrorSource } from "./scraperErrorSource";
+import { ScraperErrorSource } from "./scraper-error-source";
 
 /**
  * Represents failures during HTTP communication with the target site (e.g. status code >= 400).
@@ -8,7 +8,7 @@ export class ScraperHttpError extends Error {
   status: number;
   html: string;
 
-  constructor(url: string, html: string, status: number) {
+  constructor(url: string, html: string, status: number = 500) {
     super(`HTTP request failed with status ${status} (URL: ${url})`);
     this.name = "ScraperHttpError";
     this.url = url;
@@ -18,15 +18,20 @@ export class ScraperHttpError extends Error {
 }
 
 /**
- * Represents failures when parsing the DOM structure or attributes of a fetched page.
+ * Represents failures during document parsing (e.g. missing elements, malformed text).
  */
 export class ScraperParseError extends Error {
   url: string;
   source: ScraperErrorSource;
   html: string;
 
-  constructor(source: ScraperErrorSource, url: string, html: string) {
-    super(`Parsing failed at ${source} (URL: ${url})`);
+  constructor(
+    source: ScraperErrorSource,
+    url: string,
+    html: string,
+    message?: string,
+  ) {
+    super(message || `Parsing failed at ${source} (URL: ${url})`);
     this.name = "ScraperParseError";
     this.url = url;
     this.source = source;
