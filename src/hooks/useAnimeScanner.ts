@@ -20,10 +20,9 @@ export function useAnimeScanner(
     setIsScanning(true);
     setProgress({ percent: 0, message: "Getting total pages..." });
 
-    let totalPages: number;
-    try {
-      totalPages = await scraperService.getTotalPages();
-    } catch (error) {
+    const totalPagesResult = await scraperService.getTotalPages();
+    if (!totalPagesResult.isSuccess) {
+      const error = totalPagesResult.error;
       console.error("Scan failed", error);
       setProgress({ percent: 0, message: "Scan failed" });
       if (error instanceof ScraperHttpError) {
@@ -31,10 +30,11 @@ export function useAnimeScanner(
       } else if (error instanceof ScraperParseError) {
         setParseErrors([error]);
       } else {
+        const errVal = error as unknown;
         setHttpErrors([
           new ScraperHttpError(
             "",
-            error instanceof Error ? error.message : String(error),
+            errVal instanceof Error ? errVal.message : String(errVal),
             500,
           ),
         ]);
@@ -43,6 +43,7 @@ export function useAnimeScanner(
       setProgress({ percent: 0, message: "" });
       return;
     }
+    const totalPages = totalPagesResult.items;
 
     try {
       const trashLinks = new Set(trash.map((t) => t.link));
@@ -50,16 +51,12 @@ export function useAnimeScanner(
 
       const filterItem = (item: AnimeItem) => {
         if (trashLinks.has(item.link) || favLinks.has(item.link)) return false;
-        if (isNaN(item.episode_count) || item.episode_count < 10) return false;
+        if (isNaN(item.episodeCount) || item.episodeCount < 10) return false;
         if (item.title.includes("OVA")) return false;
         return true;
       };
 
-      const {
-        items: detailedItems,
-        httpErrors: scanHttpErrors,
-        parseErrors: scanParseErrors,
-      } = await scraperService.scanAllWithPipeline(
+      const scanResult = await scraperService.scanAllWithPipeline(
         totalPages,
         5,
         10,
@@ -91,6 +88,14 @@ export function useAnimeScanner(
 
           setProgress({ percent, message: msg });
         },
+      );
+
+      const detailedItems = scanResult.items;
+      const scanHttpErrors = scanResult.errors.filter(
+        (err): err is ScraperHttpError => err instanceof ScraperHttpError,
+      );
+      const scanParseErrors = scanResult.errors.filter(
+        (err): err is ScraperParseError => err instanceof ScraperParseError,
       );
 
       const filteredItems = detailedItems.filter((item) => item.score >= 4.8);

@@ -6,6 +6,7 @@ import {
   type AnimeScraper,
   type ScanProgressCallback,
 } from "../types/anime";
+import { type Result, type BatchResult } from "../types/result";
 import {
   ScraperErrorSource,
   ScraperHttpError,
@@ -16,79 +17,156 @@ import { ScraperPipeline } from "./scraperPipeline";
 const BASE_URL = "https://ani.gamer.com.tw";
 
 export class ScraperService implements AnimeScraper {
-  private async fetchText(url: string): Promise<string> {
-    const response = await fetch(url);
-    if (!response.ok) {
-      const snippet = await response
-        .text()
-        .catch(() => "")
-        .then((t) => t.slice(0, 200));
-      throw new ScraperHttpError(url, snippet, response.status);
+  private async fetchText(
+    url: string,
+  ): Promise<Result<string, ScraperHttpError>> {
+    try {
+      const response = await fetch(url);
+      if (!response.ok) {
+        const snippet = await response
+          .text()
+          .catch(() => "")
+          .then((t) => t.slice(0, 200));
+        return {
+          isSuccess: false,
+          items: null,
+          error: new ScraperHttpError(url, snippet, response.status),
+        };
+      }
+      return { isSuccess: true, items: await response.text(), error: null };
+    } catch (err) {
+      return {
+        isSuccess: false,
+        items: null,
+        error: new ScraperHttpError(
+          url,
+          err instanceof Error ? err.message : String(err),
+          500,
+        ),
+      };
     }
-    return response.text();
   }
 
   /**
    * Fetches the total number of pages from the anime list.
    */
-  async getTotalPages(): Promise<number> {
+  async getTotalPages(): Promise<
+    Result<number, ScraperHttpError | ScraperParseError>
+  > {
     const url = `${BASE_URL}/animeList.php?page=1`;
-    const text = await this.fetchText(url);
-
-    const doc = new DOMParser().parseFromString(text, "text/html");
-    const pageLinks = doc.querySelectorAll(".page_number a");
-
-    if (pageLinks.length === 0) {
-      throw new ScraperParseError(
-        ScraperErrorSource.PAGINATION,
-        url,
-        doc.body.innerHTML.substring(0, 500),
-      );
+    let text: string;
+    try {
+      const textResult = await this.fetchText(url);
+      if (!textResult.isSuccess) {
+        return textResult;
+      }
+      text = textResult.items;
+    } catch (err) {
+      if (err instanceof ScraperHttpError || err instanceof ScraperParseError) {
+        return { isSuccess: false, items: null, error: err };
+      }
+      return {
+        isSuccess: false,
+        items: null,
+        error: new ScraperHttpError(
+          url,
+          err instanceof Error ? err.message : String(err),
+          500,
+        ),
+      };
     }
 
-    const lastPageText = pageLinks[pageLinks.length - 1].textContent;
-    if (!lastPageText) {
-      throw new ScraperParseError(
-        ScraperErrorSource.PAGINATION,
-        url,
-        doc.querySelector(".page_number")!.outerHTML,
-      );
-    }
+    try {
+      const doc = new DOMParser().parseFromString(text, "text/html");
+      const pageLinks = doc.querySelectorAll(".page_number a");
 
-    const totalPages = parseInt(lastPageText, 10);
-    if (isNaN(totalPages)) {
-      throw new ScraperParseError(
-        ScraperErrorSource.PAGINATION,
-        url,
-        doc.querySelector(".page_number")!.outerHTML,
-      );
-    }
+      if (pageLinks.length === 0) {
+        return {
+          isSuccess: false,
+          items: null,
+          error: new ScraperParseError(
+            ScraperErrorSource.PAGINATION,
+            url,
+            doc.body.innerHTML.substring(0, 500),
+          ),
+        };
+      }
 
-    return totalPages;
+      const lastPageText = pageLinks[pageLinks.length - 1].textContent;
+      if (!lastPageText) {
+        return {
+          isSuccess: false,
+          items: null,
+          error: new ScraperParseError(
+            ScraperErrorSource.PAGINATION,
+            url,
+            doc.querySelector(".page_number")!.outerHTML,
+          ),
+        };
+      }
+
+      const totalPages = parseInt(lastPageText, 10);
+      if (isNaN(totalPages)) {
+        return {
+          isSuccess: false,
+          items: null,
+          error: new ScraperParseError(
+            ScraperErrorSource.PAGINATION,
+            url,
+            doc.querySelector(".page_number")!.outerHTML,
+          ),
+        };
+      }
+
+      return { isSuccess: true, items: totalPages, error: null };
+    } catch (err) {
+      if (err instanceof ScraperHttpError || err instanceof ScraperParseError) {
+        return { isSuccess: false, items: null, error: err };
+      }
+      return {
+        isSuccess: false,
+        items: null,
+        error: new ScraperParseError(
+          ScraperErrorSource.PAGINATION,
+          url,
+          err instanceof Error ? err.message : String(err),
+        ),
+      };
+    }
   }
 
   /**
    * Parses a single anime card element into an AnimeItem.
-   * Throws ScraperParseError if parsing of required fields fails.
    */
-  private parseAnimeCard(card: Element, url: string): AnimeItem {
+  private parseAnimeCard(
+    card: Element,
+    url: string,
+  ): Result<AnimeItem, ScraperParseError> {
     const href = card.getAttribute("href");
     if (!href) {
-      throw new ScraperParseError(
-        ScraperErrorSource.TITLE,
-        url,
-        card.outerHTML.substring(0, 500),
-      );
+      return {
+        isSuccess: false,
+        items: null,
+        error: new ScraperParseError(
+          ScraperErrorSource.TITLE,
+          url,
+          card.outerHTML.substring(0, 500),
+        ),
+      };
     }
 
     const link = `${BASE_URL}/${href.replace(/^\//, "")}`;
     const titleEl = card.querySelector(".theme-name");
     if (!titleEl || !titleEl.textContent?.trim()) {
-      throw new ScraperParseError(
-        ScraperErrorSource.TITLE,
-        url,
-        card.outerHTML.substring(0, 500),
-      );
+      return {
+        isSuccess: false,
+        items: null,
+        error: new ScraperParseError(
+          ScraperErrorSource.TITLE,
+          url,
+          card.outerHTML.substring(0, 500),
+        ),
+      };
     }
     const title = titleEl.textContent.trim();
 
@@ -106,21 +184,25 @@ export class ScraperService implements AnimeScraper {
     }
 
     if (isNaN(watchCount)) {
-      throw new ScraperParseError(
-        ScraperErrorSource.WATCH_COUNT,
-        url,
-        card.outerHTML.substring(0, 500),
-      );
+      return {
+        isSuccess: false,
+        items: null,
+        error: new ScraperParseError(
+          ScraperErrorSource.WATCH_COUNT,
+          url,
+          card.outerHTML.substring(0, 500),
+        ),
+      };
     }
 
-    let episode_count = NaN;
-    let upload_date = new Date(NaN);
+    let episodeCount = NaN;
+    let uploadDate = new Date(NaN);
 
     const detailBlock = card.querySelector(".theme-detail-info-block");
     if (detailBlock) {
       const epEl = detailBlock.querySelector(".theme-number");
       if (epEl && epEl.textContent) {
-        episode_count = parseInt(
+        episodeCount = parseInt(
           epEl.textContent.replace("共", "").replace("集", "").trim(),
           10,
         );
@@ -129,34 +211,46 @@ export class ScraperService implements AnimeScraper {
       const timeEl = detailBlock.querySelector(".theme-time");
       if (timeEl && timeEl.textContent) {
         const yearStr = timeEl.textContent.replace("年份：", "").trim();
-        upload_date = new Date(`${yearStr}-01-01T00:00:00Z`);
+        uploadDate = new Date(`${yearStr}-01-01T00:00:00Z`);
       }
     }
 
-    if (isNaN(episode_count)) {
-      throw new ScraperParseError(
-        ScraperErrorSource.EPISODE_COUNT,
-        url,
-        card.outerHTML.substring(0, 500),
-      );
+    if (isNaN(episodeCount)) {
+      return {
+        isSuccess: false,
+        items: null,
+        error: new ScraperParseError(
+          ScraperErrorSource.EPISODE_COUNT,
+          url,
+          card.outerHTML.substring(0, 500),
+        ),
+      };
     }
-    if (isNaN(upload_date.getTime())) {
-      throw new ScraperParseError(
-        ScraperErrorSource.UPLOAD_DATE,
-        url,
-        card.outerHTML.substring(0, 500),
-      );
+    if (isNaN(uploadDate.getTime())) {
+      return {
+        isSuccess: false,
+        items: null,
+        error: new ScraperParseError(
+          ScraperErrorSource.UPLOAD_DATE,
+          url,
+          card.outerHTML.substring(0, 500),
+        ),
+      };
     }
 
     return {
-      link,
-      title,
-      watch_count: watchCount,
-      episode_count,
-      upload_date,
-      score: 0,
-      rating_count: 0,
-      description: "",
+      isSuccess: true,
+      items: {
+        link,
+        title,
+        watchCount: watchCount,
+        episodeCount,
+        uploadDate,
+        score: 0,
+        ratingCount: 0,
+        description: "",
+      },
+      error: null,
     };
   }
 
@@ -165,90 +259,181 @@ export class ScraperService implements AnimeScraper {
    */
   async scrapeListPage(pageNum: number): Promise<ScrapeListResult> {
     const url = `${BASE_URL}/animeList.php?page=${pageNum}`;
-    const text = await this.fetchText(url);
-
     const items: AnimeItem[] = [];
-    const parseErrors: ScraperParseError[] = [];
-    const doc = new DOMParser().parseFromString(text, "text/html");
-    const cards = doc.querySelectorAll("a.theme-list-main");
+    const errors: (ScraperParseError | ScraperHttpError)[] = [];
 
-    for (const card of Array.from(cards)) {
-      try {
-        const item = this.parseAnimeCard(card, url);
-        items.push(item);
-      } catch (error) {
-        if (error instanceof ScraperParseError) {
-          parseErrors.push(error);
+    let text: string;
+    try {
+      const textResult = await this.fetchText(url);
+      if (!textResult.isSuccess) {
+        return { items: [], errors: [textResult.error] };
+      }
+      text = textResult.items;
+    } catch (error) {
+      if (
+        error instanceof ScraperHttpError ||
+        error instanceof ScraperParseError
+      ) {
+        return { items: [], errors: [error] };
+      }
+      return {
+        items: [],
+        errors: [
+          new ScraperHttpError(
+            url,
+            error instanceof Error ? error.message : String(error),
+            500,
+          ),
+        ],
+      };
+    }
+
+    try {
+      const doc = new DOMParser().parseFromString(text, "text/html");
+      const cards = doc.querySelectorAll("a.theme-list-main");
+
+      for (const card of Array.from(cards)) {
+        const parseRes = this.parseAnimeCard(card, url);
+        if (parseRes.isSuccess) {
+          items.push(parseRes.items);
         } else {
-          parseErrors.push(
-            new ScraperParseError(
-              ScraperErrorSource.TITLE,
-              url,
-              card.outerHTML.substring(0, 500),
-            ),
-          );
+          errors.push(parseRes.error);
         }
+      }
+    } catch (error) {
+      if (error instanceof ScraperParseError) {
+        errors.push(error);
+      } else {
+        errors.push(
+          new ScraperParseError(
+            ScraperErrorSource.TITLE,
+            url,
+            error instanceof Error ? error.message : String(error),
+          ),
+        );
       }
     }
 
-    return { items, parseErrors };
+    return { items: items, errors };
   }
 
   /**
    * Scrapes details for a single anime item.
    */
-  async scrapeAnimeDetails(link: string): Promise<AnimeDetails> {
-    const text = await this.fetchText(link);
-    const doc = new DOMParser().parseFromString(text, "text/html");
-
-    const scoreNumDiv = doc.querySelector(".score-overall-number");
-    if (!scoreNumDiv || !scoreNumDiv.textContent) {
-      throw new ScraperParseError(
-        ScraperErrorSource.SCORE,
-        link,
-        doc.body.innerHTML.substring(0, 500),
-      );
-    }
-    const score = parseFloat(scoreNumDiv.textContent);
-    if (isNaN(score)) {
-      throw new ScraperParseError(
-        ScraperErrorSource.SCORE,
-        link,
-        scoreNumDiv.outerHTML,
-      );
-    }
-
-    const scorePeopleDiv = doc.querySelector(".score-overall-people");
-    if (!scorePeopleDiv || !scorePeopleDiv.textContent) {
-      throw new ScraperParseError(
-        ScraperErrorSource.RATING_COUNT,
-        link,
-        doc.body.innerHTML.substring(0, 500),
-      );
-    }
-    const rating_count = parseInt(
-      scorePeopleDiv.textContent.replace("人評價", "").replace(/,/g, ""),
-      10,
-    );
-    if (isNaN(rating_count)) {
-      throw new ScraperParseError(
-        ScraperErrorSource.RATING_COUNT,
-        link,
-        scorePeopleDiv.outerHTML,
-      );
+  async scrapeAnimeDetails(
+    link: string,
+  ): Promise<Result<AnimeDetails, ScraperHttpError | ScraperParseError>> {
+    let text: string;
+    try {
+      const textResult = await this.fetchText(link);
+      if (!textResult.isSuccess) {
+        return textResult;
+      }
+      text = textResult.items;
+    } catch (err) {
+      if (err instanceof ScraperHttpError || err instanceof ScraperParseError) {
+        return { isSuccess: false, items: null, error: err };
+      }
+      return {
+        isSuccess: false,
+        items: null,
+        error: new ScraperHttpError(
+          link,
+          err instanceof Error ? err.message : String(err),
+          500,
+        ),
+      };
     }
 
-    const descDiv = doc.querySelector(".data-intro p");
-    if (!descDiv || !descDiv.textContent?.trim()) {
-      throw new ScraperParseError(
-        ScraperErrorSource.DESCRIPTION,
-        link,
-        doc.body.innerHTML.substring(0, 500),
-      );
-    }
-    const description = descDiv.textContent.trim();
+    try {
+      const doc = new DOMParser().parseFromString(text, "text/html");
 
-    return { score, rating_count, description };
+      const scoreNumDiv = doc.querySelector(".score-overall-number");
+      if (!scoreNumDiv || !scoreNumDiv.textContent) {
+        return {
+          isSuccess: false,
+          items: null,
+          error: new ScraperParseError(
+            ScraperErrorSource.SCORE,
+            link,
+            doc.body.innerHTML.substring(0, 500),
+          ),
+        };
+      }
+      const score = parseFloat(scoreNumDiv.textContent);
+      if (isNaN(score)) {
+        return {
+          isSuccess: false,
+          items: null,
+          error: new ScraperParseError(
+            ScraperErrorSource.SCORE,
+            link,
+            scoreNumDiv.outerHTML,
+          ),
+        };
+      }
+
+      const scorePeopleDiv = doc.querySelector(".score-overall-people");
+      if (!scorePeopleDiv || !scorePeopleDiv.textContent) {
+        return {
+          isSuccess: false,
+          items: null,
+          error: new ScraperParseError(
+            ScraperErrorSource.RATING_COUNT,
+            link,
+            doc.body.innerHTML.substring(0, 500),
+          ),
+        };
+      }
+      const ratingCount = parseInt(
+        scorePeopleDiv.textContent.replace("人評價", "").replace(/,/g, ""),
+        10,
+      );
+      if (isNaN(ratingCount)) {
+        return {
+          isSuccess: false,
+          items: null,
+          error: new ScraperParseError(
+            ScraperErrorSource.RATING_COUNT,
+            link,
+            scorePeopleDiv.outerHTML,
+          ),
+        };
+      }
+
+      const descDiv = doc.querySelector(".data-intro p");
+      if (!descDiv || !descDiv.textContent?.trim()) {
+        return {
+          isSuccess: false,
+          items: null,
+          error: new ScraperParseError(
+            ScraperErrorSource.DESCRIPTION,
+            link,
+            doc.body.innerHTML.substring(0, 500),
+          ),
+        };
+      }
+      const description = descDiv.textContent.trim();
+
+      return {
+        isSuccess: true,
+        items: { score, ratingCount, description },
+        error: null,
+      };
+    } catch (err) {
+      if (err instanceof ScraperHttpError || err instanceof ScraperParseError) {
+        return { isSuccess: false, items: null, error: err };
+      }
+      return {
+        isSuccess: false,
+        items: null,
+        error: new ScraperParseError(
+          ScraperErrorSource.DESCRIPTION,
+          link,
+          err instanceof Error ? err.message : String(err),
+        ),
+      };
+    }
   }
 
   /**
@@ -262,26 +447,27 @@ export class ScraperService implements AnimeScraper {
       total: number,
       currentTitle: string,
     ) => void,
-  ): Promise<{
-    items: AnimeItem[];
-    errors: (ScraperHttpError | ScraperParseError)[];
-  }> {
+  ): Promise<BatchResult<AnimeItem, ScraperHttpError | ScraperParseError>> {
     const results: (AnimeItem | null)[] = new Array(items.length).fill(null);
     const errors: (ScraperHttpError | ScraperParseError)[] = [];
-    let completed = 0;
-    const total = items.length;
+    let completedCount = 0;
+    const totalCount = items.length;
 
-    if (total === 0) {
+    if (totalCount === 0) {
       return { items: [], errors: [] };
     }
 
     const queue = items.map((item, index) => ({ item, index }));
 
     const fetchDetailsAction = async (item: AnimeItem, index: number) => {
-      onProgress(completed, total, item.title);
+      onProgress(completedCount, totalCount, item.title);
       try {
-        const details = await this.scrapeAnimeDetails(item.link);
-        results[index] = { ...item, ...details };
+        const detailsResult = await this.scrapeAnimeDetails(item.link);
+        if (detailsResult.isSuccess) {
+          results[index] = { ...item, ...detailsResult.items };
+        } else {
+          errors.push(detailsResult.error);
+        }
       } catch (err) {
         if (
           err instanceof ScraperHttpError ||
@@ -298,8 +484,8 @@ export class ScraperService implements AnimeScraper {
           );
         }
       }
-      completed++;
-      onProgress(completed, total, item.title);
+      completedCount++;
+      onProgress(completedCount, totalCount, item.title);
     };
 
     const runWorker = async () => {
@@ -310,8 +496,9 @@ export class ScraperService implements AnimeScraper {
       }
     };
 
-    const workers = Array.from({ length: Math.min(concurrency, total) }, () =>
-      runWorker(),
+    const workers = Array.from(
+      { length: Math.min(concurrency, totalCount) },
+      () => runWorker(),
     );
     await Promise.all(workers);
 
@@ -329,10 +516,9 @@ export class ScraperService implements AnimeScraper {
     totalPages: number,
     concurrency: number,
     onProgress: (percent: number, msg: string) => void,
-  ): Promise<ScanResult> {
+  ): Promise<BatchResult<AnimeItem, ScraperHttpError | ScraperParseError>> {
     const results: AnimeItem[][] = Array.from({ length: totalPages }, () => []);
-    const httpErrors: ScraperHttpError[] = [];
-    const parseErrors: ScraperParseError[] = [];
+    const errors: (ScraperHttpError | ScraperParseError)[] = [];
     let completed = 0;
 
     const fetchPageAction = async (page: number) => {
@@ -340,26 +526,9 @@ export class ScraperService implements AnimeScraper {
         Math.floor((completed / totalPages) * 100),
         `Fetching page ${page}...`,
       );
-      try {
-        const { items, parseErrors: pageErrors } =
-          await this.scrapeListPage(page);
-        results[page - 1] = items;
-        parseErrors.push(...pageErrors);
-      } catch (err) {
-        if (err instanceof ScraperHttpError) {
-          httpErrors.push(err);
-        } else if (err instanceof ScraperParseError) {
-          parseErrors.push(err);
-        } else {
-          httpErrors.push(
-            new ScraperHttpError(
-              `${BASE_URL}/animeList.php?page=${page}`,
-              err instanceof Error ? err.message : String(err),
-              500,
-            ),
-          );
-        }
-      }
+      const pageResult = await this.scrapeListPage(page);
+      results[page - 1] = pageResult.items;
+      errors.push(...pageResult.errors);
       completed++;
       onProgress(
         Math.floor((completed / totalPages) * 100),
@@ -380,7 +549,7 @@ export class ScraperService implements AnimeScraper {
     const workers = Array.from({ length: concurrency }, () => runWorker());
     await Promise.all(workers);
 
-    return { items: results.flat(), httpErrors, parseErrors };
+    return { items: results.flat(), errors };
   }
 
   /**

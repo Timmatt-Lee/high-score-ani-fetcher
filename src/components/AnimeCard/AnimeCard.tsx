@@ -25,12 +25,12 @@ export function AnimeCard({
         <span className={styles.scoreBadge}>★ {item.score.toFixed(1)}</span>
       </div>
       <div className={styles.animeMeta}>
-        <span>{item.episode_count} Episodes</span>
-        <span>{item.watch_count.toLocaleString()} Views</span>
+        <span>{item.episodeCount} Episodes</span>
+        <span>{item.watchCount.toLocaleString()} Views</span>
         <span>
-          {isNaN(item.upload_date.getTime())
+          {isNaN(item.uploadDate.getTime())
             ? "N/A"
-            : item.upload_date.getFullYear()}
+            : item.uploadDate.getFullYear()}
         </span>
       </div>
       <div className={styles.animeDesc}>{item.description}</div>

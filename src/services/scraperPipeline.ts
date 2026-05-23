@@ -7,9 +7,6 @@ import {
 import { ScraperHttpError, ScraperParseError } from "../errors";
 import PQueue from "p-queue";
 
-// Core pipeline orchestration
-// trigger
-
 /**
  * Encapsulates the state and logic for a two-stage concurrent scraping pipeline.
  * Stage 1: Fetches list pages and enqueues items.
@@ -17,13 +14,12 @@ import PQueue from "p-queue";
  */
 export class ScraperPipeline {
   private results: AnimeItem[] = [];
-  private httpErrors: ScraperHttpError[] = [];
-  private parseErrors: ScraperParseError[] = [];
+  private errors: (ScraperHttpError | ScraperParseError)[] = [];
   private pageQueue: PQueue;
   private detailQueue: PQueue;
-  private pagesCompleted = 0;
-  private detailsCompleted = 0;
-  private detailsTotal = 0;
+  private pagesCompletedCount = 0;
+  private detailsCompletedCount = 0;
+  private detailsTotalCount = 0;
 
   private totalPages: number;
   private filterItem: (item: AnimeItem) => boolean;
@@ -50,9 +46,10 @@ export class ScraperPipeline {
    * Orchestrates the execution of both pipeline stages.
    */
   async execute(): Promise<ScanResult> {
-    const pagePromises = [...Array(this.totalPages).keys()].map((i) =>
-      this.pageQueue.add(() => this.fetchPage(i + 1)),
-    );
+    const pagePromises = Array.from(
+      { length: this.totalPages },
+      (_, i) => i + 1,
+    ).map((page) => this.pageQueue.add(() => this.fetchPage(page)));
 
     // Wait for all list pages to be fetched.
     // Errors are captured internally within fetchPage, so these promises always resolve.
@@ -63,20 +60,20 @@ export class ScraperPipeline {
 
     return {
       items: this.results,
-      httpErrors: this.httpErrors,
-      parseErrors: this.parseErrors,
+      errors: this.errors,
     };
   }
 
   private async fetchPage(page: number): Promise<void> {
     try {
-      const { items: pageItems, parseErrors: pageErrors } =
-        await this.scraper.scrapeListPage(page);
-      this.parseErrors.push(...pageErrors);
+      const pageResult = await this.scraper.scrapeListPage(page);
+      this.errors.push(...pageResult.errors);
 
-      pageItems.filter(this.filterItem).forEach((item) => {
-        this.detailsTotal++;
-        this.detailQueue.add(() => this.fetchDetail(item));
+      pageResult.items.forEach((item) => {
+        if (this.filterItem(item)) {
+          this.detailsTotalCount++;
+          this.detailQueue.add(() => this.fetchDetail(item));
+        }
       });
     } catch (err) {
       this.captureError(
@@ -84,29 +81,31 @@ export class ScraperPipeline {
         `https://ani.gamer.com.tw/animeList.php?page=${page}`,
       );
     }
-    this.pagesCompleted++;
+    this.pagesCompletedCount++;
     this.reportProgress("");
   }
 
   private async fetchDetail(item: AnimeItem): Promise<void> {
     this.reportProgress(item.title);
     try {
-      const details = await this.scraper.scrapeAnimeDetails(item.link);
-      this.results.push({ ...item, ...details });
+      const detailsResult = await this.scraper.scrapeAnimeDetails(item.link);
+      if (detailsResult.isSuccess) {
+        this.results.push({ ...item, ...detailsResult.items });
+      } else {
+        this.errors.push(detailsResult.error);
+      }
     } catch (err) {
       this.captureError(err, item.link);
     }
-    this.detailsCompleted++;
+    this.detailsCompletedCount++;
     this.reportProgress(item.title);
   }
 
   private captureError(err: unknown, url: string): void {
-    if (err instanceof ScraperHttpError) {
-      this.httpErrors.push(err);
-    } else if (err instanceof ScraperParseError) {
-      this.parseErrors.push(err);
+    if (err instanceof ScraperHttpError || err instanceof ScraperParseError) {
+      this.errors.push(err);
     } else {
-      this.httpErrors.push(
+      this.errors.push(
         new ScraperHttpError(
           url,
           err instanceof Error ? err.message : String(err),
@@ -118,10 +117,10 @@ export class ScraperPipeline {
 
   private reportProgress(currentTitle: string): void {
     this.onProgress(
-      this.pagesCompleted,
+      this.pagesCompletedCount,
       this.totalPages,
-      this.detailsCompleted,
-      this.detailsTotal,
+      this.detailsCompletedCount,
+      this.detailsTotalCount,
       currentTitle,
     );
   }
