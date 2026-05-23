@@ -31,14 +31,8 @@ export function useAnimeScanner(
       } else if (error instanceof ScraperParseError) {
         setParseErrors([error]);
       } else {
-        const errVal = error as unknown;
-        setHttpErrors([
-          new ScraperHttpError(
-            "",
-            errVal instanceof Error ? errVal.message : String(errVal),
-            500,
-          ),
-        ]);
+        const err = error as Error;
+        setHttpErrors([new ScraperHttpError("", err.message, 500)]);
       }
       setIsScanning(false);
       setProgress({ percent: 0, message: "" });
@@ -91,14 +85,7 @@ export function useAnimeScanner(
         },
       );
 
-      const detailedItems = scanResult.value;
-      const scanHttpErrors = scanResult.errors.filter(
-        (err): err is ScraperHttpError => err instanceof ScraperHttpError,
-      );
-      const scanParseErrors = scanResult.errors.filter(
-        (err): err is ScraperParseError => err instanceof ScraperParseError,
-      );
-
+      const detailedItems = scanResult.items;
       const filteredItems = detailedItems.filter((item) => item.score >= 4.8);
       const sortedItems = filteredItems.sort((a, b) => {
         if (b.score !== a.score) {
@@ -107,8 +94,8 @@ export function useAnimeScanner(
         return a.title.localeCompare(b.title);
       });
 
-      setHttpErrors(scanHttpErrors);
-      setParseErrors(scanParseErrors);
+      setHttpErrors(scanResult.httpErrors);
+      setParseErrors(scanResult.parseErrors);
       onScanComplete(sortedItems);
     } finally {
       setIsScanning(false);

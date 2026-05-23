@@ -379,7 +379,7 @@ describe("Scan functionality", () => {
 
     await waitFor(() => expect(screen.getByText("Scanning...")).toBeDefined());
     await act(async () => {
-      resolveScrape({ value: [], errors: [] });
+      resolveScrape({ items: [], httpErrors: [], parseErrors: [] });
     });
   });
 
@@ -402,7 +402,7 @@ describe("Scan functionality", () => {
         const filtered = [highScore, lowScore].filter(filterItem);
         onProgress(1, 1, 1, filtered.length, "Progress title");
         return {
-          value: [
+          items: [
             {
               ...highScore,
               score: 5.0,
@@ -411,7 +411,8 @@ describe("Scan functionality", () => {
             },
             { ...lowScore, score: 4.0, ratingCount: 10, description: "Meh" },
           ].filter((item) => filtered.some((f) => f.link === item.link)),
-          errors: [],
+          httpErrors: [],
+          parseErrors: [],
         };
       },
     );
@@ -442,13 +443,14 @@ describe("Scan functionality", () => {
       async (_pages, _pc, _dc, filterItem) => {
         const filtered = [shortShow].filter(filterItem);
         return {
-          value: filtered.map((item) => ({
+          items: filtered.map((item) => ({
             ...item,
             score: 9.0,
             ratingCount: 100,
             description: "x",
           })),
-          errors: [],
+          httpErrors: [],
+          parseErrors: [],
         };
       },
     );
@@ -478,13 +480,14 @@ describe("Scan functionality", () => {
       async (_pages, _pc, _dc, filterItem) => {
         const filtered = [ova].filter(filterItem);
         return {
-          value: filtered.map((item) => ({
+          items: filtered.map((item) => ({
             ...item,
             score: 9.0,
             ratingCount: 100,
             description: "x",
           })),
-          errors: [],
+          httpErrors: [],
+          parseErrors: [],
         };
       },
     );
@@ -515,13 +518,14 @@ describe("Scan functionality", () => {
       async (_pages, _pc, _dc, filterItem) => {
         const filtered = [trashItem].filter(filterItem);
         return {
-          value: filtered.map((item) => ({
+          items: filtered.map((item) => ({
             ...item,
             score: 9.0,
             ratingCount: 100,
             description: "x",
           })),
-          errors: [],
+          httpErrors: [],
+          parseErrors: [],
         };
       },
     );
@@ -552,13 +556,14 @@ describe("Scan functionality", () => {
       async (_pages, _pc, _dc, filterItem) => {
         const filtered = [favItem].filter(filterItem);
         return {
-          value: filtered.map((item) => ({
+          items: filtered.map((item) => ({
             ...item,
             score: 9.0,
             ratingCount: 100,
             description: "x",
           })),
-          errors: [],
+          httpErrors: [],
+          parseErrors: [],
         };
       },
     );
@@ -588,13 +593,14 @@ describe("Scan functionality", () => {
       async (_pages, _pc, _dc, filterItem) => {
         const filtered = [naEp].filter(filterItem);
         return {
-          value: filtered.map((item) => ({
+          items: filtered.map((item) => ({
             ...item,
             score: 9.0,
             ratingCount: 100,
             description: "x",
           })),
-          errors: [],
+          httpErrors: [],
+          parseErrors: [],
         };
       },
     );
@@ -619,8 +625,9 @@ describe("Scan functionality", () => {
 
     vi.spyOn(scraperService, "getTotalPages").mockResolvedValue(2);
     vi.spyOn(scraperService, "scanAllWithPipeline").mockResolvedValue({
-      value: [{ ...anime, score: 9.0, ratingCount: 100, description: "x" }],
-      errors: [mockError],
+      items: [{ ...anime, score: 9.0, ratingCount: 100, description: "x" }],
+      httpErrors: [mockError],
+      parseErrors: [],
     });
 
     await act(async () => {
@@ -665,8 +672,9 @@ describe("Scan functionality", () => {
 
     vi.spyOn(scraperService, "getTotalPages").mockResolvedValue(1);
     vi.spyOn(scraperService, "scanAllWithPipeline").mockResolvedValue({
-      value: [{ ...anime, score: 9.0, ratingCount: 100, description: "x" }],
-      errors: errorsList,
+      items: [{ ...anime, score: 9.0, ratingCount: 100, description: "x" }],
+      httpErrors: errorsList,
+      parseErrors: [],
     });
 
     await act(async () => {

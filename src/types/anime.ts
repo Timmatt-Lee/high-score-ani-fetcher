@@ -16,8 +16,9 @@ export interface AnimeItem extends AnimeDetails {
 }
 
 export interface ScrapeListResult {
-  value: AnimeItem[];
-  errors: (ScraperHttpError | ScraperParseError)[];
+  items: AnimeItem[];
+  httpErrors: ScraperHttpError[];
+  parseErrors: ScraperParseError[];
 }
 
 export type ScanResult = ScrapeListResult;
@@ -27,6 +28,12 @@ export type ScanProgressCallback = (
   pagesTotal: number,
   detailsCompleted: number,
   detailsTotal: number,
+  currentTitle: string,
+) => void;
+
+export type DetailsProgressCallback = (
+  completed: number,
+  total: number,
   currentTitle: string,
 ) => void;
 

@@ -15,7 +15,8 @@ import PQueue from "p-queue";
  */
 export class ScraperPipeline {
   private results: AnimeItem[] = [];
-  private errors: (ScraperHttpError | ScraperParseError)[] = [];
+  private httpErrors: ScraperHttpError[] = [];
+  private parseErrors: ScraperParseError[] = [];
   private pageQueue: PQueue;
   private detailQueue: PQueue;
   private pagesCompletedCount = 0;
@@ -60,17 +61,19 @@ export class ScraperPipeline {
     await this.detailQueue.onIdle();
 
     return {
-      value: this.results,
-      errors: this.errors,
+      items: this.results,
+      httpErrors: this.httpErrors,
+      parseErrors: this.parseErrors,
     };
   }
 
   private async fetchPage(page: number): Promise<void> {
     try {
       const pageResult = await this.scraper.scrapeListPage(page);
-      this.errors.push(...pageResult.errors);
+      this.httpErrors.push(...pageResult.httpErrors);
+      this.parseErrors.push(...pageResult.parseErrors);
 
-      pageResult.value.forEach((item) => {
+      pageResult.items.forEach((item) => {
         if (this.filterItem(item)) {
           this.detailsTotalCount++;
           this.detailQueue.add(() => this.fetchDetail(item));
@@ -91,7 +94,11 @@ export class ScraperPipeline {
     try {
       const res = await this.scraper.scrapeAnimeDetails(item.link);
       if (isError(res)) {
-        this.errors.push(res);
+        if (res instanceof ScraperHttpError) {
+          this.httpErrors.push(res);
+        } else {
+          this.parseErrors.push(res);
+        }
       } else {
         this.results.push({ ...item, ...res });
       }
@@ -103,10 +110,12 @@ export class ScraperPipeline {
   }
 
   private captureError(err: unknown, url: string): void {
-    if (err instanceof ScraperHttpError || err instanceof ScraperParseError) {
-      this.errors.push(err);
+    if (err instanceof ScraperHttpError) {
+      this.httpErrors.push(err);
+    } else if (err instanceof ScraperParseError) {
+      this.parseErrors.push(err);
     } else {
-      this.errors.push(
+      this.httpErrors.push(
         new ScraperHttpError(
           url,
           err instanceof Error ? err.message : String(err),
