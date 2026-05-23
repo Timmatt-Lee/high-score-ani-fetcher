@@ -1,4 +1,4 @@
-import { test, expect } from "../../fixtures/extension";
+import { test, expect } from "@playwright/test";
 import path from "path";
 import fs from "fs";
 
@@ -19,8 +19,8 @@ test.describe("Popup Visual Regression", () => {
     detailHtml = fs.readFileSync(detailMockPath, "utf-8");
   });
 
-  test.beforeEach(async ({ page, extensionId }) => {
-    await page.goto(`chrome-extension://${extensionId}/index.html`);
+  test.beforeEach(async ({ page }) => {
+    await page.goto("/");
   });
 
   test("should match visual snapshot for initial state", async ({ page }) => {
