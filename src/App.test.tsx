@@ -25,8 +25,8 @@ const chromeStorageMock = {
         });
         return result;
       }),
-      set: vi.fn(async (items: Record<string, unknown>) => {
-        Object.assign(storageMock, items);
+      set: vi.fn(async (value: Record<string, unknown>) => {
+        Object.assign(storageMock, value);
       }),
     },
   },
@@ -359,11 +359,7 @@ describe("Card actions", () => {
 describe("Scan functionality", () => {
   it("shows Scanning... and progress bar while running", async () => {
     let resolveScrape!: (res: ScanResult) => void;
-    vi.spyOn(scraperService, "getTotalPages").mockResolvedValue({
-      isSuccess: true,
-      value: 1,
-      error: undefined,
-    });
+    vi.spyOn(scraperService, "getTotalPages").mockResolvedValue(1);
     vi.spyOn(scraperService, "scanAllWithPipeline").mockReturnValue(
       new Promise<ScanResult>((resolve) => {
         resolveScrape = resolve;
@@ -383,7 +379,7 @@ describe("Scan functionality", () => {
 
     await waitFor(() => expect(screen.getByText("Scanning...")).toBeDefined());
     await act(async () => {
-      resolveScrape({ items: [], errors: [] });
+      resolveScrape({ items: [], httpErrors: [], parseErrors: [] });
     });
   });
 
@@ -400,11 +396,7 @@ describe("Scan functionality", () => {
       link: "http://other",
     });
 
-    vi.spyOn(scraperService, "getTotalPages").mockResolvedValue({
-      isSuccess: true,
-      value: 1,
-      error: undefined,
-    });
+    vi.spyOn(scraperService, "getTotalPages").mockResolvedValue(1);
     vi.spyOn(scraperService, "scanAllWithPipeline").mockImplementation(
       async (_pages, _pc, _dc, filterItem, onProgress) => {
         const filtered = [highScore, lowScore].filter(filterItem);
@@ -419,7 +411,8 @@ describe("Scan functionality", () => {
             },
             { ...lowScore, score: 4.0, ratingCount: 10, description: "Meh" },
           ].filter((item) => filtered.some((f) => f.link === item.link)),
-          errors: [],
+          httpErrors: [],
+          parseErrors: [],
         };
       },
     );
@@ -445,11 +438,7 @@ describe("Scan functionality", () => {
       episodeCount: 5,
       score: 9.0,
     });
-    vi.spyOn(scraperService, "getTotalPages").mockResolvedValue({
-      isSuccess: true,
-      value: 1,
-      error: undefined,
-    });
+    vi.spyOn(scraperService, "getTotalPages").mockResolvedValue(1);
     vi.spyOn(scraperService, "scanAllWithPipeline").mockImplementation(
       async (_pages, _pc, _dc, filterItem) => {
         const filtered = [shortShow].filter(filterItem);
@@ -460,7 +449,8 @@ describe("Scan functionality", () => {
             ratingCount: 100,
             description: "x",
           })),
-          errors: [],
+          httpErrors: [],
+          parseErrors: [],
         };
       },
     );
@@ -485,11 +475,7 @@ describe("Scan functionality", () => {
       episodeCount: 12,
       score: 9.0,
     });
-    vi.spyOn(scraperService, "getTotalPages").mockResolvedValue({
-      isSuccess: true,
-      value: 1,
-      error: undefined,
-    });
+    vi.spyOn(scraperService, "getTotalPages").mockResolvedValue(1);
     vi.spyOn(scraperService, "scanAllWithPipeline").mockImplementation(
       async (_pages, _pc, _dc, filterItem) => {
         const filtered = [ova].filter(filterItem);
@@ -500,7 +486,8 @@ describe("Scan functionality", () => {
             ratingCount: 100,
             description: "x",
           })),
-          errors: [],
+          httpErrors: [],
+          parseErrors: [],
         };
       },
     );
@@ -526,11 +513,7 @@ describe("Scan functionality", () => {
       score: 9.0,
     });
     storageMock["trash"] = [trashItem];
-    vi.spyOn(scraperService, "getTotalPages").mockResolvedValue({
-      isSuccess: true,
-      value: 1,
-      error: undefined,
-    });
+    vi.spyOn(scraperService, "getTotalPages").mockResolvedValue(1);
     vi.spyOn(scraperService, "scanAllWithPipeline").mockImplementation(
       async (_pages, _pc, _dc, filterItem) => {
         const filtered = [trashItem].filter(filterItem);
@@ -541,7 +524,8 @@ describe("Scan functionality", () => {
             ratingCount: 100,
             description: "x",
           })),
-          errors: [],
+          httpErrors: [],
+          parseErrors: [],
         };
       },
     );
@@ -567,11 +551,7 @@ describe("Scan functionality", () => {
       score: 9.0,
     });
     storageMock["favorites"] = [favItem];
-    vi.spyOn(scraperService, "getTotalPages").mockResolvedValue({
-      isSuccess: true,
-      value: 1,
-      error: undefined,
-    });
+    vi.spyOn(scraperService, "getTotalPages").mockResolvedValue(1);
     vi.spyOn(scraperService, "scanAllWithPipeline").mockImplementation(
       async (_pages, _pc, _dc, filterItem) => {
         const filtered = [favItem].filter(filterItem);
@@ -582,7 +562,8 @@ describe("Scan functionality", () => {
             ratingCount: 100,
             description: "x",
           })),
-          errors: [],
+          httpErrors: [],
+          parseErrors: [],
         };
       },
     );
@@ -607,11 +588,7 @@ describe("Scan functionality", () => {
       episodeCount: NaN,
       score: 9.0,
     });
-    vi.spyOn(scraperService, "getTotalPages").mockResolvedValue({
-      isSuccess: true,
-      value: 1,
-      error: undefined,
-    });
+    vi.spyOn(scraperService, "getTotalPages").mockResolvedValue(1);
     vi.spyOn(scraperService, "scanAllWithPipeline").mockImplementation(
       async (_pages, _pc, _dc, filterItem) => {
         const filtered = [naEp].filter(filterItem);
@@ -622,7 +599,8 @@ describe("Scan functionality", () => {
             ratingCount: 100,
             description: "x",
           })),
-          errors: [],
+          httpErrors: [],
+          parseErrors: [],
         };
       },
     );
@@ -645,14 +623,11 @@ describe("Scan functionality", () => {
     const anime = makeAnime({ title: "Partial Success", score: 9.0 });
     const mockError = new ScraperHttpError("", "HTTP 502", 502);
 
-    vi.spyOn(scraperService, "getTotalPages").mockResolvedValue({
-      isSuccess: true,
-      value: 2,
-      error: undefined,
-    });
+    vi.spyOn(scraperService, "getTotalPages").mockResolvedValue(2);
     vi.spyOn(scraperService, "scanAllWithPipeline").mockResolvedValue({
       items: [{ ...anime, score: 9.0, ratingCount: 100, description: "x" }],
-      errors: [mockError],
+      httpErrors: [mockError],
+      parseErrors: [],
     });
 
     await act(async () => {
@@ -695,14 +670,11 @@ describe("Scan functionality", () => {
         ),
     );
 
-    vi.spyOn(scraperService, "getTotalPages").mockResolvedValue({
-      isSuccess: true,
-      value: 1,
-      error: undefined,
-    });
+    vi.spyOn(scraperService, "getTotalPages").mockResolvedValue(1);
     vi.spyOn(scraperService, "scanAllWithPipeline").mockResolvedValue({
       items: [{ ...anime, score: 9.0, ratingCount: 100, description: "x" }],
-      errors: errorsList,
+      httpErrors: errorsList,
+      parseErrors: [],
     });
 
     await act(async () => {

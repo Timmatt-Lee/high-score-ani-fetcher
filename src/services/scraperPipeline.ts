@@ -5,6 +5,7 @@ import {
   type ScanProgressCallback,
 } from "../types/anime";
 import { ScraperHttpError, ScraperParseError } from "../errors";
+import { isError } from "../types/result";
 import PQueue from "p-queue";
 
 /**
@@ -14,7 +15,8 @@ import PQueue from "p-queue";
  */
 export class ScraperPipeline {
   private results: AnimeItem[] = [];
-  private errors: (ScraperHttpError | ScraperParseError)[] = [];
+  private httpErrors: ScraperHttpError[] = [];
+  private parseErrors: ScraperParseError[] = [];
   private pageQueue: PQueue;
   private detailQueue: PQueue;
   private pagesCompletedCount = 0;
@@ -46,10 +48,10 @@ export class ScraperPipeline {
    * Orchestrates the execution of both pipeline stages.
    */
   async execute(): Promise<ScanResult> {
-    const pagePromises = Array.from(
-      { length: this.totalPages },
-      (_, i) => i + 1,
-    ).map((page) => this.pageQueue.add(() => this.fetchPage(page)));
+    const pagePromises = [];
+    for (let page = 1; page <= this.totalPages; page++) {
+      pagePromises.push(this.pageQueue.add(() => this.fetchPage(page)));
+    }
 
     // Wait for all list pages to be fetched.
     // Errors are captured internally within fetchPage, so these promises always resolve.
@@ -60,14 +62,16 @@ export class ScraperPipeline {
 
     return {
       items: this.results,
-      errors: this.errors,
+      httpErrors: this.httpErrors,
+      parseErrors: this.parseErrors,
     };
   }
 
   private async fetchPage(page: number): Promise<void> {
     try {
       const pageResult = await this.scraper.scrapeListPage(page);
-      this.errors.push(...pageResult.errors);
+      this.httpErrors.push(...pageResult.httpErrors);
+      this.parseErrors.push(...pageResult.parseErrors);
 
       pageResult.items.forEach((item) => {
         if (this.filterItem(item)) {
@@ -88,11 +92,15 @@ export class ScraperPipeline {
   private async fetchDetail(item: AnimeItem): Promise<void> {
     this.reportProgress(item.title);
     try {
-      const detailsResult = await this.scraper.scrapeAnimeDetails(item.link);
-      if (detailsResult.isSuccess) {
-        this.results.push({ ...item, ...detailsResult.value });
+      const res = await this.scraper.scrapeAnimeDetails(item.link);
+      if (isError(res)) {
+        if (res instanceof ScraperHttpError) {
+          this.httpErrors.push(res);
+        } else {
+          this.parseErrors.push(res);
+        }
       } else {
-        this.errors.push(detailsResult.error);
+        this.results.push({ ...item, ...res });
       }
     } catch (err) {
       this.captureError(err, item.link);
@@ -102,10 +110,12 @@ export class ScraperPipeline {
   }
 
   private captureError(err: unknown, url: string): void {
-    if (err instanceof ScraperHttpError || err instanceof ScraperParseError) {
-      this.errors.push(err);
+    if (err instanceof ScraperHttpError) {
+      this.httpErrors.push(err);
+    } else if (err instanceof ScraperParseError) {
+      this.parseErrors.push(err);
     } else {
-      this.errors.push(
+      this.httpErrors.push(
         new ScraperHttpError(
           url,
           err instanceof Error ? err.message : String(err),

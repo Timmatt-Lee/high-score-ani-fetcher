@@ -2,6 +2,7 @@ import { useState } from "react";
 import { type AnimeItem } from "../types/anime";
 import { useServices } from "../contexts/ServiceContext";
 import { ScraperHttpError, ScraperParseError } from "../errors";
+import { isError } from "../types/result";
 
 export function useAnimeScanner(
   favorites: AnimeItem[],
@@ -21,8 +22,8 @@ export function useAnimeScanner(
     setProgress({ percent: 0, message: "Getting total pages..." });
 
     const totalPagesResult = await scraperService.getTotalPages();
-    if (!totalPagesResult.isSuccess) {
-      const error = totalPagesResult.error;
+    if (isError(totalPagesResult)) {
+      const error = totalPagesResult;
       console.error("Scan failed", error);
       setProgress({ percent: 0, message: "Scan failed" });
       if (error instanceof ScraperHttpError) {
@@ -30,20 +31,14 @@ export function useAnimeScanner(
       } else if (error instanceof ScraperParseError) {
         setParseErrors([error]);
       } else {
-        const errVal = error as unknown;
-        setHttpErrors([
-          new ScraperHttpError(
-            "",
-            errVal instanceof Error ? errVal.message : String(errVal),
-            500,
-          ),
-        ]);
+        const err = error as Error;
+        setHttpErrors([new ScraperHttpError("", err.message, 500)]);
       }
       setIsScanning(false);
       setProgress({ percent: 0, message: "" });
       return;
     }
-    const totalPages = totalPagesResult.value;
+    const totalPages = totalPagesResult;
 
     try {
       const trashLinks = new Set(trash.map((t) => t.link));
@@ -91,13 +86,6 @@ export function useAnimeScanner(
       );
 
       const detailedItems = scanResult.items;
-      const scanHttpErrors = scanResult.errors.filter(
-        (err): err is ScraperHttpError => err instanceof ScraperHttpError,
-      );
-      const scanParseErrors = scanResult.errors.filter(
-        (err): err is ScraperParseError => err instanceof ScraperParseError,
-      );
-
       const filteredItems = detailedItems.filter((item) => item.score >= 4.8);
       const sortedItems = filteredItems.sort((a, b) => {
         if (b.score !== a.score) {
@@ -106,8 +94,8 @@ export function useAnimeScanner(
         return a.title.localeCompare(b.title);
       });
 
-      setHttpErrors(scanHttpErrors);
-      setParseErrors(scanParseErrors);
+      setHttpErrors(scanResult.httpErrors);
+      setParseErrors(scanResult.parseErrors);
       onScanComplete(sortedItems);
     } finally {
       setIsScanning(false);

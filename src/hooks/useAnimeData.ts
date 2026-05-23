@@ -8,8 +8,8 @@ export function useAnimeData() {
 
   // Load data on mount
   useEffect(() => {
-    const reviveData = (items: AnimeItem[]): AnimeItem[] =>
-      items.map((item) => ({
+    const reviveData = (data: AnimeItem[]): AnimeItem[] =>
+      data.map((item) => ({
         ...item,
         uploadDate: new Date(item.uploadDate),
       }));
