@@ -15,13 +15,11 @@ export interface AnimeItem extends AnimeDetails {
   uploadDate: Date;
 }
 
-export interface ScrapeListResult {
+export interface ScraperResult {
   items: AnimeItem[];
   httpErrors: ScraperHttpError[];
   parseErrors: ScraperParseError[];
 }
-
-export type ScanResult = ScrapeListResult;
 
 export type ScanProgressCallback = (
   pagesCompleted: number,
@@ -31,17 +29,11 @@ export type ScanProgressCallback = (
   currentTitle: string,
 ) => void;
 
-export type DetailsProgressCallback = (
-  completed: number,
-  total: number,
-  currentTitle: string,
-) => void;
-
 export interface AnimeScraper {
   getTotalPages(): Promise<
     Result<number, ScraperHttpError | ScraperParseError>
   >;
-  scrapeListPage(pageNum: number): Promise<ScrapeListResult>;
+  scrapeListPage(pageNum: number): Promise<ScraperResult>;
   scrapeAnimeDetails(
     link: string,
   ): Promise<Result<AnimeDetails, ScraperHttpError | ScraperParseError>>;
