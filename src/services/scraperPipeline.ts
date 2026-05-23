@@ -48,10 +48,10 @@ export class ScraperPipeline {
    * Orchestrates the execution of both pipeline stages.
    */
   async execute(): Promise<ScanResult> {
-    const pagePromises = Array.from(
-      { length: this.totalPages },
-      (_, i) => i + 1,
-    ).map((page) => this.pageQueue.add(() => this.fetchPage(page)));
+    const pagePromises = [];
+    for (let page = 1; page <= this.totalPages; page++) {
+      pagePromises.push(this.pageQueue.add(() => this.fetchPage(page)));
+    }
 
     // Wait for all list pages to be fetched.
     // Errors are captured internally within fetchPage, so these promises always resolve.
