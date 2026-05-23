@@ -147,15 +147,14 @@ export class ScraperService implements AnimeScraper {
   ): Result<AnimeItem, ScraperParseError> {
     const href = card.getAttribute("href");
     if (!href) {
-      // Skip silently as it might be a decorative anchor or non-anime link
       return {
         isSuccess: false,
         value: undefined,
         error: new ScraperParseError(
           ScraperErrorSource.TITLE,
           url,
-          "Missing href",
-          "SKIPPED",
+          card.outerHTML.substring(0, 500),
+          "Missing href attribute",
         ),
       };
     }
@@ -345,7 +344,7 @@ export class ScraperService implements AnimeScraper {
       const parseRes = this.parseAnimeCard(card, url);
       if (parseRes.isSuccess) {
         items.push(parseRes.value);
-      } else if (parseRes.error.message !== "SKIPPED") {
+      } else {
         errors.push(parseRes.error);
       }
     }
