@@ -71,11 +71,9 @@ export class ScraperPipeline {
         await this.scraper.scrapeListPage(page);
       this.parseErrors.push(...pageErrors);
 
-      pageItems.forEach((item) => {
-        if (this.filterItem(item)) {
-          this.detailsTotal++;
-          this.detailQueue.add(() => this.fetchDetail(item));
-        }
+      pageItems.filter(this.filterItem).forEach((item) => {
+        this.detailsTotal++;
+        this.detailQueue.add(() => this.fetchDetail(item));
       });
     } catch (err) {
       this.captureError(
