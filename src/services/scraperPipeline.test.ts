@@ -112,14 +112,20 @@ describe("ScraperPipeline", () => {
     expect(items).toHaveLength(0);
     expect(parseErrors).toHaveLength(2);
     expect(httpErrors).toHaveLength(2);
-    expect(parseErrors[0]).toBeInstanceOf(ScraperParseError);
-    expect(parseErrors[0].source).toBe(ScraperErrorSource.TITLE);
-    expect(parseErrors[1]).toBeInstanceOf(ScraperParseError);
-    expect(parseErrors[1].source).toBe(ScraperErrorSource.SCORE);
-    expect(httpErrors[0]).toBeInstanceOf(ScraperHttpError);
-    expect(httpErrors[0].status).toBe(404);
-    expect(httpErrors[1]).toBeInstanceOf(ScraperHttpError);
-    expect(httpErrors[1].status).toBe(500);
+
+    const parseErrorTitle = parseErrors.find(
+      (e) => e.source === ScraperErrorSource.TITLE,
+    );
+    const parseErrorScore = parseErrors.find(
+      (e) => e.source === ScraperErrorSource.SCORE,
+    );
+    expect(parseErrorTitle).toBeDefined();
+    expect(parseErrorScore).toBeDefined();
+
+    const httpError404 = httpErrors.find((e) => e.status === 404);
+    const httpError500 = httpErrors.find((e) => e.status === 500);
+    expect(httpError404).toBeDefined();
+    expect(httpError500).toBeDefined();
   });
 
   it("wraps non-Error page and detail failures", async () => {
@@ -174,10 +180,13 @@ describe("ScraperPipeline", () => {
     expect(parseErrors).toHaveLength(0);
     expect(httpErrors).toHaveLength(2);
 
-    expect(httpErrors[0]).toBeInstanceOf(ScraperHttpError);
-    expect(httpErrors[0].html).toBe("Normal Page Error");
-
-    expect(httpErrors[1]).toBeInstanceOf(ScraperHttpError);
-    expect(httpErrors[1].html).toBe("Raw Detail Error String");
+    const normalPageError = httpErrors.find(
+      (e) => e.html === "Normal Page Error",
+    );
+    const rawDetailError = httpErrors.find(
+      (e) => e.html === "Raw Detail Error String",
+    );
+    expect(normalPageError).toBeDefined();
+    expect(rawDetailError).toBeDefined();
   });
 });

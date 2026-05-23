@@ -3,6 +3,8 @@ import {
   type AnimeDetails,
   type ScrapeListResult,
   type ScanResult,
+  type AnimeScraper,
+  type ScanProgressCallback,
 } from "../types/anime";
 import {
   ScraperErrorSource,
@@ -13,7 +15,7 @@ import { ScraperPipeline } from "./scraperPipeline";
 
 const BASE_URL = "https://ani.gamer.com.tw";
 
-export class ScraperService {
+export class ScraperService implements AnimeScraper {
   private async fetchText(url: string): Promise<string> {
     const response = await fetch(url);
     if (!response.ok) {
@@ -389,13 +391,7 @@ export class ScraperService {
     pageConcurrency: number,
     detailConcurrency: number,
     filterItem: (item: AnimeItem) => boolean,
-    onProgress: (
-      pagesCompleted: number,
-      pagesTotal: number,
-      detailsCompleted: number,
-      detailsTotal: number,
-      currentTitle: string,
-    ) => void,
+    onProgress: ScanProgressCallback,
   ): Promise<ScanResult> {
     const pipeline = new ScraperPipeline(
       totalPages,
