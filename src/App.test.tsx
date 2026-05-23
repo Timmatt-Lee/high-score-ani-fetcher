@@ -361,7 +361,7 @@ describe("Scan functionality", () => {
     let resolveScrape!: (res: ScanResult) => void;
     vi.spyOn(scraperService, "getTotalPages").mockResolvedValue({
       isSuccess: true,
-      items: 1,
+      value: 1,
       error: undefined,
     });
     vi.spyOn(scraperService, "scanAllWithPipeline").mockReturnValue(
@@ -402,7 +402,7 @@ describe("Scan functionality", () => {
 
     vi.spyOn(scraperService, "getTotalPages").mockResolvedValue({
       isSuccess: true,
-      items: 1,
+      value: 1,
       error: undefined,
     });
     vi.spyOn(scraperService, "scanAllWithPipeline").mockImplementation(
@@ -447,7 +447,7 @@ describe("Scan functionality", () => {
     });
     vi.spyOn(scraperService, "getTotalPages").mockResolvedValue({
       isSuccess: true,
-      items: 1,
+      value: 1,
       error: undefined,
     });
     vi.spyOn(scraperService, "scanAllWithPipeline").mockImplementation(
@@ -487,7 +487,7 @@ describe("Scan functionality", () => {
     });
     vi.spyOn(scraperService, "getTotalPages").mockResolvedValue({
       isSuccess: true,
-      items: 1,
+      value: 1,
       error: undefined,
     });
     vi.spyOn(scraperService, "scanAllWithPipeline").mockImplementation(
@@ -528,7 +528,7 @@ describe("Scan functionality", () => {
     storageMock["trash"] = [trashItem];
     vi.spyOn(scraperService, "getTotalPages").mockResolvedValue({
       isSuccess: true,
-      items: 1,
+      value: 1,
       error: undefined,
     });
     vi.spyOn(scraperService, "scanAllWithPipeline").mockImplementation(
@@ -569,7 +569,7 @@ describe("Scan functionality", () => {
     storageMock["favorites"] = [favItem];
     vi.spyOn(scraperService, "getTotalPages").mockResolvedValue({
       isSuccess: true,
-      items: 1,
+      value: 1,
       error: undefined,
     });
     vi.spyOn(scraperService, "scanAllWithPipeline").mockImplementation(
@@ -609,7 +609,7 @@ describe("Scan functionality", () => {
     });
     vi.spyOn(scraperService, "getTotalPages").mockResolvedValue({
       isSuccess: true,
-      items: 1,
+      value: 1,
       error: undefined,
     });
     vi.spyOn(scraperService, "scanAllWithPipeline").mockImplementation(
@@ -647,7 +647,7 @@ describe("Scan functionality", () => {
 
     vi.spyOn(scraperService, "getTotalPages").mockResolvedValue({
       isSuccess: true,
-      items: 2,
+      value: 2,
       error: undefined,
     });
     vi.spyOn(scraperService, "scanAllWithPipeline").mockResolvedValue({
@@ -697,7 +697,7 @@ describe("Scan functionality", () => {
 
     vi.spyOn(scraperService, "getTotalPages").mockResolvedValue({
       isSuccess: true,
-      items: 1,
+      value: 1,
       error: undefined,
     });
     vi.spyOn(scraperService, "scanAllWithPipeline").mockResolvedValue({
