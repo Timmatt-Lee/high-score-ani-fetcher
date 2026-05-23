@@ -6,11 +6,11 @@ import { type AnimeItem } from "../../types/anime";
 const makeAnime = (title: string): AnimeItem => ({
   link: `http://${title}`,
   title,
-  watch_count: 100,
-  episode_count: 12,
-  upload_date: new Date("2024-01-01"),
+  watchCount: 100,
+  episodeCount: 12,
+  uploadDate: new Date("2024-01-01"),
   score: 8.5,
-  rating_count: 50,
+  ratingCount: 50,
   description: "Desc",
 });
 

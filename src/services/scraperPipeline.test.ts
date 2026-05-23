@@ -12,11 +12,11 @@ describe("ScraperPipeline", () => {
     ({
       link,
       title,
-      watch_count: 100,
-      episode_count: 12,
-      upload_date: new Date(),
+      watchCount: 100,
+      episodeCount: 12,
+      uploadDate: new Date(),
       score: 0,
-      rating_count: 0,
+      ratingCount: 0,
       description: "",
     }) as AnimeItem;
 
@@ -25,21 +25,25 @@ describe("ScraperPipeline", () => {
       if (page === 1) {
         return {
           items: [makeItem("A", "http://a"), makeItem("B", "http://b")],
-          parseErrors: [],
+          errors: [],
         };
       }
       return {
         items: [makeItem("C", "http://c"), makeItem("D", "http://d")],
-        parseErrors: [],
+        errors: [],
       };
     });
 
     const detailSpy = vi.fn().mockImplementation(async (link) => {
       const char = link.replace("http://", "");
       return {
-        score: 9.0,
-        rating_count: 100,
-        description: `Desc ${char.toUpperCase()}`,
+        isSuccess: true,
+        items: {
+          score: 9.0,
+          ratingCount: 100,
+          description: `Desc ${char.toUpperCase()}`,
+        },
+        error: null,
       };
     });
 
@@ -47,11 +51,18 @@ describe("ScraperPipeline", () => {
     const filterItem = (item: AnimeItem) => item.title !== "B";
 
     const pipeline = new ScraperPipeline(2, 2, 2, filterItem, onProgress, {
+      getTotalPages: vi.fn(),
       scrapeListPage: listSpy,
       scrapeAnimeDetails: detailSpy,
     });
 
-    const { items, httpErrors, parseErrors } = await pipeline.execute();
+    const { items: items, errors } = await pipeline.execute();
+    const httpErrors = errors.filter(
+      (e): e is ScraperHttpError => e instanceof ScraperHttpError,
+    );
+    const parseErrors = errors.filter(
+      (e): e is ScraperParseError => e instanceof ScraperParseError,
+    );
 
     expect(listSpy).toHaveBeenCalledTimes(2);
     expect(detailSpy).toHaveBeenCalledTimes(3);
@@ -78,7 +89,7 @@ describe("ScraperPipeline", () => {
       if (page === 1) {
         return {
           items: [makeItem("A", "http://a"), makeItem("B", "http://b")],
-          parseErrors: [
+          errors: [
             new ScraperParseError(
               ScraperErrorSource.TITLE,
               "http://a",
@@ -102,11 +113,18 @@ describe("ScraperPipeline", () => {
     });
 
     const pipeline = new ScraperPipeline(2, 1, 1, () => true, vi.fn(), {
+      getTotalPages: vi.fn(),
       scrapeListPage: listSpy,
       scrapeAnimeDetails: detailSpy,
     });
 
-    const { items, httpErrors, parseErrors } = await pipeline.execute();
+    const { items: items, errors } = await pipeline.execute();
+    const httpErrors = errors.filter(
+      (e): e is ScraperHttpError => e instanceof ScraperHttpError,
+    );
+    const parseErrors = errors.filter(
+      (e): e is ScraperParseError => e instanceof ScraperParseError,
+    );
 
     expect(listSpy).toHaveBeenCalledTimes(2);
     expect(items).toHaveLength(0);
@@ -133,11 +151,19 @@ describe("ScraperPipeline", () => {
     const detailSpy = vi.fn();
 
     const pipeline = new ScraperPipeline(1, 1, 1, () => true, vi.fn(), {
+      getTotalPages: vi.fn(),
       scrapeListPage: listSpy,
       scrapeAnimeDetails: detailSpy,
     });
 
-    const { items, httpErrors, parseErrors } = await pipeline.execute();
+    const { items: items, errors } = await pipeline.execute();
+    const httpErrors = errors.filter(
+      (e): e is ScraperHttpError => e instanceof ScraperHttpError,
+    );
+    const parseErrors = errors.filter(
+      (e): e is ScraperParseError => e instanceof ScraperParseError,
+    );
+
     expect(items).toHaveLength(0);
     expect(parseErrors).toHaveLength(0);
     expect(httpErrors).toHaveLength(1);
@@ -152,29 +178,40 @@ describe("ScraperPipeline", () => {
       } else if (page === 2) {
         return {
           items: [makeItem("A", "http://a"), makeItem("B", "http://b")],
-          parseErrors: [],
+          errors: [],
         };
       } else {
         return {
           items: [makeItem("C", "http://c")],
-          parseErrors: [],
+          errors: [],
         };
       }
     });
 
     const detailSpy = vi.fn().mockImplementation(async (link) => {
       if (link === "http://a" || link === "http://b") {
-        return { score: 9.0, rating_count: 100, description: "OK" };
+        return {
+          isSuccess: true,
+          items: { score: 9.0, ratingCount: 100, description: "OK" },
+          error: null,
+        };
       }
       throw "Raw Detail Error String";
     });
 
     const pipeline = new ScraperPipeline(3, 1, 1, () => true, vi.fn(), {
+      getTotalPages: vi.fn(),
       scrapeListPage: listSpy,
       scrapeAnimeDetails: detailSpy,
     });
 
-    const { items, httpErrors, parseErrors } = await pipeline.execute();
+    const { items: items, errors } = await pipeline.execute();
+    const httpErrors = errors.filter(
+      (e): e is ScraperHttpError => e instanceof ScraperHttpError,
+    );
+    const parseErrors = errors.filter(
+      (e): e is ScraperParseError => e instanceof ScraperParseError,
+    );
 
     expect(items).toHaveLength(2);
     expect(parseErrors).toHaveLength(0);
@@ -188,5 +225,30 @@ describe("ScraperPipeline", () => {
     );
     expect(normalPageError).toBeDefined();
     expect(rawDetailError).toBeDefined();
+  });
+
+  it("aggregates returned details-level errors without throwing", async () => {
+    const listSpy = vi.fn().mockResolvedValue({
+      items: [makeItem("A", "http://a")],
+      errors: [],
+    });
+
+    const detailSpy = vi.fn().mockResolvedValue({
+      isSuccess: false,
+      items: null,
+      error: new ScraperHttpError("http://a", "http err returned", 500),
+    });
+
+    const pipeline = new ScraperPipeline(1, 1, 1, () => true, vi.fn(), {
+      getTotalPages: vi.fn(),
+      scrapeListPage: listSpy,
+      scrapeAnimeDetails: detailSpy,
+    });
+
+    const { items: items, errors } = await pipeline.execute();
+    expect(items).toHaveLength(0);
+    expect(errors).toHaveLength(1);
+    expect(errors[0]).toBeInstanceOf(ScraperHttpError);
+    expect((errors[0] as ScraperHttpError).html).toBe("http err returned");
   });
 });

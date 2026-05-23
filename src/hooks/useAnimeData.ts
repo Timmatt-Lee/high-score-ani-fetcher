@@ -11,7 +11,7 @@ export function useAnimeData() {
     const reviveData = (items: AnimeItem[]): AnimeItem[] =>
       items.map((item) => ({
         ...item,
-        upload_date: new Date(item.upload_date),
+        uploadDate: new Date(item.uploadDate),
       }));
 
     const loadData = async () => {
