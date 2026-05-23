@@ -7,6 +7,9 @@ import {
 import { ScraperHttpError, ScraperParseError } from "../errors";
 import PQueue from "p-queue";
 
+// Core pipeline orchestration
+// trigger
+
 /**
  * Encapsulates the state and logic for a two-stage concurrent scraping pipeline.
  * Stage 1: Fetches list pages and enqueues items.
