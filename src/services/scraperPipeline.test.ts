@@ -101,84 +101,6 @@ describe("ScraperPipeline", () => {
     expect(parseErrors).toHaveLength(0);
   });
 
-  it("wraps non-Error page failures in ScraperHttpError", async () => {
-    const listSpy = vi.fn();
-    const detailSpy = vi.fn();
-
-    listSpy.mockImplementation(() => {
-      throw "page crash";
-    });
-
-    const pipeline = new ScraperPipeline(1, 1, 1, () => true, vi.fn(), {
-      getTotalPages: vi.fn(),
-      scrapeListPage: listSpy,
-      scrapeAnimeDetails: detailSpy,
-    });
-
-    const { items, httpErrors, parseErrors } = await pipeline.execute();
-    expect(items).toHaveLength(0);
-    expect(httpErrors).toHaveLength(1);
-    expect(httpErrors[0]).toBeInstanceOf(ScraperHttpError);
-    if (httpErrors[0] instanceof ScraperHttpError) {
-      expect(httpErrors[0].html).toBe("page crash");
-    }
-    expect(parseErrors).toHaveLength(0);
-  });
-
-  it("wraps generic Error page failures in ScraperHttpError with message", async () => {
-    const listSpy = vi.fn();
-    const detailSpy = vi.fn();
-
-    listSpy.mockImplementation(() => {
-      throw new Error("unexpected error object");
-    });
-
-    const pipeline = new ScraperPipeline(1, 1, 1, () => true, vi.fn(), {
-      getTotalPages: vi.fn(),
-      scrapeListPage: listSpy,
-      scrapeAnimeDetails: detailSpy,
-    });
-
-    const { items, httpErrors, parseErrors } = await pipeline.execute();
-    expect(items).toHaveLength(0);
-    expect(httpErrors).toHaveLength(1);
-    expect(httpErrors[0]).toBeInstanceOf(ScraperHttpError);
-    if (httpErrors[0] instanceof ScraperHttpError) {
-      expect(httpErrors[0].html).toBe("unexpected error object");
-    }
-    expect(parseErrors).toHaveLength(0);
-  });
-
-  it("covers remaining error branches", async () => {
-    const listSpy = vi.fn();
-    const detailSpy = vi.fn();
-
-    const parseError = new ScraperParseError(
-      ScraperErrorSource.SCORE,
-      "http://a",
-      "html",
-    );
-    listSpy.mockResolvedValueOnce({
-      items: [{ link: "http://a", title: "A" } as AnimeItem],
-      httpErrors: [],
-      parseErrors: [],
-    });
-    detailSpy.mockImplementation(() => {
-      throw parseError;
-    });
-
-    const pipeline = new ScraperPipeline(1, 1, 1, () => true, vi.fn(), {
-      getTotalPages: vi.fn(),
-      scrapeListPage: listSpy,
-      scrapeAnimeDetails: detailSpy,
-    });
-
-    const { items, httpErrors, parseErrors } = await pipeline.execute();
-    expect(items).toHaveLength(0);
-    expect(parseErrors).toContain(parseError);
-    expect(httpErrors).toHaveLength(0);
-  });
-
   it("aggregates returned details-level errors without throwing", async () => {
     const listSpy = vi.fn();
     const detailSpy = vi.fn();
@@ -189,7 +111,7 @@ describe("ScraperPipeline", () => {
       items: [{ link: "http://a", title: "A" } as AnimeItem],
       httpErrors: [],
       parseErrors: [],
-    });
+    } as ScraperResult);
 
     detailSpy.mockResolvedValueOnce(error);
 
@@ -220,7 +142,7 @@ describe("ScraperPipeline", () => {
       items: [{ link: "http://a", title: "A" } as AnimeItem],
       httpErrors: [],
       parseErrors: [],
-    });
+    } as ScraperResult);
 
     detailSpy.mockResolvedValueOnce(parseError);
 
@@ -235,34 +157,5 @@ describe("ScraperPipeline", () => {
     expect(parseErrors).toHaveLength(1);
     expect(parseErrors[0]).toBe(parseError);
     expect(httpErrors).toHaveLength(0);
-  });
-
-  it("handles caught ScraperHttpError in catch block", async () => {
-    const listSpy = vi.fn();
-    const detailSpy = vi.fn();
-
-    const httpError = new ScraperHttpError("http://a", "fail", 500);
-
-    listSpy.mockResolvedValueOnce({
-      items: [{ link: "http://a", title: "A" } as AnimeItem],
-      httpErrors: [],
-      parseErrors: [],
-    });
-
-    detailSpy.mockImplementation(() => {
-      throw httpError;
-    });
-
-    const pipeline = new ScraperPipeline(1, 1, 1, () => true, vi.fn(), {
-      getTotalPages: vi.fn(),
-      scrapeListPage: listSpy,
-      scrapeAnimeDetails: detailSpy,
-    });
-
-    const { items, httpErrors, parseErrors } = await pipeline.execute();
-    expect(items).toHaveLength(0);
-    expect(httpErrors).toHaveLength(1);
-    expect(httpErrors[0]).toBe(httpError);
-    expect(parseErrors).toHaveLength(0);
   });
 });

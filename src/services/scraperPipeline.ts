@@ -68,61 +68,33 @@ export class ScraperPipeline {
   }
 
   private async fetchPage(page: number): Promise<void> {
-    try {
-      const pageResult = await this.scraper.scrapeListPage(page);
-      this.httpErrors.push(...pageResult.httpErrors);
-      this.parseErrors.push(...pageResult.parseErrors);
+    const pageResult = await this.scraper.scrapeListPage(page);
+    this.httpErrors.push(...pageResult.httpErrors);
+    this.parseErrors.push(...pageResult.parseErrors);
 
-      pageResult.items.forEach((item) => {
-        if (this.filterItem(item)) {
-          this.detailsTotalCount++;
-          this.detailQueue.add(() => this.fetchDetail(item));
-        }
-      });
-    } catch (err) {
-      this.captureError(
-        err,
-        `https://ani.gamer.com.tw/animeList.php?page=${page}`,
-      );
-    }
+    pageResult.items.forEach((item) => {
+      if (this.filterItem(item)) {
+        this.detailsTotalCount++;
+        this.detailQueue.add(() => this.fetchDetail(item));
+      }
+    });
     this.pagesCompletedCount++;
-    this.reportProgress("");
   }
 
   private async fetchDetail(item: AnimeItem): Promise<void> {
     this.reportProgress(item.title);
-    try {
-      const res = await this.scraper.scrapeAnimeDetails(item.link);
-      if (isError(res)) {
-        if (res instanceof ScraperHttpError) {
-          this.httpErrors.push(res);
-        } else {
-          this.parseErrors.push(res);
-        }
+    const res = await this.scraper.scrapeAnimeDetails(item.link);
+    if (isError(res)) {
+      if (res instanceof ScraperHttpError) {
+        this.httpErrors.push(res);
       } else {
-        this.results.push({ ...item, ...res });
+        this.parseErrors.push(res);
       }
-    } catch (err) {
-      this.captureError(err, item.link);
+    } else {
+      this.results.push({ ...item, ...res });
     }
     this.detailsCompletedCount++;
     this.reportProgress(item.title);
-  }
-
-  private captureError(err: unknown, url: string): void {
-    if (err instanceof ScraperHttpError) {
-      this.httpErrors.push(err);
-    } else if (err instanceof ScraperParseError) {
-      this.parseErrors.push(err);
-    } else {
-      this.httpErrors.push(
-        new ScraperHttpError(
-          url,
-          err instanceof Error ? err.message : String(err),
-          500,
-        ),
-      );
-    }
   }
 
   private reportProgress(currentTitle: string): void {
