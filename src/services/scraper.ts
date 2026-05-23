@@ -50,39 +50,48 @@ export class ScraperService implements AnimeScraper {
     const text = await this.fetchText(url);
     if (isError(text)) return text;
 
-    const doc = new DOMParser().parseFromString(text, "text/html");
-    const pageLinks = doc.querySelectorAll(".page_number a");
+    try {
+      const doc = new DOMParser().parseFromString(text, "text/html");
+      const pageLinks = doc.querySelectorAll(".page_number a");
 
-    if (pageLinks.length === 0) {
+      if (pageLinks.length === 0) {
+        return new ScraperParseError(
+          ScraperErrorSource.PAGINATION,
+          url,
+          doc.body.innerHTML.substring(0, 500),
+          "Pagination element not found",
+        );
+      }
+
+      const lastPageText = pageLinks[pageLinks.length - 1].textContent;
+      if (!lastPageText) {
+        return new ScraperParseError(
+          ScraperErrorSource.PAGINATION,
+          url,
+          doc.querySelector(".page_number")!.outerHTML,
+          "No pagination text",
+        );
+      }
+
+      const totalPages = parseInt(lastPageText, 10);
+      if (isNaN(totalPages)) {
+        return new ScraperParseError(
+          ScraperErrorSource.PAGINATION,
+          url,
+          doc.querySelector(".page_number")!.outerHTML,
+          "Invalid page number",
+        );
+      }
+
+      return totalPages;
+    } catch (err) {
       return new ScraperParseError(
         ScraperErrorSource.PAGINATION,
         url,
-        doc.body.innerHTML.substring(0, 500),
-        "Pagination element not found",
+        err instanceof Error ? err.message : String(err),
+        "Unexpected parsing error",
       );
     }
-
-    const lastPageText = pageLinks[pageLinks.length - 1].textContent;
-    if (!lastPageText) {
-      return new ScraperParseError(
-        ScraperErrorSource.PAGINATION,
-        url,
-        doc.querySelector(".page_number")!.outerHTML,
-        "No pagination text",
-      );
-    }
-
-    const totalPages = parseInt(lastPageText, 10);
-    if (isNaN(totalPages)) {
-      return new ScraperParseError(
-        ScraperErrorSource.PAGINATION,
-        url,
-        doc.querySelector(".page_number")!.outerHTML,
-        "Invalid page number",
-      );
-    }
-
-    return totalPages;
   }
 
   /**
@@ -91,127 +100,136 @@ export class ScraperService implements AnimeScraper {
   private parseAnimeCard(
     card: Element,
     url: string,
-  ): Result<AnimeItem, ScraperParseError | ScraperHttpError> {
-    const href = card.getAttribute("href");
-    if (!href) {
-      return new ScraperParseError(
-        ScraperErrorSource.TITLE,
-        url,
-        card.outerHTML.substring(0, 500),
-        "Missing href",
-      );
-    }
-
-    const link = `${BASE_URL}/${href.replace(/^\//, "")}`;
-    const titleEl = card.querySelector(".theme-name");
-    let title = "";
-    if (titleEl) {
-      const text = titleEl.textContent;
-      if (text) {
-        title = text.trim();
+  ): Result<AnimeItem, ScraperParseError> {
+    try {
+      const href = card.getAttribute("href");
+      if (!href) {
+        return new ScraperParseError(
+          ScraperErrorSource.TITLE,
+          url,
+          card.outerHTML.substring(0, 500),
+          "Missing href",
+        );
       }
-    }
 
-    if (!title) {
+      const link = `${BASE_URL}/${href.replace(/^\//, "")}`;
+      const titleEl = card.querySelector(".theme-name");
+      let title = "";
+      if (titleEl) {
+        const text = titleEl.textContent;
+        if (text) {
+          title = text.trim();
+        }
+      }
+
+      if (!title) {
+        return new ScraperParseError(
+          ScraperErrorSource.TITLE,
+          url,
+          card.outerHTML.substring(0, 500),
+          "Anime title missing",
+        );
+      }
+
+      const watchCountEl = card.querySelector(
+        "p:not(.theme-name):not(.theme-time)",
+      );
+      if (!watchCountEl || !watchCountEl.textContent) {
+        return new ScraperParseError(
+          ScraperErrorSource.WATCH_COUNT,
+          url,
+          card.outerHTML.substring(0, 500),
+          "Watch count element missing",
+        );
+      }
+
+      const str = watchCountEl.textContent.trim();
+      const watchCount = str.includes("萬")
+        ? Math.floor(parseFloat(str.replace("萬", "")) * 10000)
+        : parseInt(str.replace(/,/g, ""), 10);
+
+      if (isNaN(watchCount)) {
+        return new ScraperParseError(
+          ScraperErrorSource.WATCH_COUNT,
+          url,
+          card.outerHTML.substring(0, 500),
+          "Failed to parse watch count",
+        );
+      }
+
+      const detailBlock = card.querySelector(".theme-detail-info-block");
+      if (!detailBlock) {
+        return new ScraperParseError(
+          ScraperErrorSource.EPISODE_COUNT,
+          url,
+          card.outerHTML.substring(0, 500),
+          "Detail block missing",
+        );
+      }
+
+      const epEl = detailBlock.querySelector(".theme-number");
+      const timeEl = detailBlock.querySelector(".theme-time");
+
+      if (!epEl || !epEl.textContent) {
+        return new ScraperParseError(
+          ScraperErrorSource.EPISODE_COUNT,
+          url,
+          detailBlock.outerHTML,
+          "Episode count missing",
+        );
+      }
+
+      if (!timeEl || !timeEl.textContent) {
+        return new ScraperParseError(
+          ScraperErrorSource.UPLOAD_DATE,
+          url,
+          detailBlock.outerHTML,
+          "Upload date missing",
+        );
+      }
+
+      const episodeCount = parseInt(
+        epEl.textContent.replace("共", "").replace("集", "").trim(),
+        10,
+      );
+      const yearStr = timeEl.textContent.replace("年份：", "").trim();
+      const uploadDate = new Date(`${yearStr}-01-01T00:00:00Z`);
+
+      if (isNaN(episodeCount)) {
+        return new ScraperParseError(
+          ScraperErrorSource.EPISODE_COUNT,
+          url,
+          epEl.outerHTML,
+          "Failed to parse episode count",
+        );
+      }
+      if (isNaN(uploadDate.getTime())) {
+        return new ScraperParseError(
+          ScraperErrorSource.UPLOAD_DATE,
+          url,
+          timeEl.outerHTML,
+          "Failed to parse upload date",
+        );
+      }
+
+      return {
+        link,
+        title,
+        watchCount,
+        episodeCount,
+        uploadDate,
+        score: 0,
+        ratingCount: 0,
+        description: "",
+      };
+    } catch (err) {
       return new ScraperParseError(
         ScraperErrorSource.TITLE,
         url,
-        card.outerHTML.substring(0, 500),
-        "Anime title missing",
+        err instanceof Error ? err.message : String(err),
+        "Unexpected parsing error",
       );
     }
-
-    const watchCountEl = card.querySelector(
-      "p:not(.theme-name):not(.theme-time)",
-    );
-    if (!watchCountEl || !watchCountEl.textContent) {
-      return new ScraperParseError(
-        ScraperErrorSource.WATCH_COUNT,
-        url,
-        card.outerHTML.substring(0, 500),
-        "Watch count element missing",
-      );
-    }
-
-    const str = watchCountEl.textContent.trim();
-    const watchCount = str.includes("萬")
-      ? Math.floor(parseFloat(str.replace("萬", "")) * 10000)
-      : parseInt(str.replace(/,/g, ""), 10);
-
-    if (isNaN(watchCount)) {
-      return new ScraperParseError(
-        ScraperErrorSource.WATCH_COUNT,
-        url,
-        card.outerHTML.substring(0, 500),
-        "Failed to parse watch count",
-      );
-    }
-
-    const detailBlock = card.querySelector(".theme-detail-info-block");
-    if (!detailBlock) {
-      return new ScraperParseError(
-        ScraperErrorSource.EPISODE_COUNT,
-        url,
-        card.outerHTML.substring(0, 500),
-        "Detail block missing",
-      );
-    }
-
-    const epEl = detailBlock.querySelector(".theme-number");
-    const timeEl = detailBlock.querySelector(".theme-time");
-
-    if (!epEl || !epEl.textContent) {
-      return new ScraperParseError(
-        ScraperErrorSource.EPISODE_COUNT,
-        url,
-        detailBlock.outerHTML,
-        "Episode count missing",
-      );
-    }
-
-    if (!timeEl || !timeEl.textContent) {
-      return new ScraperParseError(
-        ScraperErrorSource.UPLOAD_DATE,
-        url,
-        detailBlock.outerHTML,
-        "Upload date missing",
-      );
-    }
-
-    const episodeCount = parseInt(
-      epEl.textContent.replace("共", "").replace("集", "").trim(),
-      10,
-    );
-    const yearStr = timeEl.textContent.replace("年份：", "").trim();
-    const uploadDate = new Date(`${yearStr}-01-01T00:00:00Z`);
-
-    if (isNaN(episodeCount)) {
-      return new ScraperParseError(
-        ScraperErrorSource.EPISODE_COUNT,
-        url,
-        epEl.outerHTML,
-        "Failed to parse episode count",
-      );
-    }
-    if (isNaN(uploadDate.getTime())) {
-      return new ScraperParseError(
-        ScraperErrorSource.UPLOAD_DATE,
-        url,
-        timeEl.outerHTML,
-        "Failed to parse upload date",
-      );
-    }
-
-    return {
-      link,
-      title,
-      watchCount,
-      episodeCount,
-      uploadDate,
-      score: 0,
-      ratingCount: 0,
-      description: "",
-    };
   }
 
   /**
@@ -222,22 +240,36 @@ export class ScraperService implements AnimeScraper {
     const text = await this.fetchText(url);
     if (isError(text)) return { value: [], errors: [text] };
 
-    const doc = new DOMParser().parseFromString(text, "text/html");
-    const cards = doc.querySelectorAll("a.theme-list-main");
+    try {
+      const doc = new DOMParser().parseFromString(text, "text/html");
+      const cards = doc.querySelectorAll("a.theme-list-main");
 
-    const items: AnimeItem[] = [];
-    const errors: (ScraperParseError | ScraperHttpError)[] = [];
+      const items: AnimeItem[] = [];
+      const errors: (ScraperParseError | ScraperHttpError)[] = [];
 
-    for (const card of Array.from(cards)) {
-      const res = this.parseAnimeCard(card, url);
-      if (isError(res)) {
-        errors.push(res);
-      } else {
-        items.push(res);
+      for (const card of Array.from(cards)) {
+        const res = this.parseAnimeCard(card, url);
+        if (isError(res)) {
+          errors.push(res);
+        } else {
+          items.push(res);
+        }
       }
-    }
 
-    return { value: items, errors };
+      return { value: items, errors };
+    } catch (err) {
+      return {
+        value: [],
+        errors: [
+          new ScraperParseError(
+            ScraperErrorSource.TITLE,
+            url,
+            err instanceof Error ? err.message : String(err),
+            "Unexpected page parsing error",
+          ),
+        ],
+      };
+    }
   }
 
   /**
@@ -249,61 +281,70 @@ export class ScraperService implements AnimeScraper {
     const text = await this.fetchText(link);
     if (isError(text)) return text;
 
-    const doc = new DOMParser().parseFromString(text, "text/html");
+    try {
+      const doc = new DOMParser().parseFromString(text, "text/html");
 
-    const scoreNumDiv = doc.querySelector(".score-overall-number");
-    if (!scoreNumDiv || !scoreNumDiv.textContent) {
-      return new ScraperParseError(
-        ScraperErrorSource.SCORE,
-        link,
-        doc.body.innerHTML.substring(0, 200),
-        "Score element missing",
-      );
-    }
-    const score = parseFloat(scoreNumDiv.textContent);
-    if (isNaN(score)) {
-      return new ScraperParseError(
-        ScraperErrorSource.SCORE,
-        link,
-        scoreNumDiv.outerHTML,
-        "Failed to parse score",
-      );
-    }
+      const scoreNumDiv = doc.querySelector(".score-overall-number");
+      if (!scoreNumDiv || !scoreNumDiv.textContent) {
+        return new ScraperParseError(
+          ScraperErrorSource.SCORE,
+          link,
+          doc.body.innerHTML.substring(0, 200),
+          "Score element missing",
+        );
+      }
+      const score = parseFloat(scoreNumDiv.textContent);
+      if (isNaN(score)) {
+        return new ScraperParseError(
+          ScraperErrorSource.SCORE,
+          link,
+          scoreNumDiv.outerHTML,
+          "Failed to parse score",
+        );
+      }
 
-    const scorePeopleDiv = doc.querySelector(".score-overall-people");
-    if (!scorePeopleDiv || !scorePeopleDiv.textContent) {
-      return new ScraperParseError(
-        ScraperErrorSource.RATING_COUNT,
-        link,
-        doc.body.innerHTML.substring(0, 200),
-        "Rating count element missing",
+      const scorePeopleDiv = doc.querySelector(".score-overall-people");
+      if (!scorePeopleDiv || !scorePeopleDiv.textContent) {
+        return new ScraperParseError(
+          ScraperErrorSource.RATING_COUNT,
+          link,
+          doc.body.innerHTML.substring(0, 200),
+          "Rating count element missing",
+        );
+      }
+      const ratingCount = parseInt(
+        scorePeopleDiv.textContent.replace("人評價", "").replace(/,/g, ""),
+        10,
       );
-    }
-    const ratingCount = parseInt(
-      scorePeopleDiv.textContent.replace("人評價", "").replace(/,/g, ""),
-      10,
-    );
-    if (isNaN(ratingCount)) {
-      return new ScraperParseError(
-        ScraperErrorSource.RATING_COUNT,
-        link,
-        scorePeopleDiv.outerHTML,
-        "Failed to parse rating count",
-      );
-    }
+      if (isNaN(ratingCount)) {
+        return new ScraperParseError(
+          ScraperErrorSource.RATING_COUNT,
+          link,
+          scorePeopleDiv.outerHTML,
+          "Failed to parse rating count",
+        );
+      }
 
-    const descDiv = doc.querySelector(".data-intro p");
-    if (!descDiv || !descDiv.textContent?.trim()) {
+      const descDiv = doc.querySelector(".data-intro p");
+      if (!descDiv || !descDiv.textContent?.trim()) {
+        return new ScraperParseError(
+          ScraperErrorSource.DESCRIPTION,
+          link,
+          doc.body.innerHTML.substring(0, 200),
+          "Description missing",
+        );
+      }
+      const description = descDiv.textContent.trim();
+
+      return { score, ratingCount, description };
+    } catch (err) {
       return new ScraperParseError(
         ScraperErrorSource.DESCRIPTION,
         link,
-        doc.body.innerHTML.substring(0, 200),
-        "Description missing",
+        err instanceof Error ? err.message : String(err),
+        "Unexpected details parsing error",
       );
     }
-    const description = descDiv.textContent.trim();
-
-    return { score, ratingCount, description };
   }
 
   /**
@@ -312,11 +353,7 @@ export class ScraperService implements AnimeScraper {
   async fetchDetailsWithConcurrency(
     items: AnimeItem[],
     concurrency: number,
-    onProgress: (
-      completed: number,
-      total: number,
-      currentTitle: string,
-    ) => void,
+    onProgress: (completed: number, total: number, currentTitle: string) => void,
   ): Promise<BatchResult<AnimeItem, ScraperHttpError | ScraperParseError>> {
     const results: (AnimeItem | null)[] = new Array(items.length).fill(null);
     const errors: (ScraperHttpError | ScraperParseError)[] = [];
