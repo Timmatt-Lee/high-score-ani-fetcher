@@ -1,5 +1,13 @@
 # High Score Ani Fetcher
 
+[![CI Pipeline](https://github.com/Timmatt-Lee/high-score-ani-fetcher/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/Timmatt-Lee/high-score-ani-fetcher/actions/workflows/ci.yml)
+[![Coverage Status](https://img.shields.io/badge/coverage-%E2%89%A599%25-brightgreen.svg?style=flat-square)](#-testing)
+[![Chrome Extension](https://img.shields.io/badge/Chrome%20Extension-Manifest%20V3-blue.svg?logo=google-chrome&logoColor=white&style=flat-square)](https://developer.chrome.com/docs/extensions/)
+[![React](https://img.shields.io/badge/React-19-61DAFB.svg?logo=react&logoColor=black&style=flat-square)](https://react.dev/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-Strict-blue.svg?logo=typescript&logoColor=white&style=flat-square)](https://www.typescriptlang.org/)
+[![License](https://img.shields.io/github/license/Timmatt-Lee/high-score-ani-fetcher?style=flat-square&color=orange)](LICENSE)
+[![CodeQL Analysis](https://github.com/Timmatt-Lee/high-score-ani-fetcher/actions/workflows/codeql-analysis.yml/badge.svg)](https://github.com/Timmatt-Lee/high-score-ani-fetcher/actions/workflows/codeql-analysis.yml)
+
 A modern Chrome Extension built with React, TypeScript, and Vite that fetches and filters high-score anime from 巴哈姆特動漫瘋 (動畫瘋 - ani.gamer.com.tw).
 
 ## 🚀 Features
@@ -42,7 +50,7 @@ The output will be generated in the `dist` folder. You can then load this unpack
 
 ## 🧪 Testing
 
-This project maintains a strictly 90%+ test coverage standard and utilizes both Unit/Integration tests and End-to-End (E2E) tests.
+This project maintains a strictly 99% test coverage standard (the AI-augmented gold standard) and utilizes both Unit/Integration tests and End-to-End (E2E) tests.
 
 - **Run Unit & Integration Tests (Fast)**:
 
