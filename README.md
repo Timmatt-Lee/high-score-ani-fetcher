@@ -6,6 +6,7 @@
 [![React](https://img.shields.io/badge/React-19-61DAFB.svg?logo=react&logoColor=black&style=flat-square)](https://react.dev/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-Strict-blue.svg?logo=typescript&logoColor=white&style=flat-square)](https://www.typescriptlang.org/)
 [![License](https://img.shields.io/github/license/Timmatt-Lee/high-score-ani-fetcher?style=flat-square&color=orange)](LICENSE)
+[![CodeQL Analysis](https://github.com/Timmatt-Lee/high-score-ani-fetcher/actions/workflows/codeql-analysis.yml/badge.svg)](https://github.com/Timmatt-Lee/high-score-ani-fetcher/actions/workflows/codeql-analysis.yml)
 
 A modern Chrome Extension built with React, TypeScript, and Vite that fetches and filters high-score anime from 巴哈姆特動漫瘋 (動畫瘋 - ani.gamer.com.tw).
 
