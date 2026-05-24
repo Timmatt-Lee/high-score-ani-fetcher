@@ -31,7 +31,7 @@ function App() {
   const totalErrors = httpErrors.length + parseErrors.length;
 
   return (
-    <div className={styles.appContainer}>
+    <div className={styles.appContainer} data-testid="app-container">
       <div className={styles.header}>
         <h1>AniFetcher Pro</h1>
         <button

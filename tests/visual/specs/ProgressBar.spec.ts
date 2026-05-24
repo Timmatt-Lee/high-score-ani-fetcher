@@ -1,0 +1,41 @@
+import { test, expect } from "@playwright/test";
+
+test.describe("ProgressBar Visual Regression", () => {
+  test.beforeEach(async ({ page }) => {
+    await page.mouse.move(0, 0);
+  });
+
+  test("should match in-progress scanning state snapshot", async ({ page }) => {
+    await page.goto(
+      "?component=ProgressBar&isScanning=true&percent=50&message=Scanning%20page%205%20of%2010...",
+    );
+    await expect(page.locator("#playground-root")).toHaveScreenshot(
+      "progress-bar-in-progress.png",
+    );
+  });
+
+  test("should match start scanning state snapshot", async ({ page }) => {
+    await page.goto(
+      "?component=ProgressBar&isScanning=true&percent=0&message=Initializing%20scanner...",
+    );
+    await expect(page.locator("#playground-root")).toHaveScreenshot(
+      "progress-bar-start.png",
+    );
+  });
+
+  test("should match completed scanning state snapshot", async ({ page }) => {
+    await page.goto(
+      "?component=ProgressBar&isScanning=true&percent=100&message=Scan%20finished!",
+    );
+    await expect(page.locator("#playground-root")).toHaveScreenshot(
+      "progress-bar-completed.png",
+    );
+  });
+
+  test("should match hidden state snapshot", async ({ page }) => {
+    await page.goto("?component=ProgressBar&isScanning=false");
+    await expect(page.locator("#playground-root")).toHaveScreenshot(
+      "progress-bar-hidden.png",
+    );
+  });
+});

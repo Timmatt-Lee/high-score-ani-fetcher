@@ -13,6 +13,8 @@
     "test": "vitest run --coverage",
     "test:e2e": "./scripts/test-e2e.sh",
     "test:e2e:update": "./scripts/test-e2e.sh --update-snapshots",
+    "test:visual": "./scripts/test-visual.sh",
+    "test:visual:update": "./scripts/test-visual.sh --update-snapshots",
     "prepare": "husky"
   },
   "dependencies": {

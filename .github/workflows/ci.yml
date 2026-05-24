@@ -42,11 +42,14 @@ jobs:
       - name: Run E2E and Update Visual Regression Tests
         run: npm run test:e2e -- --update-snapshots
 
+      - name: Run Component Visual Regression Tests and Update Snapshots
+        run: npm run test:visual -- --update-snapshots
+
       - name: Auto-commit updated snapshots
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
-          commit_message: "chore(tests): auto-update Linux E2E visual snapshots from CI"
-          file_pattern: "tests/e2e/specs/popup/visual.spec.ts-snapshots/*.png"
+          commit_message: "chore(tests): auto-update Linux visual snapshots from CI"
+          file_pattern: "tests/**/*-snapshots/*.png"
 
       - uses: actions/upload-artifact@v4
         if: ${{ !cancelled() }}
