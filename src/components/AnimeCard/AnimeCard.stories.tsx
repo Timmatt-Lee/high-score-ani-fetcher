@@ -66,11 +66,14 @@ export const LongText: Story = {
   },
 };
 
+const mockInvalidDate = new Date(NaN);
+mockInvalidDate.toISOString = () => "Invalid Date";
+
 export const InvalidDate: Story = {
   args: {
     item: {
       ...baseAnime,
-      uploadDate: new Date(NaN),
+      uploadDate: mockInvalidDate,
     },
     activeTab: "search",
   },
