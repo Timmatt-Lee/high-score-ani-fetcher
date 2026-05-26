@@ -39,17 +39,11 @@ jobs:
       - name: Install Playwright Browsers
         run: npx playwright install --with-deps chromium
 
-      - name: Run E2E and Update Visual Regression Tests
-        run: npm run test:e2e -- --update-snapshots
+      - name: Run E2E Visual Regression Tests
+        run: npm run test:e2e
 
-      - name: Run Component Visual Regression Tests and Update Snapshots
-        run: npm run test:visual -- --update-snapshots
-
-      - name: Auto-commit updated snapshots
-        uses: stefanzweifel/git-auto-commit-action@v5
-        with:
-          commit_message: "chore(tests): auto-update Linux visual snapshots from CI"
-          file_pattern: "tests/**/*-snapshots/*.png"
+      - name: Run Component Visual Regression Tests
+        run: npm run test:visual
 
       - uses: actions/upload-artifact@v4
         if: ${{ !cancelled() }}
