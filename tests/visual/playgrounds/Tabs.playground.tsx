@@ -14,7 +14,7 @@ export default function TabsPlayground({
 
   return (
     <TestContainer>
-      <div style={{ width: "400px" }}>
+      <div style={{ width: "400px", height: "48px", boxSizing: "border-box" }}>
         <Tabs
           activeTab={activeTabType}
           setActiveTab={() => {}}

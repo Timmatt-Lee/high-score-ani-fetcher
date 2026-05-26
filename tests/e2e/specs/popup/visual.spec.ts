@@ -27,6 +27,13 @@ test.describe("Popup Visual Regression", () => {
 
   test("should match visual snapshot for initial state", async ({ page }) => {
     await expect(page.getByText("AniFetcher Pro")).toBeVisible();
+
+    // Set fixed height on app-container to prevent flaky font-rendering dimensions
+    await page.locator('[data-testid="app-container"]').evaluate((el) => {
+      (el as HTMLElement).style.height = "270px";
+      (el as HTMLElement).style.boxSizing = "border-box";
+    });
+
     await expect(
       page.locator('[data-testid="app-container"]'),
     ).toHaveScreenshot("popup-initial.png");
@@ -65,6 +72,12 @@ test.describe("Popup Visual Regression", () => {
       page.getByRole("button", { name: "Scanning..." }),
     ).toBeVisible();
 
+    // Set fixed height on app-container to prevent flaky font-rendering dimensions
+    await page.locator('[data-testid="app-container"]').evaluate((el) => {
+      (el as HTMLElement).style.height = "350px";
+      (el as HTMLElement).style.boxSizing = "border-box";
+    });
+
     // Take screenshot of scanning state
     await expect(
       page.locator('[data-testid="app-container"]'),
@@ -101,6 +114,12 @@ test.describe("Popup Visual Regression", () => {
     // Wait for the mock results cards to appear
     await expect(page.getByText("測試動畫第一季")).toBeVisible({
       timeout: 15000,
+    });
+
+    // Set fixed height on app-container to prevent flaky font-rendering dimensions
+    await page.locator('[data-testid="app-container"]').evaluate((el) => {
+      (el as HTMLElement).style.height = "480px";
+      (el as HTMLElement).style.boxSizing = "border-box";
     });
 
     // Take screenshot of the populated result state

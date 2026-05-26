@@ -9,27 +9,27 @@ test.describe("ProgressBar Visual Regression", () => {
     await page.goto(
       "?component=ProgressBar&isScanning=true&percent=50&message=Scanning%20page%205%20of%2010...",
     );
-    await expect(
-      page.locator('[data-testid="progress-container"]'),
-    ).toHaveScreenshot("progress-bar-in-progress.png");
+    await expect(page.locator("#playground-root")).toHaveScreenshot(
+      "progress-bar-in-progress.png",
+    );
   });
 
   test("should match start scanning state snapshot", async ({ page }) => {
     await page.goto(
       "?component=ProgressBar&isScanning=true&percent=0&message=Initializing%20scanner...",
     );
-    await expect(
-      page.locator('[data-testid="progress-container"]'),
-    ).toHaveScreenshot("progress-bar-start.png");
+    await expect(page.locator("#playground-root")).toHaveScreenshot(
+      "progress-bar-start.png",
+    );
   });
 
   test("should match completed scanning state snapshot", async ({ page }) => {
     await page.goto(
       "?component=ProgressBar&isScanning=true&percent=100&message=Scan%20finished!",
     );
-    await expect(
-      page.locator('[data-testid="progress-container"]'),
-    ).toHaveScreenshot("progress-bar-completed.png");
+    await expect(page.locator("#playground-root")).toHaveScreenshot(
+      "progress-bar-completed.png",
+    );
   });
 
   test("should be hidden when isScanning is false", async ({ page }) => {

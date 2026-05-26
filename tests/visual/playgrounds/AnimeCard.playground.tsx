@@ -41,7 +41,7 @@ export default function AnimeCardPlayground({
 
   return (
     <TestContainer>
-      <div style={{ width: "360px" }}>
+      <div style={{ width: "360px", height: "220px", boxSizing: "border-box" }}>
         <AnimeCard
           item={item}
           activeTab={cardState}

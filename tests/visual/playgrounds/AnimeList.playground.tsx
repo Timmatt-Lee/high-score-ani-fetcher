@@ -44,9 +44,10 @@ export default function AnimeListPlayground({
       <div
         style={{
           width: "360px",
-          maxHeight: "400px",
+          height: "400px",
           overflowY: "auto",
           border: "1px solid #222",
+          boxSizing: "border-box",
         }}
       >
         <AnimeList
