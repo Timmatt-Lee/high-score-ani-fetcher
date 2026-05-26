@@ -12,7 +12,7 @@ export default function ProgressBarPlayground({
 
   return (
     <TestContainer>
-      <div style={{ width: "400px", height: "64px", boxSizing: "border-box" }}>
+      <div style={{ width: "400px", height: "50px", boxSizing: "border-box" }}>
         <ProgressBar
           isScanning={isScanning}
           percent={percent}

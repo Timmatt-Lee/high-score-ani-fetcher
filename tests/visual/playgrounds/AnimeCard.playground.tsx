@@ -39,9 +39,17 @@ export default function AnimeCardPlayground({
       ? "search"
       : (state as "search" | "favorites" | "trash");
 
+  const wrapperHeight = state === "long-title" ? "210px" : "165px";
+
   return (
     <TestContainer>
-      <div style={{ width: "360px", height: "220px", boxSizing: "border-box" }}>
+      <div
+        style={{
+          width: "360px",
+          height: wrapperHeight,
+          boxSizing: "border-box",
+        }}
+      >
         <AnimeCard
           item={item}
           activeTab={cardState}

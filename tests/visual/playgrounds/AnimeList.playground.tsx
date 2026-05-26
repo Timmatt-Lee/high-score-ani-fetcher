@@ -39,12 +39,14 @@ export default function AnimeListPlayground({
   const favorites = isListEmpty ? [] : [mockItem1];
   const trash = isListEmpty ? [] : [mockItem2];
 
+  const wrapperHeight = isListEmpty ? "50px" : "340px";
+
   return (
     <TestContainer>
       <div
         style={{
           width: "360px",
-          height: "400px",
+          height: wrapperHeight,
           overflowY: "auto",
           border: "1px solid #222",
           boxSizing: "border-box",

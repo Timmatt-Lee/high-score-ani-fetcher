@@ -2,8 +2,8 @@ import { test, expect } from "@playwright/test";
 
 test.describe("AnimeCard Visual Regression", () => {
   test.beforeEach(async ({ page }) => {
-    // Reset mouse to (0,0) to prevent accidental hovers on links or buttons
-    await page.mouse.move(0, 0);
+    // Reset mouse to (1000,1000) to prevent accidental hovers on links or buttons
+    await page.mouse.move(1000, 1000);
   });
 
   test("should match search tab state snapshot", async ({ page }) => {

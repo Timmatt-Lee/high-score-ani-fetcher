@@ -2,7 +2,7 @@ import { test, expect } from "@playwright/test";
 
 test.describe("ProgressBar Visual Regression", () => {
   test.beforeEach(async ({ page }) => {
-    await page.mouse.move(0, 0);
+    await page.mouse.move(1000, 1000);
   });
 
   test("should match in-progress scanning state snapshot", async ({ page }) => {
