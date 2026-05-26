@@ -60,20 +60,39 @@ This project maintains a strictly 99% test coverage standard (the AI-augmented g
 
   _These tests run via Vitest, check coverage, and are automatically executed before every commit using Husky._
 
-- **Run End-to-End (E2E) Tests (Docker-based locally, Native in CI)**:
+- **Component Visual Sandbox & Documentation (Storybook)**:
 
-  > [!IMPORTANT]
-  > **Prerequisite**: You must have **Docker Desktop** installed and running on your local machine. Locally, the E2E tests will automatically run inside Playwright's official Linux Docker container to guarantee consistent visual regression snapshot comparisons (preventing macOS vs. Linux font rendering discrepancies). In the CI/CD pipeline, tests run natively on the Linux runner.
+  To run the Storybook component library locally:
+
+  ```sh
+  npm run storybook
+  ```
+
+  To build the static Storybook:
+
+  ```sh
+  npm run build-storybook
+  ```
+
+- **Visual Regression Testing (Chromatic)**:
+
+  We use Chromatic for cloud-based visual regression testing. It runs automatically in CI/CD, eliminating flakiness from OS-specific rendering engines (no local Docker required).
+
+  To publish new visual baselines manually:
+
+  ```sh
+  npm run chromatic -- --project-token=<your-token>
+  ```
+
+- **Functional End-to-End (E2E) Tests (Playwright)**:
+
+  To verify Chrome Extension behaviors (like page scanning and service worker messaging):
 
   ```sh
   npm run test:e2e
   ```
 
-  To update visual snapshots (inside Docker), run:
-
-  ```sh
-  npm run test:e2e:update
-  ```
+  _Note: Playwright visual regression snapshots have been completely replaced by Chromatic; E2E tests now strictly verify functional integration._
 
 ## 📜 License
 
