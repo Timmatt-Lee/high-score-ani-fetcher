@@ -9,7 +9,11 @@ test.describe("AnimeList Visual Regression", () => {
     page,
   }) => {
     await page.goto("?component=AnimeList&state=search&isListEmpty=false");
-    await page.mouse.move(1000, 1000); // Ensure mouse is moved away after page loads
+    await page
+      .locator('[data-testid="list-container"]')
+      .waitFor({ state: "visible" });
+    await page.evaluate(() => document.fonts.ready);
+    await page.mouse.move(1000, 1000);
     await expect(page.locator("#playground-root")).toHaveScreenshot(
       "anime-list-populated-search.png",
     );
@@ -17,6 +21,10 @@ test.describe("AnimeList Visual Regression", () => {
 
   test("should match empty search list snapshot", async ({ page }) => {
     await page.goto("?component=AnimeList&state=search&isListEmpty=true");
+    await page
+      .locator('[data-testid="list-container"]')
+      .waitFor({ state: "visible" });
+    await page.evaluate(() => document.fonts.ready);
     await page.mouse.move(1000, 1000);
     await expect(page.locator("#playground-root")).toHaveScreenshot(
       "anime-list-empty-search.png",
@@ -25,6 +33,10 @@ test.describe("AnimeList Visual Regression", () => {
 
   test("should match empty favorites list snapshot", async ({ page }) => {
     await page.goto("?component=AnimeList&state=favorites&isListEmpty=true");
+    await page
+      .locator('[data-testid="list-container"]')
+      .waitFor({ state: "visible" });
+    await page.evaluate(() => document.fonts.ready);
     await page.mouse.move(1000, 1000);
     await expect(page.locator("#playground-root")).toHaveScreenshot(
       "anime-list-empty-favorites.png",
