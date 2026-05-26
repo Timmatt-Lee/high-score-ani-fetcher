@@ -12,6 +12,8 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
+    container:
+      image: mcr.microsoft.com/playwright:v1.60.0-noble
 
     steps:
       - uses: actions/checkout@v4
@@ -35,9 +37,6 @@ jobs:
 
       - name: Test with Vitest and enforce 90% coverage
         run: npm run test
-
-      - name: Install Playwright Browsers
-        run: npx playwright install --with-deps chromium
 
       - name: Run E2E Visual Regression Tests
         run: npm run test:e2e
