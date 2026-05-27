@@ -7,11 +7,21 @@ interface ServiceContextType {
 
 const ServiceContext = createContext<ServiceContextType | undefined>(undefined);
 
-export function ServiceProvider({ children }: { children: ReactNode }) {
-  // We provide the singleton instance here.
-  // This allows for easier testing by providing a mock service via a custom Provider in tests.
+interface ServiceProviderProps {
+  children: ReactNode;
+  scraperService?: ScraperService;
+}
+
+export function ServiceProvider({
+  children,
+  scraperService: customScraperService,
+}: ServiceProviderProps) {
+  // We provide the singleton instance here by default.
+  // This allows for easier testing by providing a mock service via a custom Provider or prop.
   return (
-    <ServiceContext.Provider value={{ scraperService }}>
+    <ServiceContext.Provider
+      value={{ scraperService: customScraperService || scraperService }}
+    >
       {children}
     </ServiceContext.Provider>
   );
