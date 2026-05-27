@@ -1,4 +1,6 @@
 .appContainer {
+  width: 450px;
+  height: 600px;
   padding: 20px;
   display: flex;
   flex-direction: column;
