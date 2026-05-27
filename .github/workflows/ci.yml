@@ -39,6 +39,20 @@ jobs:
       - name: Test with Vitest and enforce coverage
         run: npm run test
 
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+          restore-keys: |
+            playwright-${{ runner.os }}-
+
+      - name: Install Playwright Chromium (if not cached)
+        run: npx playwright install chromium --with-deps
+
+      - name: Run functional E2E Tests
+        run: npm run test:e2e
+
       - name: Publish to Chromatic
         uses: chromaui/action@v11
         with:
