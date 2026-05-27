@@ -18,7 +18,7 @@ export function Tabs({
   trashCount,
 }: TabsProps) {
   return (
-    <div className={styles.tabs}>
+    <div className={styles.tabs} data-testid="tabs-container">
       <button
         className={`${styles.tab} ${activeTab === "search" ? styles.active : ""}`}
         onClick={() => setActiveTab("search")}

@@ -27,8 +27,6 @@ body {
     sans-serif;
   background-color: var(--bg-color);
   color: var(--text-main);
-  width: 450px;
-  height: 600px;
   overflow-y: auto;
   overflow-x: hidden;
 }

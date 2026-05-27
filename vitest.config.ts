@@ -8,11 +8,18 @@ export default defineConfig({
     globals: true,
     setupFiles: ["./src/setupTests.ts"],
     include: ["src/**/*.{test,spec}.{ts,tsx}"],
+    exclude: ["**/node_modules/**", "**/dist/**", "**/*.visual.spec.ts"],
     coverage: {
       provider: "v8",
       reporter: ["text", "json", "html"],
       include: ["src/**/*.{ts,tsx}"],
-      exclude: ["src/main.tsx", "src/setupTests.ts", "src/vite-env.d.ts"],
+      exclude: [
+        "src/main.tsx",
+        "src/setupTests.ts",
+        "src/vite-env.d.ts",
+        "src/components/ComponentPlayground.tsx",
+        "src/**/*.stories.{ts,tsx}",
+      ],
       thresholds: {
         lines: 99,
         functions: 99,

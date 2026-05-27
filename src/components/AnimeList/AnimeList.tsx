@@ -28,7 +28,9 @@ export function AnimeList({
 
   if (list.length === 0) {
     return (
-      <div className={styles.emptyState}>No anime found in this list.</div>
+      <div className={styles.emptyState} data-testid="list-container">
+        No anime found in this list.
+      </div>
     );
   }
 

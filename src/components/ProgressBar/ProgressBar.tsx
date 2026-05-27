@@ -14,7 +14,7 @@ export function ProgressBar({
   if (!isScanning) return null;
 
   return (
-    <div className={styles.progressContainer}>
+    <div className={styles.progressContainer} data-testid="progress-container">
       <div className={styles.progressBar}>
         <div
           className={styles.progressFill}
