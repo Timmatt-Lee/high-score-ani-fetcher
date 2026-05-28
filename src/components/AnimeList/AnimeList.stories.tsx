@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react";
 import { AnimeList } from "./AnimeList";
+import { TabType } from "../Tabs";
 import { type AnimeItem } from "../../types/anime";
 
 const meta: Meta<typeof AnimeList> = {
@@ -9,7 +10,7 @@ const meta: Meta<typeof AnimeList> = {
   argTypes: {
     activeTab: {
       control: "select",
-      options: ["search", "favorites", "trash"],
+      options: [TabType.Search, TabType.Favorites, TabType.Trash],
     },
     onMoveToFavorites: { action: "moveToFavorites" },
     onMoveToTrash: { action: "moveToTrash" },
@@ -75,7 +76,7 @@ const sampleTrashList: AnimeItem[] = [
 
 export const SearchTabWithItems: Story = {
   args: {
-    activeTab: "search",
+    activeTab: TabType.Search,
     searchList: sampleSearchList,
     favorites: sampleFavoritesList,
     trash: sampleTrashList,
@@ -84,7 +85,7 @@ export const SearchTabWithItems: Story = {
 
 export const FavoritesTabWithItems: Story = {
   args: {
-    activeTab: "favorites",
+    activeTab: TabType.Favorites,
     searchList: sampleSearchList,
     favorites: sampleFavoritesList,
     trash: sampleTrashList,
@@ -93,7 +94,7 @@ export const FavoritesTabWithItems: Story = {
 
 export const TrashTabWithItems: Story = {
   args: {
-    activeTab: "trash",
+    activeTab: TabType.Trash,
     searchList: sampleSearchList,
     favorites: sampleFavoritesList,
     trash: sampleTrashList,
@@ -102,7 +103,7 @@ export const TrashTabWithItems: Story = {
 
 export const EmptySearchState: Story = {
   args: {
-    activeTab: "search",
+    activeTab: TabType.Search,
     searchList: [],
     favorites: sampleFavoritesList,
     trash: sampleTrashList,
@@ -111,7 +112,7 @@ export const EmptySearchState: Story = {
 
 export const EmptyFavoritesState: Story = {
   args: {
-    activeTab: "favorites",
+    activeTab: TabType.Favorites,
     searchList: sampleSearchList,
     favorites: [],
     trash: sampleTrashList,

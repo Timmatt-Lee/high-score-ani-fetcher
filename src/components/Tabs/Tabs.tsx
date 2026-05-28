@@ -1,6 +1,11 @@
+/* eslint-disable react-refresh/only-export-components */
 import styles from "./Tabs.module.css";
 
-export type TabType = "search" | "favorites" | "trash";
+export enum TabType {
+  Search = "search",
+  Favorites = "favorites",
+  Trash = "trash",
+}
 
 interface TabsProps {
   activeTab: TabType;
@@ -20,20 +25,20 @@ export function Tabs({
   return (
     <div className={styles.tabs} data-testid="tabs-container">
       <button
-        className={`${styles.tab} ${activeTab === "search" ? styles.active : ""}`}
-        onClick={() => setActiveTab("search")}
+        className={`${styles.tab} ${activeTab === TabType.Search ? styles.active : ""}`}
+        onClick={() => setActiveTab(TabType.Search)}
       >
         Results ({searchCount})
       </button>
       <button
-        className={`${styles.tab} ${activeTab === "favorites" ? styles.active : ""}`}
-        onClick={() => setActiveTab("favorites")}
+        className={`${styles.tab} ${activeTab === TabType.Favorites ? styles.active : ""}`}
+        onClick={() => setActiveTab(TabType.Favorites)}
       >
         Favorites ({favoritesCount})
       </button>
       <button
-        className={`${styles.tab} ${activeTab === "trash" ? styles.active : ""}`}
-        onClick={() => setActiveTab("trash")}
+        className={`${styles.tab} ${activeTab === TabType.Trash ? styles.active : ""}`}
+        onClick={() => setActiveTab(TabType.Trash)}
       >
         Trash ({trashCount})
       </button>

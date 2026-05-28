@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react";
-import { Tabs } from "./Tabs";
+import { Tabs, TabType } from "./Tabs";
 
 const meta: Meta<typeof Tabs> = {
   title: "Components/Tabs",
@@ -8,7 +8,7 @@ const meta: Meta<typeof Tabs> = {
   argTypes: {
     activeTab: {
       control: "select",
-      options: ["search", "favorites", "trash"],
+      options: [TabType.Search, TabType.Favorites, TabType.Trash],
     },
     searchCount: { control: { type: "number", min: 0 } },
     favoritesCount: { control: { type: "number", min: 0 } },
@@ -22,7 +22,7 @@ type Story = StoryObj<typeof Tabs>;
 
 export const SearchActive: Story = {
   args: {
-    activeTab: "search",
+    activeTab: TabType.Search,
     searchCount: 15,
     favoritesCount: 3,
     trashCount: 2,
@@ -31,7 +31,7 @@ export const SearchActive: Story = {
 
 export const FavoritesActive: Story = {
   args: {
-    activeTab: "favorites",
+    activeTab: TabType.Favorites,
     searchCount: 15,
     favoritesCount: 3,
     trashCount: 2,
@@ -40,7 +40,7 @@ export const FavoritesActive: Story = {
 
 export const TrashActive: Story = {
   args: {
-    activeTab: "trash",
+    activeTab: TabType.Trash,
     searchCount: 15,
     favoritesCount: 3,
     trashCount: 2,
@@ -49,7 +49,7 @@ export const TrashActive: Story = {
 
 export const EmptyCounts: Story = {
   args: {
-    activeTab: "search",
+    activeTab: TabType.Search,
     searchCount: 0,
     favoritesCount: 0,
     trashCount: 0,

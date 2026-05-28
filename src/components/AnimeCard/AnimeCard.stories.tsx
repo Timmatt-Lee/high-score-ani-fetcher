@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react";
 import { AnimeCard } from "./AnimeCard";
+import { TabType } from "../Tabs";
 import { type AnimeItem } from "../../types/anime";
 
 const meta: Meta<typeof AnimeCard> = {
@@ -9,7 +10,7 @@ const meta: Meta<typeof AnimeCard> = {
   argTypes: {
     activeTab: {
       control: "select",
-      options: ["search", "favorites", "trash"],
+      options: [TabType.Search, TabType.Favorites, TabType.Trash],
     },
     onMoveToFavorites: { action: "moveToFavorites" },
     onMoveToTrash: { action: "moveToTrash" },
@@ -35,21 +36,21 @@ const baseAnime: AnimeItem = {
 export const SearchTab: Story = {
   args: {
     item: baseAnime,
-    activeTab: "search",
+    activeTab: TabType.Search,
   },
 };
 
 export const FavoritesTab: Story = {
   args: {
     item: baseAnime,
-    activeTab: "favorites",
+    activeTab: TabType.Favorites,
   },
 };
 
 export const TrashTab: Story = {
   args: {
     item: baseAnime,
-    activeTab: "trash",
+    activeTab: TabType.Trash,
   },
 };
 
@@ -62,7 +63,7 @@ export const LongText: Story = {
       description:
         "This is an extremely long description designed to test if the card handles large amounts of paragraph text gracefully without overflowing the layout boundaries. It should wrap properly and maintain the visual spacing guidelines.",
     },
-    activeTab: "search",
+    activeTab: TabType.Search,
   },
 };
 
@@ -75,6 +76,6 @@ export const InvalidDate: Story = {
       ...baseAnime,
       uploadDate: mockInvalidDate,
     },
-    activeTab: "search",
+    activeTab: TabType.Search,
   },
 };

@@ -3,12 +3,12 @@ import { useAnimeData } from "./hooks/useAnimeData";
 import { useAnimeScanner } from "./hooks/useAnimeScanner";
 import { AnimeList } from "./components/AnimeList";
 import { ProgressBar } from "./components/ProgressBar";
-import { Tabs, type TabType } from "./components/Tabs";
+import { Tabs, TabType } from "./components/Tabs";
 import styles from "./App.module.css";
 import "./index.css";
 
 function App() {
-  const [activeTab, setActiveTab] = useState<TabType>("search");
+  const [activeTab, setActiveTab] = useState<TabType>(TabType.Search);
   const [showErrorDetails, setShowErrorDetails] = useState(false);
 
   const {
