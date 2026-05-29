@@ -1,10 +1,15 @@
+/* eslint-disable react-refresh/only-export-components */
 import styles from "./Tabs.module.css";
 
-export type TabType = "search" | "favorites" | "trash";
+export enum Tab {
+  Search,
+  Favorites,
+  Trash,
+}
 
 interface TabsProps {
-  activeTab: TabType;
-  setActiveTab: (tab: TabType) => void;
+  activeTab: Tab;
+  setActiveTab: (tab: Tab) => void;
   searchCount: number;
   favoritesCount: number;
   trashCount: number;
@@ -20,20 +25,20 @@ export function Tabs({
   return (
     <div className={styles.tabs} data-testid="tabs-container">
       <button
-        className={`${styles.tab} ${activeTab === "search" ? styles.active : ""}`}
-        onClick={() => setActiveTab("search")}
+        className={`${styles.tab} ${activeTab === Tab.Search ? styles.active : ""}`}
+        onClick={() => setActiveTab(Tab.Search)}
       >
         Results ({searchCount})
       </button>
       <button
-        className={`${styles.tab} ${activeTab === "favorites" ? styles.active : ""}`}
-        onClick={() => setActiveTab("favorites")}
+        className={`${styles.tab} ${activeTab === Tab.Favorites ? styles.active : ""}`}
+        onClick={() => setActiveTab(Tab.Favorites)}
       >
         Favorites ({favoritesCount})
       </button>
       <button
-        className={`${styles.tab} ${activeTab === "trash" ? styles.active : ""}`}
-        onClick={() => setActiveTab("trash")}
+        className={`${styles.tab} ${activeTab === Tab.Trash ? styles.active : ""}`}
+        onClick={() => setActiveTab(Tab.Trash)}
       >
         Trash ({trashCount})
       </button>

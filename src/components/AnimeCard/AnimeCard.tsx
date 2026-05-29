@@ -1,9 +1,10 @@
 import { type AnimeItem } from "../../types/anime";
+import { Tab } from "../Tabs";
 import styles from "./AnimeCard.module.css";
 
 interface AnimeCardProps {
   item: AnimeItem;
-  activeTab: "search" | "favorites" | "trash";
+  activeTab: Tab;
   onMoveToFavorites: (item: AnimeItem) => void;
   onMoveToTrash: (item: AnimeItem) => void;
   onRestoreFromTrash: (item: AnimeItem) => void;
@@ -36,7 +37,7 @@ export function AnimeCard({
       <div className={styles.animeDesc}>{item.description}</div>
 
       <div className={styles.cardActions}>
-        {activeTab !== "favorites" && activeTab !== "trash" && (
+        {activeTab !== Tab.Favorites && activeTab !== Tab.Trash && (
           <button
             className={`${styles.actionBtn} ${styles.fav}`}
             onClick={() => onMoveToFavorites(item)}
@@ -44,7 +45,7 @@ export function AnimeCard({
             ❤ Favorite
           </button>
         )}
-        {activeTab !== "trash" && (
+        {activeTab !== Tab.Trash && (
           <button
             className={`${styles.actionBtn} ${styles.trash}`}
             onClick={() => onMoveToTrash(item)}
@@ -52,7 +53,7 @@ export function AnimeCard({
             🗑 Trash
           </button>
         )}
-        {activeTab === "trash" && (
+        {activeTab === Tab.Trash && (
           <button
             className={styles.actionBtn}
             onClick={() => onRestoreFromTrash(item)}
