@@ -54,6 +54,7 @@ jobs:
         run: npm run test:e2e
 
       - name: Publish to Chromatic
+        if: ${{ secrets.CHROMATIC_PROJECT_TOKEN != '' }}
         uses: chromaui/action@v11
         with:
           projectToken: ${{ secrets.CHROMATIC_PROJECT_TOKEN }}
