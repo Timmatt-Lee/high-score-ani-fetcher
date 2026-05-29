@@ -22,20 +22,14 @@ export class ScraperService implements AnimeScraper {
     try {
       const response = await fetch(url);
       if (!response.ok) {
-        let htmlBody = "";
+        let snippet = "";
         try {
-          htmlBody = await response.text();
-        } catch (err) {
-          const errMsg = err instanceof Error ? err.message : String(err);
-          console.warn(
-            `Failed to retrieve response body from non-ok response: ${errMsg}`,
-          );
-          // It is safe to swallow this error because fetchText is attempting a best-effort retrieval
-          // of the response body for debugging purposes. If response.text() fails (e.g., if the body
-          // stream has already been read or if the connection was aborted), we fall back to an empty body
-          // and return the ScraperHttpError with status and URL.
+          const t = await response.text();
+          snippet = t.slice(0, 200);
+        } catch {
+          // ignore
         }
-        return new ScraperHttpError(url, htmlBody, response.status);
+        return new ScraperHttpError(url, snippet, response.status);
       }
       return await response.text();
     } catch (err) {

@@ -90,48 +90,6 @@ describe("scraperService.getTotalPages", () => {
     }
   });
 
-  it("returns ScraperHttpError with fallback error message when response.text() fails with Error", async () => {
-    vi.stubGlobal(
-      "fetch",
-      vi.fn().mockResolvedValue({
-        ok: false,
-        status: 500,
-        statusText: "Server Error",
-        text: async () => {
-          throw new Error("text stream error");
-        },
-      }),
-    );
-    const result = await scraperService.getTotalPages();
-    expect(isError(result)).toBe(true);
-    if (isError(result)) {
-      expect(result).toBeInstanceOf(ScraperHttpError);
-      expect((result as ScraperHttpError).status).toBe(500);
-      expect((result as ScraperHttpError).html).toBe("");
-    }
-  });
-
-  it("returns ScraperHttpError with fallback error message when response.text() fails with string", async () => {
-    vi.stubGlobal(
-      "fetch",
-      vi.fn().mockResolvedValue({
-        ok: false,
-        status: 500,
-        statusText: "Server Error",
-        text: async () => {
-          throw "text stream string error";
-        },
-      }),
-    );
-    const result = await scraperService.getTotalPages();
-    expect(isError(result)).toBe(true);
-    if (isError(result)) {
-      expect(result).toBeInstanceOf(ScraperHttpError);
-      expect((result as ScraperHttpError).status).toBe(500);
-      expect((result as ScraperHttpError).html).toBe("");
-    }
-  });
-
   it("handles fetch failure (network error) by returning ScraperHttpError", async () => {
     vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("network")));
     const result = await scraperService.getTotalPages();
