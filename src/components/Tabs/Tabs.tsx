@@ -2,9 +2,9 @@
 import styles from "./Tabs.module.css";
 
 export enum Tab {
-  Search = "search",
-  Favorites = "favorites",
-  Trash = "trash",
+  Search,
+  Favorites,
+  Trash,
 }
 
 interface TabsProps {
