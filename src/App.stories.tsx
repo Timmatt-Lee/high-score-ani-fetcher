@@ -140,7 +140,7 @@ export const WithLoadedData: Story = {
           watchCount: 300000,
         }),
       ];
-      const mockFavorites = [
+      const mockFavoriteList = [
         createMockAnime({
           title: "鋼之鍊金術師 BROTHERHOOD",
           score: 4.9,
@@ -148,7 +148,7 @@ export const WithLoadedData: Story = {
           link: "https://ani.gamer.com.tw/anime.php?sn=fav1",
         }),
       ];
-      const mockTrash = [
+      const mockTrashList = [
         createMockAnime({
           title: "爛尾劣質番",
           score: 3.2,
@@ -160,8 +160,8 @@ export const WithLoadedData: Story = {
         "animeData",
         JSON.stringify({
           searchList: mockSearchList,
-          favorites: mockFavorites,
-          trash: mockTrash,
+          favoriteList: mockFavoriteList,
+          trashList: mockTrashList,
         }),
       );
       return <Story />;
@@ -184,8 +184,8 @@ export const WithScanErrors: Story = {
         "animeData",
         JSON.stringify({
           searchList: mockSearchList,
-          favorites: [],
-          trash: [],
+          favoriteList: [],
+          trashList: [],
         }),
       );
       return <Story />;

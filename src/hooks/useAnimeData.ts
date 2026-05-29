@@ -23,26 +23,32 @@ export function useAnimeData() {
         if (typeof chrome !== "undefined" && chrome.storage) {
           const data = await chrome.storage.local.get([
             "searchList",
-            "favorites",
-            "trash",
+            "favoriteList",
+            "trashList",
           ]);
           if (data.searchList) {
             setSearchList(parseList(data.searchList));
           }
-          if (data.favorites) {
-            setFavoriteList(parseList(data.favorites));
+          if (data.favoriteList) {
+            setFavoriteList(parseList(data.favoriteList));
           }
-          if (data.trash) {
-            setTrashList(parseList(data.trash));
+          if (data.trashList) {
+            setTrashList(parseList(data.trashList));
           }
         } else {
           // Fallback for local web dev without extension context
           const localData = localStorage.getItem("animeData");
           if (localData) {
             const parsed = JSON.parse(localData);
-            setSearchList(parseList(parsed.searchList));
-            setFavoriteList(parseList(parsed.favorites));
-            setTrashList(parseList(parsed.trash));
+            if (parsed.searchList) {
+              setSearchList(parseList(parsed.searchList));
+            }
+            if (parsed.favoriteList) {
+              setFavoriteList(parseList(parsed.favoriteList));
+            }
+            if (parsed.trashList) {
+              setTrashList(parseList(parsed.trashList));
+            }
           }
         }
       } catch (err) {
@@ -63,8 +69,8 @@ export function useAnimeData() {
 
       const payload = {
         searchList: serializeList(s),
-        favorites: serializeList(f),
-        trash: serializeList(t),
+        favoriteList: serializeList(f),
+        trashList: serializeList(t),
       };
 
       if (typeof chrome !== "undefined" && chrome.storage) {
