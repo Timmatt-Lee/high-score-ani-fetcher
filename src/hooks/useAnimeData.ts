@@ -11,7 +11,11 @@ export function useAnimeData() {
   useEffect(() => {
     const parseList = (data: unknown): AnimeItem[] => {
       const result = z.array(AnimeItemSchema).safeParse(data);
-      return result.success ? result.data : [];
+      if (!result.success) {
+        console.error("Zod parse error:", result.error, "Data was:", data);
+        return [];
+      }
+      return result.data;
     };
 
     const loadData = async () => {
@@ -51,17 +55,22 @@ export function useAnimeData() {
   // Save data when state changes
   const saveData = async (s: AnimeItem[], f: AnimeItem[], t: AnimeItem[]) => {
     try {
+      const serializeList = (list: AnimeItem[]) =>
+        list.map((item) => ({
+          ...item,
+          uploadDate: item.uploadDate.toISOString(),
+        }));
+
+      const payload = {
+        searchList: serializeList(s),
+        favorites: serializeList(f),
+        trash: serializeList(t),
+      };
+
       if (typeof chrome !== "undefined" && chrome.storage) {
-        await chrome.storage.local.set({
-          searchList: s,
-          favorites: f,
-          trash: t,
-        });
+        await chrome.storage.local.set(payload);
       } else {
-        localStorage.setItem(
-          "animeData",
-          JSON.stringify({ searchList: s, favorites: f, trash: t }),
-        );
+        localStorage.setItem("animeData", JSON.stringify(payload));
       }
     } catch (err) {
       console.error("Failed to save data", err);
