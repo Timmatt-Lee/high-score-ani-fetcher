@@ -22,10 +22,13 @@ export class ScraperService implements AnimeScraper {
     try {
       const response = await fetch(url);
       if (!response.ok) {
-        const snippet = await response
-          .text()
-          .catch(() => "")
-          .then((t) => t.slice(0, 200));
+        let snippet = "";
+        try {
+          const t = await response.text();
+          snippet = t.slice(0, 200);
+        } catch {
+          // ignore
+        }
         return new ScraperHttpError(url, snippet, response.status);
       }
       return await response.text();
