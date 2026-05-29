@@ -95,4 +95,20 @@ describe("AnimeCard", () => {
     fireEvent.click(screen.getByText("↺ Restore"));
     expect(restoreFn).toHaveBeenCalled();
   });
+
+  it("throws error for unhandled activeTab state", () => {
+    const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    expect(() =>
+      render(
+        <AnimeCard
+          item={makeAnime()}
+          activeTab={"InvalidTab" as unknown as Tab}
+          onMoveToFavorites={vi.fn()}
+          onMoveToTrash={vi.fn()}
+          onRestoreFromTrash={vi.fn()}
+        />,
+      ),
+    ).toThrowError("Unhandled activeTab state: InvalidTab");
+    consoleSpy.mockRestore();
+  });
 });

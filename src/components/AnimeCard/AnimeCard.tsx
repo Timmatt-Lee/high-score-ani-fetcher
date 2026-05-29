@@ -17,6 +17,50 @@ export function AnimeCard({
   onMoveToTrash,
   onRestoreFromTrash,
 }: AnimeCardProps) {
+  const renderActions = () => {
+    switch (activeTab) {
+      case Tab.Search:
+        return (
+          <>
+            <button
+              className={`${styles.actionBtn} ${styles.fav}`}
+              onClick={() => onMoveToFavorites(item)}
+            >
+              ❤ Favorite
+            </button>
+            <button
+              className={`${styles.actionBtn} ${styles.trash}`}
+              onClick={() => onMoveToTrash(item)}
+            >
+              🗑 Trash
+            </button>
+          </>
+        );
+      case Tab.Favorites:
+        return (
+          <button
+            className={`${styles.actionBtn} ${styles.trash}`}
+            onClick={() => onMoveToTrash(item)}
+          >
+            🗑 Trash
+          </button>
+        );
+      case Tab.Trash:
+        return (
+          <button
+            className={styles.actionBtn}
+            onClick={() => onRestoreFromTrash(item)}
+          >
+            ↺ Restore
+          </button>
+        );
+      default: {
+        const _exhaustiveCheck: never = activeTab;
+        throw new Error(`Unhandled activeTab state: ${_exhaustiveCheck}`);
+      }
+    }
+  };
+
   return (
     <div className={styles.animeCard} data-testid="anime-card">
       <div className={styles.animeTitle}>
@@ -36,32 +80,7 @@ export function AnimeCard({
       </div>
       <div className={styles.animeDesc}>{item.description}</div>
 
-      <div className={styles.cardActions}>
-        {activeTab !== Tab.Favorites && activeTab !== Tab.Trash && (
-          <button
-            className={`${styles.actionBtn} ${styles.fav}`}
-            onClick={() => onMoveToFavorites(item)}
-          >
-            ❤ Favorite
-          </button>
-        )}
-        {activeTab !== Tab.Trash && (
-          <button
-            className={`${styles.actionBtn} ${styles.trash}`}
-            onClick={() => onMoveToTrash(item)}
-          >
-            🗑 Trash
-          </button>
-        )}
-        {activeTab === Tab.Trash && (
-          <button
-            className={styles.actionBtn}
-            onClick={() => onRestoreFromTrash(item)}
-          >
-            ↺ Restore
-          </button>
-        )}
-      </div>
+      <div className={styles.cardActions}>{renderActions()}</div>
     </div>
   );
 }
