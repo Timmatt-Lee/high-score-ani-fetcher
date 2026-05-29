@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { AnimeList } from "./AnimeList";
-import { TabType } from "../Tabs";
+import { Tab } from "../Tabs";
 import { type AnimeItem } from "../../types/anime";
 
 const makeAnime = (title: string): AnimeItem => ({
@@ -19,7 +19,7 @@ describe("AnimeList", () => {
   it("renders empty state", () => {
     render(
       <AnimeList
-        activeTab={TabType.Search}
+        activeTab={Tab.Search}
         searchList={[]}
         favorites={[]}
         trash={[]}
@@ -34,7 +34,7 @@ describe("AnimeList", () => {
   it("renders searchList when activeTab is search", () => {
     render(
       <AnimeList
-        activeTab={TabType.Search}
+        activeTab={Tab.Search}
         searchList={[makeAnime("Search 1"), makeAnime("Search 2")]}
         favorites={[makeAnime("Fav")]}
         trash={[makeAnime("Trash")]}

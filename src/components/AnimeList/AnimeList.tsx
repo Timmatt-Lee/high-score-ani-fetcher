@@ -1,10 +1,10 @@
 import { AnimeCard } from "../AnimeCard";
 import { type AnimeItem } from "../../types/anime";
-import { TabType } from "../Tabs";
+import { Tab } from "../Tabs";
 import styles from "./AnimeList.module.css";
 
 interface AnimeListProps {
-  activeTab: TabType;
+  activeTab: Tab;
   searchList: AnimeItem[];
   favorites: AnimeItem[];
   trash: AnimeItem[];
@@ -23,9 +23,9 @@ export function AnimeList({
   onRestoreFromTrash,
 }: AnimeListProps) {
   let list: AnimeItem[] = [];
-  if (activeTab === TabType.Search) list = searchList;
-  if (activeTab === TabType.Favorites) list = favorites;
-  if (activeTab === TabType.Trash) list = trash;
+  if (activeTab === Tab.Search) list = searchList;
+  if (activeTab === Tab.Favorites) list = favorites;
+  if (activeTab === Tab.Trash) list = trash;
 
   if (list.length === 0) {
     return (

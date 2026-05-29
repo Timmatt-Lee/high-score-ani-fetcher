@@ -1,12 +1,12 @@
 import { describe, it, expect, vi } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
-import { Tabs, TabType } from "./Tabs";
+import { Tabs, Tab } from "./Tabs";
 
 describe("Tabs", () => {
   it("renders all tabs with correct counts", () => {
     render(
       <Tabs
-        activeTab={TabType.Search}
+        activeTab={Tab.Search}
         setActiveTab={() => {}}
         searchCount={5}
         favoritesCount={2}
@@ -22,7 +22,7 @@ describe("Tabs", () => {
     const setActiveTab = vi.fn();
     render(
       <Tabs
-        activeTab={TabType.Search}
+        activeTab={Tab.Search}
         setActiveTab={setActiveTab}
         searchCount={5}
         favoritesCount={2}
@@ -30,6 +30,6 @@ describe("Tabs", () => {
       />,
     );
     fireEvent.click(screen.getByText("Favorites (2)"));
-    expect(setActiveTab).toHaveBeenCalledWith(TabType.Favorites);
+    expect(setActiveTab).toHaveBeenCalledWith(Tab.Favorites);
   });
 });

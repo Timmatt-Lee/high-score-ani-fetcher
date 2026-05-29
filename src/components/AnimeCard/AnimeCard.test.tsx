@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
 import { AnimeCard } from "./AnimeCard";
-import { TabType } from "../Tabs";
+import { Tab } from "../Tabs";
 import { type AnimeItem } from "../../types/anime";
 
 const makeAnime = (): AnimeItem => ({
@@ -20,7 +20,7 @@ describe("AnimeCard", () => {
     render(
       <AnimeCard
         item={makeAnime()}
-        activeTab={TabType.Search}
+        activeTab={Tab.Search}
         onMoveToFavorites={vi.fn()}
         onMoveToTrash={vi.fn()}
         onRestoreFromTrash={vi.fn()}
@@ -37,7 +37,7 @@ describe("AnimeCard", () => {
     render(
       <AnimeCard
         item={item}
-        activeTab={TabType.Search}
+        activeTab={Tab.Search}
         onMoveToFavorites={vi.fn()}
         onMoveToTrash={vi.fn()}
         onRestoreFromTrash={vi.fn()}
@@ -52,7 +52,7 @@ describe("AnimeCard", () => {
     render(
       <AnimeCard
         item={makeAnime()}
-        activeTab={TabType.Search}
+        activeTab={Tab.Search}
         onMoveToFavorites={favFn}
         onMoveToTrash={trashFn}
         onRestoreFromTrash={vi.fn()}
@@ -69,7 +69,7 @@ describe("AnimeCard", () => {
     render(
       <AnimeCard
         item={makeAnime()}
-        activeTab={TabType.Favorites}
+        activeTab={Tab.Favorites}
         onMoveToFavorites={vi.fn()}
         onMoveToTrash={vi.fn()}
         onRestoreFromTrash={vi.fn()}
@@ -84,7 +84,7 @@ describe("AnimeCard", () => {
     render(
       <AnimeCard
         item={makeAnime()}
-        activeTab={TabType.Trash}
+        activeTab={Tab.Trash}
         onMoveToFavorites={vi.fn()}
         onMoveToTrash={vi.fn()}
         onRestoreFromTrash={restoreFn}
