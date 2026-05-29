@@ -46,4 +46,22 @@ describe("AnimeList", () => {
     expect(screen.getByText("Search 1")).toBeDefined();
     expect(screen.queryByText("Fav")).toBeNull();
   });
+
+  it("throws error for unhandled activeTab state", () => {
+    const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    expect(() =>
+      render(
+        <AnimeList
+          activeTab={"InvalidTab" as unknown as Tab}
+          searchList={[]}
+          favorites={[]}
+          trash={[]}
+          onMoveToFavorites={vi.fn()}
+          onMoveToTrash={vi.fn()}
+          onRestoreFromTrash={vi.fn()}
+        />,
+      ),
+    ).toThrowError("Unhandled activeTab state: InvalidTab");
+    consoleSpy.mockRestore();
+  });
 });

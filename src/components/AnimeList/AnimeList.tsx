@@ -22,10 +22,22 @@ export function AnimeList({
   onMoveToTrash,
   onRestoreFromTrash,
 }: AnimeListProps) {
-  let list: AnimeItem[] = [];
-  if (activeTab === Tab.Search) list = searchList;
-  if (activeTab === Tab.Favorites) list = favorites;
-  if (activeTab === Tab.Trash) list = trash;
+  let list: AnimeItem[];
+  switch (activeTab) {
+    case Tab.Search:
+      list = searchList;
+      break;
+    case Tab.Favorites:
+      list = favorites;
+      break;
+    case Tab.Trash:
+      list = trash;
+      break;
+    default: {
+      const _exhaustiveCheck: never = activeTab;
+      throw new Error(`Unhandled activeTab state: ${_exhaustiveCheck}`);
+    }
+  }
 
   if (list.length === 0) {
     return (
