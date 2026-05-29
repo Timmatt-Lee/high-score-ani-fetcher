@@ -70,7 +70,7 @@ test.describe("Popup Scanning & Interaction", () => {
     await expect(firstCard).toBeVisible({ timeout: 15000 });
 
     // Add to Favorites
-    await firstCard.getByRole("button", { name: "❤ Favorite" }).click();
+    await firstCard.getByRole("button", { name: "Favorite" }).click();
 
     // Verify in Favorites tab
     await page.getByRole("button", { name: /Favorites/ }).click();
@@ -82,7 +82,7 @@ test.describe("Popup Scanning & Interaction", () => {
     const favCard = page
       .getByTestId("anime-card")
       .filter({ hasText: "測試動畫第一季" });
-    await favCard.getByRole("button", { name: "🗑 Trash" }).click();
+    await favCard.getByRole("button", { name: "Trash" }).click();
 
     // Verify in Trash tab
     await page.getByRole("button", { name: /Trash/ }).click();
@@ -98,7 +98,7 @@ test.describe("Popup Scanning & Interaction", () => {
       .filter({ hasText: "測試動畫第一季" });
     await expect(firstCard).toBeVisible({ timeout: 15000 });
 
-    await firstCard.getByRole("button", { name: "❤ Favorite" }).click();
+    await firstCard.getByRole("button", { name: "Favorite" }).click();
 
     // Reload page
     await page.reload();
