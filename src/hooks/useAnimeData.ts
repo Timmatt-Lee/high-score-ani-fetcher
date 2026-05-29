@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
-import { type AnimeItem } from "../types/anime";
+import { z } from "zod";
+import { type AnimeItem, AnimeItemSchema } from "../types/anime";
 
 export function useAnimeData() {
   const [searchList, setSearchList] = useState<AnimeItem[]>([]);
@@ -8,11 +9,10 @@ export function useAnimeData() {
 
   // Load data on mount
   useEffect(() => {
-    const reviveData = (data: AnimeItem[]): AnimeItem[] =>
-      data.map((item) => ({
-        ...item,
-        uploadDate: new Date(item.uploadDate),
-      }));
+    const parseList = (data: unknown): AnimeItem[] => {
+      const result = z.array(AnimeItemSchema).safeParse(data);
+      return result.success ? result.data : [];
+    };
 
     const loadData = async () => {
       try {
@@ -22,25 +22,23 @@ export function useAnimeData() {
             "favorites",
             "trash",
           ]);
-          if (Array.isArray(data.searchList)) {
-            setSearchList(reviveData(data.searchList as AnimeItem[]));
+          if (data.searchList) {
+            setSearchList(parseList(data.searchList));
           }
-          if (Array.isArray(data.favorites)) {
-            setFavoriteList(reviveData(data.favorites as AnimeItem[]));
+          if (data.favorites) {
+            setFavoriteList(parseList(data.favorites));
           }
-          if (Array.isArray(data.trash)) {
-            setTrashList(reviveData(data.trash as AnimeItem[]));
+          if (data.trash) {
+            setTrashList(parseList(data.trash));
           }
         } else {
           // Fallback for local web dev without extension context
           const localData = localStorage.getItem("animeData");
           if (localData) {
             const parsed = JSON.parse(localData);
-            setSearchList(reviveData((parsed.searchList || []) as AnimeItem[]));
-            setFavoriteList(
-              reviveData((parsed.favorites || []) as AnimeItem[]),
-            );
-            setTrashList(reviveData((parsed.trash || []) as AnimeItem[]));
+            setSearchList(parseList(parsed.searchList));
+            setFavoriteList(parseList(parsed.favorites));
+            setTrashList(parseList(parsed.trash));
           }
         }
       } catch (err) {
