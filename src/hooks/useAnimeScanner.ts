@@ -5,8 +5,8 @@ import { ScraperHttpError, ScraperParseError } from "../errors";
 import { isError } from "../types/result";
 
 export function useAnimeScanner(
-  favorites: AnimeItem[],
-  trash: AnimeItem[],
+  favoriteList: AnimeItem[],
+  trashList: AnimeItem[],
   onScanComplete: (newItems: AnimeItem[]) => void,
 ) {
   const { scraperService } = useServices();
@@ -41,8 +41,8 @@ export function useAnimeScanner(
     const totalPages = totalPagesResult;
 
     try {
-      const trashLinks = new Set(trash.map((t) => t.link));
-      const favLinks = new Set(favorites.map((f) => f.link));
+      const trashLinks = new Set(trashList.map((t) => t.link));
+      const favLinks = new Set(favoriteList.map((f) => f.link));
 
       const filterItem = (item: AnimeItem) => {
         if (trashLinks.has(item.link) || favLinks.has(item.link)) return false;

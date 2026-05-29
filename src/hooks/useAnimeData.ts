@@ -3,8 +3,8 @@ import { type AnimeItem } from "../types/anime";
 
 export function useAnimeData() {
   const [searchList, setSearchList] = useState<AnimeItem[]>([]);
-  const [favorites, setFavorites] = useState<AnimeItem[]>([]);
-  const [trash, setTrash] = useState<AnimeItem[]>([]);
+  const [favoriteList, setFavoriteList] = useState<AnimeItem[]>([]);
+  const [trashList, setTrashList] = useState<AnimeItem[]>([]);
 
   // Load data on mount
   useEffect(() => {
@@ -26,10 +26,10 @@ export function useAnimeData() {
             setSearchList(reviveData(data.searchList as AnimeItem[]));
           }
           if (Array.isArray(data.favorites)) {
-            setFavorites(reviveData(data.favorites as AnimeItem[]));
+            setFavoriteList(reviveData(data.favorites as AnimeItem[]));
           }
           if (Array.isArray(data.trash)) {
-            setTrash(reviveData(data.trash as AnimeItem[]));
+            setTrashList(reviveData(data.trash as AnimeItem[]));
           }
         } else {
           // Fallback for local web dev without extension context
@@ -37,8 +37,10 @@ export function useAnimeData() {
           if (localData) {
             const parsed = JSON.parse(localData);
             setSearchList(reviveData((parsed.searchList || []) as AnimeItem[]));
-            setFavorites(reviveData((parsed.favorites || []) as AnimeItem[]));
-            setTrash(reviveData((parsed.trash || []) as AnimeItem[]));
+            setFavoriteList(
+              reviveData((parsed.favorites || []) as AnimeItem[]),
+            );
+            setTrashList(reviveData((parsed.trash || []) as AnimeItem[]));
           }
         }
       } catch (err) {
@@ -70,35 +72,35 @@ export function useAnimeData() {
 
   const moveToFavorites = (item: AnimeItem) => {
     const newSearch = searchList.filter((i) => i.link !== item.link);
-    const newFav = [...favorites, item];
+    const newFav = [...favoriteList, item];
     setSearchList(newSearch);
-    setFavorites(newFav);
-    saveData(newSearch, newFav, trash);
+    setFavoriteList(newFav);
+    saveData(newSearch, newFav, trashList);
   };
 
   const moveToTrash = (item: AnimeItem) => {
     const newSearch = searchList.filter((i) => i.link !== item.link);
-    const newFav = favorites.filter((i) => i.link !== item.link);
-    const newTrash = [...trash, item];
+    const newFav = favoriteList.filter((i) => i.link !== item.link);
+    const newTrash = [...trashList, item];
     setSearchList(newSearch);
-    setFavorites(newFav);
-    setTrash(newTrash);
+    setFavoriteList(newFav);
+    setTrashList(newTrash);
     saveData(newSearch, newFav, newTrash);
   };
 
   const restoreFromTrash = (item: AnimeItem) => {
-    const newTrash = trash.filter((i) => i.link !== item.link);
+    const newTrash = trashList.filter((i) => i.link !== item.link);
     const newSearch = [...searchList, item];
-    setTrash(newTrash);
+    setTrashList(newTrash);
     setSearchList(newSearch);
-    saveData(newSearch, favorites, newTrash);
+    saveData(newSearch, favoriteList, newTrash);
   };
 
   return {
     searchList,
     setSearchList,
-    favorites,
-    trash,
+    favoriteList,
+    trashList,
     moveToFavorites,
     moveToTrash,
     restoreFromTrash,

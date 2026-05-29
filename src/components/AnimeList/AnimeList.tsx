@@ -6,8 +6,8 @@ import styles from "./AnimeList.module.css";
 interface AnimeListProps {
   activeTab: Tab;
   searchList: AnimeItem[];
-  favorites: AnimeItem[];
-  trash: AnimeItem[];
+  favoriteList: AnimeItem[];
+  trashList: AnimeItem[];
   onMoveToFavorites: (item: AnimeItem) => void;
   onMoveToTrash: (item: AnimeItem) => void;
   onRestoreFromTrash: (item: AnimeItem) => void;
@@ -16,8 +16,8 @@ interface AnimeListProps {
 export function AnimeList({
   activeTab,
   searchList,
-  favorites,
-  trash,
+  favoriteList,
+  trashList,
   onMoveToFavorites,
   onMoveToTrash,
   onRestoreFromTrash,
@@ -28,10 +28,10 @@ export function AnimeList({
       list = searchList;
       break;
     case Tab.Favorites:
-      list = favorites;
+      list = favoriteList;
       break;
     case Tab.Trash:
-      list = trash;
+      list = trashList;
       break;
     default: {
       const _exhaustiveCheck: never = activeTab;

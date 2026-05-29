@@ -78,8 +78,8 @@ export const SearchTabWithItems: Story = {
   args: {
     activeTab: Tab.Search,
     searchList: sampleSearchList,
-    favorites: sampleFavoritesList,
-    trash: sampleTrashList,
+    favoriteList: sampleFavoritesList,
+    trashList: sampleTrashList,
   },
 };
 
@@ -87,8 +87,8 @@ export const FavoritesTabWithItems: Story = {
   args: {
     activeTab: Tab.Favorites,
     searchList: sampleSearchList,
-    favorites: sampleFavoritesList,
-    trash: sampleTrashList,
+    favoriteList: sampleFavoritesList,
+    trashList: sampleTrashList,
   },
 };
 
@@ -96,8 +96,8 @@ export const TrashTabWithItems: Story = {
   args: {
     activeTab: Tab.Trash,
     searchList: sampleSearchList,
-    favorites: sampleFavoritesList,
-    trash: sampleTrashList,
+    favoriteList: sampleFavoritesList,
+    trashList: sampleTrashList,
   },
 };
 
@@ -105,8 +105,8 @@ export const EmptySearchState: Story = {
   args: {
     activeTab: Tab.Search,
     searchList: [],
-    favorites: sampleFavoritesList,
-    trash: sampleTrashList,
+    favoriteList: sampleFavoritesList,
+    trashList: sampleTrashList,
   },
 };
 
@@ -114,7 +114,7 @@ export const EmptyFavoritesState: Story = {
   args: {
     activeTab: Tab.Favorites,
     searchList: sampleSearchList,
-    favorites: [],
-    trash: sampleTrashList,
+    favoriteList: [],
+    trashList: sampleTrashList,
   },
 };
