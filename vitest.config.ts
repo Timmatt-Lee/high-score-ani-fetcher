@@ -19,6 +19,7 @@ export default defineConfig({
         "src/vite-env.d.ts",
         "src/components/ComponentPlayground.tsx",
         "src/**/*.stories.{ts,tsx}",
+        "src/**/index.ts",
       ],
       thresholds: {
         lines: 99,
