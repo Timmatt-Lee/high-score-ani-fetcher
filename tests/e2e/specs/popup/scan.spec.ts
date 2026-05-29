@@ -54,7 +54,7 @@ test.describe("Popup Scanning & Interaction", () => {
 
     // Verify results are rendered (from our mock)
     await expect(page.getByText("測試動畫第一季")).toBeVisible({
-      timeout: 15000,
+      timeout: 8000,
     });
     await expect(page.getByText("垃圾桶動畫")).toBeVisible();
     await expect(page.getByText("★ 4.9")).toHaveCount(2);
@@ -67,7 +67,7 @@ test.describe("Popup Scanning & Interaction", () => {
     const firstCard = page
       .getByTestId("anime-card")
       .filter({ hasText: "測試動畫第一季" });
-    await expect(firstCard).toBeVisible({ timeout: 15000 });
+    await expect(firstCard).toBeVisible({ timeout: 8000 });
 
     // Add to Favorites
     await firstCard.getByRole("button", { name: "Favorite" }).click();
@@ -96,7 +96,7 @@ test.describe("Popup Scanning & Interaction", () => {
     const firstCard = page
       .getByTestId("anime-card")
       .filter({ hasText: "測試動畫第一季" });
-    await expect(firstCard).toBeVisible({ timeout: 15000 });
+    await expect(firstCard).toBeVisible({ timeout: 8000 });
 
     await firstCard.getByRole("button", { name: "Favorite" }).click();
 
