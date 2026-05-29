@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
-import { type AnimeItem } from "../types/anime";
+import { z } from "zod";
+import { type AnimeItem, AnimeItemSchema } from "../types/anime";
 
 export function useAnimeData() {
   const [searchList, setSearchList] = useState<AnimeItem[]>([]);
@@ -8,11 +9,14 @@ export function useAnimeData() {
 
   // Load data on mount
   useEffect(() => {
-    const reviveData = (data: AnimeItem[]): AnimeItem[] =>
-      data.map((item) => ({
-        ...item,
-        uploadDate: new Date(item.uploadDate),
-      }));
+    const parseList = (data: unknown): AnimeItem[] => {
+      const result = z.array(AnimeItemSchema).safeParse(data);
+      if (!result.success) {
+        console.error("Zod parse error:", result.error, "Data was:", data);
+        return [];
+      }
+      return result.data;
+    };
 
     const loadData = async () => {
       try {
@@ -22,25 +26,23 @@ export function useAnimeData() {
             "favorites",
             "trash",
           ]);
-          if (Array.isArray(data.searchList)) {
-            setSearchList(reviveData(data.searchList as AnimeItem[]));
+          if (data.searchList) {
+            setSearchList(parseList(data.searchList));
           }
-          if (Array.isArray(data.favorites)) {
-            setFavoriteList(reviveData(data.favorites as AnimeItem[]));
+          if (data.favorites) {
+            setFavoriteList(parseList(data.favorites));
           }
-          if (Array.isArray(data.trash)) {
-            setTrashList(reviveData(data.trash as AnimeItem[]));
+          if (data.trash) {
+            setTrashList(parseList(data.trash));
           }
         } else {
           // Fallback for local web dev without extension context
           const localData = localStorage.getItem("animeData");
           if (localData) {
             const parsed = JSON.parse(localData);
-            setSearchList(reviveData((parsed.searchList || []) as AnimeItem[]));
-            setFavoriteList(
-              reviveData((parsed.favorites || []) as AnimeItem[]),
-            );
-            setTrashList(reviveData((parsed.trash || []) as AnimeItem[]));
+            setSearchList(parseList(parsed.searchList));
+            setFavoriteList(parseList(parsed.favorites));
+            setTrashList(parseList(parsed.trash));
           }
         }
       } catch (err) {
@@ -53,17 +55,22 @@ export function useAnimeData() {
   // Save data when state changes
   const saveData = async (s: AnimeItem[], f: AnimeItem[], t: AnimeItem[]) => {
     try {
+      const serializeList = (list: AnimeItem[]) =>
+        list.map((item) => ({
+          ...item,
+          uploadDate: item.uploadDate.toISOString(),
+        }));
+
+      const payload = {
+        searchList: serializeList(s),
+        favorites: serializeList(f),
+        trash: serializeList(t),
+      };
+
       if (typeof chrome !== "undefined" && chrome.storage) {
-        await chrome.storage.local.set({
-          searchList: s,
-          favorites: f,
-          trash: t,
-        });
+        await chrome.storage.local.set(payload);
       } else {
-        localStorage.setItem(
-          "animeData",
-          JSON.stringify({ searchList: s, favorites: f, trash: t }),
-        );
+        localStorage.setItem("animeData", JSON.stringify(payload));
       }
     } catch (err) {
       console.error("Failed to save data", err);
