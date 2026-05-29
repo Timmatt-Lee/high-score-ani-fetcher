@@ -58,11 +58,11 @@ describe("AnimeCard", () => {
         onRestoreFromTrash={vi.fn()}
       />,
     );
-    fireEvent.click(screen.getByText("❤ Favorite"));
+    fireEvent.click(screen.getByRole("button", { name: "Favorite" }));
     expect(favFn).toHaveBeenCalled();
-    fireEvent.click(screen.getByText("🗑 Trash"));
+    fireEvent.click(screen.getByRole("button", { name: "Trash" }));
     expect(trashFn).toHaveBeenCalled();
-    expect(screen.queryByText("↺ Restore")).toBeNull();
+    expect(screen.queryByRole("button", { name: "Restore" })).toBeNull();
   });
 
   it("shows only trash button in favorites tab", () => {
@@ -75,8 +75,8 @@ describe("AnimeCard", () => {
         onRestoreFromTrash={vi.fn()}
       />,
     );
-    expect(screen.queryByText("❤ Favorite")).toBeNull();
-    expect(screen.getByText("🗑 Trash")).toBeDefined();
+    expect(screen.queryByRole("button", { name: "Favorite" })).toBeNull();
+    expect(screen.getByRole("button", { name: "Trash" })).toBeDefined();
   });
 
   it("shows only restore button in trash tab", () => {
@@ -90,9 +90,9 @@ describe("AnimeCard", () => {
         onRestoreFromTrash={restoreFn}
       />,
     );
-    expect(screen.queryByText("❤ Favorite")).toBeNull();
-    expect(screen.queryByText("🗑 Trash")).toBeNull();
-    fireEvent.click(screen.getByText("↺ Restore"));
+    expect(screen.queryByRole("button", { name: "Favorite" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Trash" })).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Restore" }));
     expect(restoreFn).toHaveBeenCalled();
   });
 

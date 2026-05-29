@@ -93,6 +93,9 @@
   font-size: 0.8rem;
   cursor: pointer;
   transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .actionBtn:hover {
