@@ -1,6 +1,7 @@
 import { type AnimeItem } from "../../types/anime";
 import { Tab } from "../Tabs";
 import styles from "./AnimeCard.module.css";
+import { HeartIcon, TrashIcon, RestoreIcon } from "../Icons";
 
 interface AnimeCardProps {
   item: AnimeItem;
@@ -26,13 +27,13 @@ export function AnimeCard({
               className={`${styles.actionBtn} ${styles.fav}`}
               onClick={() => onMoveToFavorites(item)}
             >
-              ❤ Favorite
+              <HeartIcon /> Favorite
             </button>
             <button
               className={`${styles.actionBtn} ${styles.trash}`}
               onClick={() => onMoveToTrash(item)}
             >
-              🗑 Trash
+              <TrashIcon /> Trash
             </button>
           </>
         );
@@ -42,7 +43,7 @@ export function AnimeCard({
             className={`${styles.actionBtn} ${styles.trash}`}
             onClick={() => onMoveToTrash(item)}
           >
-            🗑 Trash
+            <TrashIcon /> Trash
           </button>
         );
       case Tab.Trash:
@@ -51,7 +52,7 @@ export function AnimeCard({
             className={styles.actionBtn}
             onClick={() => onRestoreFromTrash(item)}
           >
-            ↺ Restore
+            <RestoreIcon /> Restore
           </button>
         );
       default: {

@@ -258,7 +258,7 @@ describe("Card actions", () => {
         </ServiceProvider>,
       );
     });
-    fireEvent.click(screen.getByText("❤ Favorite"));
+    fireEvent.click(screen.getByRole("button", { name: "Favorite" }));
     expect(screen.queryByText("Test Anime")).toBeNull();
     fireEvent.click(screen.getByText(/Favorites/));
     expect(screen.getByText("Test Anime")).toBeDefined();
@@ -277,7 +277,7 @@ describe("Card actions", () => {
         </ServiceProvider>,
       );
     });
-    fireEvent.click(screen.getByText("❤ Favorite"));
+    fireEvent.click(screen.getByRole("button", { name: "Favorite" }));
     const saved = JSON.parse(localStorage.getItem("animeData") || "{}");
     expect(saved.favorites).toHaveLength(1);
   });
@@ -299,7 +299,7 @@ describe("Card actions", () => {
       );
     });
     // Should not throw - just log the error
-    fireEvent.click(screen.getByText("❤ Favorite"));
+    fireEvent.click(screen.getByRole("button", { name: "Favorite" }));
     await act(async () => {});
     expect(screen.getByText("AniFetcher Pro")).toBeDefined();
   });
@@ -313,7 +313,7 @@ describe("Card actions", () => {
         </ServiceProvider>,
       );
     });
-    fireEvent.click(screen.getByText("🗑 Trash"));
+    fireEvent.click(screen.getByRole("button", { name: "Trash" }));
     expect(screen.queryByText("Test Anime")).toBeNull();
     fireEvent.click(screen.getByText(/Trash/));
     expect(screen.getByText("Test Anime")).toBeDefined();
@@ -333,7 +333,7 @@ describe("Card actions", () => {
       );
     });
     fireEvent.click(screen.getByText(/Favorites/));
-    fireEvent.click(screen.getByText("🗑 Trash"));
+    fireEvent.click(screen.getByRole("button", { name: "Trash" }));
     fireEvent.click(screen.getByText(/Trash/));
     expect(screen.getByText("Fav Anime")).toBeDefined();
   });
@@ -348,7 +348,7 @@ describe("Card actions", () => {
       );
     });
     fireEvent.click(screen.getByText(/Trash/));
-    fireEvent.click(screen.getByText("↺ Restore"));
+    fireEvent.click(screen.getByRole("button", { name: "Restore" }));
     expect(screen.queryByText("Test Anime")).toBeNull();
     fireEvent.click(screen.getByText(/Results/));
     expect(screen.getByText("Test Anime")).toBeDefined();
