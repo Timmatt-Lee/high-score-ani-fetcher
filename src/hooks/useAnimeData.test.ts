@@ -58,8 +58,8 @@ describe("useAnimeData", () => {
 
     expect(result.current.searchList).toHaveLength(1);
     expect(result.current.searchList[0].title).toBe("Test");
-    expect(result.current.favorites).toHaveLength(1);
-    expect(result.current.trash).toHaveLength(1);
+    expect(result.current.favoriteList).toHaveLength(1);
+    expect(result.current.trashList).toHaveLength(1);
   });
 
   // --- localStorage fallback path (lines 22-30) ---
@@ -85,8 +85,8 @@ describe("useAnimeData", () => {
 
     expect(result.current.searchList).toHaveLength(1);
     expect(result.current.searchList[0].title).toBe("Local");
-    expect(result.current.favorites).toHaveLength(1);
-    expect(result.current.trash).toHaveLength(1);
+    expect(result.current.favoriteList).toHaveLength(1);
+    expect(result.current.trashList).toHaveLength(1);
   });
 
   it("handles empty localStorage gracefully", async () => {
@@ -114,8 +114,8 @@ describe("useAnimeData", () => {
     });
 
     expect(result.current.searchList).toHaveLength(1);
-    expect(result.current.favorites).toHaveLength(0);
-    expect(result.current.trash).toHaveLength(0);
+    expect(result.current.favoriteList).toHaveLength(0);
+    expect(result.current.trashList).toHaveLength(0);
   });
 
   it("handles localStorage with empty object using || [] fallbacks", async () => {
@@ -129,8 +129,8 @@ describe("useAnimeData", () => {
     });
 
     expect(result.current.searchList).toHaveLength(0);
-    expect(result.current.favorites).toHaveLength(0);
-    expect(result.current.trash).toHaveLength(0);
+    expect(result.current.favoriteList).toHaveLength(0);
+    expect(result.current.trashList).toHaveLength(0);
   });
 
   // --- Load error path (lines 32-34) ---
@@ -200,7 +200,7 @@ describe("useAnimeData", () => {
       result.current.moveToFavorites(makeAnime("Test"));
     });
 
-    expect(result.current.favorites).toHaveLength(1);
+    expect(result.current.favoriteList).toHaveLength(1);
   });
 
   // --- Core operations ---
@@ -218,7 +218,7 @@ describe("useAnimeData", () => {
     });
 
     expect(result.current.searchList).toHaveLength(0);
-    expect(result.current.favorites).toHaveLength(1);
+    expect(result.current.favoriteList).toHaveLength(1);
   });
 
   it("moves item to trash from both search and favorites", async () => {
@@ -236,8 +236,8 @@ describe("useAnimeData", () => {
     });
 
     expect(result.current.searchList).toHaveLength(0);
-    expect(result.current.favorites).toHaveLength(0);
-    expect(result.current.trash).toHaveLength(1);
+    expect(result.current.favoriteList).toHaveLength(0);
+    expect(result.current.trashList).toHaveLength(1);
   });
 
   it("restores item from trash back to search", async () => {
@@ -253,7 +253,7 @@ describe("useAnimeData", () => {
       result.current.restoreFromTrash(anime);
     });
 
-    expect(result.current.trash).toHaveLength(0);
+    expect(result.current.trashList).toHaveLength(0);
     expect(result.current.searchList).toHaveLength(1);
   });
 });

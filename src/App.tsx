@@ -14,8 +14,8 @@ function App() {
   const {
     searchList,
     setSearchList,
-    favorites,
-    trash,
+    favoriteList,
+    trashList,
     moveToFavorites,
     moveToTrash,
     restoreFromTrash,
@@ -23,9 +23,9 @@ function App() {
   } = useAnimeData();
 
   const { isScanning, progress, httpErrors, parseErrors, handleScan } =
-    useAnimeScanner(favorites, trash, (newItems) => {
+    useAnimeScanner(favoriteList, trashList, (newItems) => {
       setSearchList(newItems);
-      saveData(newItems, favorites, trash);
+      saveData(newItems, favoriteList, trashList);
     });
 
   const totalErrors = httpErrors.length + parseErrors.length;
@@ -84,15 +84,15 @@ function App() {
         activeTab={activeTab}
         setActiveTab={setActiveTab}
         searchCount={searchList.length}
-        favoritesCount={favorites.length}
-        trashCount={trash.length}
+        favoritesCount={favoriteList.length}
+        trashCount={trashList.length}
       />
 
       <AnimeList
         activeTab={activeTab}
         searchList={searchList}
-        favorites={favorites}
-        trash={trash}
+        favoriteList={favoriteList}
+        trashList={trashList}
         onMoveToFavorites={moveToFavorites}
         onMoveToTrash={moveToTrash}
         onRestoreFromTrash={restoreFromTrash}

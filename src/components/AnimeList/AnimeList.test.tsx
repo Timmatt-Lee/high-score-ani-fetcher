@@ -21,8 +21,8 @@ describe("AnimeList", () => {
       <AnimeList
         activeTab={Tab.Search}
         searchList={[]}
-        favorites={[]}
-        trash={[]}
+        favoriteList={[]}
+        trashList={[]}
         onMoveToFavorites={vi.fn()}
         onMoveToTrash={vi.fn()}
         onRestoreFromTrash={vi.fn()}
@@ -36,8 +36,8 @@ describe("AnimeList", () => {
       <AnimeList
         activeTab={Tab.Search}
         searchList={[makeAnime("Search 1"), makeAnime("Search 2")]}
-        favorites={[makeAnime("Fav")]}
-        trash={[makeAnime("Trash")]}
+        favoriteList={[makeAnime("Fav")]}
+        trashList={[makeAnime("Trash")]}
         onMoveToFavorites={vi.fn()}
         onMoveToTrash={vi.fn()}
         onRestoreFromTrash={vi.fn()}
@@ -54,8 +54,8 @@ describe("AnimeList", () => {
         <AnimeList
           activeTab={"InvalidTab" as unknown as Tab}
           searchList={[]}
-          favorites={[]}
-          trash={[]}
+          favoriteList={[]}
+          trashList={[]}
           onMoveToFavorites={vi.fn()}
           onMoveToTrash={vi.fn()}
           onRestoreFromTrash={vi.fn()}
