@@ -118,8 +118,8 @@ describe("App rendering", () => {
       "animeData",
       JSON.stringify({
         searchList: [anime],
-        favorites: [fav],
-        trash: [trashItem],
+        favoriteList: [fav],
+        trashList: [trashItem],
       }),
     );
     await act(async () => {
@@ -148,10 +148,10 @@ describe("App rendering", () => {
     expect(screen.getByText("No anime found in this list.")).toBeDefined();
   });
 
-  it("handles localStorage data with missing favorites and trash keys", async () => {
+  it("handles localStorage data with missing favoriteList and trashList keys", async () => {
     vi.stubGlobal("chrome", undefined);
     const anime = makeAnime({ title: "Only Search" });
-    // Deliberately omit favorites and trash to trigger the || [] fallback
+    // Deliberately omit favoriteList and trashList to trigger the || [] fallback
     localStorage.setItem("animeData", JSON.stringify({ searchList: [anime] }));
     await act(async () => {
       render(
@@ -193,7 +193,7 @@ describe("Tab switching", () => {
       title: "Fav Anime",
       link: "https://ani.gamer.com.tw/anime.php?sn=2",
     });
-    storageMock["favorites"] = [fav];
+    storageMock["favoriteList"] = [fav];
     await act(async () => {
       render(
         <ServiceProvider>
@@ -210,7 +210,7 @@ describe("Tab switching", () => {
       title: "Trash Anime",
       link: "https://ani.gamer.com.tw/anime.php?sn=3",
     });
-    storageMock["trash"] = [trashItem];
+    storageMock["trashList"] = [trashItem];
     await act(async () => {
       render(
         <ServiceProvider>
@@ -268,7 +268,11 @@ describe("Card actions", () => {
     vi.stubGlobal("chrome", undefined);
     localStorage.setItem(
       "animeData",
-      JSON.stringify({ searchList: [makeAnime()], favorites: [], trash: [] }),
+      JSON.stringify({
+        searchList: [makeAnime()],
+        favoriteList: [],
+        trashList: [],
+      }),
     );
     await act(async () => {
       render(
@@ -279,7 +283,7 @@ describe("Card actions", () => {
     });
     fireEvent.click(screen.getByRole("button", { name: "Favorite" }));
     const saved = JSON.parse(localStorage.getItem("animeData") || "{}");
-    expect(saved.favorites).toHaveLength(1);
+    expect(saved.favoriteList).toHaveLength(1);
   });
 
   it("handles saveData error gracefully without crashing", async () => {
@@ -324,7 +328,7 @@ describe("Card actions", () => {
       title: "Fav Anime",
       link: "https://ani.gamer.com.tw/anime.php?sn=2",
     });
-    storageMock["favorites"] = [fav];
+    storageMock["favoriteList"] = [fav];
     await act(async () => {
       render(
         <ServiceProvider>
@@ -339,7 +343,7 @@ describe("Card actions", () => {
   });
 
   it("restores item from Trash", async () => {
-    storageMock["trash"] = [makeAnime()];
+    storageMock["trashList"] = [makeAnime()];
     await act(async () => {
       render(
         <ServiceProvider>
@@ -512,7 +516,7 @@ describe("Scan functionality", () => {
       episodeCount: 12,
       score: 9.0,
     });
-    storageMock["trash"] = [trashItem];
+    storageMock["trashList"] = [trashItem];
     vi.spyOn(scraperService, "getTotalPages").mockResolvedValue(1);
     vi.spyOn(scraperService, "scanAllWithPipeline").mockImplementation(
       async (_pages, _pc, _dc, filterItem) => {
@@ -550,7 +554,7 @@ describe("Scan functionality", () => {
       episodeCount: 12,
       score: 9.0,
     });
-    storageMock["favorites"] = [favItem];
+    storageMock["favoriteList"] = [favItem];
     vi.spyOn(scraperService, "getTotalPages").mockResolvedValue(1);
     vi.spyOn(scraperService, "scanAllWithPipeline").mockImplementation(
       async (_pages, _pc, _dc, filterItem) => {

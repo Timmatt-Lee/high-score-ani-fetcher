@@ -48,8 +48,8 @@ describe("useAnimeData", () => {
   // --- Chrome storage path ---
   it("loads data from chrome.storage on mount", async () => {
     storageMock["searchList"] = [makeAnime("Test")];
-    storageMock["favorites"] = [makeAnime("Fav")];
-    storageMock["trash"] = [makeAnime("Trash")];
+    storageMock["favoriteList"] = [makeAnime("Fav")];
+    storageMock["trashList"] = [makeAnime("Trash")];
     const { result } = renderHook(() => useAnimeData());
 
     await act(async () => {
@@ -72,8 +72,8 @@ describe("useAnimeData", () => {
       "animeData",
       JSON.stringify({
         searchList: [anime],
-        favorites: [fav],
-        trash: [trashItem],
+        favoriteList: [fav],
+        trashList: [trashItem],
       }),
     );
 
@@ -160,8 +160,8 @@ describe("useAnimeData", () => {
       "animeData",
       JSON.stringify({
         searchList: [makeAnime("Test")],
-        favorites: [],
-        trash: [],
+        favoriteList: [],
+        trashList: [],
       }),
     );
 
@@ -176,7 +176,7 @@ describe("useAnimeData", () => {
     });
 
     const saved = JSON.parse(localStorage.getItem("animeData") || "{}");
-    expect(saved.favorites).toHaveLength(1);
+    expect(saved.favoriteList).toHaveLength(1);
   });
 
   // --- Save error path (lines 54-56) ---
@@ -224,7 +224,7 @@ describe("useAnimeData", () => {
   it("moves item to trash from both search and favorites", async () => {
     const anime = makeAnime("Test");
     storageMock["searchList"] = [anime];
-    storageMock["favorites"] = [anime];
+    storageMock["favoriteList"] = [anime];
     const { result } = renderHook(() => useAnimeData());
 
     await act(async () => {
@@ -242,7 +242,7 @@ describe("useAnimeData", () => {
 
   it("restores item from trash back to search", async () => {
     const anime = makeAnime("Test");
-    storageMock["trash"] = [anime];
+    storageMock["trashList"] = [anime];
     const { result } = renderHook(() => useAnimeData());
 
     await act(async () => {
