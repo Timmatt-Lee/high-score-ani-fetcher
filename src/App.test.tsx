@@ -9,8 +9,33 @@ import {
 import { ServiceProvider } from "./contexts/ServiceContext";
 import App from "./App";
 import { scraperService } from "./services/scraper";
-import { type AnimeItem, type ScraperResult } from "./types/anime";
-import { ScraperHttpError } from "./errors";
+import {
+  type AnimeItem,
+  type ScraperResult,
+  type ScanEvent,
+} from "./types/anime";
+import {
+  ScraperHttpError,
+  ScraperParseError,
+  ScraperUnknownError,
+} from "./errors";
+import { Observable, Subject } from "rxjs";
+
+function createMockObservable(
+  result: ScraperResult,
+  progressEvents: ScanEvent[] = [],
+): Observable<ScanEvent> {
+  return new Observable<ScanEvent>((subscriber) => {
+    for (const event of progressEvents) {
+      subscriber.next(event);
+    }
+    subscriber.next({
+      type: "completed",
+      result,
+    });
+    subscriber.complete();
+  });
+}
 
 // --- Chrome storage mock (default) ---
 const storageMock: Record<string, unknown> = {};
@@ -48,6 +73,7 @@ const makeAnime = (overrides: Partial<AnimeItem> = {}): AnimeItem => ({
 });
 
 beforeEach(() => {
+  vi.restoreAllMocks();
   vi.clearAllMocks();
   Object.keys(storageMock).forEach((k) => delete storageMock[k]);
   // Restore chrome mock (some tests override it)
@@ -57,6 +83,7 @@ beforeEach(() => {
 
 afterEach(() => {
   localStorage.clear();
+  vi.useRealTimers();
 });
 
 // --- Rendering ---
@@ -362,13 +389,9 @@ describe("Card actions", () => {
 // --- Scan ---
 describe("Scan functionality", () => {
   it("shows Scanning... and progress bar while running", async () => {
-    let resolveScrape!: (res: ScraperResult) => void;
+    const subject = new Subject<ScanEvent>();
     vi.spyOn(scraperService, "getTotalPages").mockResolvedValue(1);
-    vi.spyOn(scraperService, "scanAllWithPipeline").mockReturnValue(
-      new Promise<ScraperResult>((resolve) => {
-        resolveScrape = resolve;
-      }),
-    );
+    vi.spyOn(scraperService, "scanAllWithPipeline").mockReturnValue(subject);
 
     await act(async () => {
       render(
@@ -383,7 +406,11 @@ describe("Scan functionality", () => {
 
     await waitFor(() => expect(screen.getByText("Scanning...")).toBeDefined());
     await act(async () => {
-      resolveScrape({ items: [], httpErrors: [], parseErrors: [] });
+      subject.next({
+        type: "completed",
+        result: { items: [], httpErrors: [], parseErrors: [] },
+      });
+      subject.complete();
     });
   });
 
@@ -402,22 +429,31 @@ describe("Scan functionality", () => {
 
     vi.spyOn(scraperService, "getTotalPages").mockResolvedValue(1);
     vi.spyOn(scraperService, "scanAllWithPipeline").mockImplementation(
-      async (_pages, _pc, _dc, filterItem, onProgress) => {
+      (_pages, _pc, _dc, filterItem) => {
         const filtered = [highScore, lowScore].filter(filterItem);
-        onProgress(1, 1, 1, filtered.length, "Progress title");
-        return {
-          items: [
+        return createMockObservable(
+          {
+            items: [
+              {
+                ...highScore,
+                score: 5.0,
+                ratingCount: 100,
+                description: "Good",
+              },
+              { ...lowScore, score: 4.0, ratingCount: 10, description: "Meh" },
+            ].filter((item) => filtered.some((f) => f.link === item.link)),
+            httpErrors: [],
+            parseErrors: [],
+          },
+          [
+            { type: "page_completed", pageNum: 1, success: true },
             {
-              ...highScore,
-              score: 5.0,
-              ratingCount: 100,
-              description: "Good",
+              type: "detail_completed",
+              title: "Progress title",
+              success: true,
             },
-            { ...lowScore, score: 4.0, ratingCount: 10, description: "Meh" },
-          ].filter((item) => filtered.some((f) => f.link === item.link)),
-          httpErrors: [],
-          parseErrors: [],
-        };
+          ],
+        );
       },
     );
 
@@ -444,9 +480,9 @@ describe("Scan functionality", () => {
     });
     vi.spyOn(scraperService, "getTotalPages").mockResolvedValue(1);
     vi.spyOn(scraperService, "scanAllWithPipeline").mockImplementation(
-      async (_pages, _pc, _dc, filterItem) => {
+      (_pages, _pc, _dc, filterItem) => {
         const filtered = [shortShow].filter(filterItem);
-        return {
+        return createMockObservable({
           items: filtered.map((item) => ({
             ...item,
             score: 9.0,
@@ -455,7 +491,7 @@ describe("Scan functionality", () => {
           })),
           httpErrors: [],
           parseErrors: [],
-        };
+        });
       },
     );
 
@@ -481,9 +517,9 @@ describe("Scan functionality", () => {
     });
     vi.spyOn(scraperService, "getTotalPages").mockResolvedValue(1);
     vi.spyOn(scraperService, "scanAllWithPipeline").mockImplementation(
-      async (_pages, _pc, _dc, filterItem) => {
+      (_pages, _pc, _dc, filterItem) => {
         const filtered = [ova].filter(filterItem);
-        return {
+        return createMockObservable({
           items: filtered.map((item) => ({
             ...item,
             score: 9.0,
@@ -492,7 +528,7 @@ describe("Scan functionality", () => {
           })),
           httpErrors: [],
           parseErrors: [],
-        };
+        });
       },
     );
 
@@ -519,9 +555,9 @@ describe("Scan functionality", () => {
     storageMock["trashList"] = [trashItem];
     vi.spyOn(scraperService, "getTotalPages").mockResolvedValue(1);
     vi.spyOn(scraperService, "scanAllWithPipeline").mockImplementation(
-      async (_pages, _pc, _dc, filterItem) => {
+      (_pages, _pc, _dc, filterItem) => {
         const filtered = [trashItem].filter(filterItem);
-        return {
+        return createMockObservable({
           items: filtered.map((item) => ({
             ...item,
             score: 9.0,
@@ -530,7 +566,7 @@ describe("Scan functionality", () => {
           })),
           httpErrors: [],
           parseErrors: [],
-        };
+        });
       },
     );
 
@@ -557,9 +593,9 @@ describe("Scan functionality", () => {
     storageMock["favoriteList"] = [favItem];
     vi.spyOn(scraperService, "getTotalPages").mockResolvedValue(1);
     vi.spyOn(scraperService, "scanAllWithPipeline").mockImplementation(
-      async (_pages, _pc, _dc, filterItem) => {
+      (_pages, _pc, _dc, filterItem) => {
         const filtered = [favItem].filter(filterItem);
-        return {
+        return createMockObservable({
           items: filtered.map((item) => ({
             ...item,
             score: 9.0,
@@ -568,7 +604,7 @@ describe("Scan functionality", () => {
           })),
           httpErrors: [],
           parseErrors: [],
-        };
+        });
       },
     );
 
@@ -594,9 +630,9 @@ describe("Scan functionality", () => {
     });
     vi.spyOn(scraperService, "getTotalPages").mockResolvedValue(1);
     vi.spyOn(scraperService, "scanAllWithPipeline").mockImplementation(
-      async (_pages, _pc, _dc, filterItem) => {
+      (_pages, _pc, _dc, filterItem) => {
         const filtered = [naEp].filter(filterItem);
-        return {
+        return createMockObservable({
           items: filtered.map((item) => ({
             ...item,
             score: 9.0,
@@ -605,7 +641,7 @@ describe("Scan functionality", () => {
           })),
           httpErrors: [],
           parseErrors: [],
-        };
+        });
       },
     );
 
@@ -628,10 +664,12 @@ describe("Scan functionality", () => {
     const mockError = new ScraperHttpError("", "HTTP 502", 502);
 
     vi.spyOn(scraperService, "getTotalPages").mockResolvedValue(2);
-    vi.spyOn(scraperService, "scanAllWithPipeline").mockResolvedValue({
-      items: [{ ...anime, score: 9.0, ratingCount: 100, description: "x" }],
-      httpErrors: [mockError],
-      parseErrors: [],
+    vi.spyOn(scraperService, "scanAllWithPipeline").mockImplementation(() => {
+      return createMockObservable({
+        items: [{ ...anime, score: 9.0, ratingCount: 100, description: "x" }],
+        httpErrors: [mockError],
+        parseErrors: [],
+      });
     });
 
     await act(async () => {
@@ -675,10 +713,12 @@ describe("Scan functionality", () => {
     );
 
     vi.spyOn(scraperService, "getTotalPages").mockResolvedValue(1);
-    vi.spyOn(scraperService, "scanAllWithPipeline").mockResolvedValue({
-      items: [{ ...anime, score: 9.0, ratingCount: 100, description: "x" }],
-      httpErrors: errorsList,
-      parseErrors: [],
+    vi.spyOn(scraperService, "scanAllWithPipeline").mockImplementation(() => {
+      return createMockObservable({
+        items: [{ ...anime, score: 9.0, ratingCount: 100, description: "x" }],
+        httpErrors: errorsList,
+        parseErrors: [],
+      });
     });
 
     await act(async () => {
@@ -701,5 +741,176 @@ describe("Scan functionality", () => {
     // Toggle to show details
     fireEvent.click(screen.getByText("Show Details"));
     expect(screen.getByText(/And 1 more errors.../)).toBeDefined();
+  });
+
+  it("renders fatal error screen, allows copying error details, and allows dismissal", async () => {
+    const writeTextSpy = vi.fn().mockResolvedValue(undefined);
+    vi.stubGlobal("navigator", {
+      clipboard: {
+        writeText: writeTextSpy,
+      },
+    });
+
+    const fatalErr = new ScraperHttpError(
+      "https://ani.gamer.com.tw/error",
+      "Bad Request",
+      400,
+    );
+    vi.spyOn(scraperService, "getTotalPages").mockResolvedValue(fatalErr);
+
+    await act(async () => {
+      render(
+        <ServiceProvider>
+          <App />
+        </ServiceProvider>,
+      );
+    });
+
+    await act(async () => {
+      fireEvent.click(screen.getByText("Scan 巴哈姆特動漫瘋"));
+    });
+
+    // Verify fatal error screen is rendered and progress bar / tabs are NOT rendered
+    await waitFor(() =>
+      expect(screen.getByTestId("fatal-error-screen")).toBeDefined(),
+    );
+    expect(screen.queryByTestId("progress-container")).toBeNull();
+    expect(screen.queryByTestId("tabs-container")).toBeNull();
+
+    expect(screen.getByText("ScraperHttpError")).toBeDefined();
+    expect(
+      screen.getAllByText(/HTTP request failed with status 400/).length,
+    ).toBeGreaterThan(0);
+
+    // Verify copy button copies details
+    vi.useFakeTimers();
+    const copyBtn = screen.getByTestId("copy-error-btn");
+    await act(async () => {
+      fireEvent.click(copyBtn);
+    });
+    expect(writeTextSpy).toHaveBeenCalled();
+    const copiedText = writeTextSpy.mock.calls[0][0];
+    expect(copiedText).toContain("Error Name: ScraperHttpError");
+    expect(copiedText).toContain("Status Code: 400");
+    expect(copiedText).toContain("URL: https://ani.gamer.com.tw/error");
+
+    expect(screen.getByText("Copied! ✓")).toBeDefined();
+
+    // Fast-forward timers to run setTimeout callback
+    await act(async () => {
+      vi.advanceTimersByTime(2000);
+    });
+    expect(screen.queryByText("Copied! ✓")).toBeNull();
+
+    // Verify dismiss button returns UI to normal state
+    const dismissBtn = screen.getByTestId("dismiss-error-btn");
+    await act(async () => {
+      fireEvent.click(dismissBtn);
+    });
+
+    expect(screen.queryByTestId("fatal-error-screen")).toBeNull();
+    expect(screen.getByTestId("tabs-container")).toBeDefined();
+    vi.useRealTimers();
+  });
+
+  it("handles copy failure gracefully when navigator.clipboard throws", async () => {
+    const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    vi.stubGlobal("navigator", {
+      clipboard: {
+        writeText: vi.fn().mockRejectedValue(new Error("clipboard blocked")),
+      },
+    });
+
+    const fatalErr = new ScraperHttpError(
+      "https://ani.gamer.com.tw/error",
+      "Bad Request",
+      400,
+    );
+    vi.spyOn(scraperService, "getTotalPages").mockResolvedValue(fatalErr);
+
+    await act(async () => {
+      render(
+        <ServiceProvider>
+          <App />
+        </ServiceProvider>,
+      );
+    });
+
+    await act(async () => {
+      fireEvent.click(screen.getByText("Scan 巴哈姆特動漫瘋"));
+    });
+
+    await waitFor(() =>
+      expect(screen.getByTestId("fatal-error-screen")).toBeDefined(),
+    );
+
+    const copyBtn = screen.getByTestId("copy-error-btn");
+    await act(async () => {
+      fireEvent.click(copyBtn);
+    });
+    expect(consoleSpy).toHaveBeenCalledWith(
+      "Failed to copy error details",
+      expect.any(Error),
+    );
+    consoleSpy.mockRestore();
+  });
+
+  it("displays source component in formatted error details when fatal error is ScraperParseError", async () => {
+    const fatalErr = new ScraperParseError(
+      1,
+      "https://ani.gamer.com.tw/error",
+      "Bad HTML",
+      "Title element missing",
+    );
+    vi.spyOn(scraperService, "getTotalPages").mockResolvedValue(fatalErr);
+
+    await act(async () => {
+      render(
+        <ServiceProvider>
+          <App />
+        </ServiceProvider>,
+      );
+    });
+
+    await act(async () => {
+      fireEvent.click(screen.getByText("Scan 巴哈姆特動漫瘋"));
+    });
+
+    await waitFor(() =>
+      expect(screen.getByTestId("fatal-error-screen")).toBeDefined(),
+    );
+    const textarea = screen.getByTestId(
+      "error-details-textarea",
+    ) as HTMLTextAreaElement;
+    expect(textarea.value).toContain("Source Component: 1");
+  });
+
+  it("displays formatted error details when fatal error does not have a stack trace", async () => {
+    const fatalErr = new ScraperUnknownError(new Error("no stack error"));
+    Object.defineProperty(fatalErr, "stack", {
+      value: undefined,
+      configurable: true,
+    });
+    vi.spyOn(scraperService, "getTotalPages").mockResolvedValue(fatalErr);
+
+    await act(async () => {
+      render(
+        <ServiceProvider>
+          <App />
+        </ServiceProvider>,
+      );
+    });
+
+    await act(async () => {
+      fireEvent.click(screen.getByText("Scan 巴哈姆特動漫瘋"));
+    });
+
+    await waitFor(() =>
+      expect(screen.getByTestId("fatal-error-screen")).toBeDefined(),
+    );
+    const textarea = screen.getByTestId(
+      "error-details-textarea",
+    ) as HTMLTextAreaElement;
+    expect(textarea.value).not.toContain("Stack Trace:");
   });
 });

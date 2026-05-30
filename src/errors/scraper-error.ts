@@ -38,3 +38,16 @@ export class ScraperParseError extends Error {
     this.html = html;
   }
 }
+
+/**
+ * Represents unexpected runtime errors that occurred during scraping.
+ */
+export class ScraperUnknownError extends Error {
+  causeError: Error;
+
+  constructor(causeError: Error) {
+    super(causeError.message);
+    this.name = "ScraperUnknownError";
+    this.causeError = causeError;
+  }
+}

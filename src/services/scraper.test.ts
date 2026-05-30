@@ -5,7 +5,7 @@ import {
   ScraperHttpError,
   ScraperParseError,
 } from "../errors";
-import { type AnimeItem } from "../types/anime";
+import { type AnimeItem, type ScraperResult } from "../types/anime";
 import { isError } from "../types/result";
 
 // --- Helpers ---
@@ -537,17 +537,26 @@ describe("ScraperService pipeline methods", () => {
       description: "Awesome",
     });
 
-    const res = await scraperService.scanAllWithPipeline(
-      1,
-      1,
-      1,
-      () => true,
-      vi.fn(),
-    );
-    expect(res.items).toHaveLength(1);
-    expect(res.items[0].title).toBe("A");
-    expect(res.items[0].score).toBe(9.5);
-    expect(res.httpErrors).toHaveLength(0);
-    expect(res.parseErrors).toHaveLength(0);
+    let completedResult: ScraperResult | null = null;
+    await new Promise<void>((resolve, reject) => {
+      scraperService
+        .scanAllWithPipeline(1, 1, 1, () => true)
+        .subscribe({
+          next: (event) => {
+            if (event.type === "completed") {
+              completedResult = event.result;
+            }
+          },
+          error: reject,
+          complete: resolve,
+        });
+    });
+
+    expect(completedResult).not.toBeNull();
+    expect(completedResult.items).toHaveLength(1);
+    expect(completedResult.items[0].title).toBe("A");
+    expect(completedResult.items[0].score).toBe(9.5);
+    expect(completedResult.httpErrors).toHaveLength(0);
+    expect(completedResult.parseErrors).toHaveLength(0);
   });
 });

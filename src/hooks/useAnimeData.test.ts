@@ -256,4 +256,18 @@ describe("useAnimeData", () => {
     expect(result.current.trashList).toHaveLength(0);
     expect(result.current.searchList).toHaveLength(1);
   });
+
+  it("handles malformed loaded data by failing validation and returning empty list", async () => {
+    const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    storageMock["searchList"] = [{ title: 12345 }];
+    const { result } = renderHook(() => useAnimeData());
+
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+
+    expect(result.current.searchList).toHaveLength(0);
+    expect(consoleSpy).toHaveBeenCalled();
+    consoleSpy.mockRestore();
+  });
 });

@@ -1,7 +1,7 @@
 import { ScraperHttpError, ScraperParseError } from "../errors";
 import { type Result } from "./result";
-
 import { z } from "zod";
+import { type Observable } from "rxjs";
 
 export const AnimeDetailsSchema = z.object({
   score: z.number(),
@@ -20,19 +20,22 @@ export const AnimeItemSchema = AnimeDetailsSchema.extend({
 export type AnimeDetails = z.infer<typeof AnimeDetailsSchema>;
 export type AnimeItem = z.infer<typeof AnimeItemSchema>;
 
+export interface ScanCompleteResult {
+  newSearchItems: AnimeItem[];
+  updatedFavoriteList: AnimeItem[];
+  updatedTrashList: AnimeItem[];
+}
+
 export interface ScraperResult {
   items: AnimeItem[];
   httpErrors: ScraperHttpError[];
   parseErrors: ScraperParseError[];
 }
 
-export type ScanProgressCallback = (
-  pagesCompleted: number,
-  pagesTotal: number,
-  detailsCompleted: number,
-  detailsTotal: number,
-  currentTitle: string,
-) => void;
+export type ScanEvent =
+  | { type: "page_completed"; pageNum: number; success: boolean }
+  | { type: "detail_completed"; title: string; success: boolean }
+  | { type: "completed"; result: ScraperResult };
 
 export interface AnimeScraper {
   getTotalPages(): Promise<
@@ -42,4 +45,10 @@ export interface AnimeScraper {
   scrapeAnimeDetails(
     link: string,
   ): Promise<Result<AnimeDetails, ScraperHttpError | ScraperParseError>>;
+  scanAllWithPipeline(
+    totalPages: number,
+    pageConcurrency: number,
+    detailConcurrency: number,
+    filterItem: (item: AnimeItem) => boolean,
+  ): Observable<ScanEvent>;
 }

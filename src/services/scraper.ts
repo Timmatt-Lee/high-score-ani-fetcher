@@ -3,7 +3,7 @@ import {
   type AnimeDetails,
   type ScraperResult,
   type AnimeScraper,
-  type ScanProgressCallback,
+  type ScanEvent,
 } from "../types/anime";
 import { type Result, isError } from "../types/result";
 import {
@@ -12,6 +12,7 @@ import {
   ScraperParseError,
 } from "../errors";
 import { ScraperPipeline } from "./scraperPipeline";
+import { type Observable } from "rxjs";
 
 const BASE_URL = "https://ani.gamer.com.tw";
 
@@ -359,19 +360,17 @@ export class ScraperService implements AnimeScraper {
   /**
    * Pipeline scraping where stage 1 page fetching feeds items dynamically to stage 2 details fetching.
    */
-  async scanAllWithPipeline(
+  scanAllWithPipeline(
     totalPages: number,
     pageConcurrency: number,
     detailConcurrency: number,
     filterItem: (item: AnimeItem) => boolean,
-    onProgress: ScanProgressCallback,
-  ): Promise<ScraperResult> {
+  ): Observable<ScanEvent> {
     const pipeline = new ScraperPipeline(
       totalPages,
       pageConcurrency,
       detailConcurrency,
       filterItem,
-      onProgress,
       this,
     );
     return pipeline.execute();

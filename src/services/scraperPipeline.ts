@@ -1,12 +1,12 @@
 import {
   type AnimeItem,
-  type ScraperResult,
   type AnimeScraper,
-  type ScanProgressCallback,
+  type ScanEvent,
 } from "../types/anime";
 import { ScraperHttpError, ScraperParseError } from "../errors";
 import { isError } from "../types/result";
 import PQueue from "p-queue";
+import { Subject, type Observable } from "rxjs";
 
 /**
  * Encapsulates the state and logic for a two-stage concurrent scraping pipeline.
@@ -25,46 +25,49 @@ export class ScraperPipeline {
 
   private totalPages: number;
   private filterItem: (item: AnimeItem) => boolean;
-  private onProgress: ScanProgressCallback;
   private scraper: AnimeScraper;
+  private eventSubject = new Subject<ScanEvent>();
 
   constructor(
     totalPages: number,
     pageConcurrency: number,
     detailConcurrency: number,
     filterItem: (item: AnimeItem) => boolean,
-    onProgress: ScanProgressCallback,
     scraper: AnimeScraper,
   ) {
     this.totalPages = totalPages;
     this.filterItem = filterItem;
-    this.onProgress = onProgress;
     this.scraper = scraper;
     this.pageQueue = new PQueue({ concurrency: pageConcurrency });
     this.detailQueue = new PQueue({ concurrency: detailConcurrency });
   }
 
-  /**
-   * Orchestrates the execution of both pipeline stages.
-   */
-  async execute(): Promise<ScraperResult> {
-    const pagePromises = [];
-    for (let page = 1; page <= this.totalPages; page++) {
-      pagePromises.push(this.pageQueue.add(() => this.fetchPage(page)));
-    }
-
-    // Wait for all list pages to be fetched.
-    // Errors are captured internally within fetchPage, so these promises always resolve.
-    await Promise.all(pagePromises);
-
-    // Wait for all dynamically queued details requests to finish
-    await this.detailQueue.onIdle();
-
-    return {
-      items: this.results,
-      httpErrors: this.httpErrors,
-      parseErrors: this.parseErrors,
+  execute(): Observable<ScanEvent> {
+    const run = async () => {
+      try {
+        const pagePromises = [];
+        for (let page = 1; page <= this.totalPages; page++) {
+          pagePromises.push(this.pageQueue.add(() => this.fetchPage(page)));
+        }
+        await Promise.all(pagePromises);
+        await this.detailQueue.onIdle();
+        this.eventSubject.next({
+          type: "completed",
+          result: {
+            items: this.results,
+            httpErrors: this.httpErrors,
+            parseErrors: this.parseErrors,
+          },
+        });
+        this.eventSubject.complete();
+      } catch (err) {
+        this.eventSubject.error(
+          err instanceof Error ? err : new Error(String(err)),
+        );
+      }
     };
+    run();
+    return this.eventSubject.asObservable();
   }
 
   private async fetchPage(page: number): Promise<void> {
@@ -79,12 +82,20 @@ export class ScraperPipeline {
       }
     });
     this.pagesCompletedCount++;
+    this.eventSubject.next({
+      type: "page_completed",
+      pageNum: page,
+      success:
+        pageResult.httpErrors.length === 0 &&
+        pageResult.parseErrors.length === 0,
+    });
   }
 
   private async fetchDetail(item: AnimeItem): Promise<void> {
-    this.reportProgress(item.title);
     const res = await this.scraper.scrapeAnimeDetails(item.link);
+    let isSuccessful = true;
     if (isError(res)) {
+      isSuccessful = false;
       if (res instanceof ScraperHttpError) {
         this.httpErrors.push(res);
       } else {
@@ -94,16 +105,10 @@ export class ScraperPipeline {
       this.results.push({ ...item, ...res });
     }
     this.detailsCompletedCount++;
-    this.reportProgress(item.title);
-  }
-
-  private reportProgress(currentTitle: string): void {
-    this.onProgress(
-      this.pagesCompletedCount,
-      this.totalPages,
-      this.detailsCompletedCount,
-      this.detailsTotalCount,
-      currentTitle,
-    );
+    this.eventSubject.next({
+      type: "detail_completed",
+      title: item.title,
+      success: isSuccessful,
+    });
   }
 }

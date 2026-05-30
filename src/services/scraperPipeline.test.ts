@@ -4,12 +4,35 @@ import {
   type AnimeItem,
   type AnimeDetails,
   type ScraperResult,
+  type ScanEvent,
 } from "../types/anime";
 import {
   ScraperHttpError,
   ScraperParseError,
   ScraperErrorSource,
 } from "../errors";
+
+const runPipeline = (pipeline: ScraperPipeline) => {
+  return new Promise<{ events: ScanEvent[]; result: ScraperResult }>(
+    (resolve, reject) => {
+      const events: ScanEvent[] = [];
+      pipeline.execute().subscribe({
+        next: (event: ScanEvent) => {
+          events.push(event);
+        },
+        error: reject,
+        complete: () => {
+          const completedEvent = events.find((e) => e.type === "completed");
+          if (completedEvent && completedEvent.type === "completed") {
+            resolve({ events, result: completedEvent.result });
+          } else {
+            reject(new Error("No completed event found"));
+          }
+        },
+      });
+    },
+  );
+};
 
 describe("ScraperPipeline", () => {
   beforeEach(() => {
@@ -49,16 +72,17 @@ describe("ScraperPipeline", () => {
       } as AnimeDetails;
     });
 
-    const onProgress = vi.fn();
     const filterItem = (item: AnimeItem) => item.title !== "B";
 
-    const pipeline = new ScraperPipeline(2, 2, 2, filterItem, onProgress, {
+    const pipeline = new ScraperPipeline(2, 2, 2, filterItem, {
       getTotalPages: vi.fn(),
       scrapeListPage: listSpy,
       scrapeAnimeDetails: detailSpy,
+      scanAllWithPipeline: vi.fn(),
     });
 
-    const { items, httpErrors, parseErrors } = await pipeline.execute();
+    const { events, result } = await runPipeline(pipeline);
+    const { items, httpErrors, parseErrors } = result;
 
     expect(listSpy).toHaveBeenCalledTimes(2);
     expect(detailSpy).toHaveBeenCalledTimes(3);
@@ -70,7 +94,7 @@ describe("ScraperPipeline", () => {
       a.title.localeCompare(b.title),
     );
     expect(sortedItems[0].description).toBe("Desc A");
-    expect(onProgress).toHaveBeenCalled();
+    expect(events.some((e) => e.type === "page_completed")).toBe(true);
   });
 
   it("aggregates page-level and detail-level errors", async () => {
@@ -88,13 +112,16 @@ describe("ScraperPipeline", () => {
 
     detailSpy.mockResolvedValueOnce(detailError);
 
-    const pipeline = new ScraperPipeline(1, 1, 1, () => true, vi.fn(), {
+    const pipeline = new ScraperPipeline(1, 1, 1, () => true, {
       getTotalPages: vi.fn(),
       scrapeListPage: listSpy,
       scrapeAnimeDetails: detailSpy,
+      scanAllWithPipeline: vi.fn(),
     });
 
-    const { items, httpErrors, parseErrors } = await pipeline.execute();
+    const { events, result } = await runPipeline(pipeline);
+    const { items, httpErrors, parseErrors } = result;
+    expect(events.some((e) => e.type === "page_completed")).toBe(true);
     expect(items).toHaveLength(0);
     expect(httpErrors).toContain(pageError);
     expect(httpErrors).toContain(detailError);
@@ -115,13 +142,16 @@ describe("ScraperPipeline", () => {
 
     detailSpy.mockResolvedValueOnce(error);
 
-    const pipeline = new ScraperPipeline(1, 1, 1, () => true, vi.fn(), {
+    const pipeline = new ScraperPipeline(1, 1, 1, () => true, {
       getTotalPages: vi.fn(),
       scrapeListPage: listSpy,
       scrapeAnimeDetails: detailSpy,
+      scanAllWithPipeline: vi.fn(),
     });
 
-    const { items, httpErrors, parseErrors } = await pipeline.execute();
+    const { events, result } = await runPipeline(pipeline);
+    const { items, httpErrors, parseErrors } = result;
+    expect(events.some((e) => e.type === "page_completed")).toBe(true);
     expect(items).toHaveLength(0);
     expect(httpErrors).toHaveLength(1);
     expect(httpErrors[0]).toBe(error);
@@ -146,16 +176,74 @@ describe("ScraperPipeline", () => {
 
     detailSpy.mockResolvedValueOnce(parseError);
 
-    const pipeline = new ScraperPipeline(1, 1, 1, () => true, vi.fn(), {
+    const pipeline = new ScraperPipeline(1, 1, 1, () => true, {
       getTotalPages: vi.fn(),
       scrapeListPage: listSpy,
       scrapeAnimeDetails: detailSpy,
+      scanAllWithPipeline: vi.fn(),
     });
 
-    const { items, httpErrors, parseErrors } = await pipeline.execute();
+    const { events, result } = await runPipeline(pipeline);
+    const { items, httpErrors, parseErrors } = result;
+    expect(events.some((e) => e.type === "page_completed")).toBe(true);
     expect(items).toHaveLength(0);
     expect(parseErrors).toHaveLength(1);
     expect(parseErrors[0]).toBe(parseError);
     expect(httpErrors).toHaveLength(0);
+  });
+
+  it("emits error event when the pipeline catches an error", async () => {
+    const listSpy = vi
+      .fn()
+      .mockRejectedValue(new Error("unexpected queue error"));
+
+    const pipeline = new ScraperPipeline(1, 1, 1, () => true, {
+      getTotalPages: vi.fn(),
+      scrapeListPage: listSpy,
+      scrapeAnimeDetails: vi.fn(),
+      scanAllWithPipeline: vi.fn(),
+    });
+
+    const runPromise = new Promise<void>((resolve, reject) => {
+      pipeline.execute().subscribe({
+        next: () => {},
+        error: (err) => {
+          expect(err.message).toBe("unexpected queue error");
+          resolve();
+        },
+        complete: () => {
+          reject(new Error("Should not complete successfully"));
+        },
+      });
+    });
+
+    await runPromise;
+  });
+
+  it("emits non-Error string catches as Error inside pipeline", async () => {
+    const listSpy = vi.fn().mockRejectedValue("unexpected string queue error");
+
+    const pipeline = new ScraperPipeline(1, 1, 1, () => true, {
+      getTotalPages: vi.fn(),
+      scrapeListPage: listSpy,
+      scrapeAnimeDetails: vi.fn(),
+      scanAllWithPipeline: vi.fn(),
+    });
+
+    const runPromise = new Promise<void>((resolve, reject) => {
+      pipeline.execute().subscribe({
+        next: () => {},
+        error: (err) => {
+          expect(err).toBeInstanceOf(Error);
+          expect(err.message).toBe("unexpected string queue error");
+          resolve();
+        },
+        complete: () => {
+          reject(new Error("Should not complete successfully"));
+        },
+      });
+    });
+
+    await runPromise;
   });
 });
