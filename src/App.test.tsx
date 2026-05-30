@@ -14,12 +14,7 @@ import {
   type ScraperResult,
   type ScanEvent,
 } from "./types/anime";
-import {
-  ScraperHttpError,
-  ScraperParseError,
-  ScraperUnknownError,
-} from "./errors";
-import { type Result } from "./types/result";
+import { ScraperHttpError } from "./errors";
 import { Observable, Subject } from "rxjs";
 
 function createMockObservable(
@@ -744,14 +739,7 @@ describe("Scan functionality", () => {
     expect(screen.getByText(/And 1 more errors.../)).toBeDefined();
   });
 
-  it("renders fatal error screen, allows copying error details, and allows dismissal", async () => {
-    const writeTextSpy = vi.fn().mockResolvedValue(undefined);
-    vi.stubGlobal("navigator", {
-      clipboard: {
-        writeText: writeTextSpy,
-      },
-    });
-
+  it("renders fatal error screen when scan fails, and clears it on dismiss", async () => {
     const fatalErr = new ScraperHttpError(
       "https://ani.gamer.com.tw/error",
       "Bad Request",
@@ -778,31 +766,6 @@ describe("Scan functionality", () => {
     expect(screen.queryByTestId("progress-container")).toBeNull();
     expect(screen.queryByTestId("tabs-container")).toBeNull();
 
-    expect(screen.getByText("ScraperHttpError")).toBeDefined();
-    expect(
-      screen.getAllByText(/HTTP request failed with status 400/).length,
-    ).toBeGreaterThan(0);
-
-    // Verify copy button copies details
-    vi.useFakeTimers();
-    const copyBtn = screen.getByTestId("copy-error-btn");
-    await act(async () => {
-      fireEvent.click(copyBtn);
-    });
-    expect(writeTextSpy).toHaveBeenCalled();
-    const copiedText = writeTextSpy.mock.calls[0][0];
-    expect(copiedText).toContain("Error Name: ScraperHttpError");
-    expect(copiedText).toContain("Status Code: 400");
-    expect(copiedText).toContain("URL: https://ani.gamer.com.tw/error");
-
-    expect(screen.getByText("Copied! ✓")).toBeDefined();
-
-    // Fast-forward timers to run setTimeout callback
-    await act(async () => {
-      vi.advanceTimersByTime(2000);
-    });
-    expect(screen.queryByText("Copied! ✓")).toBeNull();
-
     // Verify dismiss button returns UI to normal state
     const dismissBtn = screen.getByTestId("dismiss-error-btn");
     await act(async () => {
@@ -811,112 +774,5 @@ describe("Scan functionality", () => {
 
     expect(screen.queryByTestId("fatal-error-screen")).toBeNull();
     expect(screen.getByTestId("tabs-container")).toBeDefined();
-    vi.useRealTimers();
-  });
-
-  it("handles copy failure gracefully when navigator.clipboard throws", async () => {
-    const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
-    vi.stubGlobal("navigator", {
-      clipboard: {
-        writeText: vi.fn().mockRejectedValue(new Error("clipboard blocked")),
-      },
-    });
-
-    const fatalErr = new ScraperHttpError(
-      "https://ani.gamer.com.tw/error",
-      "Bad Request",
-      400,
-    );
-    vi.spyOn(scraperService, "getTotalPages").mockResolvedValue(fatalErr);
-
-    await act(async () => {
-      render(
-        <ServiceProvider>
-          <App />
-        </ServiceProvider>,
-      );
-    });
-
-    await act(async () => {
-      fireEvent.click(screen.getByText("Scan 巴哈姆特動漫瘋"));
-    });
-
-    await waitFor(() =>
-      expect(screen.getByTestId("fatal-error-screen")).toBeDefined(),
-    );
-
-    const copyBtn = screen.getByTestId("copy-error-btn");
-    await act(async () => {
-      fireEvent.click(copyBtn);
-    });
-    expect(consoleSpy).toHaveBeenCalledWith(
-      "Failed to copy error details",
-      expect.any(Error),
-    );
-    consoleSpy.mockRestore();
-  });
-
-  it("displays source component in formatted error details when fatal error is ScraperParseError", async () => {
-    const fatalErr = new ScraperParseError(
-      1,
-      "https://ani.gamer.com.tw/error",
-      "Bad HTML",
-      "Title element missing",
-    );
-    vi.spyOn(scraperService, "getTotalPages").mockResolvedValue(fatalErr);
-
-    await act(async () => {
-      render(
-        <ServiceProvider>
-          <App />
-        </ServiceProvider>,
-      );
-    });
-
-    await act(async () => {
-      fireEvent.click(screen.getByText("Scan 巴哈姆特動漫瘋"));
-    });
-
-    await waitFor(() =>
-      expect(screen.getByTestId("fatal-error-screen")).toBeDefined(),
-    );
-    const textarea = screen.getByTestId(
-      "error-details-textarea",
-    ) as HTMLTextAreaElement;
-    expect(textarea.value).toContain("Source Component: 1");
-  });
-
-  it("displays formatted error details when fatal error does not have a stack trace", async () => {
-    const fatalErr = new ScraperUnknownError(new Error("no stack error"));
-    Object.defineProperty(fatalErr, "stack", {
-      value: undefined,
-      configurable: true,
-    });
-    vi.spyOn(scraperService, "getTotalPages").mockResolvedValue(
-      fatalErr as unknown as Result<
-        number,
-        ScraperHttpError | ScraperParseError
-      >,
-    );
-
-    await act(async () => {
-      render(
-        <ServiceProvider>
-          <App />
-        </ServiceProvider>,
-      );
-    });
-
-    await act(async () => {
-      fireEvent.click(screen.getByText("Scan 巴哈姆特動漫瘋"));
-    });
-
-    await waitFor(() =>
-      expect(screen.getByTestId("fatal-error-screen")).toBeDefined(),
-    );
-    const textarea = screen.getByTestId(
-      "error-details-textarea",
-    ) as HTMLTextAreaElement;
-    expect(textarea.value).not.toContain("Stack Trace:");
   });
 });

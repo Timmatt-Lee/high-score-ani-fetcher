@@ -6,7 +6,6 @@ import {
   ScraperHttpError,
   ScraperParseError,
   ScraperErrorSource,
-  ScraperUnknownError,
 } from "./errors";
 import { ScraperService } from "./services/scraper";
 
@@ -223,109 +222,6 @@ export const WithScanErrors: Story = {
         scraperService={
           mockScraperServiceWithErrors as unknown as ScraperService
         }
-      >
-        <div
-          style={{
-            width: "450px",
-            border: "1px solid #333",
-            background: "#121212",
-          }}
-        >
-          <App />
-        </div>
-      </ServiceProvider>
-    );
-  },
-};
-
-// Automate click to enter fatal error screen for visual review
-const clickScanOnMount = (Story: () => React.ReactElement) => {
-  setTimeout(() => {
-    const btn = document.querySelector("button");
-    if (btn && btn.textContent === "Scan 巴哈姆特動漫瘋") {
-      btn.click();
-    }
-  }, 100);
-  return <Story />;
-};
-
-export const WithFatalHttpError: Story = {
-  decorators: [clickScanOnMount],
-  render: () => {
-    const mockService = {
-      ...mockScraperService,
-      getTotalPages: async () => {
-        return new ScraperHttpError(
-          "https://ani.gamer.com.tw/animeList.php?page=1",
-          "HTTP 500 Internal Server Error",
-          500,
-        );
-      },
-    };
-    return (
-      <ServiceProvider
-        scraperService={mockService as unknown as ScraperService}
-      >
-        <div
-          style={{
-            width: "450px",
-            border: "1px solid #333",
-            background: "#121212",
-          }}
-        >
-          <App />
-        </div>
-      </ServiceProvider>
-    );
-  },
-};
-
-export const WithFatalParseError: Story = {
-  decorators: [clickScanOnMount],
-  render: () => {
-    const mockService = {
-      ...mockScraperService,
-      getTotalPages: async () => {
-        return new ScraperParseError(
-          ScraperErrorSource.PAGINATION,
-          "https://ani.gamer.com.tw/animeList.php?page=1",
-          "Invalid HTML document structure",
-          "Pagination element not found",
-        );
-      },
-    };
-    return (
-      <ServiceProvider
-        scraperService={mockService as unknown as ScraperService}
-      >
-        <div
-          style={{
-            width: "450px",
-            border: "1px solid #333",
-            background: "#121212",
-          }}
-        >
-          <App />
-        </div>
-      </ServiceProvider>
-    );
-  },
-};
-
-export const WithFatalUnknownError: Story = {
-  decorators: [clickScanOnMount],
-  render: () => {
-    const mockService = {
-      ...mockScraperService,
-      getTotalPages: async () => {
-        return new ScraperUnknownError(
-          new Error("An unexpected system exception occurred"),
-        );
-      },
-    };
-    return (
-      <ServiceProvider
-        scraperService={mockService as unknown as ScraperService}
       >
         <div
           style={{

@@ -4,13 +4,13 @@ import { useAnimeScanner } from "./hooks/useAnimeScanner";
 import { AnimeList } from "./components/AnimeList";
 import { ProgressBar } from "./components/ProgressBar";
 import { Tabs, Tab } from "./components/Tabs";
+import { FatalErrorScreen } from "./components/FatalErrorScreen/FatalErrorScreen";
 import styles from "./App.module.css";
 import "./index.css";
 
 function App() {
   const [activeTab, setActiveTab] = useState<Tab>(Tab.Search);
   const [showErrorDetails, setShowErrorDetails] = useState(false);
-  const [isCopied, setIsCopied] = useState(false);
 
   const {
     searchList,
@@ -46,35 +46,6 @@ function App() {
 
   const totalErrors = httpErrors.length + parseErrors.length;
 
-  const getFormattedErrorDetails = () => {
-    const error = fatalError!;
-    let details = `Error Name: ${error.name}\n`;
-    details += `Message: ${error.message}\n`;
-    if ("url" in error && error.url) {
-      details += `URL: ${error.url}\n`;
-    }
-    if ("status" in error && error.status !== undefined) {
-      details += `Status Code: ${error.status}\n`;
-    }
-    if ("source" in error && error.source !== undefined) {
-      details += `Source Component: ${error.source}\n`;
-    }
-    if (error.stack) {
-      details += `\nStack Trace:\n${error.stack}\n`;
-    }
-    return details;
-  };
-
-  const handleCopyError = async () => {
-    try {
-      await navigator.clipboard.writeText(getFormattedErrorDetails());
-      setIsCopied(true);
-      setTimeout(() => setIsCopied(false), 2000);
-    } catch (err) {
-      console.error("Failed to copy error details", err);
-    }
-  };
-
   return (
     <div className={styles.appContainer} data-testid="app-container">
       <div className={styles.header}>
@@ -89,46 +60,7 @@ function App() {
       </div>
 
       {fatalError ? (
-        <div
-          className={styles.fatalErrorScreen}
-          data-testid="fatal-error-screen"
-        >
-          <div className={styles.errorIcon}>❌</div>
-          <h2>Something went wrong</h2>
-          <p className={styles.errorSubtitle}>
-            A fatal error occurred during the scanning process.
-          </p>
-
-          <div className={styles.errorBox}>
-            <strong>{fatalError.name}</strong>: {fatalError.message}
-          </div>
-
-          <div className={styles.errorDetailsHeader}>
-            <span>Error Info</span>
-            <button
-              className={`${styles.btn} ${styles.btnSecondary}`}
-              onClick={handleCopyError}
-              data-testid="copy-error-btn"
-            >
-              {isCopied ? "Copied! ✓" : "Copy Error"}
-            </button>
-          </div>
-
-          <textarea
-            className={styles.errorTextArea}
-            readOnly
-            value={getFormattedErrorDetails()}
-            data-testid="error-details-textarea"
-          />
-
-          <button
-            className={`${styles.btn} ${styles.dismissBtn}`}
-            onClick={clearFatalError}
-            data-testid="dismiss-error-btn"
-          >
-            Dismiss
-          </button>
-        </div>
+        <FatalErrorScreen fatalError={fatalError} onDismiss={clearFatalError} />
       ) : (
         <>
           <ProgressBar

@@ -412,6 +412,26 @@ describe("useAnimeScanner", () => {
     expect(result.current.parseErrors).toHaveLength(0);
   });
 
+  it("sets fatalError directly without double wrapping when getTotalPages fails with ScraperUnknownError", async () => {
+    const error = new ScraperUnknownError(
+      new Error("pre-wrapped unknown error"),
+    );
+    vi.spyOn(scraperService, "getTotalPages").mockResolvedValue(
+      error as unknown as ScraperHttpError,
+    );
+
+    const onComplete = vi.fn();
+    const { result } = renderHook(() => useAnimeScanner([], [], onComplete), {
+      wrapper: ServiceProvider,
+    });
+
+    await act(async () => {
+      await result.current.handleScan();
+    });
+
+    expect(result.current.fatalError).toBe(error);
+  });
+
   it("clears fatalError when clearFatalError is called", async () => {
     const error = new ScraperHttpError("http://err", "Failed", 500);
     vi.spyOn(scraperService, "getTotalPages").mockResolvedValue(error);
