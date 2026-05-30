@@ -553,10 +553,11 @@ describe("ScraperService pipeline methods", () => {
     });
 
     expect(completedResult).not.toBeNull();
-    expect(completedResult.items).toHaveLength(1);
-    expect(completedResult.items[0].title).toBe("A");
-    expect(completedResult.items[0].score).toBe(9.5);
-    expect(completedResult.httpErrors).toHaveLength(0);
-    expect(completedResult.parseErrors).toHaveLength(0);
+    const result = completedResult!;
+    expect(result.items).toHaveLength(1);
+    expect(result.items[0].title).toBe("A");
+    expect(result.items[0].score).toBe(9.5);
+    expect(result.httpErrors).toHaveLength(0);
+    expect(result.parseErrors).toHaveLength(0);
   });
 });

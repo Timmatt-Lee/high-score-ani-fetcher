@@ -19,6 +19,7 @@ import {
   ScraperParseError,
   ScraperUnknownError,
 } from "./errors";
+import { type Result } from "./types/result";
 import { Observable, Subject } from "rxjs";
 
 function createMockObservable(
@@ -891,7 +892,12 @@ describe("Scan functionality", () => {
       value: undefined,
       configurable: true,
     });
-    vi.spyOn(scraperService, "getTotalPages").mockResolvedValue(fatalErr);
+    vi.spyOn(scraperService, "getTotalPages").mockResolvedValue(
+      fatalErr as unknown as Result<
+        number,
+        ScraperHttpError | ScraperParseError
+      >,
+    );
 
     await act(async () => {
       render(
