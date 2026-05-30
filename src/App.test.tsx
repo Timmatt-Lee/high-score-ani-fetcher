@@ -687,9 +687,6 @@ describe("Scan functionality", () => {
       screen.getByText(/Scan completed with 1 parsing\/network errors/),
     ).toBeDefined();
 
-    // Click on Errors tab
-    fireEvent.click(screen.getByRole("button", { name: /Errors/ }));
-
     // Verify errors panel renders HTTP error details
     expect(screen.getByTestId("errors-panel")).toBeDefined();
     expect(screen.getByText(/HTTP Network Errors \(1\)/)).toBeDefined();
@@ -737,9 +734,6 @@ describe("Scan functionality", () => {
       screen.getByText(/Scan completed with 11 parsing\/network errors/),
     ).toBeDefined();
 
-    // Click on Errors tab
-    fireEvent.click(screen.getByRole("button", { name: /Errors/ }));
-
     // Expect summary text with failed pages to be rendered
     expect(
       screen.getByText(/Failed Pages: 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11/),
@@ -786,5 +780,64 @@ describe("Scan functionality", () => {
 
     expect(screen.queryByTestId("fatal-error-screen")).toBeNull();
     expect(screen.getByTestId("tabs-container")).toBeDefined();
+  });
+
+  it("renders ErrorsPanel inside Results tab and hides it when retry clears the errors", async () => {
+    const anime = makeAnime({ title: "Partial Success", score: 9.0 });
+    const error = new ScraperHttpError(
+      "https://ani.gamer.com.tw/animeList.php?page=1",
+      "fail",
+      500,
+    );
+
+    vi.spyOn(scraperService, "getTotalPages").mockResolvedValue(1);
+
+    // First scan yields error
+    const pipelineMock = vi.spyOn(scraperService, "scanAllWithPipeline");
+    pipelineMock.mockImplementationOnce(() => {
+      return createMockObservable({
+        items: [{ ...anime }],
+        httpErrors: [error],
+        parseErrors: [],
+      });
+    });
+
+    await act(async () => {
+      render(
+        <ServiceProvider>
+          <App />
+        </ServiceProvider>,
+      );
+    });
+
+    await act(async () => {
+      fireEvent.click(screen.getByText("Scan 巴哈姆特動漫瘋"));
+    });
+
+    await waitFor(() => expect(screen.queryByText("Scanning...")).toBeNull());
+
+    // ErrorsPanel should be rendered since we are on the Results tab and there are errors
+    expect(screen.getByTestId("errors-panel")).toBeDefined();
+
+    // Mock second scan (retry) to succeed with no errors
+    pipelineMock.mockImplementationOnce(() => {
+      return createMockObservable({
+        items: [{ ...anime }],
+        httpErrors: [],
+        parseErrors: [],
+      });
+    });
+
+    // Click retry button in ErrorsPanel
+    const retryBtn = screen.getByTestId("retry-errors-btn");
+    await act(async () => {
+      fireEvent.click(retryBtn);
+    });
+
+    // Wait for the scan to finish and verify that ErrorsPanel is hidden
+    await waitFor(() => expect(screen.queryByText("Scanning...")).toBeNull());
+
+    // ErrorsPanel should be hidden now
+    expect(screen.queryByTestId("errors-panel")).toBeNull();
   });
 });

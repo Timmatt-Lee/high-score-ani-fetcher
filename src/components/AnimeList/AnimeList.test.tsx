@@ -47,21 +47,6 @@ describe("AnimeList", () => {
     expect(screen.queryByText("Fav")).toBeNull();
   });
 
-  it("returns null when activeTab is errors", () => {
-    const { container } = render(
-      <AnimeList
-        activeTab={Tab.Errors}
-        searchList={[makeAnime("Search 1")]}
-        favoriteList={[]}
-        trashList={[]}
-        onMoveToFavorites={vi.fn()}
-        onMoveToTrash={vi.fn()}
-        onRestoreFromTrash={vi.fn()}
-      />,
-    );
-    expect(container.firstChild).toBeNull();
-  });
-
   it("throws error for unhandled activeTab state", () => {
     const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
     expect(() =>

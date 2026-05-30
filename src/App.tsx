@@ -75,7 +75,7 @@ function App() {
               <div className={styles.warningHeader}>
                 <span>
                   ⚠️ Scan completed with {totalErrors} parsing/network errors.
-                  Check the <strong>Errors</strong> tab for details and retry
+                  Check the <strong>Results</strong> tab for details and retry
                   options.
                 </span>
               </div>
@@ -88,10 +88,9 @@ function App() {
             searchCount={searchList.length}
             favoritesCount={favoriteList.length}
             trashCount={trashList.length}
-            errorsCount={totalErrors}
           />
 
-          {activeTab === Tab.Errors ? (
+          {activeTab === Tab.Search && totalErrors > 0 && (
             <ErrorsPanel
               httpErrors={httpErrors}
               parseErrors={parseErrors}
@@ -99,17 +98,17 @@ function App() {
               isScanning={isScanning}
               onRetry={handleScan}
             />
-          ) : (
-            <AnimeList
-              activeTab={activeTab}
-              searchList={searchList}
-              favoriteList={favoriteList}
-              trashList={trashList}
-              onMoveToFavorites={moveToFavorites}
-              onMoveToTrash={moveToTrash}
-              onRestoreFromTrash={restoreFromTrash}
-            />
           )}
+
+          <AnimeList
+            activeTab={activeTab}
+            searchList={searchList}
+            favoriteList={favoriteList}
+            trashList={trashList}
+            onMoveToFavorites={moveToFavorites}
+            onMoveToTrash={moveToTrash}
+            onRestoreFromTrash={restoreFromTrash}
+          />
         </>
       )}
     </div>
