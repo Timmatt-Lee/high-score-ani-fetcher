@@ -30,12 +30,18 @@ export interface ScraperResult {
   items: AnimeItem[];
   httpErrors: ScraperHttpError[];
   parseErrors: ScraperParseError[];
+  failedDetails?: AnimeItem[];
 }
 
 export type ScanEvent =
   | { type: "page_completed"; pageNum: number; success: boolean }
   | { type: "detail_completed"; title: string; success: boolean }
   | { type: "completed"; result: ScraperResult };
+
+export interface PipelineOptions {
+  failedPages?: number[];
+  failedDetails?: AnimeItem[];
+}
 
 export interface AnimeScraper {
   getTotalPages(): Promise<
@@ -50,5 +56,6 @@ export interface AnimeScraper {
     pageConcurrency: number,
     detailConcurrency: number,
     filterItem: (item: AnimeItem) => boolean,
+    options?: PipelineOptions,
   ): Observable<ScanEvent>;
 }

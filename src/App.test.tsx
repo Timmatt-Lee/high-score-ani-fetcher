@@ -682,27 +682,28 @@ describe("Scan functionality", () => {
 
     await waitFor(() => expect(screen.queryByText("Scanning...")).toBeNull());
 
-    // Expect warning alert to be rendered
-    expect(screen.getByText(/1 parsing\/network errors/)).toBeDefined();
-    expect(screen.queryByText(/status 502/)).toBeNull();
+    // Expect warning alert to be rendered pointing to Errors tab
+    expect(
+      screen.getByText(/Scan completed with 1 parsing\/network errors/),
+    ).toBeDefined();
 
-    // Toggle to show details
-    fireEvent.click(screen.getByText("Show Details"));
-    expect(screen.getByText(/URL: unknown/)).toBeDefined();
-    expect(screen.getByText(/status 502/)).toBeDefined();
+    // Click on Errors tab
+    fireEvent.click(screen.getByRole("button", { name: /Errors/ }));
 
-    // Toggle to hide details
-    fireEvent.click(screen.getByText("Hide Details"));
-    expect(screen.queryByText(/status 502/)).toBeNull();
+    // Verify errors panel renders HTTP error details
+    expect(screen.getByTestId("errors-panel")).toBeDefined();
+    expect(screen.getByText(/HTTP Network Errors \(1\)/)).toBeDefined();
+    expect(screen.getByText(/Status:/)).toBeDefined();
+    expect(screen.getAllByText(/502/).length).toBeGreaterThanOrEqual(1);
   });
 
-  it("renders more than 10 errors text when errors count > 10", async () => {
+  it("renders page numbers and failed details counts in Errors tab summary when there are many errors", async () => {
     const anime = makeAnime({ title: "Partial Success", score: 9.0 });
     const errorsList = Array.from(
       { length: 11 },
       (_, i) =>
         new ScraperHttpError(
-          `https://ani.gamer.com.tw/animeList.php?page=${i}`,
+          `https://ani.gamer.com.tw/animeList.php?page=${i + 1}`,
           `Error ${i}`,
           500,
         ),
@@ -732,11 +733,17 @@ describe("Scan functionality", () => {
     await waitFor(() => expect(screen.queryByText("Scanning...")).toBeNull());
 
     // Expect warning alert to be rendered
-    expect(screen.getByText(/11 parsing\/network errors/)).toBeDefined();
+    expect(
+      screen.getByText(/Scan completed with 11 parsing\/network errors/),
+    ).toBeDefined();
 
-    // Toggle to show details
-    fireEvent.click(screen.getByText("Show Details"));
-    expect(screen.getByText(/And 1 more errors.../)).toBeDefined();
+    // Click on Errors tab
+    fireEvent.click(screen.getByRole("button", { name: /Errors/ }));
+
+    // Expect summary text with failed pages to be rendered
+    expect(
+      screen.getByText(/Failed Pages: 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11/),
+    ).toBeDefined();
   });
 
   it("renders fatal error screen when scan fails, and clears it on dismiss", async () => {
@@ -745,7 +752,9 @@ describe("Scan functionality", () => {
       "Bad Request",
       400,
     );
-    vi.spyOn(scraperService, "getTotalPages").mockResolvedValue(fatalErr);
+    const spy = vi
+      .spyOn(scraperService, "getTotalPages")
+      .mockResolvedValue(fatalErr);
 
     await act(async () => {
       render(
@@ -758,6 +767,9 @@ describe("Scan functionality", () => {
     await act(async () => {
       fireEvent.click(screen.getByText("Scan 巴哈姆特動漫瘋"));
     });
+
+    // Check if the spy was actually called
+    await waitFor(() => expect(spy).toHaveBeenCalled());
 
     // Verify fatal error screen is rendered and progress bar / tabs are NOT rendered
     await waitFor(() =>

@@ -5,12 +5,12 @@ import { AnimeList } from "./components/AnimeList";
 import { ProgressBar } from "./components/ProgressBar";
 import { Tabs, Tab } from "./components/Tabs";
 import { FatalErrorScreen } from "./components/FatalErrorScreen/FatalErrorScreen";
+import { ErrorsPanel } from "./components/ErrorsPanel/ErrorsPanel";
 import styles from "./App.module.css";
 import "./index.css";
 
 function App() {
   const [activeTab, setActiveTab] = useState<Tab>(Tab.Search);
-  const [showErrorDetails, setShowErrorDetails] = useState(false);
 
   const {
     searchList,
@@ -33,7 +33,8 @@ function App() {
     fatalError,
     clearFatalError,
     handleScan,
-  } = useAnimeScanner(favoriteList, trashList, (result) => {
+    failedDetails,
+  } = useAnimeScanner(searchList, favoriteList, trashList, (result) => {
     setSearchList(result.newSearchItems);
     setFavoriteList(result.updatedFavoriteList);
     setTrashList(result.updatedTrashList);
@@ -52,7 +53,7 @@ function App() {
         <h1>AniFetcher Pro</h1>
         <button
           className={styles.btn}
-          onClick={handleScan}
+          onClick={() => handleScan()}
           disabled={isScanning}
         >
           {isScanning ? "Scanning..." : "Scan 巴哈姆特動漫瘋"}
@@ -74,31 +75,10 @@ function App() {
               <div className={styles.warningHeader}>
                 <span>
                   ⚠️ Scan completed with {totalErrors} parsing/network errors.
-                  Remaining items were loaded.
+                  Check the <strong>Errors</strong> tab for details and retry
+                  options.
                 </span>
-                <button
-                  className={styles.toggleDetailsBtn}
-                  onClick={() => setShowErrorDetails(!showErrorDetails)}
-                >
-                  {showErrorDetails ? "Hide Details" : "Show Details"}
-                </button>
               </div>
-              {showErrorDetails && (
-                <ul className={styles.warningList}>
-                  {[...httpErrors, ...parseErrors]
-                    .slice(0, 10)
-                    .map((err, i) => (
-                      <li key={i} className={styles.warningItem}>
-                        {err.name} (URL: {err.url || "unknown"}) — {err.message}
-                      </li>
-                    ))}
-                  {totalErrors > 10 && (
-                    <li className={styles.warningItem}>
-                      And {totalErrors - 10} more errors...
-                    </li>
-                  )}
-                </ul>
-              )}
             </div>
           )}
 
@@ -108,17 +88,28 @@ function App() {
             searchCount={searchList.length}
             favoritesCount={favoriteList.length}
             trashCount={trashList.length}
+            errorsCount={totalErrors}
           />
 
-          <AnimeList
-            activeTab={activeTab}
-            searchList={searchList}
-            favoriteList={favoriteList}
-            trashList={trashList}
-            onMoveToFavorites={moveToFavorites}
-            onMoveToTrash={moveToTrash}
-            onRestoreFromTrash={restoreFromTrash}
-          />
+          {activeTab === Tab.Errors ? (
+            <ErrorsPanel
+              httpErrors={httpErrors}
+              parseErrors={parseErrors}
+              failedDetails={failedDetails}
+              isScanning={isScanning}
+              onRetry={handleScan}
+            />
+          ) : (
+            <AnimeList
+              activeTab={activeTab}
+              searchList={searchList}
+              favoriteList={favoriteList}
+              trashList={trashList}
+              onMoveToFavorites={moveToFavorites}
+              onMoveToTrash={moveToTrash}
+              onRestoreFromTrash={restoreFromTrash}
+            />
+          )}
         </>
       )}
     </div>

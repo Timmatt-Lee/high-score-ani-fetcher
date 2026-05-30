@@ -86,9 +86,12 @@ describe("useAnimeScanner", () => {
     );
 
     const onComplete = vi.fn();
-    const { result } = renderHook(() => useAnimeScanner([], [], onComplete), {
-      wrapper: ServiceProvider,
-    });
+    const { result } = renderHook(
+      () => useAnimeScanner([], [], [], onComplete),
+      {
+        wrapper: ServiceProvider,
+      },
+    );
 
     await act(async () => {
       await result.current.handleScan();
@@ -111,9 +114,12 @@ describe("useAnimeScanner", () => {
     vi.spyOn(scraperService, "scanAllWithPipeline").mockReturnValue(subject);
 
     const onComplete = vi.fn();
-    const { result } = renderHook(() => useAnimeScanner([], [], onComplete), {
-      wrapper: ServiceProvider,
-    });
+    const { result } = renderHook(
+      () => useAnimeScanner([], [], [], onComplete),
+      {
+        wrapper: ServiceProvider,
+      },
+    );
 
     await act(async () => {
       result.current.handleScan();
@@ -150,9 +156,12 @@ describe("useAnimeScanner", () => {
     );
 
     const onComplete = vi.fn();
-    const { result } = renderHook(() => useAnimeScanner([], [], onComplete), {
-      wrapper: ServiceProvider,
-    });
+    const { result } = renderHook(
+      () => useAnimeScanner([], [], [], onComplete),
+      {
+        wrapper: ServiceProvider,
+      },
+    );
 
     await act(async () => {
       await result.current.handleScan();
@@ -183,7 +192,7 @@ describe("useAnimeScanner", () => {
 
     const onComplete = vi.fn();
     const { result } = renderHook(
-      () => useAnimeScanner([favItem], [trashItem], onComplete),
+      () => useAnimeScanner([], [favItem], [trashItem], onComplete),
       { wrapper: ServiceProvider },
     );
 
@@ -240,9 +249,12 @@ describe("useAnimeScanner", () => {
     );
 
     const onComplete = vi.fn();
-    const { result } = renderHook(() => useAnimeScanner([], [], onComplete), {
-      wrapper: ServiceProvider,
-    });
+    const { result } = renderHook(
+      () => useAnimeScanner([], [], [], onComplete),
+      {
+        wrapper: ServiceProvider,
+      },
+    );
 
     await act(async () => {
       await result.current.handleScan();
@@ -269,9 +281,12 @@ describe("useAnimeScanner", () => {
     });
 
     const onComplete = vi.fn();
-    const { result } = renderHook(() => useAnimeScanner([], [], onComplete), {
-      wrapper: ServiceProvider,
-    });
+    const { result } = renderHook(
+      () => useAnimeScanner([], [], [], onComplete),
+      {
+        wrapper: ServiceProvider,
+      },
+    );
 
     await act(async () => {
       await result.current.handleScan();
@@ -314,9 +329,12 @@ describe("useAnimeScanner", () => {
     });
 
     const onComplete = vi.fn();
-    const { result } = renderHook(() => useAnimeScanner([], [], onComplete), {
-      wrapper: ServiceProvider,
-    });
+    const { result } = renderHook(
+      () => useAnimeScanner([], [], [], onComplete),
+      {
+        wrapper: ServiceProvider,
+      },
+    );
 
     await act(async () => {
       await result.current.handleScan();
@@ -340,9 +358,12 @@ describe("useAnimeScanner", () => {
     vi.spyOn(scraperService, "getTotalPages").mockResolvedValue(error);
 
     const onComplete = vi.fn();
-    const { result } = renderHook(() => useAnimeScanner([], [], onComplete), {
-      wrapper: ServiceProvider,
-    });
+    const { result } = renderHook(
+      () => useAnimeScanner([], [], [], onComplete),
+      {
+        wrapper: ServiceProvider,
+      },
+    );
 
     await act(async () => {
       await result.current.handleScan();
@@ -360,9 +381,12 @@ describe("useAnimeScanner", () => {
     vi.spyOn(scraperService, "getTotalPages").mockResolvedValue(error);
 
     const onComplete = vi.fn();
-    const { result } = renderHook(() => useAnimeScanner([], [], onComplete), {
-      wrapper: ServiceProvider,
-    });
+    const { result } = renderHook(
+      () => useAnimeScanner([], [], [], onComplete),
+      {
+        wrapper: ServiceProvider,
+      },
+    );
 
     await act(async () => {
       await result.current.handleScan();
@@ -378,9 +402,12 @@ describe("useAnimeScanner", () => {
     );
 
     const onComplete = vi.fn();
-    const { result } = renderHook(() => useAnimeScanner([], [], onComplete), {
-      wrapper: ServiceProvider,
-    });
+    const { result } = renderHook(
+      () => useAnimeScanner([], [], [], onComplete),
+      {
+        wrapper: ServiceProvider,
+      },
+    );
 
     await act(async () => {
       await result.current.handleScan();
@@ -398,9 +425,12 @@ describe("useAnimeScanner", () => {
     );
 
     const onComplete = vi.fn();
-    const { result } = renderHook(() => useAnimeScanner([], [], onComplete), {
-      wrapper: ServiceProvider,
-    });
+    const { result } = renderHook(
+      () => useAnimeScanner([], [], [], onComplete),
+      {
+        wrapper: ServiceProvider,
+      },
+    );
 
     await act(async () => {
       await result.current.handleScan();
@@ -421,9 +451,12 @@ describe("useAnimeScanner", () => {
     );
 
     const onComplete = vi.fn();
-    const { result } = renderHook(() => useAnimeScanner([], [], onComplete), {
-      wrapper: ServiceProvider,
-    });
+    const { result } = renderHook(
+      () => useAnimeScanner([], [], [], onComplete),
+      {
+        wrapper: ServiceProvider,
+      },
+    );
 
     await act(async () => {
       await result.current.handleScan();
@@ -437,9 +470,12 @@ describe("useAnimeScanner", () => {
     vi.spyOn(scraperService, "getTotalPages").mockResolvedValue(error);
 
     const onComplete = vi.fn();
-    const { result } = renderHook(() => useAnimeScanner([], [], onComplete), {
-      wrapper: ServiceProvider,
-    });
+    const { result } = renderHook(
+      () => useAnimeScanner([], [], [], onComplete),
+      {
+        wrapper: ServiceProvider,
+      },
+    );
 
     await act(async () => {
       await result.current.handleScan();
@@ -468,9 +504,12 @@ describe("useAnimeScanner", () => {
     });
 
     const onComplete = vi.fn();
-    const { result } = renderHook(() => useAnimeScanner([], [], onComplete), {
-      wrapper: ServiceProvider,
-    });
+    const { result } = renderHook(
+      () => useAnimeScanner([], [], [], onComplete),
+      {
+        wrapper: ServiceProvider,
+      },
+    );
 
     await act(async () => {
       await result.current.handleScan();
@@ -491,9 +530,12 @@ describe("useAnimeScanner", () => {
     vi.spyOn(scraperService, "scanAllWithPipeline").mockReturnValue(subject);
 
     const onComplete = vi.fn();
-    const { result } = renderHook(() => useAnimeScanner([], [], onComplete), {
-      wrapper: ServiceProvider,
-    });
+    const { result } = renderHook(
+      () => useAnimeScanner([], [], [], onComplete),
+      {
+        wrapper: ServiceProvider,
+      },
+    );
 
     await act(async () => {
       result.current.handleScan();
@@ -528,9 +570,12 @@ describe("useAnimeScanner", () => {
     });
 
     const onComplete = vi.fn();
-    const { result } = renderHook(() => useAnimeScanner([], [], onComplete), {
-      wrapper: ServiceProvider,
-    });
+    const { result } = renderHook(
+      () => useAnimeScanner([], [], [], onComplete),
+      {
+        wrapper: ServiceProvider,
+      },
+    );
 
     await act(async () => {
       await result.current.handleScan();
@@ -568,7 +613,7 @@ describe("useAnimeScanner", () => {
 
     const onComplete = vi.fn();
     const { result } = renderHook(
-      () => useAnimeScanner([favItem], [trashItem], onComplete),
+      () => useAnimeScanner([], [favItem], [trashItem], onComplete),
       { wrapper: ServiceProvider },
     );
 
@@ -612,7 +657,7 @@ describe("useAnimeScanner", () => {
 
     const onComplete = vi.fn();
     const { result } = renderHook(
-      () => useAnimeScanner([favItem], [trashItem], onComplete),
+      () => useAnimeScanner([], [favItem], [trashItem], onComplete),
       { wrapper: ServiceProvider },
     );
 
@@ -636,9 +681,12 @@ describe("useAnimeScanner", () => {
     });
 
     const onComplete = vi.fn();
-    const { result } = renderHook(() => useAnimeScanner([], [], onComplete), {
-      wrapper: ServiceProvider,
-    });
+    const { result } = renderHook(
+      () => useAnimeScanner([], [], [], onComplete),
+      {
+        wrapper: ServiceProvider,
+      },
+    );
 
     await act(async () => {
       await result.current.handleScan();
@@ -658,9 +706,12 @@ describe("useAnimeScanner", () => {
     });
 
     const onComplete = vi.fn();
-    const { result } = renderHook(() => useAnimeScanner([], [], onComplete), {
-      wrapper: ServiceProvider,
-    });
+    const { result } = renderHook(
+      () => useAnimeScanner([], [], [], onComplete),
+      {
+        wrapper: ServiceProvider,
+      },
+    );
 
     await act(async () => {
       await result.current.handleScan();
@@ -668,5 +719,103 @@ describe("useAnimeScanner", () => {
 
     expect(result.current.fatalError).toBeInstanceOf(ScraperUnknownError);
     expect(result.current.fatalError?.message).toBe("pipeline standard error");
+  });
+
+  it("handles retry scans by pre-populating merged items map and bypassing total page fetch", async () => {
+    const searchItem = makeAnime("SearchItem");
+    const favItem = makeAnime("FavItem");
+    const trashItem = makeAnime("TrashItem");
+
+    const pipelineSpy = vi
+      .spyOn(scraperService, "scanAllWithPipeline")
+      .mockImplementation(() => {
+        return createMockObservable({
+          items: [{ ...searchItem, score: 9.0 }],
+          httpErrors: [],
+          parseErrors: [],
+        });
+      });
+
+    const onComplete = vi.fn();
+    const { result } = renderHook(
+      () => useAnimeScanner([searchItem], [favItem], [trashItem], onComplete),
+      { wrapper: ServiceProvider },
+    );
+
+    // Call handleScan with retry options
+    await act(async () => {
+      await result.current.handleScan({
+        failedPages: [3],
+        failedDetails: [searchItem],
+      });
+    });
+
+    // Check that getTotalPages was not called
+    const pagesSpy = vi.spyOn(scraperService, "getTotalPages");
+    expect(pagesSpy).not.toHaveBeenCalled();
+
+    // Check that scanAllWithPipeline was called with option args
+    expect(pipelineSpy).toHaveBeenCalledWith(
+      0, // totalPages defaults to 0 since we didn't fetch it, but retry option page list is used
+      5,
+      10,
+      expect.any(Function),
+      {
+        failedPages: [3],
+        failedDetails: [searchItem],
+      },
+    );
+
+    expect(onComplete).toHaveBeenCalled();
+  });
+
+  it("handles empty options object as non-retry and detail-only retry branch conditions", async () => {
+    // 1. Empty options should be treated as non-retry
+    vi.spyOn(scraperService, "getTotalPages").mockResolvedValue(2);
+    const pipelineSpy = vi
+      .spyOn(scraperService, "scanAllWithPipeline")
+      .mockImplementation(() => {
+        return createMockObservable({
+          items: [],
+          httpErrors: [],
+          parseErrors: [],
+        });
+      });
+
+    const onComplete = vi.fn();
+    const { result } = renderHook(
+      () => useAnimeScanner([], [], [], onComplete),
+      {
+        wrapper: ServiceProvider,
+      },
+    );
+
+    await act(async () => {
+      await result.current.handleScan({}); // empty options
+    });
+
+    expect(pipelineSpy).toHaveBeenLastCalledWith(
+      2,
+      5,
+      10,
+      expect.any(Function),
+      undefined,
+    );
+
+    // 2. Retry with failedDetails but no failedPages (failedPages is falsy/undefined)
+    const detailItem = makeAnime("DetailItem");
+    await act(async () => {
+      await result.current.handleScan({
+        failedDetails: [detailItem],
+      });
+    });
+
+    expect(pipelineSpy).toHaveBeenLastCalledWith(
+      2,
+      5,
+      10,
+      expect.any(Function),
+      { failedDetails: [detailItem] },
+    );
   });
 });

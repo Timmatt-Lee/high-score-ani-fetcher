@@ -96,6 +96,19 @@ describe("AnimeCard", () => {
     expect(restoreFn).toHaveBeenCalled();
   });
 
+  it("returns null/no actions when activeTab is Tab.Errors", () => {
+    render(
+      <AnimeCard
+        item={makeAnime()}
+        activeTab={Tab.Errors}
+        onMoveToFavorites={vi.fn()}
+        onMoveToTrash={vi.fn()}
+        onRestoreFromTrash={vi.fn()}
+      />,
+    );
+    expect(screen.queryByRole("button")).toBeNull();
+  });
+
   it("throws error for unhandled activeTab state", () => {
     const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
     expect(() =>

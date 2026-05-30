@@ -246,4 +246,55 @@ describe("ScraperPipeline", () => {
 
     await runPromise;
   });
+
+  it("handles failedPages and failedDetails option inputs to pre-populate detailQueue and limit scanned pages", async () => {
+    const listSpy = vi.fn();
+    const detailSpy = vi.fn();
+
+    const failedDetail = {
+      link: "http://failedDetail",
+      title: "Failed Detail",
+    } as AnimeItem;
+
+    listSpy.mockResolvedValueOnce({
+      items: [
+        { link: "http://newPageItem", title: "New Page Item" } as AnimeItem,
+      ],
+      httpErrors: [],
+      parseErrors: [],
+    });
+
+    detailSpy.mockImplementation(async (link: string) => {
+      return {
+        score: 9.5,
+        ratingCount: 200,
+        description: `Retried ${link}`,
+      };
+    });
+
+    const pipeline = new ScraperPipeline(
+      5, // total pages 5, but we only scan 1 because of failedPages option
+      1,
+      1,
+      () => true,
+      {
+        getTotalPages: vi.fn(),
+        scrapeListPage: listSpy,
+        scrapeAnimeDetails: detailSpy,
+        scanAllWithPipeline: vi.fn(),
+      },
+      {
+        failedPages: [3],
+        failedDetails: [failedDetail],
+      },
+    );
+
+    const { result } = await runPipeline(pipeline);
+    expect(listSpy).toHaveBeenCalledTimes(1);
+    expect(listSpy).toHaveBeenCalledWith(3); // only page 3 retried
+    expect(detailSpy).toHaveBeenCalledTimes(2); // failedDetail + newPageItem
+    expect(detailSpy).toHaveBeenCalledWith("http://failedDetail");
+    expect(detailSpy).toHaveBeenCalledWith("http://newPageItem");
+    expect(result.items).toHaveLength(2);
+  });
 });

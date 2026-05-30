@@ -2,6 +2,7 @@ import {
   type AnimeItem,
   type AnimeScraper,
   type ScanEvent,
+  type PipelineOptions,
 } from "../types/anime";
 import { ScraperHttpError, ScraperParseError } from "../errors";
 import { isError } from "../types/result";
@@ -17,6 +18,7 @@ export class ScraperPipeline {
   private results: AnimeItem[] = [];
   private httpErrors: ScraperHttpError[] = [];
   private parseErrors: ScraperParseError[] = [];
+  private failedDetails: AnimeItem[] = [];
   private pageQueue: PQueue;
   private detailQueue: PQueue;
   private pagesCompletedCount = 0;
@@ -26,6 +28,7 @@ export class ScraperPipeline {
   private totalPages: number;
   private filterItem: (item: AnimeItem) => boolean;
   private scraper: AnimeScraper;
+  private options?: PipelineOptions;
   private eventSubject = new Subject<ScanEvent>();
 
   constructor(
@@ -34,10 +37,12 @@ export class ScraperPipeline {
     detailConcurrency: number,
     filterItem: (item: AnimeItem) => boolean,
     scraper: AnimeScraper,
+    options?: PipelineOptions,
   ) {
     this.totalPages = totalPages;
     this.filterItem = filterItem;
     this.scraper = scraper;
+    this.options = options;
     this.pageQueue = new PQueue({ concurrency: pageConcurrency });
     this.detailQueue = new PQueue({ concurrency: detailConcurrency });
   }
@@ -46,9 +51,22 @@ export class ScraperPipeline {
     const run = async () => {
       try {
         const pagePromises = [];
-        for (let page = 1; page <= this.totalPages; page++) {
+        const pagesToScan =
+          this.options?.failedPages ??
+          Array.from({ length: this.totalPages }, (_, i) => i + 1);
+
+        for (const page of pagesToScan) {
           pagePromises.push(this.pageQueue.add(() => this.fetchPage(page)));
         }
+
+        // If there are pre-specified failed details, add them directly to the detailQueue
+        if (this.options?.failedDetails) {
+          this.detailsTotalCount += this.options.failedDetails.length;
+          this.options.failedDetails.forEach((item) => {
+            this.detailQueue.add(() => this.fetchDetail(item));
+          });
+        }
+
         await Promise.all(pagePromises);
         await this.detailQueue.onIdle();
         this.eventSubject.next({
@@ -57,6 +75,7 @@ export class ScraperPipeline {
             items: this.results,
             httpErrors: this.httpErrors,
             parseErrors: this.parseErrors,
+            failedDetails: this.failedDetails,
           },
         });
         this.eventSubject.complete();
@@ -96,6 +115,7 @@ export class ScraperPipeline {
     let isSuccessful = true;
     if (isError(res)) {
       isSuccessful = false;
+      this.failedDetails.push(item);
       if (res instanceof ScraperHttpError) {
         this.httpErrors.push(res);
       } else {

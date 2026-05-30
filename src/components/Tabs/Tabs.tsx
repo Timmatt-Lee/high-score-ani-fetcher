@@ -5,6 +5,7 @@ export enum Tab {
   Search,
   Favorites,
   Trash,
+  Errors,
 }
 
 interface TabsProps {
@@ -13,6 +14,7 @@ interface TabsProps {
   searchCount: number;
   favoritesCount: number;
   trashCount: number;
+  errorsCount: number;
 }
 
 export function Tabs({
@@ -21,6 +23,7 @@ export function Tabs({
   searchCount,
   favoritesCount,
   trashCount,
+  errorsCount,
 }: TabsProps) {
   return (
     <div className={styles.tabs} data-testid="tabs-container">
@@ -41,6 +44,12 @@ export function Tabs({
         onClick={() => setActiveTab(Tab.Trash)}
       >
         Trash ({trashCount})
+      </button>
+      <button
+        className={`${styles.tab} ${activeTab === Tab.Errors ? styles.active : ""} ${errorsCount > 0 ? styles.hasErrors : ""}`}
+        onClick={() => setActiveTab(Tab.Errors)}
+      >
+        Errors ({errorsCount})
       </button>
     </div>
   );

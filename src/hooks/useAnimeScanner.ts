@@ -1,5 +1,9 @@
 import { useState } from "react";
-import { type AnimeItem, type ScanCompleteResult } from "../types/anime";
+import {
+  type AnimeItem,
+  type ScanCompleteResult,
+  type PipelineOptions,
+} from "../types/anime";
 import { useServices } from "../contexts/ServiceContext";
 import {
   ScraperHttpError,
@@ -14,6 +18,7 @@ export type FatalError =
   | ScraperUnknownError;
 
 export function useAnimeScanner(
+  searchList: AnimeItem[],
   favoriteList: AnimeItem[],
   trashList: AnimeItem[],
   onScanComplete: (result: ScanCompleteResult) => void,
@@ -24,40 +29,53 @@ export function useAnimeScanner(
   const [httpErrors, setHttpErrors] = useState<ScraperHttpError[]>([]);
   const [parseErrors, setParseErrors] = useState<ScraperParseError[]>([]);
   const [fatalError, setFatalError] = useState<FatalError | null>(null);
+  const [totalPagesCount, setTotalPagesCount] = useState(0);
+  const [failedDetails, setFailedDetails] = useState<AnimeItem[]>([]);
 
   const clearFatalError = () => {
     setFatalError(null);
   };
 
-  const handleScan = async () => {
+  const handleScan = async (options?: PipelineOptions) => {
     setHttpErrors([]);
     setParseErrors([]);
     setFatalError(null);
     setIsScanning(true);
-    setProgress({ percent: 0, message: "Getting total pages..." });
 
-    const totalPagesResult = await scraperService.getTotalPages();
-    const isResultError =
-      isError(totalPagesResult) || typeof totalPagesResult !== "number";
-    if (isResultError) {
-      const error = isError(totalPagesResult)
-        ? totalPagesResult
-        : new Error(String(totalPagesResult));
-      console.error("Scan failed", error);
-      if (error instanceof ScraperHttpError) {
-        setFatalError(error);
-      } else if (error instanceof ScraperParseError) {
-        setFatalError(error);
-      } else if (error instanceof ScraperUnknownError) {
-        setFatalError(error);
-      } else {
-        setFatalError(new ScraperUnknownError(error));
+    const isRetry = !!(
+      options &&
+      (options.failedPages || options.failedDetails)
+    );
+    let totalPages = totalPagesCount;
+
+    if (!isRetry) {
+      setProgress({ percent: 0, message: "Getting total pages..." });
+      const totalPagesResult = await scraperService.getTotalPages();
+      const isResultError =
+        isError(totalPagesResult) || typeof totalPagesResult !== "number";
+      if (isResultError) {
+        const error = isError(totalPagesResult)
+          ? totalPagesResult
+          : new Error(String(totalPagesResult));
+        console.error("Scan failed", error);
+        if (error instanceof ScraperHttpError) {
+          setFatalError(error);
+        } else if (error instanceof ScraperParseError) {
+          setFatalError(error);
+        } else if (error instanceof ScraperUnknownError) {
+          setFatalError(error);
+        } else {
+          setFatalError(new ScraperUnknownError(error));
+        }
+        setIsScanning(false);
+        setProgress({ percent: 0, message: "" });
+        return;
       }
-      setIsScanning(false);
-      setProgress({ percent: 0, message: "" });
-      return;
+      totalPages = totalPagesResult;
+      setTotalPagesCount(totalPagesResult);
+    } else {
+      setProgress({ percent: 0, message: "Retrying failed items..." });
     }
-    const totalPages = totalPagesResult;
 
     const trashLinks = new Set(trashList.map((t) => t.link));
     const favLinks = new Set(favoriteList.map((f) => f.link));
@@ -82,8 +100,13 @@ export function useAnimeScanner(
     };
 
     const updateProgress = (currentTitle?: string) => {
+      // If retrying, we might have fewer pages to scan
+      const pagesToScanCount =
+        isRetry && options.failedPages
+          ? options.failedPages.length
+          : totalPages;
       const pagesPercent =
-        totalPages > 0 ? pagesCompletedCount / totalPages : 0;
+        pagesToScanCount > 0 ? pagesCompletedCount / pagesToScanCount : 0;
       const detailsPercent =
         detailsTotalCount > 0 ? detailsCompletedCount / detailsTotalCount : 0;
       const rawPercent = Math.floor(
@@ -91,7 +114,7 @@ export function useAnimeScanner(
       );
       const percent = Math.min(99, rawPercent);
 
-      let msg = `Scanning pages (${pagesCompletedCount}/${totalPages})`;
+      let msg = `Scanning pages (${pagesCompletedCount}/${pagesToScanCount})`;
       if (detailsTotalCount > 0) {
         msg += ` and details (${detailsCompletedCount}/${detailsTotalCount})`;
       }
@@ -105,7 +128,13 @@ export function useAnimeScanner(
     };
 
     scraperService
-      .scanAllWithPipeline(totalPages, 5, 10, wrappedFilterItem)
+      .scanAllWithPipeline(
+        totalPages,
+        5,
+        10,
+        wrappedFilterItem,
+        isRetry ? options : undefined,
+      )
       .subscribe({
         next: (event) => {
           switch (event.type) {
@@ -122,13 +151,33 @@ export function useAnimeScanner(
                 items,
                 httpErrors: scanHttpErrors,
                 parseErrors: scanParseErrors,
+                failedDetails: scanFailedDetails,
               } = event.result;
+
+              const mergedItemsMap = new Map<string, AnimeItem>();
+              if (isRetry) {
+                // Pre-populate with previous results when retrying
+                searchList.forEach((item) =>
+                  mergedItemsMap.set(item.link, item),
+                );
+                favoriteList.forEach((item) =>
+                  mergedItemsMap.set(item.link, item),
+                );
+                trashList.forEach((item) =>
+                  mergedItemsMap.set(item.link, item),
+                );
+              }
+
+              // Overwrite or add newly retrieved anime items
+              for (const item of items) {
+                mergedItemsMap.set(item.link, item);
+              }
 
               const updatedFavMap = new Map<string, AnimeItem>();
               const updatedTrashMap = new Map<string, AnimeItem>();
               const newItems: AnimeItem[] = [];
 
-              for (const item of items) {
+              for (const item of mergedItemsMap.values()) {
                 if (favLinks.has(item.link)) {
                   updatedFavMap.set(item.link, item);
                 } else if (trashLinks.has(item.link)) {
@@ -154,6 +203,7 @@ export function useAnimeScanner(
 
               setHttpErrors(scanHttpErrors);
               setParseErrors(scanParseErrors);
+              setFailedDetails(scanFailedDetails ?? []);
               onScanComplete({
                 newSearchItems: filteredNewItems,
                 updatedFavoriteList,
@@ -182,5 +232,6 @@ export function useAnimeScanner(
     fatalError,
     clearFatalError,
     handleScan,
+    failedDetails,
   };
 }

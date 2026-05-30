@@ -4,6 +4,7 @@ import {
   type ScraperResult,
   type AnimeScraper,
   type ScanEvent,
+  type PipelineOptions,
 } from "../types/anime";
 import { type Result, isError } from "../types/result";
 import {
@@ -365,6 +366,7 @@ export class ScraperService implements AnimeScraper {
     pageConcurrency: number,
     detailConcurrency: number,
     filterItem: (item: AnimeItem) => boolean,
+    options?: PipelineOptions,
   ): Observable<ScanEvent> {
     const pipeline = new ScraperPipeline(
       totalPages,
@@ -372,6 +374,7 @@ export class ScraperService implements AnimeScraper {
       detailConcurrency,
       filterItem,
       this,
+      options,
     );
     return pipeline.execute();
   }
