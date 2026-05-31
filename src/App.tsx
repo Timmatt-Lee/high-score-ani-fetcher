@@ -100,13 +100,13 @@ function App() {
             onRestoreFromTrash={restoreFromTrash}
           />
 
-          {activeTab === Tab.Search && totalErrors > 0 && (
+          {activeTab === Tab.Search && totalErrors > 0 && !isScanning && (
             <ErrorsPanel
               httpErrors={httpErrors}
               parseErrors={parseErrors}
               failedDetails={failedDetails}
               isScanning={isScanning}
-              onRetry={handleScan}
+              onRetry={() => handleScan()}
             />
           )}
         </>

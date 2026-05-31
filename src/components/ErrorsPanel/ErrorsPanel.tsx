@@ -8,10 +8,7 @@ interface ErrorsPanelProps {
   parseErrors: ScraperParseError[];
   failedDetails: AnimeItem[];
   isScanning: boolean;
-  onRetry: (options: {
-    failedPages: number[];
-    failedDetails: AnimeItem[];
-  }) => void;
+  onRetry: () => void;
 }
 
 export function ErrorsPanel({
@@ -37,16 +34,17 @@ export function ErrorsPanel({
     }
     return Array.from(pages).sort((a, b) => a - b);
   };
-
   const failedPages = getFailedPages();
   const totalErrorsCount = httpErrors.length + parseErrors.length;
+
+  if (totalErrorsCount === 0) {
+    return null;
+  }
+
   const isRetryDisabled = isScanning || totalErrorsCount === 0;
 
   const handleRetry = () => {
-    onRetry({
-      failedPages,
-      failedDetails,
-    });
+    onRetry();
   };
 
   return (

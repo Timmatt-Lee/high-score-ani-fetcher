@@ -17,9 +17,9 @@ const makeAnime = (title: string): AnimeItem => ({
 });
 
 describe("ErrorsPanel", () => {
-  it("renders empty state for both groups when no errors exist", () => {
+  it("renders nothing when no errors exist", () => {
     const onRetrySpy = vi.fn();
-    render(
+    const { container } = render(
       <ErrorsPanel
         httpErrors={[]}
         parseErrors={[]}
@@ -29,12 +29,7 @@ describe("ErrorsPanel", () => {
       />,
     );
 
-    expect(screen.getByText("0 errors encountered")).toBeDefined();
-    expect(screen.getByText("No network errors.")).toBeDefined();
-    expect(screen.getByText("No parser errors.")).toBeDefined();
-
-    const retryBtn = screen.getByTestId("retry-errors-btn");
-    expect(retryBtn).toBeDisabled();
+    expect(container.firstChild).toBeNull();
   });
 
   it("renders HTTP and parse errors and permits toggling accordion headers", () => {
@@ -105,10 +100,7 @@ describe("ErrorsPanel", () => {
     expect(retryBtn).not.toBeDisabled();
     fireEvent.click(retryBtn);
 
-    expect(onRetrySpy).toHaveBeenCalledWith({
-      failedPages: [4],
-      failedDetails: [failedDetail],
-    });
+    expect(onRetrySpy).toHaveBeenCalled();
   });
 
   it("shows retrying text and disables button when isScanning is true", () => {
@@ -200,5 +192,27 @@ describe("ErrorsPanel", () => {
     expect(screen.getAllByText(/Anime:/).length).toBe(2);
     expect(screen.getByText("葬送的芙莉蓮")).toBeDefined();
     expect(screen.getByText("鬼滅之刃")).toBeDefined();
+  });
+
+  it("renders empty HTTP errors group when only parser errors are present", () => {
+    const parseErr = new ScraperParseError(
+      ScraperErrorSource.TITLE,
+      "https://ani.gamer.com.tw/animeList.php?page=3",
+      "Bad html",
+      "Parsing failed",
+    );
+
+    render(
+      <ErrorsPanel
+        httpErrors={[]}
+        parseErrors={[parseErr]}
+        failedDetails={[]}
+        isScanning={false}
+        onRetry={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByText("No network errors.")).toBeDefined();
+    expect(screen.getByText("Parsing failed (Bad html)")).toBeDefined();
   });
 });

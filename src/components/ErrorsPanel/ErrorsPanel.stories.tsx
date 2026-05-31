@@ -74,8 +74,7 @@ export const AllErrors: Story = {
     parseErrors: sampleParseErrors,
     failedDetails: sampleFailedDetails,
     isScanning: false,
-    onRetry: (options) =>
-      console.log("Retry callback triggered with options:", options),
+    onRetry: () => console.log("Retry callback triggered"),
   },
 };
 
@@ -85,8 +84,7 @@ export const HttpErrorsOnly: Story = {
     parseErrors: [],
     failedDetails: [],
     isScanning: false,
-    onRetry: (options) =>
-      console.log("Retry callback triggered with options:", options),
+    onRetry: () => console.log("Retry callback triggered"),
   },
 };
 
@@ -96,8 +94,7 @@ export const ParseErrorsOnly: Story = {
     parseErrors: sampleParseErrors,
     failedDetails: [],
     isScanning: false,
-    onRetry: (options) =>
-      console.log("Retry callback triggered with options:", options),
+    onRetry: () => console.log("Retry callback triggered"),
   },
 };
 
@@ -107,8 +104,7 @@ export const FailedDetailsOnly: Story = {
     parseErrors: [],
     failedDetails: sampleFailedDetails,
     isScanning: false,
-    onRetry: (options) =>
-      console.log("Retry callback triggered with options:", options),
+    onRetry: () => console.log("Retry callback triggered"),
   },
 };
 
@@ -118,8 +114,7 @@ export const RetryingState: Story = {
     parseErrors: sampleParseErrors,
     failedDetails: sampleFailedDetails,
     isScanning: true,
-    onRetry: (options) =>
-      console.log("Retry callback triggered with options:", options),
+    onRetry: () => console.log("Retry callback triggered"),
   },
 };
 
@@ -129,7 +124,6 @@ export const EmptyErrors: Story = {
     parseErrors: [],
     failedDetails: [],
     isScanning: false,
-    onRetry: (options) =>
-      console.log("Retry callback triggered with options:", options),
+    onRetry: () => console.log("Retry callback triggered"),
   },
 };

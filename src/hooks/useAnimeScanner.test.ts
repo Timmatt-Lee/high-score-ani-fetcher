@@ -729,11 +729,20 @@ describe("useAnimeScanner", () => {
     const pipelineSpy = vi
       .spyOn(scraperService, "scanAllWithPipeline")
       .mockImplementation(() => {
-        return createMockObservable({
-          items: [{ ...searchItem, score: 9.0 }],
-          httpErrors: [],
-          parseErrors: [],
-        });
+        return createMockObservable(
+          {
+            items: [{ ...searchItem, score: 9.0 }],
+            httpErrors: [],
+            parseErrors: [],
+          },
+          [
+            {
+              type: "page_completed",
+              pageNum: 3,
+              success: true,
+            },
+          ],
+        );
       });
 
     const onComplete = vi.fn();
@@ -775,11 +784,20 @@ describe("useAnimeScanner", () => {
     const pipelineSpy = vi
       .spyOn(scraperService, "scanAllWithPipeline")
       .mockImplementation(() => {
-        return createMockObservable({
-          items: [],
-          httpErrors: [],
-          parseErrors: [],
-        });
+        return createMockObservable(
+          {
+            items: [],
+            httpErrors: [],
+            parseErrors: [],
+          },
+          [
+            {
+              type: "detail_completed",
+              title: "Mocking Progress Details",
+              success: true,
+            },
+          ],
+        );
       });
 
     const onComplete = vi.fn();
