@@ -8,10 +8,9 @@ import styles from "./ErrorCard.module.css";
 
 interface ErrorCardProps {
   error: ScraperHttpError | ScraperParseError | ScraperUnknownError;
-  onDismiss?: () => void;
 }
 
-export function ErrorCard({ error, onDismiss }: ErrorCardProps) {
+export function ErrorCard({ error }: ErrorCardProps) {
   const [isCopied, setIsCopied] = useState(false);
 
   const getPageNumber = (url?: string) => {
@@ -24,25 +23,35 @@ export function ErrorCard({ error, onDismiss }: ErrorCardProps) {
   const title = "title" in error ? error.title : undefined;
 
   let cardTitle: string;
+  let cardSubtitle: string | null;
+
   if ("status" in error && error.status !== undefined) {
+    const pageStr = page ? `Page ${page}` : "";
+    const statusStr = `Status ${error.status}`;
+    const metaParts = [pageStr, statusStr].filter(Boolean).join(" | ");
+
     if (title) {
-      const pageStr = page ? `(Page: ${page})` : "";
-      cardTitle = `${title} ${pageStr}(Status: ${error.status})`
-        .replace(/\s+/g, " ")
-        .trim();
+      cardTitle = title;
+      cardSubtitle = metaParts;
     } else {
-      const pageStr = page ? `Page: ${page} ` : "";
-      cardTitle = `${pageStr}(Status: ${error.status})`.trim();
+      cardTitle = metaParts;
+      cardSubtitle = null;
     }
   } else if ("source" in error && error.source !== undefined) {
+    const pageStr = page ? `Page ${page}` : "";
+    const sourceStr = `Component: ${error.source}`;
+    const metaParts = [pageStr, sourceStr].filter(Boolean).join(" | ");
+
     if (title) {
-      const pageStr = page ? `(Page: ${page})` : "";
-      cardTitle = `${title} ${pageStr}`.trim();
+      cardTitle = title;
+      cardSubtitle = metaParts;
     } else {
-      cardTitle = page ? `Page: ${page}` : `Parser Error (${error.source})`;
+      cardTitle = metaParts;
+      cardSubtitle = null;
     }
   } else {
     cardTitle = error.name || "Fatal Error";
+    cardSubtitle = null;
   }
 
   const getFormattedDetails = () => {
@@ -76,8 +85,18 @@ export function ErrorCard({ error, onDismiss }: ErrorCardProps) {
   return (
     <div className={styles.errorCard} data-testid="error-card">
       <div className={styles.cardHeader}>
-        <div className={styles.errorTitle} data-testid="error-card-title">
-          ⚠️ {cardTitle}
+        <div className={styles.titleGroup}>
+          <div className={styles.errorTitle} data-testid="error-card-title">
+            {cardTitle}
+          </div>
+          {cardSubtitle && (
+            <div
+              className={styles.errorSubtitle}
+              data-testid="error-card-subtitle"
+            >
+              {cardSubtitle}
+            </div>
+          )}
         </div>
         <div className={styles.actionGroup}>
           <button
@@ -88,28 +107,12 @@ export function ErrorCard({ error, onDismiss }: ErrorCardProps) {
           >
             {isCopied ? "Copied! ✓" : "Copy"}
           </button>
-          {onDismiss && (
-            <button
-              className={styles.dismissBtn}
-              onClick={onDismiss}
-              data-testid="error-card-dismiss-btn"
-              title="Dismiss error"
-            >
-              Dismiss
-            </button>
-          )}
         </div>
       </div>
 
       <div className={styles.errorMessage} data-testid="error-card-message">
         {error.message}
       </div>
-
-      {"source" in error && error.source && (
-        <div className={styles.errorMeta}>
-          Component: <strong>{error.source}</strong>
-        </div>
-      )}
     </div>
   );
 }

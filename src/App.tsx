@@ -61,7 +61,19 @@ function App() {
       </div>
 
       {fatalError ? (
-        <ErrorCard error={fatalError} onDismiss={clearFatalError} />
+        <div
+          className={styles.fatalErrorContainer}
+          data-testid="fatal-error-container"
+        >
+          <ErrorCard error={fatalError} />
+          <button
+            className={`${styles.btn} ${styles.dismissBtn}`}
+            onClick={clearFatalError}
+            data-testid="error-card-dismiss-btn"
+          >
+            Dismiss
+          </button>
+        </div>
       ) : (
         <>
           <ProgressBar
@@ -69,18 +81,6 @@ function App() {
             percent={progress.percent}
             message={progress.message}
           />
-
-          {totalErrors > 0 && (
-            <div className={styles.warningAlert}>
-              <div className={styles.warningHeader}>
-                <span>
-                  ⚠️ Scan completed with {totalErrors} parsing/network errors.
-                  Check the <strong>Results</strong> tab for details and retry
-                  options.
-                </span>
-              </div>
-            </div>
-          )}
 
           <Tabs
             activeTab={activeTab}

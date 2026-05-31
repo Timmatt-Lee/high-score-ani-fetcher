@@ -682,16 +682,10 @@ describe("Scan functionality", () => {
 
     await waitFor(() => expect(screen.queryByText("Scanning...")).toBeNull());
 
-    // Expect warning alert to be rendered pointing to Errors tab
-    expect(
-      screen.getByText(/Scan completed with 1 parsing\/network errors/),
-    ).toBeDefined();
-
     // Verify errors panel renders HTTP error details
     expect(screen.getByTestId("errors-panel")).toBeDefined();
     expect(screen.getByText(/HTTP Network Errors \(1\)/)).toBeDefined();
-    expect(screen.getByText(/Status:/)).toBeDefined();
-    expect(screen.getAllByText(/502/).length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText(/Status 502/).length).toBeGreaterThanOrEqual(1);
   });
 
   it("renders page numbers and failed details counts in Errors tab summary when there are many errors", async () => {
@@ -729,11 +723,6 @@ describe("Scan functionality", () => {
 
     await waitFor(() => expect(screen.queryByText("Scanning...")).toBeNull());
 
-    // Expect warning alert to be rendered
-    expect(
-      screen.getByText(/Scan completed with 11 parsing\/network errors/),
-    ).toBeDefined();
-
     // Expect summary text to be rendered
     expect(screen.getByText("11 errors occurred")).toBeDefined();
   });
@@ -764,7 +753,9 @@ describe("Scan functionality", () => {
     await waitFor(() => expect(spy).toHaveBeenCalled());
 
     // Verify fatal error screen is rendered and progress bar / tabs are NOT rendered
-    await waitFor(() => expect(screen.getByTestId("error-card")).toBeDefined());
+    await waitFor(() =>
+      expect(screen.getByTestId("fatal-error-container")).toBeDefined(),
+    );
     expect(screen.queryByTestId("progress-container")).toBeNull();
     expect(screen.queryByTestId("tabs-container")).toBeNull();
 
@@ -774,7 +765,7 @@ describe("Scan functionality", () => {
       fireEvent.click(dismissBtn);
     });
 
-    expect(screen.queryByTestId("error-card")).toBeNull();
+    expect(screen.queryByTestId("fatal-error-container")).toBeNull();
     expect(screen.getByTestId("tabs-container")).toBeDefined();
   });
 

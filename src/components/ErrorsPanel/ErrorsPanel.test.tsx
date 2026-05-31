@@ -57,8 +57,8 @@ describe("ErrorsPanel", () => {
     );
 
     expect(screen.getByText("2 errors occurred")).toBeDefined();
-    expect(screen.getByText(/Page: 2.*Status: 502/)).toBeDefined();
-    expect(screen.getByText("Component:")).toBeDefined();
+    expect(screen.getByText("Page 2 | Status 502")).toBeDefined();
+    expect(screen.getByText("Page 3 | Component: 1")).toBeDefined();
     expect(screen.getByText("Parsing failed")).toBeDefined();
 
     // Toggle HTTP Accordion
@@ -182,8 +182,9 @@ describe("ErrorsPanel", () => {
       />,
     );
 
-    expect(screen.getByText(/葬送的芙莉蓮.*Status: 500/)).toBeDefined();
-    expect(screen.getByText(/鬼滅之刃/)).toBeDefined();
+    expect(screen.getByText("葬送的芙莉蓮")).toBeDefined();
+    expect(screen.getByText("Status 500")).toBeDefined();
+    expect(screen.getByText("鬼滅之刃")).toBeDefined();
   });
 
   it("renders empty HTTP errors group when only parser errors are present", () => {

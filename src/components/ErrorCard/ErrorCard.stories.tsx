@@ -10,20 +10,6 @@ import { ScraperErrorSource } from "../../errors/scraper-error-source";
 const meta: Meta<typeof ErrorCard> = {
   title: "Components/ErrorCard",
   component: ErrorCard,
-  decorators: [
-    (Story) => (
-      <div
-        style={{
-          maxWidth: "450px",
-          width: "100%",
-          padding: "20px",
-          background: "#121212",
-        }}
-      >
-        <Story />
-      </div>
-    ),
-  ],
 };
 
 export default meta;
@@ -80,6 +66,5 @@ export const ParseErrorNoTitle: Story = {
 export const FatalUnknownError: Story = {
   args: {
     error: new ScraperUnknownError(new Error("Connection reset by peer")),
-    onDismiss: () => console.log("Dismissed"),
   },
 };

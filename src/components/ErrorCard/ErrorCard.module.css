@@ -13,8 +13,14 @@
 .cardHeader {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-start;
   gap: 12px;
+}
+
+.titleGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
 }
 
 .errorTitle {
@@ -24,14 +30,19 @@
   line-height: 1.4;
 }
 
+.errorSubtitle {
+  font-size: 0.75rem;
+  color: var(--text-muted, #9ca3af);
+}
+
 .actionGroup {
   display: flex;
   align-items: center;
   gap: 8px;
+  margin-top: 2px;
 }
 
-.copyBtn,
-.dismissBtn {
+.copyBtn {
   font-size: 0.75rem;
   font-weight: 600;
   padding: 4px 10px;
@@ -44,8 +55,7 @@
   white-space: nowrap;
 }
 
-.copyBtn:hover,
-.dismissBtn:hover {
+.copyBtn:hover {
   background: rgba(255, 255, 255, 0.1);
   border-color: rgba(255, 255, 255, 0.2);
   transform: translateY(-0.5px);
@@ -56,14 +66,6 @@
   color: var(--text-muted, #9ca3af);
   line-height: 1.45;
   word-break: break-all;
-}
-
-.errorMeta {
-  font-size: 0.75rem;
-  color: var(--text-muted, #9ca3af);
-  border-top: 1px solid rgba(255, 255, 255, 0.04);
-  padding-top: 6px;
-  margin-top: 2px;
 }
 
 @keyframes slideIn {

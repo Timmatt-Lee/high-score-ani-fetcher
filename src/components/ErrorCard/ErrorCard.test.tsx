@@ -43,8 +43,11 @@ describe("ErrorCard", () => {
 
     render(<ErrorCard error={error} />);
 
-    expect(screen.getByTestId("error-card-title").textContent).toContain(
-      "葬送的芙莉蓮 (Page: 2)(Status: 500)",
+    expect(screen.getByTestId("error-card-title").textContent).toBe(
+      "葬送的芙莉蓮",
+    );
+    expect(screen.getByTestId("error-card-subtitle").textContent).toBe(
+      "Page 2 | Status 500",
     );
     expect(screen.getByTestId("error-card-message").textContent).toBe(
       error.message,
@@ -60,9 +63,10 @@ describe("ErrorCard", () => {
 
     render(<ErrorCard error={error} />);
 
-    expect(screen.getByTestId("error-card-title").textContent).toContain(
-      "Page: 3 (Status: 502)",
+    expect(screen.getByTestId("error-card-title").textContent).toBe(
+      "Page 3 | Status 502",
     );
+    expect(screen.queryByTestId("error-card-subtitle")).toBeNull();
   });
 
   it("renders Parser error with title correctly", () => {
@@ -78,10 +82,10 @@ describe("ErrorCard", () => {
 
     render(<ErrorCard error={error} />);
 
-    expect(screen.getByTestId("error-card-title").textContent).toContain(
-      "鬼滅之刃 (Page: 5)",
+    expect(screen.getByTestId("error-card-title").textContent).toBe("鬼滅之刃");
+    expect(screen.getByTestId("error-card-subtitle").textContent).toBe(
+      "Page 5 | Component: 1",
     );
-    expect(screen.getByText("Component:")).toBeDefined();
   });
 
   it("renders Parser error without title or page correctly", () => {
@@ -94,26 +98,21 @@ describe("ErrorCard", () => {
 
     render(<ErrorCard error={error} />);
 
-    expect(screen.getByTestId("error-card-title").textContent).toContain(
-      "Parser Error (7)",
+    expect(screen.getByTestId("error-card-title").textContent).toBe(
+      "Component: 7",
     );
   });
 
-  it("renders Unknown/Fatal error, handles dismiss and copy click", async () => {
+  it("renders Unknown/Fatal error and handles copy click", async () => {
     const error = new ScraperUnknownError(new Error("Fatal System Error"));
     error.stack = "fatal stack trace";
-    const onDismissSpy = vi.fn();
     writeTextMock.mockResolvedValue(undefined);
 
-    render(<ErrorCard error={error} onDismiss={onDismissSpy} />);
+    render(<ErrorCard error={error} />);
 
-    expect(screen.getByTestId("error-card-title").textContent).toContain(
+    expect(screen.getByTestId("error-card-title").textContent).toBe(
       "ScraperUnknownError",
     );
-
-    const dismissBtn = screen.getByTestId("error-card-dismiss-btn");
-    fireEvent.click(dismissBtn);
-    expect(onDismissSpy).toHaveBeenCalled();
 
     const copyBtn = screen.getByTestId("error-card-copy-btn");
     await act(async () => {
@@ -142,12 +141,10 @@ describe("ErrorCard", () => {
 
     const copyBtn = screen.getByTestId("error-card-copy-btn");
 
-    // Click button under act to ensure updates are processed
     await act(async () => {
       fireEvent.click(copyBtn);
     });
 
-    // Wait for async promises to flush inside act
     await act(async () => {
       await vi.runAllTicks();
     });
@@ -163,7 +160,6 @@ describe("ErrorCard", () => {
 
     expect(screen.getByText("Copied! ✓")).toBeDefined();
 
-    // Trigger fake timer to cover the setTimeout callback
     await act(async () => {
       vi.advanceTimersByTime(2000);
     });
@@ -201,8 +197,8 @@ describe("ErrorCard", () => {
       403,
     );
     render(<ErrorCard error={error} />);
-    expect(screen.getByTestId("error-card-title").textContent).toContain(
-      "(Status: 403)",
+    expect(screen.getByTestId("error-card-title").textContent).toBe(
+      "Status 403",
     );
   });
 
@@ -217,11 +213,8 @@ describe("ErrorCard", () => {
       { title: "鬼滅之刃" },
     );
     render(<ErrorCard error={error} />);
-    expect(screen.getByTestId("error-card-title").textContent).toContain(
-      "鬼滅之刃",
-    );
-    expect(screen.getByTestId("error-card-title").textContent).not.toContain(
-      "Page",
+    expect(screen.getByTestId("error-card-subtitle").textContent).toBe(
+      "Component: 1",
     );
   });
 
