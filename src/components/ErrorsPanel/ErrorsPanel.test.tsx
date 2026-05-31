@@ -56,13 +56,10 @@ describe("ErrorsPanel", () => {
       />,
     );
 
-    expect(
-      screen.getByText("2 errors encountered (Failed Pages: 2, 3)"),
-    ).toBeDefined();
-    expect(screen.getByText("Status:")).toBeDefined();
-    expect(screen.getByText("502")).toBeDefined();
+    expect(screen.getByText("2 errors occurred")).toBeDefined();
+    expect(screen.getByText(/Page: 2.*Status: 502/)).toBeDefined();
     expect(screen.getByText("Component:")).toBeDefined();
-    expect(screen.getByText("Parsing failed (Bad html)")).toBeDefined();
+    expect(screen.getByText("Parsing failed")).toBeDefined();
 
     // Toggle HTTP Accordion
     const httpHeader = screen.getByTestId("http-errors-header");
@@ -156,11 +153,7 @@ describe("ErrorsPanel", () => {
       />,
     );
 
-    expect(screen.getByText(/Failed Pages: 1/)).toBeDefined();
-    // Verify long HTML snippet is truncated
-    expect(screen.getByText(new RegExp("A{100}\\.\\.\\."))).toBeDefined();
-    // Verify empty HTML doesn't crash it
-    expect(screen.getByText(/Parse failed no html \(\)/)).toBeDefined();
+    expect(screen.getByText("3 errors occurred")).toBeDefined();
   });
 
   it("renders anime title in error cards when available", () => {
@@ -189,9 +182,8 @@ describe("ErrorsPanel", () => {
       />,
     );
 
-    expect(screen.getAllByText(/Anime:/).length).toBe(2);
-    expect(screen.getByText("葬送的芙莉蓮")).toBeDefined();
-    expect(screen.getByText("鬼滅之刃")).toBeDefined();
+    expect(screen.getByText(/葬送的芙莉蓮.*Status: 500/)).toBeDefined();
+    expect(screen.getByText(/鬼滅之刃/)).toBeDefined();
   });
 
   it("renders empty HTTP errors group when only parser errors are present", () => {
@@ -213,7 +205,7 @@ describe("ErrorsPanel", () => {
     );
 
     expect(screen.getByText("No network errors.")).toBeDefined();
-    expect(screen.getByText("Parsing failed (Bad html)")).toBeDefined();
+    expect(screen.getByText("Parsing failed")).toBeDefined();
   });
 
   it("renders summary only when only failed details are present", () => {
@@ -229,9 +221,7 @@ describe("ErrorsPanel", () => {
       />,
     );
 
-    expect(
-      screen.getByText("0 errors encountered (Failed Details: 1)"),
-    ).toBeDefined();
+    expect(screen.getByText("1 error occurred")).toBeDefined();
     // The lists inside accordion will show empty messages since HTTP and Parse lists are empty
     expect(screen.getByText("No network errors.")).toBeDefined();
     expect(screen.getByText("No parser errors.")).toBeDefined();

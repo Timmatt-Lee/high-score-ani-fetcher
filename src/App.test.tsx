@@ -734,10 +734,8 @@ describe("Scan functionality", () => {
       screen.getByText(/Scan completed with 11 parsing\/network errors/),
     ).toBeDefined();
 
-    // Expect summary text with failed pages to be rendered
-    expect(
-      screen.getByText(/Failed Pages: 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11/),
-    ).toBeDefined();
+    // Expect summary text to be rendered
+    expect(screen.getByText("11 errors occurred")).toBeDefined();
   });
 
   it("renders fatal error screen when scan fails, and clears it on dismiss", async () => {
@@ -766,19 +764,17 @@ describe("Scan functionality", () => {
     await waitFor(() => expect(spy).toHaveBeenCalled());
 
     // Verify fatal error screen is rendered and progress bar / tabs are NOT rendered
-    await waitFor(() =>
-      expect(screen.getByTestId("fatal-error-screen")).toBeDefined(),
-    );
+    await waitFor(() => expect(screen.getByTestId("error-card")).toBeDefined());
     expect(screen.queryByTestId("progress-container")).toBeNull();
     expect(screen.queryByTestId("tabs-container")).toBeNull();
 
     // Verify dismiss button returns UI to normal state
-    const dismissBtn = screen.getByTestId("dismiss-error-btn");
+    const dismissBtn = screen.getByTestId("error-card-dismiss-btn");
     await act(async () => {
       fireEvent.click(dismissBtn);
     });
 
-    expect(screen.queryByTestId("fatal-error-screen")).toBeNull();
+    expect(screen.queryByTestId("error-card")).toBeNull();
     expect(screen.getByTestId("tabs-container")).toBeDefined();
   });
 

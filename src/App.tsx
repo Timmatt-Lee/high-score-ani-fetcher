@@ -4,7 +4,7 @@ import { useAnimeScanner } from "./hooks/useAnimeScanner";
 import { AnimeList } from "./components/AnimeList";
 import { ProgressBar } from "./components/ProgressBar";
 import { Tabs, Tab } from "./components/Tabs";
-import { FatalErrorScreen } from "./components/FatalErrorScreen/FatalErrorScreen";
+import { ErrorCard } from "./components/ErrorCard/ErrorCard";
 import { ErrorsPanel } from "./components/ErrorsPanel/ErrorsPanel";
 import styles from "./App.module.css";
 import "./index.css";
@@ -61,7 +61,7 @@ function App() {
       </div>
 
       {fatalError ? (
-        <FatalErrorScreen fatalError={fatalError} onDismiss={clearFatalError} />
+        <ErrorCard error={fatalError} onDismiss={clearFatalError} />
       ) : (
         <>
           <ProgressBar
