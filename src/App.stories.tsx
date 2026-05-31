@@ -214,18 +214,24 @@ export const WithScanErrors: Story = {
               createMockAnime({ title: "部分解析成功的動畫", score: 4.9 }),
             ],
             httpErrors: [
-              new ScraperHttpError(
-                "https://ani.gamer.com.tw/animeList.php?page=2",
-                "HTTP 502 Bad Gateway",
-                502,
+              Object.assign(
+                new ScraperHttpError(
+                  "https://ani.gamer.com.tw/animeList.php?page=2",
+                  "HTTP 502 Bad Gateway",
+                  502,
+                ),
+                { title: "某個好看但部分章節損壞的番" },
               ),
             ],
             parseErrors: [
-              new ScraperParseError(
-                ScraperErrorSource.TITLE,
-                "https://ani.gamer.com.tw/animeVideo.php?sn=999",
-                "Missing title tag",
-                "Could not parse title",
+              Object.assign(
+                new ScraperParseError(
+                  ScraperErrorSource.TITLE,
+                  "https://ani.gamer.com.tw/animeVideo.php?sn=999",
+                  "Missing title tag",
+                  "Could not parse title",
+                ),
+                { title: "某個好看但部分章節損壞的番" },
               ),
             ],
           },

@@ -7,6 +7,7 @@ export class ScraperHttpError extends Error {
   url: string;
   status: number;
   html: string;
+  title?: string;
 
   constructor(url: string, html: string, status: number = 500) {
     super(`HTTP request failed with status ${status} (URL: ${url})`);
@@ -24,6 +25,7 @@ export class ScraperParseError extends Error {
   url: string;
   source: ScraperErrorSource;
   html: string;
+  title?: string;
 
   constructor(
     source: ScraperErrorSource,

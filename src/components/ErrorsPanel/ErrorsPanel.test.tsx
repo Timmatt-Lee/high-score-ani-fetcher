@@ -170,4 +170,35 @@ describe("ErrorsPanel", () => {
     // Verify empty HTML doesn't crash it
     expect(screen.getByText(/Parse failed no html \(\)/)).toBeDefined();
   });
+
+  it("renders anime title in error cards when available", () => {
+    const httpErr = new ScraperHttpError(
+      "https://ani.gamer.com.tw/anime.php?sn=123",
+      "Error html",
+      500,
+    );
+    httpErr.title = "葬送的芙莉蓮";
+
+    const parseErr = new ScraperParseError(
+      ScraperErrorSource.TITLE,
+      "https://ani.gamer.com.tw/anime.php?sn=124",
+      "Bad html",
+      "Parsing failed",
+    );
+    parseErr.title = "鬼滅之刃";
+
+    render(
+      <ErrorsPanel
+        httpErrors={[httpErr]}
+        parseErrors={[parseErr]}
+        failedDetails={[]}
+        isScanning={false}
+        onRetry={vi.fn()}
+      />,
+    );
+
+    expect(screen.getAllByText(/Anime:/).length).toBe(2);
+    expect(screen.getByText("葬送的芙莉蓮")).toBeDefined();
+    expect(screen.getByText("鬼滅之刃")).toBeDefined();
+  });
 });

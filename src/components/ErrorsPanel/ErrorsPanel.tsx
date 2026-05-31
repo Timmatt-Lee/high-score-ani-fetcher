@@ -92,7 +92,16 @@ export function ErrorsPanel({
                 {httpErrors.map((err, idx) => (
                   <div key={idx} className={styles.errorCard}>
                     <div className={styles.errorTitle}>
-                      Status: <strong>{err.status}</strong>
+                      {err.title ? (
+                        <>
+                          Anime: <strong>{err.title}</strong> (Status:{" "}
+                          <strong>{err.status}</strong>)
+                        </>
+                      ) : (
+                        <>
+                          Status: <strong>{err.status}</strong>
+                        </>
+                      )}
                     </div>
                     <div className={styles.errorUrl}>{err.url}</div>
                     {err.message && (
@@ -126,7 +135,16 @@ export function ErrorsPanel({
                 {parseErrors.map((err, idx) => (
                   <div key={idx} className={styles.errorCard}>
                     <div className={styles.errorTitle}>
-                      Component: <strong>{err.source}</strong>
+                      {err.title ? (
+                        <>
+                          Anime: <strong>{err.title}</strong> (Component:{" "}
+                          <strong>{err.source}</strong>)
+                        </>
+                      ) : (
+                        <>
+                          Component: <strong>{err.source}</strong>
+                        </>
+                      )}
                     </div>
                     <div className={styles.errorUrl}>{err.url}</div>
                     <div className={styles.errorMessage}>
