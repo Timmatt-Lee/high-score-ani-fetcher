@@ -1,7 +1,11 @@
 import type { Meta, StoryObj } from "@storybook/react";
 import App from "./App";
 import { ServiceProvider } from "./contexts/ServiceContext";
-import { type AnimeItem, type ScanEvent } from "./types/anime";
+import {
+  type AnimeItem,
+  type ScanEvent,
+  type PipelineOptions,
+} from "./types/anime";
 import {
   ScraperHttpError,
   ScraperParseError,
@@ -215,11 +219,11 @@ export const WithScanErrors: Story = {
       ...mockScraperService,
       getTotalPages: async () => 1,
       scanAllWithPipeline: (
-        _totalPages,
-        _pageConcurrency,
-        _detailConcurrency,
-        _filterItem,
-        options,
+        _totalPages: number,
+        _pageConcurrency: number,
+        _detailConcurrency: number,
+        _filterItem: (item: AnimeItem) => boolean,
+        options?: PipelineOptions,
       ): Observable<ScanEvent> => {
         return new Observable((subscriber) => {
           let isCancelled = false;
@@ -345,6 +349,24 @@ export const WithRetryingState: Story = {
     fireEvent.click(retryBtn);
     // 4. Wait a tiny bit to capture mid-retry progress state
     await new Promise((resolve) => setTimeout(resolve, 100));
+
+    // 5. Self-assert correct retrying state
+    const errorsPanel = canvasElement.querySelector(
+      '[data-testid="errors-panel"]',
+    );
+    if (errorsPanel) {
+      throw new Error(
+        "Self-assertion failed: ErrorsPanel is still visible during retry scan!",
+      );
+    }
+    const progressContainer = canvasElement.querySelector(
+      '[data-testid="progress-container"]',
+    );
+    if (!progressContainer) {
+      throw new Error(
+        "Self-assertion failed: ProgressBar is not visible during retry scan!",
+      );
+    }
   },
 };
 
