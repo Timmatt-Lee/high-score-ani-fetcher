@@ -90,16 +90,6 @@ function App() {
             trashCount={trashList.length}
           />
 
-          {activeTab === Tab.Search && totalErrors > 0 && (
-            <ErrorsPanel
-              httpErrors={httpErrors}
-              parseErrors={parseErrors}
-              failedDetails={failedDetails}
-              isScanning={isScanning}
-              onRetry={handleScan}
-            />
-          )}
-
           <AnimeList
             activeTab={activeTab}
             searchList={searchList}
@@ -109,6 +99,16 @@ function App() {
             onMoveToTrash={moveToTrash}
             onRestoreFromTrash={restoreFromTrash}
           />
+
+          {activeTab === Tab.Search && totalErrors > 0 && (
+            <ErrorsPanel
+              httpErrors={httpErrors}
+              parseErrors={parseErrors}
+              failedDetails={failedDetails}
+              isScanning={isScanning}
+              onRetry={handleScan}
+            />
+          )}
         </>
       )}
     </div>

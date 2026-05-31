@@ -282,3 +282,58 @@ export const WithScanErrors: Story = {
     }
   },
 };
+
+export const WithFatalError: Story = {
+  decorators: [
+    (Story) => {
+      localStorage.clear();
+      return <Story />;
+    },
+  ],
+  render: () => {
+    const mockScraperServiceWithFatalError = {
+      ...mockScraperService,
+      getTotalPages: async () => {
+        return new ScraperHttpError(
+          "https://ani.gamer.com.tw/animeList.php",
+          "Internal Server Error",
+          500,
+        );
+      },
+    };
+
+    return (
+      <ServiceProvider
+        scraperService={
+          mockScraperServiceWithFatalError as unknown as ScraperService
+        }
+      >
+        <div
+          style={{
+            width: "450px",
+            border: "1px solid #333",
+            background: "#121212",
+          }}
+        >
+          <style>{`
+            div[class*="appContainer"] {
+              height: auto !important;
+              max-height: none !important;
+              overflow: visible !important;
+            }
+          `}</style>
+          <App />
+        </div>
+      </ServiceProvider>
+    );
+  },
+  play: async ({ canvasElement }) => {
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    const scanBtn = Array.from(canvasElement.querySelectorAll("button")).find(
+      (btn) => btn.textContent?.includes("Scan"),
+    );
+    if (scanBtn) {
+      (scanBtn as HTMLButtonElement).click();
+    }
+  },
+};
