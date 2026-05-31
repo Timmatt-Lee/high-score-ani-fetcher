@@ -347,26 +347,32 @@ export const WithRetryingState: Story = {
     await new Promise((resolve) => setTimeout(resolve, 200));
     // 3. Click the retry button
     fireEvent.click(retryBtn);
-    // 4. Wait a tiny bit to capture mid-retry progress state
-    await new Promise((resolve) => setTimeout(resolve, 100));
 
-    // 5. Self-assert correct retrying state
-    const errorsPanel = canvasElement.querySelector(
-      '[data-testid="errors-panel"]',
-    );
-    if (errorsPanel) {
+    // 4. Poll and assert that errors panel hides and progress bar shows
+    const waitForElementToHide = async (selector: string): Promise<void> => {
+      for (let i = 0; i < 100; i++) {
+        const el = canvasElement.querySelector(selector);
+        if (!el) return;
+        await new Promise((resolve) => setTimeout(resolve, 50));
+      }
       throw new Error(
-        "Self-assertion failed: ErrorsPanel is still visible during retry scan!",
+        `Self-assertion failed: ${selector} did not hide during retry scan!`,
       );
-    }
-    const progressContainer = canvasElement.querySelector(
-      '[data-testid="progress-container"]',
-    );
-    if (!progressContainer) {
+    };
+
+    const waitForElementToShow = async (selector: string): Promise<Element> => {
+      for (let i = 0; i < 100; i++) {
+        const el = canvasElement.querySelector(selector);
+        if (el) return el;
+        await new Promise((resolve) => setTimeout(resolve, 50));
+      }
       throw new Error(
-        "Self-assertion failed: ProgressBar is not visible during retry scan!",
+        `Self-assertion failed: ${selector} did not show during retry scan!`,
       );
-    }
+    };
+
+    await waitForElementToHide('[data-testid="errors-panel"]');
+    await waitForElementToShow('[data-testid="progress-container"]');
   },
 };
 
