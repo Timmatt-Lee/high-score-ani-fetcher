@@ -298,23 +298,27 @@ export const WithScanErrors: Story = {
 export const WithRetryingState: Story = {
   ...WithScanErrors,
   play: async ({ canvasElement }) => {
+    const waitForElement = async (selector: string): Promise<Element> => {
+      for (let i = 0; i < 30; i++) {
+        const el = canvasElement.querySelector(selector);
+        if (el) return el;
+        await new Promise((resolve) => setTimeout(resolve, 50));
+      }
+      throw new Error(`Element ${selector} not found`);
+    };
+
     // 1. Click scan first to populate errors
     await new Promise((resolve) => setTimeout(resolve, 50));
-    const scanBtn = Array.from(canvasElement.querySelectorAll("button")).find(
-      (btn) => btn.textContent?.includes("Scan"),
-    );
+    const scanBtn = canvasElement.querySelector("button");
     if (scanBtn) {
-      (scanBtn as HTMLButtonElement).click();
+      scanBtn.click();
     }
-    // 2. Wait for first scan to complete
-    await new Promise((resolve) => setTimeout(resolve, 300));
+    // 2. Wait for first scan to complete and Retry button to appear
+    const retryBtn = (await waitForElement(
+      '[data-testid="retry-errors-btn"]',
+    )) as HTMLButtonElement;
     // 3. Click the retry button
-    const retryBtn = Array.from(canvasElement.querySelectorAll("button")).find(
-      (btn) => btn.textContent?.includes("Retry"),
-    );
-    if (retryBtn) {
-      (retryBtn as HTMLButtonElement).click();
-    }
+    retryBtn.click();
     // 4. Wait a tiny bit to capture mid-retry progress state
     await new Promise((resolve) => setTimeout(resolve, 50));
   },

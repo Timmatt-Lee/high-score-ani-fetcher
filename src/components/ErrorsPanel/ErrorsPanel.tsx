@@ -29,7 +29,7 @@ export function ErrorsPanel({
   const totalErrorsCount =
     httpErrors.length + parseErrors.length || failedDetails.length;
 
-  if (totalErrorsCount === 0 && failedDetails.length === 0) {
+  if (isScanning || (totalErrorsCount === 0 && failedDetails.length === 0)) {
     return null;
   }
 
@@ -52,7 +52,7 @@ export function ErrorsPanel({
           disabled={isRetryDisabled}
           data-testid="retry-errors-btn"
         >
-          {isScanning ? "Retrying..." : "Retry Failed Animes"}
+          Retry Failed Animes
         </button>
       </div>
 

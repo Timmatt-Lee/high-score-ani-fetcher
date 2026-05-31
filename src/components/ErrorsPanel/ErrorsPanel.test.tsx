@@ -103,7 +103,7 @@ describe("ErrorsPanel", () => {
     expect(onRetrySpy).toHaveBeenCalled();
   });
 
-  it("shows retrying text and disables button when isScanning is true", () => {
+  it("renders null when isScanning is true", () => {
     const onRetrySpy = vi.fn();
     const httpErr = new ScraperHttpError(
       "https://ani.gamer.com.tw/animeList.php?page=5",
@@ -111,7 +111,7 @@ describe("ErrorsPanel", () => {
       500,
     );
 
-    render(
+    const { container } = render(
       <ErrorsPanel
         httpErrors={[httpErr]}
         parseErrors={[]}
@@ -121,9 +121,7 @@ describe("ErrorsPanel", () => {
       />,
     );
 
-    const retryBtn = screen.getByTestId("retry-errors-btn");
-    expect(retryBtn).toBeDisabled();
-    expect(screen.getByText("Retrying...")).toBeDefined();
+    expect(container.firstChild).toBeNull();
   });
 
   it("handles branch edge cases (empty url, missing page param, long html length)", () => {
