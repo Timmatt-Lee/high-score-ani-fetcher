@@ -26,9 +26,9 @@ export function ErrorCard({ error }: ErrorCardProps) {
   let cardSubtitle: string | null;
 
   if ("status" in error && error.status !== undefined) {
-    const pageStr = page ? `Page ${page}` : "";
-    const statusStr = `Status ${error.status}`;
-    const metaParts = [pageStr, statusStr].filter(Boolean).join(" | ");
+    const pageStr = page ? `Page: ${page}` : "";
+    const statusStr = `Status: ${error.status}`;
+    const metaParts = [pageStr, statusStr].filter(Boolean).join(", ");
 
     if (title) {
       cardTitle = title;
@@ -38,19 +38,17 @@ export function ErrorCard({ error }: ErrorCardProps) {
       cardSubtitle = null;
     }
   } else if ("source" in error && error.source !== undefined) {
-    const pageStr = page ? `Page ${page}` : "";
-    const sourceStr = `Component: ${error.source}`;
-    const metaParts = [pageStr, sourceStr].filter(Boolean).join(" | ");
+    const pageStr = page ? `Page: ${page}` : "";
 
     if (title) {
       cardTitle = title;
-      cardSubtitle = metaParts;
+      cardSubtitle = pageStr || null;
     } else {
-      cardTitle = metaParts;
+      cardTitle = pageStr || "Parser Error";
       cardSubtitle = null;
     }
   } else {
-    cardTitle = error.name || "Fatal Error";
+    cardTitle = error.name;
     cardSubtitle = null;
   }
 

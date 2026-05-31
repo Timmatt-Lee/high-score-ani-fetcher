@@ -70,6 +70,18 @@ export const AllErrors: Story = {
   },
 };
 
+export const AllErrorsExpanded: Story = {
+  args: {
+    httpErrors: sampleHttpErrors,
+    parseErrors: sampleParseErrors,
+    failedDetails: sampleFailedDetails,
+    isScanning: false,
+    onRetry: () => console.log("Retry callback triggered"),
+    defaultHttpOpen: true,
+    defaultParseOpen: true,
+  },
+};
+
 export const HttpErrorsOnly: Story = {
   args: {
     httpErrors: sampleHttpErrors,

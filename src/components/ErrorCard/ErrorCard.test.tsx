@@ -47,7 +47,7 @@ describe("ErrorCard", () => {
       "葬送的芙莉蓮",
     );
     expect(screen.getByTestId("error-card-subtitle").textContent).toBe(
-      "Page 2 | Status 500",
+      "Page: 2, Status: 500",
     );
     expect(screen.getByTestId("error-card-message").textContent).toBe(
       error.message,
@@ -64,7 +64,7 @@ describe("ErrorCard", () => {
     render(<ErrorCard error={error} />);
 
     expect(screen.getByTestId("error-card-title").textContent).toBe(
-      "Page 3 | Status 502",
+      "Page: 3, Status: 502",
     );
     expect(screen.queryByTestId("error-card-subtitle")).toBeNull();
   });
@@ -84,7 +84,7 @@ describe("ErrorCard", () => {
 
     expect(screen.getByTestId("error-card-title").textContent).toBe("鬼滅之刃");
     expect(screen.getByTestId("error-card-subtitle").textContent).toBe(
-      "Page 5 | Component: 1",
+      "Page: 5",
     );
   });
 
@@ -99,13 +99,13 @@ describe("ErrorCard", () => {
     render(<ErrorCard error={error} />);
 
     expect(screen.getByTestId("error-card-title").textContent).toBe(
-      "Component: 7",
+      "Parser Error",
     );
   });
 
   it("renders Unknown/Fatal error and handles copy click", async () => {
     const error = new ScraperUnknownError(new Error("Fatal System Error"));
-    error.stack = "fatal stack trace";
+    delete error.stack;
     writeTextMock.mockResolvedValue(undefined);
 
     render(<ErrorCard error={error} />);
@@ -125,6 +125,7 @@ describe("ErrorCard", () => {
     expect(copiedText).not.toContain("URL:");
     expect(copiedText).not.toContain("Status Code:");
     expect(copiedText).not.toContain("Source Component:");
+    expect(copiedText).not.toContain("Stack Trace:");
   });
 
   it("handles copy full details on click and displays feedback state", async () => {
@@ -198,7 +199,7 @@ describe("ErrorCard", () => {
     );
     render(<ErrorCard error={error} />);
     expect(screen.getByTestId("error-card-title").textContent).toBe(
-      "Status 403",
+      "Status: 403",
     );
   });
 
@@ -213,9 +214,7 @@ describe("ErrorCard", () => {
       { title: "鬼滅之刃" },
     );
     render(<ErrorCard error={error} />);
-    expect(screen.getByTestId("error-card-subtitle").textContent).toBe(
-      "Component: 1",
-    );
+    expect(screen.queryByTestId("error-card-subtitle")).toBeNull();
   });
 
   it("handles copy of Parser error with source property", async () => {

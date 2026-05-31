@@ -685,7 +685,7 @@ describe("Scan functionality", () => {
     // Verify errors panel renders HTTP error details
     expect(screen.getByTestId("errors-panel")).toBeDefined();
     expect(screen.getByText(/HTTP Network Errors \(1\)/)).toBeDefined();
-    expect(screen.getAllByText(/Status 502/).length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText(/Status: 502/).length).toBeGreaterThanOrEqual(1);
   });
 
   it("renders page numbers and failed details counts in Errors tab summary when there are many errors", async () => {
@@ -727,7 +727,7 @@ describe("Scan functionality", () => {
     expect(screen.getByText("11 errors occurred")).toBeDefined();
   });
 
-  it("renders fatal error screen when scan fails, and clears it on dismiss", async () => {
+  it("renders fatal error screen when scan fails", async () => {
     const fatalErr = new ScraperHttpError(
       "https://ani.gamer.com.tw/error",
       "Bad Request",
@@ -758,15 +758,6 @@ describe("Scan functionality", () => {
     );
     expect(screen.queryByTestId("progress-container")).toBeNull();
     expect(screen.queryByTestId("tabs-container")).toBeNull();
-
-    // Verify dismiss button returns UI to normal state
-    const dismissBtn = screen.getByTestId("error-card-dismiss-btn");
-    await act(async () => {
-      fireEvent.click(dismissBtn);
-    });
-
-    expect(screen.queryByTestId("fatal-error-container")).toBeNull();
-    expect(screen.getByTestId("tabs-container")).toBeDefined();
   });
 
   it("renders ErrorsPanel inside Results tab and hides it when retry clears the errors", async () => {

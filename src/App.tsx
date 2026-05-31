@@ -31,7 +31,6 @@ function App() {
     httpErrors,
     parseErrors,
     fatalError,
-    clearFatalError,
     handleScan,
     failedDetails,
   } = useAnimeScanner(searchList, favoriteList, trashList, (result) => {
@@ -66,13 +65,6 @@ function App() {
           data-testid="fatal-error-container"
         >
           <ErrorCard error={fatalError} />
-          <button
-            className={`${styles.btn} ${styles.dismissBtn}`}
-            onClick={clearFatalError}
-            data-testid="error-card-dismiss-btn"
-          >
-            Dismiss
-          </button>
         </div>
       ) : (
         <>

@@ -10,6 +10,8 @@ interface ErrorsPanelProps {
   failedDetails: AnimeItem[];
   isScanning: boolean;
   onRetry: () => void;
+  defaultHttpOpen?: boolean;
+  defaultParseOpen?: boolean;
 }
 
 export function ErrorsPanel({
@@ -18,9 +20,11 @@ export function ErrorsPanel({
   failedDetails,
   isScanning,
   onRetry,
+  defaultHttpOpen = false,
+  defaultParseOpen = false,
 }: ErrorsPanelProps) {
-  const [isHttpOpen, setIsHttpOpen] = useState(true);
-  const [isParseOpen, setIsParseOpen] = useState(true);
+  const [isHttpOpen, setIsHttpOpen] = useState(defaultHttpOpen);
+  const [isParseOpen, setIsParseOpen] = useState(defaultParseOpen);
 
   const totalErrorsCount =
     httpErrors.length + parseErrors.length || failedDetails.length;

@@ -53,12 +53,14 @@ describe("ErrorsPanel", () => {
         failedDetails={[]}
         isScanning={false}
         onRetry={onRetrySpy}
+        defaultHttpOpen={true}
+        defaultParseOpen={true}
       />,
     );
 
     expect(screen.getByText("2 errors occurred")).toBeDefined();
-    expect(screen.getByText("Page 2 | Status 502")).toBeDefined();
-    expect(screen.getByText("Page 3 | Component: 1")).toBeDefined();
+    expect(screen.getByText("Page: 2, Status: 502")).toBeDefined();
+    expect(screen.getByText("Page: 3")).toBeDefined();
     expect(screen.getByText("Parsing failed")).toBeDefined();
 
     // Toggle HTTP Accordion
@@ -183,7 +185,7 @@ describe("ErrorsPanel", () => {
     );
 
     expect(screen.getByText("葬送的芙莉蓮")).toBeDefined();
-    expect(screen.getByText("Status 500")).toBeDefined();
+    expect(screen.getByText("Status: 500")).toBeDefined();
     expect(screen.getByText("鬼滅之刃")).toBeDefined();
   });
 
