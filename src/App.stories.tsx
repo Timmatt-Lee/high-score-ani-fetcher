@@ -8,7 +8,7 @@ import {
   ScraperErrorSource,
 } from "./errors";
 import { ScraperService } from "./services/scraper";
-import { Observable, of } from "rxjs";
+import { Observable } from "rxjs";
 
 // Helper to create sample anime items
 const createMockAnime = (overrides: Partial<AnimeItem> = {}): AnimeItem => ({
@@ -214,34 +214,46 @@ export const WithScanErrors: Story = {
       ...mockScraperService,
       getTotalPages: async () => 1,
       scanAllWithPipeline: (): Observable<ScanEvent> => {
-        return of({
-          type: "completed",
-          result: {
-            items: [
-              createMockAnime({ title: "部分解析成功的動畫", score: 4.9 }),
-            ],
-            httpErrors: [
-              Object.assign(
-                new ScraperHttpError(
-                  "https://ani.gamer.com.tw/animeList.php?page=2",
-                  "HTTP 502 Bad Gateway",
-                  502,
-                ),
-                { title: "某個好看但部分章節損壞的番" },
-              ),
-            ],
-            parseErrors: [
-              Object.assign(
-                new ScraperParseError(
-                  ScraperErrorSource.TITLE,
-                  "https://ani.gamer.com.tw/animeVideo.php?sn=999",
-                  "Missing title tag",
-                  "Could not parse title",
-                ),
-                { title: "某個好看但部分章節損壞的番" },
-              ),
-            ],
-          },
+        return new Observable((subscriber) => {
+          let isCancelled = false;
+          const run = async () => {
+            await new Promise((resolve) => setTimeout(resolve, 200));
+            if (isCancelled) return;
+            subscriber.next({
+              type: "completed",
+              result: {
+                items: [
+                  createMockAnime({ title: "部分解析成功的動畫", score: 4.9 }),
+                ],
+                httpErrors: [
+                  Object.assign(
+                    new ScraperHttpError(
+                      "https://ani.gamer.com.tw/animeList.php?page=2",
+                      "HTTP 502 Bad Gateway",
+                      502,
+                    ),
+                    { title: "某個好看但部分章節損壞的番" },
+                  ),
+                ],
+                parseErrors: [
+                  Object.assign(
+                    new ScraperParseError(
+                      ScraperErrorSource.TITLE,
+                      "https://ani.gamer.com.tw/animeVideo.php?sn=999",
+                      "Missing title tag",
+                      "Could not parse title",
+                    ),
+                    { title: "某個好看但部分章節損壞的番" },
+                  ),
+                ],
+              },
+            });
+            subscriber.complete();
+          };
+          run();
+          return () => {
+            isCancelled = true;
+          };
         });
       },
     };
@@ -280,6 +292,31 @@ export const WithScanErrors: Story = {
     if (scanBtn) {
       (scanBtn as HTMLButtonElement).click();
     }
+  },
+};
+
+export const WithRetryingState: Story = {
+  ...WithScanErrors,
+  play: async ({ canvasElement }) => {
+    // 1. Click scan first to populate errors
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    const scanBtn = Array.from(canvasElement.querySelectorAll("button")).find(
+      (btn) => btn.textContent?.includes("Scan"),
+    );
+    if (scanBtn) {
+      (scanBtn as HTMLButtonElement).click();
+    }
+    // 2. Wait for first scan to complete
+    await new Promise((resolve) => setTimeout(resolve, 300));
+    // 3. Click the retry button
+    const retryBtn = Array.from(canvasElement.querySelectorAll("button")).find(
+      (btn) => btn.textContent?.includes("Retry"),
+    );
+    if (retryBtn) {
+      (retryBtn as HTMLButtonElement).click();
+    }
+    // 4. Wait a tiny bit to capture mid-retry progress state
+    await new Promise((resolve) => setTimeout(resolve, 50));
   },
 };
 

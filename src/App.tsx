@@ -44,7 +44,8 @@ function App() {
     );
   });
 
-  const totalErrors = httpErrors.length + parseErrors.length;
+  const totalErrors =
+    httpErrors.length + parseErrors.length + failedDetails.length;
 
   return (
     <div className={styles.appContainer} data-testid="app-container">
@@ -98,7 +99,26 @@ function App() {
               parseErrors={parseErrors}
               failedDetails={failedDetails}
               isScanning={isScanning}
-              onRetry={() => handleScan()}
+              onRetry={() => {
+                const getPageNumber = (url?: string) => {
+                  if (!url) return null;
+                  const match = url.match(/page=(\d+)/);
+                  return match ? Number(match[1]) : null;
+                };
+                const failedPagesSet = new Set<number>();
+                httpErrors.forEach((err) => {
+                  const p = getPageNumber(err.url);
+                  if (p !== null) failedPagesSet.add(p);
+                });
+                parseErrors.forEach((err) => {
+                  const p = getPageNumber(err.url);
+                  if (p !== null) failedPagesSet.add(p);
+                });
+                handleScan({
+                  failedPages: Array.from(failedPagesSet),
+                  failedDetails,
+                });
+              }}
             />
           )}
         </>

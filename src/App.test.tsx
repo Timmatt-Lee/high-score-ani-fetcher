@@ -14,7 +14,11 @@ import {
   type ScraperResult,
   type ScanEvent,
 } from "./types/anime";
-import { ScraperHttpError } from "./errors";
+import {
+  ScraperHttpError,
+  ScraperParseError,
+  ScraperErrorSource,
+} from "./errors";
 import { Observable, Subject } from "rxjs";
 
 function createMockObservable(
@@ -770,13 +774,40 @@ describe("Scan functionality", () => {
 
     vi.spyOn(scraperService, "getTotalPages").mockResolvedValue(1);
 
+    const parseError = new ScraperParseError(
+      ScraperErrorSource.TITLE,
+      "https://ani.gamer.com.tw/anime.php",
+      "fail parse",
+      "Parsing failed",
+    );
+
+    const parseErrorNoUrl = new ScraperParseError(
+      ScraperErrorSource.TITLE,
+      undefined as unknown as string,
+      "fail parse no url",
+      "Parsing failed",
+    );
+
+    const parseErrorWithPage = new ScraperParseError(
+      ScraperErrorSource.TITLE,
+      "https://ani.gamer.com.tw/animeList.php?page=3",
+      "fail parse page",
+      "Parsing failed",
+    );
+
+    const errorNoPage = new ScraperHttpError(
+      "https://ani.gamer.com.tw/anime.php",
+      "fail no page",
+      500,
+    );
+
     // First scan yields error
     const pipelineMock = vi.spyOn(scraperService, "scanAllWithPipeline");
     pipelineMock.mockImplementationOnce(() => {
       return createMockObservable({
         items: [{ ...anime }],
-        httpErrors: [error],
-        parseErrors: [],
+        httpErrors: [error, errorNoPage],
+        parseErrors: [parseError, parseErrorNoUrl, parseErrorWithPage],
       });
     });
 

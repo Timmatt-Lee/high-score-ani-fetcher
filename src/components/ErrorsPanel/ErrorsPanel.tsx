@@ -52,7 +52,7 @@ export function ErrorsPanel({
           disabled={isRetryDisabled}
           data-testid="retry-errors-btn"
         >
-          {isScanning ? "Retrying..." : "Retry Failed Items"}
+          {isScanning ? "Retrying..." : "Retry Failed Animes"}
         </button>
       </div>
 

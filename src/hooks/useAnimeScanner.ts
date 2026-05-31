@@ -39,6 +39,7 @@ export function useAnimeScanner(
   const handleScan = async (options?: PipelineOptions) => {
     setHttpErrors([]);
     setParseErrors([]);
+    setFailedDetails([]);
     setFatalError(null);
     setIsScanning(true);
 
