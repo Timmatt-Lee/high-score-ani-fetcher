@@ -59,7 +59,8 @@ describe("ErrorsPanel", () => {
     );
 
     expect(screen.getByText("2 errors occurred")).toBeDefined();
-    expect(screen.getByText("Page: 2, Status: 502")).toBeDefined();
+    expect(screen.getByText("Page: 2")).toBeDefined();
+    expect(screen.getByText("Status: 502")).toBeDefined();
     expect(screen.getByText("Page: 3")).toBeDefined();
     expect(screen.getByText("Parsing failed")).toBeDefined();
 

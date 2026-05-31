@@ -63,10 +63,10 @@ describe("ErrorCard", () => {
 
     render(<ErrorCard error={error} />);
 
-    expect(screen.getByTestId("error-card-title").textContent).toBe(
-      "Page: 3, Status: 502",
+    expect(screen.getByTestId("error-card-title").textContent).toBe("Page: 3");
+    expect(screen.getByTestId("error-card-subtitle").textContent).toBe(
+      "Status: 502",
     );
-    expect(screen.queryByTestId("error-card-subtitle")).toBeNull();
   });
 
   it("renders Parser error with title correctly", () => {
@@ -199,6 +199,9 @@ describe("ErrorCard", () => {
     );
     render(<ErrorCard error={error} />);
     expect(screen.getByTestId("error-card-title").textContent).toBe(
+      "HTTP Error",
+    );
+    expect(screen.getByTestId("error-card-subtitle").textContent).toBe(
       "Status: 403",
     );
   });

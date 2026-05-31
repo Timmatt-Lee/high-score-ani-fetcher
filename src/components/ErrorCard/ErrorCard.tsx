@@ -28,14 +28,13 @@ export function ErrorCard({ error }: ErrorCardProps) {
   if ("status" in error && error.status !== undefined) {
     const pageStr = page ? `Page: ${page}` : "";
     const statusStr = `Status: ${error.status}`;
-    const metaParts = [pageStr, statusStr].filter(Boolean).join(", ");
 
     if (title) {
       cardTitle = title;
-      cardSubtitle = metaParts;
+      cardSubtitle = [pageStr, statusStr].filter(Boolean).join(", ");
     } else {
-      cardTitle = metaParts;
-      cardSubtitle = null;
+      cardTitle = pageStr || "HTTP Error";
+      cardSubtitle = statusStr;
     }
   } else if ("source" in error && error.source !== undefined) {
     const pageStr = page ? `Page: ${page}` : "";
