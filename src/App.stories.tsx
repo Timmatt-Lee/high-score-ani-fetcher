@@ -53,10 +53,15 @@ const mockScraperService = {
         for (let isStep = 1; isStep <= 4; isStep++) {
           if (isCancelled) return;
           await new Promise((resolve) => setTimeout(resolve, 300));
-          subscriber.next({ type: "page_completed" });
+          subscriber.next({
+            type: "page_completed",
+            pageNum: isStep,
+            success: true,
+          });
           subscriber.next({
             type: "detail_completed",
             title: titles[isStep - 1],
+            success: true,
           });
         }
         if (isCancelled) return;
