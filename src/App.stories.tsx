@@ -9,6 +9,7 @@ import {
 } from "./errors";
 import { ScraperService } from "./services/scraper";
 import { Observable } from "rxjs";
+import { fireEvent } from "@testing-library/react";
 
 // Helper to create sample anime items
 const createMockAnime = (overrides: Partial<AnimeItem> = {}): AnimeItem => ({
@@ -328,18 +329,20 @@ export const WithRetryingState: Story = {
 
     // 1. Click scan first to populate errors
     await new Promise((resolve) => setTimeout(resolve, 50));
-    const scanBtn = canvasElement.querySelector("button");
+    const scanBtn = Array.from(canvasElement.querySelectorAll("button")).find(
+      (btn) => btn.textContent?.includes("Scan"),
+    );
     if (scanBtn) {
-      scanBtn.click();
+      fireEvent.click(scanBtn);
     }
     // 2. Wait for first scan to complete and Retry button to appear
     const retryBtn = (await waitForElement(
       '[data-testid="retry-errors-btn"]',
     )) as HTMLButtonElement;
     // Wait a brief moment to ensure React has fully attached event listeners
-    await new Promise((resolve) => setTimeout(resolve, 150));
+    await new Promise((resolve) => setTimeout(resolve, 200));
     // 3. Click the retry button
-    retryBtn.click();
+    fireEvent.click(retryBtn);
     // 4. Wait a tiny bit to capture mid-retry progress state
     await new Promise((resolve) => setTimeout(resolve, 100));
   },
