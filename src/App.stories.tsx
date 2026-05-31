@@ -26,8 +26,8 @@ const createMockAnime = (overrides: Partial<AnimeItem> = {}): AnimeItem => ({
 // A robust mock of ScraperService that simulates progress ticks and resolves with new high-score items
 const mockScraperService = {
   getTotalPages: async () => {
-    // Simulate network delay
-    await new Promise((resolve) => setTimeout(resolve, 600));
+    // Simulate tiny network delay for speed and stability
+    await new Promise((resolve) => setTimeout(resolve, 10));
     return 3;
   },
   scrapeListPage: async () => {
@@ -52,7 +52,7 @@ const mockScraperService = {
         ];
         for (let isStep = 1; isStep <= 4; isStep++) {
           if (isCancelled) return;
-          await new Promise((resolve) => setTimeout(resolve, 300));
+          await new Promise((resolve) => setTimeout(resolve, 10));
           subscriber.next({
             type: "page_completed",
             pageNum: isStep,
@@ -225,7 +225,7 @@ export const WithScanErrors: Story = {
           const run = async () => {
             if (options) {
               // Retry scan: emit progress events and NEVER complete so Chromatic captures the scanning state
-              await new Promise((resolve) => setTimeout(resolve, 100));
+              await new Promise((resolve) => setTimeout(resolve, 10));
               if (isCancelled) return;
               subscriber.next({
                 type: "page_completed",
@@ -235,8 +235,8 @@ export const WithScanErrors: Story = {
               return;
             }
 
-            // First scan: completes after 200ms with errors
-            await new Promise((resolve) => setTimeout(resolve, 200));
+            // First scan: completes after 20ms with errors
+            await new Promise((resolve) => setTimeout(resolve, 20));
             if (isCancelled) return;
             subscriber.next({
               type: "completed",
@@ -318,7 +318,7 @@ export const WithRetryingState: Story = {
   ...WithScanErrors,
   play: async ({ canvasElement }) => {
     const waitForElement = async (selector: string): Promise<Element> => {
-      for (let i = 0; i < 30; i++) {
+      for (let i = 0; i < 100; i++) {
         const el = canvasElement.querySelector(selector);
         if (el) return el;
         await new Promise((resolve) => setTimeout(resolve, 50));
