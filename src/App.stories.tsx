@@ -429,3 +429,94 @@ export const WithFatalError: Story = {
     }
   },
 };
+
+export const WithScanningState: Story = {
+  decorators: [
+    (Story) => {
+      localStorage.clear();
+      return <Story />;
+    },
+  ],
+  render: () => {
+    // We override ScraperService to return a scan that NEVER completes
+    const mockScraperServiceScanning = {
+      ...mockScraperService,
+      getTotalPages: async () => {
+        await new Promise((resolve) => setTimeout(resolve, 10));
+        return 10;
+      },
+      scanAllWithPipeline: (): Observable<ScanEvent> => {
+        return new Observable((subscriber) => {
+          let isCancelled = false;
+          const run = async () => {
+            await new Promise((resolve) => setTimeout(resolve, 10));
+            if (isCancelled) return;
+            subscriber.next({
+              type: "page_completed",
+              pageNum: 1,
+              success: true,
+            });
+            // We emit details completed and then do not call complete()
+            // to keep it in scanning state forever for screenshot capture.
+            subscriber.next({
+              type: "detail_completed",
+              title: "葬送的芙莉蓮",
+              success: true,
+            });
+          };
+          run();
+          return () => {
+            isCancelled = true;
+          };
+        });
+      },
+    };
+
+    return (
+      <ServiceProvider
+        scraperService={mockScraperServiceScanning as unknown as ScraperService}
+      >
+        <div
+          style={{
+            width: "450px",
+            border: "1px solid #333",
+            background: "#121212",
+          }}
+        >
+          <style>{`
+            div[class*="appContainer"] {
+              height: auto !important;
+              max-height: none !important;
+              overflow: visible !important;
+            }
+          `}</style>
+          <App />
+        </div>
+      </ServiceProvider>
+    );
+  },
+  play: async ({ canvasElement }) => {
+    // 1. Wait for mount, then click the Scan button
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    const scanBtn = Array.from(canvasElement.querySelectorAll("button")).find(
+      (btn) => btn.textContent?.includes("Scan"),
+    );
+    if (scanBtn) {
+      (scanBtn as HTMLButtonElement).click();
+    }
+
+    // 2. Poll and assert that progress bar correctly shows up
+    const waitForElementToShow = async (selector: string): Promise<Element> => {
+      for (let i = 0; i < 100; i++) {
+        const el = canvasElement.querySelector(selector);
+        if (el) return el;
+        await new Promise((resolve) => setTimeout(resolve, 50));
+      }
+      throw new Error(
+        `Self-assertion failed: ${selector} did not show during scan state!`,
+      );
+    };
+
+    await waitForElementToShow('[data-testid="progress-container"]');
+  },
+};
