@@ -9,15 +9,7 @@ const meta: Meta<typeof ErrorsPanel> = {
   component: ErrorsPanel,
   decorators: [
     (Story) => (
-      <div
-        style={{
-          width: "600px",
-          border: "1px solid #333",
-          background: "#1e1e1e",
-          padding: "20px",
-          borderRadius: "8px",
-        }}
-      >
+      <div style={{ maxWidth: "600px", width: "100%" }}>
         <Story />
       </div>
     ),

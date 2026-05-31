@@ -12,14 +12,7 @@ const meta: Meta<typeof FatalErrorScreen> = {
   component: FatalErrorScreen,
   decorators: [
     (Story) => (
-      <div
-        style={{
-          width: "450px",
-          border: "1px solid #333",
-          background: "#121212",
-          padding: "20px",
-        }}
-      >
+      <div style={{ maxWidth: "450px", width: "100%" }}>
         <Story />
       </div>
     ),

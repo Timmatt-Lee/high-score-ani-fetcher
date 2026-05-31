@@ -215,4 +215,25 @@ describe("ErrorsPanel", () => {
     expect(screen.getByText("No network errors.")).toBeDefined();
     expect(screen.getByText("Parsing failed (Bad html)")).toBeDefined();
   });
+
+  it("renders summary only when only failed details are present", () => {
+    const failedDetail = makeAnime("Failed Detail Sn");
+
+    render(
+      <ErrorsPanel
+        httpErrors={[]}
+        parseErrors={[]}
+        failedDetails={[failedDetail]}
+        isScanning={false}
+        onRetry={vi.fn()}
+      />,
+    );
+
+    expect(
+      screen.getByText("0 errors encountered (Failed Details: 1)"),
+    ).toBeDefined();
+    // The lists inside accordion will show empty messages since HTTP and Parse lists are empty
+    expect(screen.getByText("No network errors.")).toBeDefined();
+    expect(screen.getByText("No parser errors.")).toBeDefined();
+  });
 });

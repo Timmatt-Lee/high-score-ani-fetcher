@@ -37,7 +37,7 @@ export function ErrorsPanel({
   const failedPages = getFailedPages();
   const totalErrorsCount = httpErrors.length + parseErrors.length;
 
-  if (totalErrorsCount === 0) {
+  if (totalErrorsCount === 0 && failedDetails.length === 0) {
     return null;
   }
 
