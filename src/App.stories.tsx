@@ -213,10 +213,29 @@ export const WithScanErrors: Story = {
     const mockScraperServiceWithErrors = {
       ...mockScraperService,
       getTotalPages: async () => 1,
-      scanAllWithPipeline: (): Observable<ScanEvent> => {
+      scanAllWithPipeline: (
+        _totalPages,
+        _pageConcurrency,
+        _detailConcurrency,
+        _filterItem,
+        options,
+      ): Observable<ScanEvent> => {
         return new Observable((subscriber) => {
           let isCancelled = false;
           const run = async () => {
+            if (options) {
+              // Retry scan: emit progress events and NEVER complete so Chromatic captures the scanning state
+              await new Promise((resolve) => setTimeout(resolve, 100));
+              if (isCancelled) return;
+              subscriber.next({
+                type: "page_completed",
+                pageNum: 2,
+                success: true,
+              });
+              return;
+            }
+
+            // First scan: completes after 200ms with errors
             await new Promise((resolve) => setTimeout(resolve, 200));
             if (isCancelled) return;
             subscriber.next({
@@ -317,10 +336,12 @@ export const WithRetryingState: Story = {
     const retryBtn = (await waitForElement(
       '[data-testid="retry-errors-btn"]',
     )) as HTMLButtonElement;
+    // Wait a brief moment to ensure React has fully attached event listeners
+    await new Promise((resolve) => setTimeout(resolve, 150));
     // 3. Click the retry button
     retryBtn.click();
     // 4. Wait a tiny bit to capture mid-retry progress state
-    await new Promise((resolve) => setTimeout(resolve, 50));
+    await new Promise((resolve) => setTimeout(resolve, 100));
   },
 };
 
