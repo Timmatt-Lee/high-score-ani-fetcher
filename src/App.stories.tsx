@@ -114,6 +114,13 @@ const meta: Meta<typeof App> = {
               background: "#121212",
             }}
           >
+            <style>{`
+              div[class*="appContainer"] {
+                height: auto !important;
+                max-height: none !important;
+                overflow: visible !important;
+              }
+            `}</style>
             <Story />
           </div>
         </ServiceProvider>
@@ -252,6 +259,13 @@ export const WithScanErrors: Story = {
             background: "#121212",
           }}
         >
+          <style>{`
+            div[class*="appContainer"] {
+              height: auto !important;
+              max-height: none !important;
+              overflow: visible !important;
+            }
+          `}</style>
           <App />
         </div>
       </ServiceProvider>

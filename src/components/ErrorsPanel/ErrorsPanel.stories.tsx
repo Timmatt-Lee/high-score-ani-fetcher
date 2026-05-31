@@ -28,10 +28,13 @@ export default meta;
 type Story = StoryObj<typeof ErrorsPanel>;
 
 const sampleHttpErrors = [
-  new ScraperHttpError(
-    "https://ani.gamer.com.tw/animeList.php?page=2",
-    "Internal Server Error",
-    500,
+  Object.assign(
+    new ScraperHttpError(
+      "https://ani.gamer.com.tw/animeList.php?page=2",
+      "Internal Server Error",
+      500,
+    ),
+    { title: "測試動畫第一季" },
   ),
   new ScraperHttpError(
     "https://ani.gamer.com.tw/animeList.php?page=5",
@@ -41,11 +44,14 @@ const sampleHttpErrors = [
 ];
 
 const sampleParseErrors = [
-  new ScraperParseError(
-    ScraperErrorSource.TITLE,
-    "https://ani.gamer.com.tw/animeList.php?page=3",
-    "Missing class theme-name inside theme-list-main anchor card",
-    "Anime title missing",
+  Object.assign(
+    new ScraperParseError(
+      ScraperErrorSource.TITLE,
+      "https://ani.gamer.com.tw/animeList.php?page=3",
+      "Missing class theme-name inside theme-list-main anchor card",
+      "Anime title missing",
+    ),
+    { title: "測試動畫第二季" },
   ),
 ];
 
