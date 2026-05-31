@@ -1,13 +1,14 @@
 import type { Meta, StoryObj } from "@storybook/react";
 import App from "./App";
 import { ServiceProvider } from "./contexts/ServiceContext";
-import { type AnimeItem, type ScraperResult } from "./types/anime";
+import { type AnimeItem, type ScanEvent } from "./types/anime";
 import {
   ScraperHttpError,
   ScraperParseError,
   ScraperErrorSource,
 } from "./errors";
 import { ScraperService } from "./services/scraper";
+import { Observable, of } from "rxjs";
 
 // Helper to create sample anime items
 const createMockAnime = (overrides: Partial<AnimeItem> = {}): AnimeItem => ({
@@ -39,48 +40,52 @@ const mockScraperService = {
       description: "Mock details",
     };
   },
-  scanAllWithPipeline: async (
-    _totalPages: number,
-    _pageConcurrency: number,
-    _detailConcurrency: number,
-    _filterItem: (item: AnimeItem) => boolean,
-    onProgress: (
-      pagesCompleted: number,
-      pagesTotal: number,
-      detailsCompleted: number,
-      detailsTotal: number,
-      currentTitle?: string,
-    ) => void,
-  ): Promise<ScraperResult> => {
-    const titles = [
-      "葬送的芙莉蓮",
-      "動漫瘋熱門新作",
-      "極高評分動畫",
-      "神作續篇",
-    ];
-
-    // Simulate pipeline scanning with step-by-step progress callbacks
-    for (let isStep = 1; isStep <= 4; isStep++) {
-      await new Promise((resolve) => setTimeout(resolve, 500));
-      onProgress(isStep, 4, isStep * 2, 8, titles[isStep - 1]);
-    }
-
-    return {
-      items: [
-        createMockAnime({
-          title: "葬送的芙莉蓮",
-          score: 4.9,
-          link: "https://ani.gamer.com.tw/anime.php?sn=1",
-        }),
-        createMockAnime({
-          title: "動漫瘋熱門新作",
-          score: 4.8,
-          link: "https://ani.gamer.com.tw/anime.php?sn=2",
-        }),
-      ],
-      httpErrors: [],
-      parseErrors: [],
-    };
+  scanAllWithPipeline: (): Observable<ScanEvent> => {
+    return new Observable((subscriber) => {
+      let isCancelled = false;
+      const run = async () => {
+        const titles = [
+          "葬送的芙莉蓮",
+          "動漫瘋熱門新作",
+          "極高評分動畫",
+          "神作續篇",
+        ];
+        for (let isStep = 1; isStep <= 4; isStep++) {
+          if (isCancelled) return;
+          await new Promise((resolve) => setTimeout(resolve, 300));
+          subscriber.next({ type: "page_completed" });
+          subscriber.next({
+            type: "detail_completed",
+            title: titles[isStep - 1],
+          });
+        }
+        if (isCancelled) return;
+        subscriber.next({
+          type: "completed",
+          result: {
+            items: [
+              createMockAnime({
+                title: "葬送的芙莉蓮",
+                score: 4.9,
+                link: "https://ani.gamer.com.tw/anime.php?sn=1",
+              }),
+              createMockAnime({
+                title: "動漫瘋熱門新作",
+                score: 4.8,
+                link: "https://ani.gamer.com.tw/anime.php?sn=2",
+              }),
+            ],
+            httpErrors: [],
+            parseErrors: [],
+          },
+        });
+        subscriber.complete();
+      };
+      run();
+      return () => {
+        isCancelled = true;
+      };
+    });
   },
 };
 
@@ -195,25 +200,31 @@ export const WithScanErrors: Story = {
     // We override ScraperService to return errors for this specific story
     const mockScraperServiceWithErrors = {
       ...mockScraperService,
-      scanAllWithPipeline: async (): Promise<ScraperResult> => {
-        return {
-          items: [createMockAnime({ title: "部分解析成功的動畫", score: 4.9 })],
-          httpErrors: [
-            new ScraperHttpError(
-              "https://ani.gamer.com.tw/animeList.php?page=2",
-              "HTTP 502 Bad Gateway",
-              502,
-            ),
-          ],
-          parseErrors: [
-            new ScraperParseError(
-              ScraperErrorSource.TITLE,
-              "https://ani.gamer.com.tw/animeVideo.php?sn=999",
-              "Missing title tag",
-              "Could not parse title",
-            ),
-          ],
-        };
+      getTotalPages: async () => 1,
+      scanAllWithPipeline: (): Observable<ScanEvent> => {
+        return of({
+          type: "completed",
+          result: {
+            items: [
+              createMockAnime({ title: "部分解析成功的動畫", score: 4.9 }),
+            ],
+            httpErrors: [
+              new ScraperHttpError(
+                "https://ani.gamer.com.tw/animeList.php?page=2",
+                "HTTP 502 Bad Gateway",
+                502,
+              ),
+            ],
+            parseErrors: [
+              new ScraperParseError(
+                ScraperErrorSource.TITLE,
+                "https://ani.gamer.com.tw/animeVideo.php?sn=999",
+                "Missing title tag",
+                "Could not parse title",
+              ),
+            ],
+          },
+        });
       },
     };
 
@@ -234,5 +245,15 @@ export const WithScanErrors: Story = {
         </div>
       </ServiceProvider>
     );
+  },
+  play: async ({ canvasElement }) => {
+    // Wait a tiny bit for the component to mount, then click the scan button
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    const scanBtn = Array.from(canvasElement.querySelectorAll("button")).find(
+      (btn) => btn.textContent?.includes("Scan"),
+    );
+    if (scanBtn) {
+      (scanBtn as HTMLButtonElement).click();
+    }
   },
 };

@@ -12,8 +12,6 @@ const meta: Meta<typeof ErrorsPanel> = {
       <div
         style={{
           width: "600px",
-          height: "450px",
-          overflowY: "auto",
           border: "1px solid #333",
           background: "#1e1e1e",
           padding: "20px",
