@@ -1,4 +1,4 @@
-import { ScraperHttpError, ScraperParseError } from "../errors";
+import type { ScraperHttpError, ScraperParseError } from "../services/scraper";
 import { type Result } from "./result";
 import { z } from "zod";
 import { type Observable } from "rxjs";

@@ -3,7 +3,7 @@ import {
   ScraperError,
   ScraperHttpError,
   ScraperParseError,
-} from "../../errors";
+} from "../../services/scraper";
 import { ErrorCard } from "../ErrorCard/ErrorCard";
 import styles from "./ErrorPanel.module.css";
 

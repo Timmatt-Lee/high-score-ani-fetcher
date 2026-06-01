@@ -1,12 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { scraperService } from "./scraper";
-import {
-  ScraperScanStep,
-  ScraperHttpError,
-  ScraperParseError,
-} from "../errors";
-import { type AnimeItem, type ScraperResult } from "../types/anime";
-import { isError } from "../types/result";
+import { ScraperScanStep, ScraperHttpError, ScraperParseError } from "./index";
+import { type AnimeItem, type ScraperResult } from "../../types/anime";
+import { isError } from "../../types/result";
 
 // --- Helpers ---
 const makeHtml = (content: string) => `<html><body>${content}</body></html>`;
@@ -86,7 +82,7 @@ describe("scraperService.getTotalPages", () => {
     if (isError(result)) {
       expect(result).toBeInstanceOf(ScraperHttpError);
       expect((result as ScraperHttpError).status).toBe(404);
-      expect((result as ScraperHttpError).rawHtml).toBe("Error Page");
+      expect((result as ScraperHttpError).html).toBe("Error Page");
     }
   });
 
@@ -96,7 +92,7 @@ describe("scraperService.getTotalPages", () => {
     expect(isError(result)).toBe(true);
     if (isError(result)) {
       expect(result).toBeInstanceOf(ScraperHttpError);
-      expect((result as ScraperHttpError).rawHtml).toBe("network");
+      expect((result as ScraperHttpError).html).toBe("network");
     }
   });
 
@@ -106,12 +102,19 @@ describe("scraperService.getTotalPages", () => {
     expect(isError(result)).toBe(true);
     if (isError(result)) {
       expect(result).toBeInstanceOf(ScraperHttpError);
-      expect((result as ScraperHttpError).rawHtml).toBe("network string error");
+      expect((result as ScraperHttpError).html).toBe("network string error");
     }
   });
 
   it("passes through ScraperHttpError from fetchText in getTotalPages", async () => {
-    const error = new ScraperHttpError(1, "http://x", "fail", 502);
+    const error = new ScraperHttpError(
+      1,
+      ScraperScanStep.PAGINATION,
+      "http://x",
+      "fail",
+      502,
+      undefined,
+    );
     vi.spyOn(
       scraperService as unknown as {
         fetchText: (url: string) => Promise<unknown>;
@@ -259,7 +262,14 @@ describe("scraperService.scrapeListPage", () => {
   });
 
   it("returns error when fetchText fails in scrapeListPage", async () => {
-    const error = new ScraperHttpError(1, "http://x", "fail", 404);
+    const error = new ScraperHttpError(
+      1,
+      ScraperScanStep.PAGINATION,
+      "http://x",
+      "fail",
+      404,
+      undefined,
+    );
     vi.spyOn(
       scraperService as unknown as {
         fetchText: (url: string) => Promise<unknown>;
@@ -486,7 +496,14 @@ describe("scraperService.scrapeAnimeDetails", () => {
   });
 
   it("passes through ScraperHttpError from fetchText in scrapeAnimeDetails", async () => {
-    const error = new ScraperHttpError(1, "http://x", "fail", 404);
+    const error = new ScraperHttpError(
+      1,
+      ScraperScanStep.PAGINATION,
+      "http://x",
+      "fail",
+      404,
+      undefined,
+    );
     vi.spyOn(
       scraperService as unknown as {
         fetchText: (url: string) => Promise<unknown>;

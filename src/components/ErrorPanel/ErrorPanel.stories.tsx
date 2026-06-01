@@ -1,7 +1,10 @@
 import type { Meta, StoryObj } from "@storybook/react";
 import { ErrorPanel } from "./ErrorPanel";
-import { ScraperHttpError, ScraperParseError } from "../../errors";
-import { ScraperScanStep } from "../../errors/scraper-scan-step";
+import {
+  ScraperHttpError,
+  ScraperParseError,
+  ScraperScanStep,
+} from "../../services/scraper";
 
 const meta: Meta<typeof ErrorPanel> = {
   title: "Components/ErrorPanel",
@@ -28,6 +31,7 @@ type Story = StoryObj<typeof ErrorPanel>;
 const sampleHttpErrors = [
   new ScraperHttpError(
     2,
+    ScraperScanStep.PAGINATION,
     "https://ani.gamer.com.tw/animeList.php?page=2",
     "Internal Server Error",
     500,
@@ -35,9 +39,11 @@ const sampleHttpErrors = [
   ),
   new ScraperHttpError(
     5,
+    ScraperScanStep.PAGINATION,
     "https://ani.gamer.com.tw/animeList.php?page=5",
     "Bad Gateway",
     502,
+    undefined,
   ),
 ];
 

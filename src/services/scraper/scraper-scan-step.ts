@@ -10,5 +10,4 @@ export enum ScraperScanStep {
   SCORE,
   RATING_COUNT,
   DESCRIPTION,
-  SYSTEM,
 }

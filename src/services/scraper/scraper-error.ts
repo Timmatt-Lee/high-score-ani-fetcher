@@ -29,15 +29,15 @@ export abstract class ScraperError extends Error {
  */
 export class ScraperHttpError extends ScraperError {
   status: number;
-  rawHtml: string;
+  html: string;
 
   constructor(
     page: number,
+    scanStep: ScraperScanStep,
     url: string,
-    rawHtml: string,
-    status: number = 500,
-    animeName?: string,
-    scanStep: ScraperScanStep = ScraperScanStep.PAGINATION,
+    html: string,
+    status: number,
+    animeName: string | undefined,
   ) {
     super(
       `HTTP request failed with status ${status} (URL: ${url})`,
@@ -48,7 +48,7 @@ export class ScraperHttpError extends ScraperError {
     );
     this.name = "ScraperHttpError";
     this.status = status;
-    this.rawHtml = rawHtml;
+    this.html = html;
   }
 }
 
@@ -56,13 +56,13 @@ export class ScraperHttpError extends ScraperError {
  * Represents failures during document parsing (e.g. missing elements, malformed text).
  */
 export class ScraperParseError extends ScraperError {
-  rawHtml: string;
+  html: string;
 
   constructor(
     page: number,
     scanStep: ScraperScanStep,
     url: string,
-    rawHtml: string,
+    html: string,
     message?: string,
     animeName?: string,
   ) {
@@ -74,7 +74,7 @@ export class ScraperParseError extends ScraperError {
       animeName,
     );
     this.name = "ScraperParseError";
-    this.rawHtml = rawHtml;
+    this.html = html;
   }
 }
 
@@ -82,8 +82,14 @@ export class ScraperParseError extends ScraperError {
  * Represents unexpected runtime errors that occurred during scraping.
  */
 export class ScraperUnknownError extends ScraperError {
-  constructor(causeError: Error) {
-    super(causeError.message, 1, ScraperScanStep.SYSTEM, "unknown");
+  constructor(
+    causeError: Error,
+    page: number,
+    scanStep: ScraperScanStep,
+    url: string,
+    animeName: string | undefined,
+  ) {
+    super(causeError.message, page, scanStep, url, animeName);
     this.name = "ScraperUnknownError";
     this.stack = causeError.stack;
   }

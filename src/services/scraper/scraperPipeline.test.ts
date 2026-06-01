@@ -5,12 +5,13 @@ import {
   type AnimeDetails,
   type ScraperResult,
   type ScanEvent,
-} from "../types/anime";
+} from "../../types/anime";
 import {
   ScraperHttpError,
   ScraperParseError,
   ScraperScanStep,
-} from "../errors";
+  ScraperUnknownError,
+} from "./index";
 
 const runPipeline = (pipeline: ScraperPipeline) => {
   return new Promise<{ events: ScanEvent[]; result: ScraperResult }>(
@@ -101,8 +102,22 @@ describe("ScraperPipeline", () => {
     const listSpy = vi.fn();
     const detailSpy = vi.fn();
 
-    const pageError = new ScraperHttpError(1, "http://page1", "fail", 404);
-    const detailError = new ScraperHttpError(1, "http://a", "fail", 500);
+    const pageError = new ScraperHttpError(
+      1,
+      ScraperScanStep.PAGINATION,
+      "http://page1",
+      "fail",
+      404,
+      undefined,
+    );
+    const detailError = new ScraperHttpError(
+      1,
+      ScraperScanStep.PAGINATION,
+      "http://a",
+      "fail",
+      500,
+      undefined,
+    );
 
     listSpy.mockResolvedValueOnce({
       items: [{ link: "http://a", title: "A" } as AnimeItem],
@@ -132,7 +147,14 @@ describe("ScraperPipeline", () => {
     const listSpy = vi.fn();
     const detailSpy = vi.fn();
 
-    const error = new ScraperHttpError(1, "http://a", "fail", 500);
+    const error = new ScraperHttpError(
+      1,
+      ScraperScanStep.PAGINATION,
+      "http://a",
+      "fail",
+      500,
+      undefined,
+    );
 
     listSpy.mockResolvedValueOnce({
       items: [{ link: "http://a", title: "A" } as AnimeItem],
@@ -297,5 +319,216 @@ describe("ScraperPipeline", () => {
     expect(detailSpy).toHaveBeenCalledWith("http://failedDetail", undefined);
     expect(detailSpy).toHaveBeenCalledWith("http://newPageItem", 3);
     expect(result.items).toHaveLength(2);
+  });
+
+  it("emits ScraperUnknownError when fetchPage throws unexpected error", async () => {
+    const listSpy = vi.fn().mockRejectedValue(new Error("fetch page crashed"));
+    const pipeline = new ScraperPipeline(1, 1, 1, () => true, {
+      getTotalPages: vi.fn(),
+      scrapeListPage: listSpy,
+      scrapeAnimeDetails: vi.fn(),
+      scanAllWithPipeline: vi.fn(),
+    });
+
+    const runPromise = new Promise<void>((resolve, reject) => {
+      pipeline.execute().subscribe({
+        next: () => {},
+        error: (err) => {
+          expect(err).toBeInstanceOf(ScraperUnknownError);
+          expect(err.message).toBe("fetch page crashed");
+          expect(err.scanStep).toBe(ScraperScanStep.PAGINATION);
+          expect(err.url).toBe("https://ani.gamer.com.tw/animeList.php?page=1");
+          resolve();
+        },
+        complete: () => {
+          reject(new Error("Should not complete"));
+        },
+      });
+    });
+    await runPromise;
+  });
+
+  it("emits ScraperUnknownError when fetchDetail throws unexpected error", async () => {
+    const listSpy = vi.fn().mockResolvedValue({
+      items: [{ link: "http://a", title: "A" } as AnimeItem],
+      httpErrors: [],
+      parseErrors: [],
+    });
+    const detailSpy = vi
+      .fn()
+      .mockRejectedValue(new Error("fetch detail crashed"));
+    const pipeline = new ScraperPipeline(1, 1, 1, () => true, {
+      getTotalPages: vi.fn(),
+      scrapeListPage: listSpy,
+      scrapeAnimeDetails: detailSpy,
+      scanAllWithPipeline: vi.fn(),
+    });
+
+    const runPromise = new Promise<void>((resolve, reject) => {
+      pipeline.execute().subscribe({
+        next: () => {},
+        error: (err) => {
+          expect(err).toBeInstanceOf(ScraperUnknownError);
+          expect(err.message).toBe("fetch detail crashed");
+          expect(err.scanStep).toBe(ScraperScanStep.TITLE);
+          expect(err.url).toBe("http://a");
+          expect(err.animeName).toBe("A");
+          resolve();
+        },
+        complete: () => {
+          reject(new Error("Should not complete"));
+        },
+      });
+    });
+    await runPromise;
+  });
+
+  it("emits error when queueing page task throws synchronously", async () => {
+    const pipeline = new ScraperPipeline(1, 1, 1, () => true, {
+      getTotalPages: vi.fn(),
+      scrapeListPage: vi.fn(),
+      scrapeAnimeDetails: vi.fn(),
+      scanAllWithPipeline: vi.fn(),
+    });
+    vi.spyOn(pipeline["pageQueue"], "add").mockImplementation(() => {
+      throw new Error("sync queue error");
+    });
+
+    const runPromise = new Promise<void>((resolve, reject) => {
+      pipeline.execute().subscribe({
+        next: () => {},
+        error: (err) => {
+          try {
+            expect(err.message).toBe("sync queue error");
+            resolve();
+          } catch (e) {
+            reject(e);
+          }
+        },
+        complete: () => {
+          reject(new Error("Should not complete"));
+        },
+      });
+    });
+    await runPromise;
+  });
+
+  it("emits string error when queueing page task throws string synchronously", async () => {
+    const pipeline = new ScraperPipeline(1, 1, 1, () => true, {
+      getTotalPages: vi.fn(),
+      scrapeListPage: vi.fn(),
+      scrapeAnimeDetails: vi.fn(),
+      scanAllWithPipeline: vi.fn(),
+    });
+    vi.spyOn(pipeline["pageQueue"], "add").mockImplementation(() => {
+      throw "sync string queue error";
+    });
+
+    const runPromise = new Promise<void>((resolve, reject) => {
+      pipeline.execute().subscribe({
+        next: () => {},
+        error: (err) => {
+          try {
+            expect(err).toBeInstanceOf(Error);
+            expect(err.message).toBe("sync string queue error");
+            resolve();
+          } catch (e) {
+            reject(e);
+          }
+        },
+        complete: () => {
+          reject(new Error("Should not complete"));
+        },
+      });
+    });
+    await runPromise;
+  });
+
+  it("emits ScraperUnknownError with fallback page when fetchDetail with undefined page throws unexpected error", async () => {
+    const listSpy = vi.fn().mockResolvedValue({
+      items: [],
+      httpErrors: [],
+      parseErrors: [],
+    });
+    const detailSpy = vi
+      .fn()
+      .mockRejectedValue(new Error("retry detail crashed"));
+    const failedDetail = {
+      link: "http://failedDetail",
+      title: "Failed Detail",
+    } as AnimeItem;
+
+    const pipeline = new ScraperPipeline(
+      1,
+      1,
+      1,
+      () => true,
+      {
+        getTotalPages: vi.fn(),
+        scrapeListPage: listSpy,
+        scrapeAnimeDetails: detailSpy,
+        scanAllWithPipeline: vi.fn(),
+      },
+      {
+        failedDetails: [failedDetail],
+      },
+    );
+
+    const runPromise = new Promise<void>((resolve, reject) => {
+      pipeline.execute().subscribe({
+        next: () => {},
+        error: (err) => {
+          try {
+            expect(err).toBeInstanceOf(ScraperUnknownError);
+            expect(err.message).toBe("retry detail crashed");
+            expect(err.page).toBe(1);
+            expect(err.scanStep).toBe(ScraperScanStep.TITLE);
+            expect(err.url).toBe("http://failedDetail");
+            expect(err.animeName).toBe("Failed Detail");
+            resolve();
+          } catch (e) {
+            reject(e);
+          }
+        },
+        complete: () => {
+          reject(new Error("Should not complete"));
+        },
+      });
+    });
+    await runPromise;
+  });
+
+  it("emits ScraperUnknownError with string error when fetchDetail throws unexpected string error", async () => {
+    const listSpy = vi.fn().mockResolvedValue({
+      items: [{ link: "http://a", title: "A" } as AnimeItem],
+      httpErrors: [],
+      parseErrors: [],
+    });
+    const detailSpy = vi.fn().mockRejectedValue("detail string crash");
+    const pipeline = new ScraperPipeline(1, 1, 1, () => true, {
+      getTotalPages: vi.fn(),
+      scrapeListPage: listSpy,
+      scrapeAnimeDetails: detailSpy,
+      scanAllWithPipeline: vi.fn(),
+    });
+
+    const runPromise = new Promise<void>((resolve, reject) => {
+      pipeline.execute().subscribe({
+        next: () => {},
+        error: (err) => {
+          try {
+            expect(err).toBeInstanceOf(ScraperUnknownError);
+            expect(err.message).toBe("detail string crash");
+            resolve();
+          } catch (e) {
+            reject(e);
+          }
+        },
+        complete: () => {
+          reject(new Error("Should not complete"));
+        },
+      });
+    });
+    await runPromise;
   });
 });

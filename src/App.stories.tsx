@@ -6,8 +6,12 @@ import {
   type ScanEvent,
   type PipelineOptions,
 } from "./types/anime";
-import { ScraperHttpError, ScraperParseError, ScraperScanStep } from "./errors";
-import { ScraperService } from "./services/scraper";
+import {
+  ScraperHttpError,
+  ScraperParseError,
+  ScraperScanStep,
+  ScraperService,
+} from "./services/scraper";
 import { Observable } from "rxjs";
 
 // Helper to create sample anime items
@@ -248,9 +252,11 @@ export const WithScanErrors: Story = {
                   Object.assign(
                     new ScraperHttpError(
                       2,
+                      ScraperScanStep.PAGINATION,
                       "https://ani.gamer.com.tw/animeList.php?page=2",
                       "",
                       502,
+                      undefined,
                     ),
                     { animeName: "某個好看但部分章節損壞的番" },
                   ),
@@ -386,9 +392,11 @@ export const WithError: Story = {
       getTotalPages: async () => {
         return new ScraperHttpError(
           1,
+          ScraperScanStep.PAGINATION,
           "https://ani.gamer.com.tw/animeList.php",
           "",
           500,
+          undefined,
         );
       },
     };

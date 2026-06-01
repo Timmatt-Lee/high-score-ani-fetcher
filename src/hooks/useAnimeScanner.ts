@@ -10,7 +10,8 @@ import {
   ScraperParseError,
   ScraperUnknownError,
   ScraperError,
-} from "../errors";
+  ScraperScanStep,
+} from "../services/scraper";
 import { isError } from "../types/result";
 
 export function useAnimeScanner(
@@ -62,7 +63,15 @@ export function useAnimeScanner(
         } else if (error instanceof ScraperUnknownError) {
           setError(error);
         } else {
-          setError(new ScraperUnknownError(error));
+          setError(
+            new ScraperUnknownError(
+              error,
+              1,
+              ScraperScanStep.PAGINATION,
+              "https://ani.gamer.com.tw/animeList.php?page=1",
+              undefined,
+            ),
+          );
         }
         setIsScanning(false);
         setProgress({ percent: 0, message: "" });
@@ -214,7 +223,19 @@ export function useAnimeScanner(
         },
         error: (err: unknown) => {
           const error = err instanceof Error ? err : new Error(String(err));
-          setError(new ScraperUnknownError(error));
+          if (error instanceof ScraperError) {
+            setError(error);
+          } else {
+            setError(
+              new ScraperUnknownError(
+                error,
+                1,
+                ScraperScanStep.PAGINATION,
+                "unknown",
+                undefined,
+              ),
+            );
+          }
           setIsScanning(false);
           setProgress({ percent: 0, message: "" });
         },

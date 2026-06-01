@@ -14,7 +14,11 @@ import {
   type ScraperResult,
   type ScanEvent,
 } from "./types/anime";
-import { ScraperHttpError, ScraperParseError, ScraperScanStep } from "./errors";
+import {
+  ScraperHttpError,
+  ScraperParseError,
+  ScraperScanStep,
+} from "./services/scraper";
 import { Observable, Subject } from "rxjs";
 
 function createMockObservable(
@@ -659,9 +663,11 @@ describe("Scan functionality", () => {
     const anime = makeAnime({ title: "Partial Success", score: 9.0 });
     const mockError = new ScraperHttpError(
       1,
+      ScraperScanStep.PAGINATION,
       "https://ani.gamer.com.tw/animeList.php?page=1",
       "HTTP 502",
       502,
+      undefined,
     );
 
     vi.spyOn(scraperService, "getTotalPages").mockResolvedValue(2);
@@ -700,9 +706,11 @@ describe("Scan functionality", () => {
       (_, i) =>
         new ScraperHttpError(
           i + 1,
+          ScraperScanStep.PAGINATION,
           `https://ani.gamer.com.tw/animeList.php?page=${i + 1}`,
           `Error ${i}`,
           500,
+          undefined,
         ),
     );
 
@@ -736,9 +744,11 @@ describe("Scan functionality", () => {
   it("renders fatal error screen when scan fails", async () => {
     const fatalErr = new ScraperHttpError(
       1,
+      ScraperScanStep.PAGINATION,
       "https://ani.gamer.com.tw/error",
       "Bad Request",
       400,
+      undefined,
     );
     const spy = vi
       .spyOn(scraperService, "getTotalPages")
@@ -771,9 +781,11 @@ describe("Scan functionality", () => {
     const anime = makeAnime({ title: "Partial Success", score: 9.0 });
     const error = new ScraperHttpError(
       1,
+      ScraperScanStep.PAGINATION,
       "https://ani.gamer.com.tw/animeList.php?page=1",
       "fail",
       500,
+      undefined,
     );
 
     vi.spyOn(scraperService, "getTotalPages").mockResolvedValue(1);
@@ -804,9 +816,11 @@ describe("Scan functionality", () => {
 
     const errorNoPage = new ScraperHttpError(
       0,
+      ScraperScanStep.PAGINATION,
       "https://ani.gamer.com.tw/anime.php",
       "fail no page",
       500,
+      undefined,
     );
 
     // First scan yields error

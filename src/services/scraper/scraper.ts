@@ -5,13 +5,10 @@ import {
   type AnimeScraper,
   type ScanEvent,
   type PipelineOptions,
-} from "../types/anime";
-import { type Result, isError } from "../types/result";
-import {
-  ScraperScanStep,
-  ScraperHttpError,
-  ScraperParseError,
-} from "../errors";
+} from "../../types/anime";
+import { type Result, isError } from "../../types/result";
+import { ScraperScanStep } from "./scraper-scan-step";
+import { ScraperHttpError, ScraperParseError } from "./scraper-error";
 import { ScraperPipeline } from "./scraperPipeline";
 import { type Observable } from "rxjs";
 
@@ -35,22 +32,22 @@ export class ScraperService implements AnimeScraper {
         }
         return new ScraperHttpError(
           page,
+          scanStep,
           url,
           snippet,
           response.status,
           undefined,
-          scanStep,
         );
       }
       return await response.text();
     } catch (err) {
       return new ScraperHttpError(
         page,
+        scanStep,
         url,
         err instanceof Error ? err.message : String(err),
         500,
         undefined,
-        scanStep,
       );
     }
   }

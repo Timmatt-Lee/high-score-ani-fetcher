@@ -13,7 +13,7 @@ import {
   ScraperParseError,
   ScraperScanStep,
   ScraperUnknownError,
-} from "../errors";
+} from "../services/scraper";
 import { Observable } from "rxjs";
 
 const makeAnime = (title: string): AnimeItem => ({
@@ -152,7 +152,14 @@ describe("useAnimeScanner", () => {
 
   it("handles scan failure gracefully", async () => {
     vi.spyOn(scraperService, "getTotalPages").mockResolvedValue(
-      new ScraperHttpError(1, "", "network down", 500),
+      new ScraperHttpError(
+        1,
+        ScraperScanStep.PAGINATION,
+        "",
+        "network down",
+        500,
+        undefined,
+      ),
     );
 
     const onComplete = vi.fn();
@@ -309,9 +316,11 @@ describe("useAnimeScanner", () => {
     );
     const detailError = new ScraperHttpError(
       1,
+      ScraperScanStep.PAGINATION,
       "http://err-detail",
       "Detail error",
       404,
+      undefined,
     );
 
     vi.spyOn(scraperService, "getTotalPages").mockResolvedValue(1);
@@ -356,7 +365,14 @@ describe("useAnimeScanner", () => {
   });
 
   it("handles ScraperHttpError scan failure in catch block", async () => {
-    const error = new ScraperHttpError(1, "http://err", "Failed page", 500);
+    const error = new ScraperHttpError(
+      1,
+      ScraperScanStep.PAGINATION,
+      "http://err",
+      "Failed page",
+      500,
+      undefined,
+    );
     vi.spyOn(scraperService, "getTotalPages").mockResolvedValue(error);
 
     const onComplete = vi.fn();
@@ -448,6 +464,10 @@ describe("useAnimeScanner", () => {
   it("sets error directly without double wrapping when getTotalPages fails with ScraperUnknownError", async () => {
     const error = new ScraperUnknownError(
       new Error("pre-wrapped unknown error"),
+      1,
+      ScraperScanStep.PAGINATION,
+      "unknown",
+      undefined,
     );
     vi.spyOn(scraperService, "getTotalPages").mockResolvedValue(
       error as unknown as ScraperHttpError,
@@ -469,7 +489,14 @@ describe("useAnimeScanner", () => {
   });
 
   it("clears error when clearError is called", async () => {
-    const error = new ScraperHttpError(1, "http://err", "Failed", 500);
+    const error = new ScraperHttpError(
+      1,
+      ScraperScanStep.PAGINATION,
+      "http://err",
+      "Failed",
+      500,
+      undefined,
+    );
     vi.spyOn(scraperService, "getTotalPages").mockResolvedValue(error);
 
     const onComplete = vi.fn();
@@ -494,7 +521,14 @@ describe("useAnimeScanner", () => {
   });
 
   it("clears error when a new scan starts", async () => {
-    const error = new ScraperHttpError(1, "http://err", "Failed", 500);
+    const error = new ScraperHttpError(
+      1,
+      ScraperScanStep.PAGINATION,
+      "http://err",
+      "Failed",
+      500,
+      undefined,
+    );
     vi.spyOn(scraperService, "getTotalPages")
       .mockResolvedValueOnce(error)
       .mockResolvedValueOnce(1);
@@ -838,5 +872,35 @@ describe("useAnimeScanner", () => {
       expect.any(Function),
       { failedDetails: [detailItem] },
     );
+  });
+
+  it("handles pipeline ScraperUnknownError during scanning by setting it directly", async () => {
+    const error = new ScraperUnknownError(
+      new Error("pipeline crash"),
+      1,
+      ScraperScanStep.PAGINATION,
+      "http://some-url",
+      undefined,
+    );
+    vi.spyOn(scraperService, "getTotalPages").mockResolvedValue(1);
+    vi.spyOn(scraperService, "scanAllWithPipeline").mockImplementation(() => {
+      return new Observable((subscriber) => {
+        subscriber.error(error);
+      });
+    });
+
+    const onComplete = vi.fn();
+    const { result } = renderHook(
+      () => useAnimeScanner([], [], [], onComplete),
+      {
+        wrapper: ServiceProvider,
+      },
+    );
+
+    await act(async () => {
+      await result.current.handleScan();
+    });
+
+    expect(result.current.error).toBe(error);
   });
 });

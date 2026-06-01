@@ -3,8 +3,8 @@ import {
   ScraperHttpError,
   ScraperParseError,
   ScraperError,
-} from "../../errors";
-import { ScraperScanStep } from "../../errors/scraper-scan-step";
+  ScraperScanStep,
+} from "../../services/scraper";
 import styles from "./ErrorCard.module.css";
 
 interface ErrorCardProps {
@@ -29,8 +29,6 @@ const getParseStepLabel = (step: ScraperScanStep) => {
       return "parsing Rating Count";
     case ScraperScanStep.DESCRIPTION:
       return "parsing Description";
-    case ScraperScanStep.SYSTEM:
-      return undefined;
     default:
       return "parsing";
   }
@@ -50,9 +48,7 @@ export function ErrorCard({ error }: ErrorCardProps) {
   const suffixStr =
     error instanceof ScraperHttpError
       ? `Status: ${error.status}`
-      : scanStepLabel
-        ? `When doing: ${scanStepLabel}`
-        : undefined;
+      : `When doing: ${scanStepLabel}`;
 
   const fallbackTitle =
     error instanceof ScraperHttpError

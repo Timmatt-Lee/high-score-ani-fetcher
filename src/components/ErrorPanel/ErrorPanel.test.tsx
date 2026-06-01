@@ -5,13 +5,14 @@ import {
   ScraperHttpError,
   ScraperParseError,
   ScraperUnknownError,
-} from "../../errors";
-import { ScraperScanStep } from "../../errors/scraper-scan-step";
+  ScraperScanStep,
+} from "../../services/scraper";
 
 describe("ErrorPanel", () => {
   const sampleErrors = [
     new ScraperHttpError(
       2,
+      ScraperScanStep.PAGINATION,
       "https://ani.gamer.com.tw/animeList.php?page=2",
       "Error html",
       502,
@@ -110,7 +111,13 @@ describe("ErrorPanel", () => {
   });
 
   it("renders generic/unknown errors with default title and empty message", () => {
-    const error = new ScraperUnknownError(new Error("Fatal"));
+    const error = new ScraperUnknownError(
+      new Error("Fatal"),
+      1,
+      ScraperScanStep.PAGINATION,
+      "unknown",
+      undefined,
+    );
     const { rerender } = render(
       <ErrorPanel
         errorClass={ScraperUnknownError}

@@ -6,7 +6,7 @@ import { ProgressBar } from "./components/ProgressBar";
 import { Tabs, Tab } from "./components/Tabs";
 import { ErrorPanel } from "./components/ErrorPanel/ErrorPanel";
 import { ErrorCard } from "./components/ErrorCard/ErrorCard";
-import { ScraperHttpError, ScraperParseError } from "./errors";
+import { ScraperHttpError, ScraperParseError } from "./services/scraper";
 import styles from "./App.module.css";
 import "./index.css";
 

@@ -6,8 +6,8 @@ import {
   ScraperHttpError,
   ScraperParseError,
   ScraperUnknownError,
-} from "../../errors";
-import { ScraperScanStep } from "../../errors/scraper-scan-step";
+  ScraperScanStep,
+} from "../../services/scraper";
 
 describe("ErrorCard", () => {
   const writeTextMock = vi.fn();
@@ -25,6 +25,7 @@ describe("ErrorCard", () => {
   it("renders HTTP error with title correctly", () => {
     const error = new ScraperHttpError(
       2,
+      ScraperScanStep.PAGINATION,
       "https://ani.gamer.com.tw/animeList.php?page=2",
       "HTTP 500",
       500,
@@ -47,9 +48,11 @@ describe("ErrorCard", () => {
   it("renders HTTP error without title correctly", () => {
     const error = new ScraperHttpError(
       3,
+      ScraperScanStep.PAGINATION,
       "https://ani.gamer.com.tw/animeList.php?page=3",
       "HTTP 502",
       502,
+      undefined,
     );
 
     render(<ErrorCard error={error} />);
@@ -144,7 +147,13 @@ describe("ErrorCard", () => {
 
   it("renders Unknown/Fatal error and handles copy click", async () => {
     vi.useFakeTimers();
-    const error = new ScraperUnknownError(new Error("Fatal System Error"));
+    const error = new ScraperUnknownError(
+      new Error("Fatal System Error"),
+      1,
+      ScraperScanStep.PAGINATION,
+      "unknown",
+      undefined,
+    );
     writeTextMock.mockResolvedValue(undefined);
 
     render(<ErrorCard error={error} />);
@@ -176,7 +185,7 @@ describe("ErrorCard", () => {
   it("renders fallbackTitle using error.name when page, title, and other properties are missing", () => {
     class CustomError extends ScraperError {
       constructor() {
-        super("Custom msg", 0, ScraperScanStep.SYSTEM, "unknown");
+        super("Custom msg", 0, ScraperScanStep.PAGINATION, "unknown");
         this.name = "TestCustomError";
       }
     }
@@ -190,9 +199,11 @@ describe("ErrorCard", () => {
   it("handles copy failure gracefully", async () => {
     const error = new ScraperHttpError(
       1,
+      ScraperScanStep.PAGINATION,
       "https://ani.gamer.com.tw/animeList.php?page=1",
       "HTTP 404",
       404,
+      undefined,
     );
     const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
     writeTextMock.mockRejectedValue(new Error("Clipboard block"));
