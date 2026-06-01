@@ -251,8 +251,9 @@ export const WithScanErrors: Story = {
                 httpErrors: [
                   Object.assign(
                     new ScraperHttpError(
+                      2,
                       "https://ani.gamer.com.tw/animeList.php?page=2",
-                      "HTTP 502 Bad Gateway",
+                      "",
                       502,
                     ),
                     { title: "某個好看但部分章節損壞的番" },
@@ -261,10 +262,11 @@ export const WithScanErrors: Story = {
                 parseErrors: [
                   Object.assign(
                     new ScraperParseError(
+                      3,
                       ScraperErrorSource.TITLE,
                       "https://ani.gamer.com.tw/animeVideo.php?sn=999",
+                      "",
                       "Missing title tag",
-                      "Could not parse title",
                     ),
                     { title: "某個好看但部分章節損壞的番" },
                   ),
@@ -387,8 +389,9 @@ export const WithError: Story = {
       ...mockScraperService,
       getTotalPages: async () => {
         return new ScraperHttpError(
+          1,
           "https://ani.gamer.com.tw/animeList.php",
-          "Internal Server Error",
+          "",
           500,
         );
       },

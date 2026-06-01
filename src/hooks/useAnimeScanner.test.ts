@@ -152,7 +152,7 @@ describe("useAnimeScanner", () => {
 
   it("handles scan failure gracefully", async () => {
     vi.spyOn(scraperService, "getTotalPages").mockResolvedValue(
-      new ScraperHttpError("", "network down", 500),
+      new ScraperHttpError(1, "", "network down", 500),
     );
 
     const onComplete = vi.fn();
@@ -302,11 +302,13 @@ describe("useAnimeScanner", () => {
   it("aggregates errors from scanAllWithPipeline", async () => {
     const mockAnime1 = makeAnime("SuccessAnime");
     const pageError = new ScraperParseError(
+      1,
       ScraperErrorSource.TITLE,
       "http://err-page",
       "Page error",
     );
     const detailError = new ScraperHttpError(
+      1,
       "http://err-detail",
       "Detail error",
       404,
@@ -354,7 +356,7 @@ describe("useAnimeScanner", () => {
   });
 
   it("handles ScraperHttpError scan failure in catch block", async () => {
-    const error = new ScraperHttpError("http://err", "Failed page", 500);
+    const error = new ScraperHttpError(1, "http://err", "Failed page", 500);
     vi.spyOn(scraperService, "getTotalPages").mockResolvedValue(error);
 
     const onComplete = vi.fn();
@@ -374,6 +376,7 @@ describe("useAnimeScanner", () => {
 
   it("handles ScraperParseError scan failure in catch block", async () => {
     const error = new ScraperParseError(
+      1,
       ScraperErrorSource.TITLE,
       "http://err",
       "Failed page",
@@ -466,7 +469,7 @@ describe("useAnimeScanner", () => {
   });
 
   it("clears error when clearError is called", async () => {
-    const error = new ScraperHttpError("http://err", "Failed", 500);
+    const error = new ScraperHttpError(1, "http://err", "Failed", 500);
     vi.spyOn(scraperService, "getTotalPages").mockResolvedValue(error);
 
     const onComplete = vi.fn();
@@ -491,7 +494,7 @@ describe("useAnimeScanner", () => {
   });
 
   it("clears error when a new scan starts", async () => {
-    const error = new ScraperHttpError("http://err", "Failed", 500);
+    const error = new ScraperHttpError(1, "http://err", "Failed", 500);
     vi.spyOn(scraperService, "getTotalPages")
       .mockResolvedValueOnce(error)
       .mockResolvedValueOnce(1);

@@ -4,77 +4,76 @@ import {
   ScraperParseError,
   ScraperError,
 } from "../../errors";
+import { ScraperErrorSource } from "../../errors/scraper-error-source";
 import styles from "./ErrorCard.module.css";
 
 interface ErrorCardProps {
   error: ScraperError;
 }
 
+const getSourceLabel = (src?: ScraperErrorSource) => {
+  if (src === undefined) return undefined;
+  switch (src) {
+    case ScraperErrorSource.PAGINATION:
+      return "parsing Pagination";
+    case ScraperErrorSource.TITLE:
+      return "parsing Title";
+    case ScraperErrorSource.WATCH_COUNT:
+      return "parsing Watch Count";
+    case ScraperErrorSource.EPISODE_COUNT:
+      return "parsing Episode Count";
+    case ScraperErrorSource.UPLOAD_DATE:
+      return "parsing Upload Date";
+    case ScraperErrorSource.SCORE:
+      return "parsing Score";
+    case ScraperErrorSource.RATING_COUNT:
+      return "parsing Rating Count";
+    case ScraperErrorSource.DESCRIPTION:
+      return "parsing Description";
+    default:
+      return "parsing";
+  }
+};
+
 export function ErrorCard({ error }: ErrorCardProps) {
   const [isCopied, setIsCopied] = useState(false);
 
-  const getPageNumber = (url?: string) => {
-    if (!url) return undefined;
-    const match = url.match(/page=(\d+)/);
-    return match ? match[1] : undefined;
-  };
-
-  const page = getPageNumber(error.url);
   const title = error.title;
+  const pageStr =
+    (error instanceof ScraperHttpError || error instanceof ScraperParseError) &&
+    error.page
+      ? `Page: ${error.page}`
+      : undefined;
+  const sourceLabel = getSourceLabel(error.source);
 
-  const pageStr = page ? `Page: ${page}` : undefined;
   const suffixStr =
     error instanceof ScraperHttpError
       ? `Status: ${error.status}`
-      : error.source !== undefined
-        ? `Source: ${error.source}`
+      : sourceLabel
+        ? `When doing: ${sourceLabel}`
         : undefined;
 
-  const cardTitle =
-    title ||
-    pageStr ||
-    (error instanceof ScraperHttpError
-      ? "HTTP Error"
-      : error instanceof ScraperParseError
-        ? "Parser Error"
-        : error.name || "Error");
+  let fallbackTitle = "Error";
+  if (error instanceof ScraperHttpError) {
+    fallbackTitle = "HTTP Error";
+  } else if (error instanceof ScraperParseError) {
+    fallbackTitle = "Parser Error";
+  } else if (error.name) {
+    fallbackTitle = error.name;
+  }
+
+  const cardTitle = title || pageStr || fallbackTitle;
   const cardSubtitle = title
     ? [pageStr, suffixStr].filter(Boolean).join(", ")
     : suffixStr;
 
-  const getFormattedDetails = () => {
-    let details = `Error Type: ${error.name}\n`;
-    details += `Message: ${error.message}\n`;
-    if (error.url) {
-      details += `URL: ${error.url}\n`;
-    }
-    if (error instanceof ScraperHttpError) {
-      details += `Status Code: ${error.status}\n`;
-    }
-    if (error.source) {
-      details += `Source Component: ${error.source}\n`;
-    }
-    if (error.stack) {
-      details += `\nStack Trace:\n${error.stack.slice(0, 200)}\n`;
-    }
-    return details;
-  };
-
   const handleCopy = async () => {
     try {
-      await navigator.clipboard.writeText(getFormattedDetails());
+      await navigator.clipboard.writeText(error.toString());
       setIsCopied(true);
       setTimeout(() => setIsCopied(false), 2000);
-    } catch {
-      // fallback copy
-      try {
-        const text = error.toString();
-        await navigator.clipboard.writeText(text);
-        setIsCopied(true);
-        setTimeout(() => setIsCopied(false), 2000);
-      } catch (err) {
-        console.error("Failed to copy error details", err);
-      }
+    } catch (err) {
+      console.error("Failed to copy error details", err);
     }
   };
 

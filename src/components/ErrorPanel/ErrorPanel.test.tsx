@@ -1,11 +1,17 @@
 import { describe, it, expect } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
 import { ErrorPanel } from "./ErrorPanel";
-import { ScraperHttpError } from "../../errors";
+import {
+  ScraperHttpError,
+  ScraperParseError,
+  ScraperUnknownError,
+} from "../../errors";
+import { ScraperErrorSource } from "../../errors/scraper-error-source";
 
 describe("ErrorPanel", () => {
   const sampleErrors = [
     new ScraperHttpError(
+      2,
       "https://ani.gamer.com.tw/animeList.php?page=2",
       "Error html",
       502,
@@ -16,27 +22,23 @@ describe("ErrorPanel", () => {
   it("renders collapsed by default", () => {
     render(
       <ErrorPanel
-        title="HTTP Errors"
+        errorClass={ScraperHttpError}
         errors={sampleErrors}
-        emptyMessage="No errors."
-        defaultOpen={false}
-        testIdPrefix="http-errors"
+        isExpandedByDefault={false}
       />,
     );
 
     const group = screen.getByTestId("http-errors-group");
     expect(group.className).not.toContain("open");
-    expect(screen.getByText("HTTP Errors (1)")).toBeDefined();
+    expect(screen.getByText("HTTP Network Errors (1)")).toBeDefined();
   });
 
-  it("renders open when defaultOpen is true", () => {
+  it("renders open when isExpandedByDefault is true", () => {
     render(
       <ErrorPanel
-        title="HTTP Errors"
+        errorClass={ScraperHttpError}
         errors={sampleErrors}
-        emptyMessage="No errors."
-        defaultOpen={true}
-        testIdPrefix="http-errors"
+        isExpandedByDefault={true}
       />,
     );
 
@@ -47,11 +49,9 @@ describe("ErrorPanel", () => {
   it("toggles open state when header is clicked", () => {
     render(
       <ErrorPanel
-        title="HTTP Errors"
+        errorClass={ScraperHttpError}
         errors={sampleErrors}
-        emptyMessage="No errors."
-        defaultOpen={false}
-        testIdPrefix="http-errors"
+        isExpandedByDefault={false}
       />,
     );
 
@@ -70,11 +70,62 @@ describe("ErrorPanel", () => {
   it("displays empty message when errors list is empty", () => {
     render(
       <ErrorPanel
-        title="HTTP Errors"
+        errorClass={ScraperHttpError}
         errors={[]}
-        emptyMessage="No errors found."
-        defaultOpen={true}
-        testIdPrefix="http-errors"
+        isExpandedByDefault={true}
+      />,
+    );
+
+    expect(screen.getByText("No network errors.")).toBeDefined();
+  });
+
+  it("renders document parser errors with proper titles and empty message", () => {
+    const parseErr = new ScraperParseError(
+      3,
+      ScraperErrorSource.TITLE,
+      "https://ani.gamer.com.tw/animeList.php?page=3",
+      "Bad html",
+      "Parsing failed",
+    );
+
+    const { rerender } = render(
+      <ErrorPanel
+        errorClass={ScraperParseError}
+        errors={[parseErr]}
+        isExpandedByDefault={true}
+      />,
+    );
+
+    expect(screen.getByText("Document Parser Errors (1)")).toBeDefined();
+
+    rerender(
+      <ErrorPanel
+        errorClass={ScraperParseError}
+        errors={[]}
+        isExpandedByDefault={true}
+      />,
+    );
+
+    expect(screen.getByText("No parser errors.")).toBeDefined();
+  });
+
+  it("renders generic/unknown errors with default title and empty message", () => {
+    const error = new ScraperUnknownError(new Error("Fatal"));
+    const { rerender } = render(
+      <ErrorPanel
+        errorClass={ScraperUnknownError}
+        errors={[error]}
+        isExpandedByDefault={true}
+      />,
+    );
+
+    expect(screen.getByText("Errors (1)")).toBeDefined();
+
+    rerender(
+      <ErrorPanel
+        errorClass={ScraperUnknownError}
+        errors={[]}
+        isExpandedByDefault={true}
       />,
     );
 

@@ -1,24 +1,39 @@
 import { useState } from "react";
-import { type ScraperError } from "../../errors";
+import {
+  ScraperError,
+  ScraperHttpError,
+  ScraperParseError,
+} from "../../errors";
 import { ErrorCard } from "../ErrorCard/ErrorCard";
 import styles from "./ErrorPanel.module.css";
 
-interface ErrorPanelProps {
-  title: string;
-  errors: ScraperError[];
-  emptyMessage: string;
-  defaultOpen?: boolean;
-  testIdPrefix: string;
+interface ErrorPanelProps<E extends ScraperError> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  errorClass: { new (...args: any[]): E };
+  errors: E[];
+  isExpandedByDefault?: boolean;
 }
 
-export function ErrorPanel({
-  title,
+export function ErrorPanel<E extends ScraperError>({
+  errorClass,
   errors,
-  emptyMessage,
-  defaultOpen = false,
-  testIdPrefix,
-}: ErrorPanelProps) {
-  const [isOpen, setIsOpen] = useState(defaultOpen);
+  isExpandedByDefault = false,
+}: ErrorPanelProps<E>) {
+  const [isOpen, setIsOpen] = useState(isExpandedByDefault);
+
+  let title = "Errors";
+  let emptyMessage = "No errors found.";
+  let testIdPrefix = "errors";
+
+  if ((errorClass as unknown) === ScraperHttpError) {
+    title = "HTTP Network Errors";
+    emptyMessage = "No network errors.";
+    testIdPrefix = "http-errors";
+  } else if ((errorClass as unknown) === ScraperParseError) {
+    title = "Document Parser Errors";
+    emptyMessage = "No parser errors.";
+    testIdPrefix = "parse-errors";
+  }
 
   return (
     <div

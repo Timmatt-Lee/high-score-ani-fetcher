@@ -20,6 +20,7 @@ const BASE_URL = "https://ani.gamer.com.tw";
 export class ScraperService implements AnimeScraper {
   private async fetchText(
     url: string,
+    page = 1,
   ): Promise<Result<string, ScraperHttpError>> {
     try {
       const response = await fetch(url);
@@ -31,11 +32,12 @@ export class ScraperService implements AnimeScraper {
         } catch {
           // ignore
         }
-        return new ScraperHttpError(url, snippet, response.status);
+        return new ScraperHttpError(page, url, snippet, response.status);
       }
       return await response.text();
     } catch (err) {
       return new ScraperHttpError(
+        page,
         url,
         err instanceof Error ? err.message : String(err),
         500,
@@ -51,7 +53,7 @@ export class ScraperService implements AnimeScraper {
   > {
     const url = `${BASE_URL}/animeList.php?page=1`;
 
-    const text = await this.fetchText(url);
+    const text = await this.fetchText(url, 1);
     if (isError(text)) return text;
 
     let doc: Document;
@@ -60,6 +62,7 @@ export class ScraperService implements AnimeScraper {
     } catch (err) {
       const errMsg = err instanceof Error ? err.message : String(err);
       return new ScraperParseError(
+        1,
         ScraperErrorSource.PAGINATION,
         url,
         errMsg,
@@ -70,6 +73,7 @@ export class ScraperService implements AnimeScraper {
     const pageLinks = doc.querySelectorAll(".page_number a");
     if (pageLinks.length === 0) {
       return new ScraperParseError(
+        1,
         ScraperErrorSource.PAGINATION,
         url,
         doc.body.innerHTML.substring(0, 500),
@@ -80,6 +84,7 @@ export class ScraperService implements AnimeScraper {
     const lastPageText = pageLinks[pageLinks.length - 1].textContent;
     if (!lastPageText) {
       return new ScraperParseError(
+        1,
         ScraperErrorSource.PAGINATION,
         url,
         doc.body.innerHTML.substring(0, 500),
@@ -90,6 +95,7 @@ export class ScraperService implements AnimeScraper {
     const totalPages = parseInt(lastPageText, 10);
     if (isNaN(totalPages)) {
       return new ScraperParseError(
+        1,
         ScraperErrorSource.PAGINATION,
         url,
         doc.body.innerHTML.substring(0, 500),
@@ -106,10 +112,12 @@ export class ScraperService implements AnimeScraper {
   private parseAnimeCard(
     card: Element,
     url: string,
+    page: number,
   ): Result<AnimeItem, ScraperParseError> {
     const href = card.getAttribute("href");
     if (!href) {
       return new ScraperParseError(
+        page,
         ScraperErrorSource.TITLE,
         url,
         card.outerHTML.substring(0, 500),
@@ -129,6 +137,7 @@ export class ScraperService implements AnimeScraper {
 
     if (!title) {
       return new ScraperParseError(
+        page,
         ScraperErrorSource.TITLE,
         url,
         card.outerHTML.substring(0, 500),
@@ -141,6 +150,7 @@ export class ScraperService implements AnimeScraper {
     );
     if (!watchCountEl || !watchCountEl.textContent) {
       return new ScraperParseError(
+        page,
         ScraperErrorSource.WATCH_COUNT,
         url,
         card.outerHTML.substring(0, 500),
@@ -155,6 +165,7 @@ export class ScraperService implements AnimeScraper {
 
     if (isNaN(watchCount)) {
       return new ScraperParseError(
+        page,
         ScraperErrorSource.WATCH_COUNT,
         url,
         card.outerHTML.substring(0, 500),
@@ -165,6 +176,7 @@ export class ScraperService implements AnimeScraper {
     const detailBlock = card.querySelector(".theme-detail-info-block");
     if (!detailBlock) {
       return new ScraperParseError(
+        page,
         ScraperErrorSource.EPISODE_COUNT,
         url,
         card.outerHTML.substring(0, 500),
@@ -176,6 +188,7 @@ export class ScraperService implements AnimeScraper {
 
     if (!epEl || !epEl.textContent) {
       return new ScraperParseError(
+        page,
         ScraperErrorSource.EPISODE_COUNT,
         url,
         detailBlock.outerHTML,
@@ -186,6 +199,7 @@ export class ScraperService implements AnimeScraper {
     const timeEl = detailBlock.querySelector(".theme-time");
     if (!timeEl || !timeEl.textContent) {
       return new ScraperParseError(
+        page,
         ScraperErrorSource.UPLOAD_DATE,
         url,
         detailBlock.outerHTML,
@@ -200,6 +214,7 @@ export class ScraperService implements AnimeScraper {
 
     if (isNaN(episodeCount)) {
       return new ScraperParseError(
+        page,
         ScraperErrorSource.EPISODE_COUNT,
         url,
         epEl.outerHTML,
@@ -211,6 +226,7 @@ export class ScraperService implements AnimeScraper {
     const uploadDate = new Date(`${yearStr}-01-01T00:00:00Z`);
     if (isNaN(uploadDate.getTime())) {
       return new ScraperParseError(
+        page,
         ScraperErrorSource.UPLOAD_DATE,
         url,
         timeEl.outerHTML,
@@ -235,7 +251,7 @@ export class ScraperService implements AnimeScraper {
    */
   async scrapeListPage(pageNum: number): Promise<ScraperResult> {
     const url = `${BASE_URL}/animeList.php?page=${pageNum}`;
-    const text = await this.fetchText(url);
+    const text = await this.fetchText(url, pageNum);
     if (isError(text)) {
       return {
         items: [],
@@ -254,6 +270,7 @@ export class ScraperService implements AnimeScraper {
         httpErrors: [],
         parseErrors: [
           new ScraperParseError(
+            pageNum,
             ScraperErrorSource.TITLE,
             url,
             errMsg,
@@ -270,7 +287,7 @@ export class ScraperService implements AnimeScraper {
     const parseErrors: ScraperParseError[] = [];
 
     for (const card of Array.from(cards)) {
-      const res = this.parseAnimeCard(card, url);
+      const res = this.parseAnimeCard(card, url, pageNum);
       if (isError(res)) {
         parseErrors.push(res);
       } else {
@@ -286,8 +303,9 @@ export class ScraperService implements AnimeScraper {
    */
   async scrapeAnimeDetails(
     link: string,
+    page = 1,
   ): Promise<Result<AnimeDetails, ScraperHttpError | ScraperParseError>> {
-    const text = await this.fetchText(link);
+    const text = await this.fetchText(link, page);
     if (isError(text)) return text;
 
     let doc: Document;
@@ -296,6 +314,7 @@ export class ScraperService implements AnimeScraper {
     } catch (err) {
       const errMsg = err instanceof Error ? err.message : String(err);
       return new ScraperParseError(
+        page,
         ScraperErrorSource.DESCRIPTION,
         link,
         errMsg,
@@ -306,6 +325,7 @@ export class ScraperService implements AnimeScraper {
     const scoreNumDiv = doc.querySelector(".score-overall-number");
     if (!scoreNumDiv || !scoreNumDiv.textContent) {
       return new ScraperParseError(
+        page,
         ScraperErrorSource.SCORE,
         link,
         doc.body.innerHTML.substring(0, 200),
@@ -315,6 +335,7 @@ export class ScraperService implements AnimeScraper {
     const score = parseFloat(scoreNumDiv.textContent);
     if (isNaN(score)) {
       return new ScraperParseError(
+        page,
         ScraperErrorSource.SCORE,
         link,
         scoreNumDiv.outerHTML,
@@ -325,6 +346,7 @@ export class ScraperService implements AnimeScraper {
     const scorePeopleDiv = doc.querySelector(".score-overall-people");
     if (!scorePeopleDiv || !scorePeopleDiv.textContent) {
       return new ScraperParseError(
+        page,
         ScraperErrorSource.RATING_COUNT,
         link,
         doc.body.innerHTML.substring(0, 200),
@@ -337,6 +359,7 @@ export class ScraperService implements AnimeScraper {
     );
     if (isNaN(ratingCount)) {
       return new ScraperParseError(
+        page,
         ScraperErrorSource.RATING_COUNT,
         link,
         scorePeopleDiv.outerHTML,
@@ -347,6 +370,7 @@ export class ScraperService implements AnimeScraper {
     const descDiv = doc.querySelector(".data-intro p");
     if (!descDiv || !descDiv.textContent?.trim()) {
       return new ScraperParseError(
+        page,
         ScraperErrorSource.DESCRIPTION,
         link,
         doc.body.innerHTML.substring(0, 200),

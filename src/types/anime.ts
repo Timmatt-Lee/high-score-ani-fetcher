@@ -50,6 +50,7 @@ export interface AnimeScraper {
   scrapeListPage(pageNum: number): Promise<ScraperResult>;
   scrapeAnimeDetails(
     link: string,
+    page?: number,
   ): Promise<Result<AnimeDetails, ScraperHttpError | ScraperParseError>>;
   scanAllWithPipeline(
     totalPages: number,

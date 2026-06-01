@@ -4,8 +4,9 @@ import { useAnimeScanner } from "./hooks/useAnimeScanner";
 import { AnimeList } from "./components/AnimeList";
 import { ProgressBar } from "./components/ProgressBar";
 import { Tabs, Tab } from "./components/Tabs";
+import { ErrorPanel } from "./components/ErrorPanel/ErrorPanel";
 import { ErrorCard } from "./components/ErrorCard/ErrorCard";
-import { ScanErrors } from "./components/ScanErrors/ScanErrors";
+import { ScraperHttpError, ScraperParseError } from "./errors";
 import styles from "./App.module.css";
 import "./index.css";
 
@@ -94,32 +95,45 @@ function App() {
           />
 
           {activeTab === Tab.Search && totalErrors > 0 && !isScanning && (
-            <ScanErrors
-              httpErrors={httpErrors}
-              parseErrors={parseErrors}
-              failedDetails={failedDetails}
-              isScanning={isScanning}
-              onRetry={() => {
-                const getPageNumber = (url?: string) => {
-                  if (!url) return null;
-                  const match = url.match(/page=(\d+)/);
-                  return match ? Number(match[1]) : null;
-                };
-                const failedPagesSet = new Set<number>();
-                httpErrors.forEach((err) => {
-                  const p = getPageNumber(err.url);
-                  if (p !== null) failedPagesSet.add(p);
-                });
-                parseErrors.forEach((err) => {
-                  const p = getPageNumber(err.url);
-                  if (p !== null) failedPagesSet.add(p);
-                });
-                handleScan({
-                  failedPages: Array.from(failedPagesSet),
-                  failedDetails,
-                });
-              }}
-            />
+            <div className={styles.errorsPanel} data-testid="errors-panel">
+              <div className={styles.summaryBar}>
+                <span
+                  className={styles.summaryText}
+                  data-testid="errors-summary-text"
+                >
+                  {totalErrors}{" "}
+                  {totalErrors === 1 ? "error occurred" : "errors occurred"}
+                </span>
+                <button
+                  className={`${styles.btn} ${styles.btnRetry}`}
+                  onClick={() => {
+                    const failedPagesSet = new Set<number>();
+                    httpErrors.forEach((err) => {
+                      if (err.page) failedPagesSet.add(err.page);
+                    });
+                    parseErrors.forEach((err) => {
+                      if (err.page) failedPagesSet.add(err.page);
+                    });
+                    handleScan({
+                      failedPages: Array.from(failedPagesSet),
+                      failedDetails,
+                    });
+                  }}
+                  disabled={isScanning || totalErrors === 0}
+                  data-testid="retry-errors-btn"
+                >
+                  Retry Failed Animes
+                </button>
+              </div>
+
+              <div className={styles.accordion}>
+                <ErrorPanel errorClass={ScraperHttpError} errors={httpErrors} />
+                <ErrorPanel
+                  errorClass={ScraperParseError}
+                  errors={parseErrors}
+                />
+              </div>
+            </div>
           )}
         </>
       )}

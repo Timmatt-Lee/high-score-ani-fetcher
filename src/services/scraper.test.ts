@@ -111,7 +111,7 @@ describe("scraperService.getTotalPages", () => {
   });
 
   it("passes through ScraperHttpError from fetchText in getTotalPages", async () => {
-    const error = new ScraperHttpError("http://x", "fail", 502);
+    const error = new ScraperHttpError(1, "http://x", "fail", 502);
     vi.spyOn(
       scraperService as unknown as {
         fetchText: (url: string) => Promise<unknown>;
@@ -259,7 +259,7 @@ describe("scraperService.scrapeListPage", () => {
   });
 
   it("returns error when fetchText fails in scrapeListPage", async () => {
-    const error = new ScraperHttpError("http://x", "fail", 404);
+    const error = new ScraperHttpError(1, "http://x", "fail", 404);
     vi.spyOn(
       scraperService as unknown as {
         fetchText: (url: string) => Promise<unknown>;
@@ -486,7 +486,7 @@ describe("scraperService.scrapeAnimeDetails", () => {
   });
 
   it("passes through ScraperHttpError from fetchText in scrapeAnimeDetails", async () => {
-    const error = new ScraperHttpError("http://x", "fail", 404);
+    const error = new ScraperHttpError(1, "http://x", "fail", 404);
     vi.spyOn(
       scraperService as unknown as {
         fetchText: (url: string) => Promise<unknown>;

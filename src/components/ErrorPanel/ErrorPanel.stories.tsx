@@ -27,12 +27,14 @@ type Story = StoryObj<typeof ErrorPanel>;
 
 const sampleHttpErrors = [
   new ScraperHttpError(
+    2,
     "https://ani.gamer.com.tw/animeList.php?page=2",
     "Internal Server Error",
     500,
     "測試動畫第一季",
   ),
   new ScraperHttpError(
+    5,
     "https://ani.gamer.com.tw/animeList.php?page=5",
     "Bad Gateway",
     502,
@@ -41,6 +43,7 @@ const sampleHttpErrors = [
 
 const sampleParseErrors = [
   new ScraperParseError(
+    3,
     ScraperErrorSource.TITLE,
     "https://ani.gamer.com.tw/animeList.php?page=3",
     "Missing class theme-name inside theme-list-main anchor card",
@@ -51,50 +54,40 @@ const sampleParseErrors = [
 
 export const CollapsedHttp: Story = {
   args: {
-    title: "HTTP Network Errors",
+    errorClass: ScraperHttpError,
     errors: sampleHttpErrors,
-    emptyMessage: "No network errors.",
-    defaultOpen: false,
-    testIdPrefix: "http-errors",
+    isExpandedByDefault: false,
   },
 };
 
 export const ExpandedHttp: Story = {
   args: {
-    title: "HTTP Network Errors",
+    errorClass: ScraperHttpError,
     errors: sampleHttpErrors,
-    emptyMessage: "No network errors.",
-    defaultOpen: true,
-    testIdPrefix: "http-errors",
+    isExpandedByDefault: true,
   },
 };
 
 export const CollapsedParse: Story = {
   args: {
-    title: "Document Parser Errors",
+    errorClass: ScraperParseError,
     errors: sampleParseErrors,
-    emptyMessage: "No parser errors.",
-    defaultOpen: false,
-    testIdPrefix: "parse-errors",
+    isExpandedByDefault: false,
   },
 };
 
 export const ExpandedParse: Story = {
   args: {
-    title: "Document Parser Errors",
+    errorClass: ScraperParseError,
     errors: sampleParseErrors,
-    emptyMessage: "No parser errors.",
-    defaultOpen: true,
-    testIdPrefix: "parse-errors",
+    isExpandedByDefault: true,
   },
 };
 
 export const EmptyGroup: Story = {
   args: {
-    title: "HTTP Network Errors",
+    errorClass: ScraperHttpError,
     errors: [],
-    emptyMessage: "No network errors.",
-    defaultOpen: true,
-    testIdPrefix: "http-errors",
+    isExpandedByDefault: true,
   },
 };

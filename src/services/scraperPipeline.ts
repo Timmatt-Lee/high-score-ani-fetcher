@@ -97,7 +97,7 @@ export class ScraperPipeline {
     pageResult.items.forEach((item) => {
       if (this.filterItem(item)) {
         this.detailsTotalCount++;
-        this.detailQueue.add(() => this.fetchDetail(item));
+        this.detailQueue.add(() => this.fetchDetail(item, page));
       }
     });
     this.pagesCompletedCount++;
@@ -110,8 +110,8 @@ export class ScraperPipeline {
     });
   }
 
-  private async fetchDetail(item: AnimeItem): Promise<void> {
-    const res = await this.scraper.scrapeAnimeDetails(item.link);
+  private async fetchDetail(item: AnimeItem, page?: number): Promise<void> {
+    const res = await this.scraper.scrapeAnimeDetails(item.link, page);
     let isSuccessful = true;
     if (isError(res)) {
       isSuccessful = false;

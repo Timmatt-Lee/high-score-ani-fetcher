@@ -4,14 +4,24 @@ import { ScraperErrorSource } from "./scraper-error-source";
  * Base class for all scraper errors.
  */
 export class ScraperError extends Error {
-  url?: string;
-  html?: string;
+  page: number;
   title?: string;
   source?: ScraperErrorSource;
+  url?: string;
 
-  constructor(message: string) {
+  constructor(
+    message: string,
+    page: number,
+    title?: string,
+    source?: ScraperErrorSource,
+    url?: string,
+  ) {
     super(message);
     this.name = "ScraperError";
+    this.page = page;
+    this.title = title;
+    this.source = source;
+    this.url = url;
   }
 }
 
@@ -20,21 +30,26 @@ export class ScraperError extends Error {
  */
 export class ScraperHttpError extends ScraperError {
   status: number;
+  html: string;
 
   constructor(
+    page: number,
     url: string,
     html: string,
     status: number = 500,
     title?: string,
     source?: ScraperErrorSource,
   ) {
-    super(`HTTP request failed with status ${status} (URL: ${url})`);
+    super(
+      `HTTP request failed with status ${status} (URL: ${url})`,
+      page,
+      title,
+      source,
+      url,
+    );
     this.name = "ScraperHttpError";
-    this.url = url;
     this.status = status;
     this.html = html;
-    this.title = title;
-    this.source = source;
   }
 }
 
@@ -42,19 +57,25 @@ export class ScraperHttpError extends ScraperError {
  * Represents failures during document parsing (e.g. missing elements, malformed text).
  */
 export class ScraperParseError extends ScraperError {
+  html: string;
+
   constructor(
+    page: number,
     source: ScraperErrorSource,
     url: string,
     html: string,
     message?: string,
     title?: string,
   ) {
-    super(message || `Parsing failed at ${source} (URL: ${url})`);
+    super(
+      message || `Parsing failed at ${source} (URL: ${url})`,
+      page,
+      title,
+      source,
+      url,
+    );
     this.name = "ScraperParseError";
-    this.url = url;
-    this.source = source;
     this.html = html;
-    this.title = title;
   }
 }
 
@@ -63,7 +84,7 @@ export class ScraperParseError extends ScraperError {
  */
 export class ScraperUnknownError extends ScraperError {
   constructor(causeError: Error) {
-    super(causeError.message);
+    super(causeError.message, 1);
     this.name = "ScraperUnknownError";
     this.stack = causeError.stack;
   }

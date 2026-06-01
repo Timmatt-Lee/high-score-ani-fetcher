@@ -101,8 +101,8 @@ describe("ScraperPipeline", () => {
     const listSpy = vi.fn();
     const detailSpy = vi.fn();
 
-    const pageError = new ScraperHttpError("http://page1", "fail", 404);
-    const detailError = new ScraperHttpError("http://a", "fail", 500);
+    const pageError = new ScraperHttpError(1, "http://page1", "fail", 404);
+    const detailError = new ScraperHttpError(1, "http://a", "fail", 500);
 
     listSpy.mockResolvedValueOnce({
       items: [{ link: "http://a", title: "A" } as AnimeItem],
@@ -132,7 +132,7 @@ describe("ScraperPipeline", () => {
     const listSpy = vi.fn();
     const detailSpy = vi.fn();
 
-    const error = new ScraperHttpError("http://a", "fail", 500);
+    const error = new ScraperHttpError(1, "http://a", "fail", 500);
 
     listSpy.mockResolvedValueOnce({
       items: [{ link: "http://a", title: "A" } as AnimeItem],
@@ -163,6 +163,7 @@ describe("ScraperPipeline", () => {
     const detailSpy = vi.fn();
 
     const parseError = new ScraperParseError(
+      1,
       ScraperErrorSource.SCORE,
       "http://a",
       "html",
@@ -293,8 +294,8 @@ describe("ScraperPipeline", () => {
     expect(listSpy).toHaveBeenCalledTimes(1);
     expect(listSpy).toHaveBeenCalledWith(3); // only page 3 retried
     expect(detailSpy).toHaveBeenCalledTimes(2); // failedDetail + newPageItem
-    expect(detailSpy).toHaveBeenCalledWith("http://failedDetail");
-    expect(detailSpy).toHaveBeenCalledWith("http://newPageItem");
+    expect(detailSpy).toHaveBeenCalledWith("http://failedDetail", undefined);
+    expect(detailSpy).toHaveBeenCalledWith("http://newPageItem", 3);
     expect(result.items).toHaveLength(2);
   });
 });

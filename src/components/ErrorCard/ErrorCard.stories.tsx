@@ -17,13 +17,12 @@ type Story = StoryObj<typeof ErrorCard>;
 
 export const HttpErrorWithTitle: Story = {
   args: {
-    error: Object.assign(
-      new ScraperHttpError(
-        "https://ani.gamer.com.tw/animeList.php?page=2",
-        "Internal Server Error",
-        500,
-      ),
-      { title: "葬送的芙莉蓮" },
+    error: new ScraperHttpError(
+      2,
+      "https://ani.gamer.com.tw/animeList.php?page=2",
+      "Internal Server Error",
+      500,
+      "葬送的芙莉蓮",
     ),
   },
 };
@@ -31,6 +30,7 @@ export const HttpErrorWithTitle: Story = {
 export const HttpErrorNoTitle: Story = {
   args: {
     error: new ScraperHttpError(
+      4,
       "https://ani.gamer.com.tw/animeList.php?page=4",
       "Bad Gateway",
       502,
@@ -40,14 +40,13 @@ export const HttpErrorNoTitle: Story = {
 
 export const ParseErrorWithTitle: Story = {
   args: {
-    error: Object.assign(
-      new ScraperParseError(
-        ScraperErrorSource.TITLE,
-        "https://ani.gamer.com.tw/animeList.php?page=3",
-        "Failed to parse title tag",
-        "Parser failed",
-      ),
-      { title: "鬼滅之刃 柱訓練篇" },
+    error: new ScraperParseError(
+      3,
+      ScraperErrorSource.TITLE,
+      "https://ani.gamer.com.tw/animeList.php?page=3",
+      "Failed to parse title tag",
+      "Parser failed",
+      "鬼滅之刃 柱訓練篇",
     ),
   },
 };
@@ -55,6 +54,7 @@ export const ParseErrorWithTitle: Story = {
 export const ParseErrorNoTitle: Story = {
   args: {
     error: new ScraperParseError(
+      5,
       ScraperErrorSource.EPISODE_COUNT,
       "https://ani.gamer.com.tw/animeList.php?page=5",
       "Failed to parse episode number",
@@ -66,5 +66,25 @@ export const ParseErrorNoTitle: Story = {
 export const FatalUnknownError: Story = {
   args: {
     error: new ScraperUnknownError(new Error("Connection reset by peer")),
+  },
+};
+
+export const WithCopiedState: Story = {
+  args: {
+    error: new ScraperHttpError(
+      2,
+      "https://ani.gamer.com.tw/animeList.php?page=2",
+      "Internal Server Error",
+      500,
+      "葬送的芙莉蓮",
+    ),
+  },
+  play: async ({ canvasElement }) => {
+    const copyBtn = canvasElement.querySelector(
+      '[data-testid="error-card-copy-btn"]',
+    );
+    if (copyBtn) {
+      (copyBtn as HTMLButtonElement).click();
+    }
   },
 };
