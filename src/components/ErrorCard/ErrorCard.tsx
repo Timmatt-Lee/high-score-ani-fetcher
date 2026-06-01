@@ -2,69 +2,60 @@ import { useState } from "react";
 import {
   ScraperHttpError,
   ScraperParseError,
-  ScraperUnknownError,
+  ScraperError,
 } from "../../errors";
 import styles from "./ErrorCard.module.css";
 
 interface ErrorCardProps {
-  error: ScraperHttpError | ScraperParseError | ScraperUnknownError;
+  error: ScraperError;
 }
 
 export function ErrorCard({ error }: ErrorCardProps) {
   const [isCopied, setIsCopied] = useState(false);
 
   const getPageNumber = (url?: string) => {
-    if (!url) return null;
+    if (!url) return undefined;
     const match = url.match(/page=(\d+)/);
-    return match ? match[1] : null;
+    return match ? match[1] : undefined;
   };
 
-  const page = "url" in error ? getPageNumber(error.url) : null;
-  const title = "title" in error ? error.title : undefined;
+  const page = getPageNumber(error.url);
+  const title = error.title;
 
-  let cardTitle: string;
-  let cardSubtitle: string | null;
+  const pageStr = page ? `Page: ${page}` : undefined;
+  const suffixStr =
+    error instanceof ScraperHttpError
+      ? `Status: ${error.status}`
+      : error.source !== undefined
+        ? `Source: ${error.source}`
+        : undefined;
 
-  if ("status" in error && error.status !== undefined) {
-    const pageStr = page ? `Page: ${page}` : "";
-    const statusStr = `Status: ${error.status}`;
-
-    if (title) {
-      cardTitle = title;
-      cardSubtitle = [pageStr, statusStr].filter(Boolean).join(", ");
-    } else {
-      cardTitle = pageStr || "HTTP Error";
-      cardSubtitle = statusStr;
-    }
-  } else if ("source" in error && error.source !== undefined) {
-    const pageStr = page ? `Page: ${page}` : "";
-
-    if (title) {
-      cardTitle = title;
-      cardSubtitle = pageStr || null;
-    } else {
-      cardTitle = pageStr || "Parser Error";
-      cardSubtitle = null;
-    }
-  } else {
-    cardTitle = error.name;
-    cardSubtitle = null;
-  }
+  const cardTitle =
+    title ||
+    pageStr ||
+    (error instanceof ScraperHttpError
+      ? "HTTP Error"
+      : error instanceof ScraperParseError
+        ? "Parser Error"
+        : error.name || "Error");
+  const cardSubtitle = title
+    ? [pageStr, suffixStr].filter(Boolean).join(", ")
+    : suffixStr;
 
   const getFormattedDetails = () => {
     let details = `Error Type: ${error.name}\n`;
     details += `Message: ${error.message}\n`;
-    if ("url" in error && error.url) {
+    if (error.url) {
       details += `URL: ${error.url}\n`;
     }
-    if ("status" in error && error.status !== undefined) {
+    if (error instanceof ScraperHttpError) {
       details += `Status Code: ${error.status}\n`;
     }
-    if ("source" in error && error.source !== undefined) {
+    if (error.source) {
       details += `Source Component: ${error.source}\n`;
     }
     if (error.stack) {
-      details += `\nStack Trace:\n${error.stack}\n`;
+      details += `\nStack Trace:\n${error.stack.slice(0, 200)}\n`;
     }
     return details;
   };
@@ -74,8 +65,16 @@ export function ErrorCard({ error }: ErrorCardProps) {
       await navigator.clipboard.writeText(getFormattedDetails());
       setIsCopied(true);
       setTimeout(() => setIsCopied(false), 2000);
-    } catch (err) {
-      console.error("Failed to copy error details", err);
+    } catch {
+      // fallback copy
+      try {
+        const text = error.toString();
+        await navigator.clipboard.writeText(text);
+        setIsCopied(true);
+        setTimeout(() => setIsCopied(false), 2000);
+      } catch (err) {
+        console.error("Failed to copy error details", err);
+      }
     }
   };
 

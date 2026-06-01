@@ -375,7 +375,7 @@ export const WithRetryingState: Story = {
   },
 };
 
-export const WithFatalError: Story = {
+export const WithError: Story = {
   decorators: [
     (Story) => {
       localStorage.clear();

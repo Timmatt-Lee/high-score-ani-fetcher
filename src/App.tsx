@@ -5,7 +5,7 @@ import { AnimeList } from "./components/AnimeList";
 import { ProgressBar } from "./components/ProgressBar";
 import { Tabs, Tab } from "./components/Tabs";
 import { ErrorCard } from "./components/ErrorCard/ErrorCard";
-import { ErrorsPanel } from "./components/ErrorsPanel/ErrorsPanel";
+import { ScanErrors } from "./components/ScanErrors/ScanErrors";
 import styles from "./App.module.css";
 import "./index.css";
 
@@ -30,7 +30,7 @@ function App() {
     progress,
     httpErrors,
     parseErrors,
-    fatalError,
+    error,
     handleScan,
     failedDetails,
   } = useAnimeScanner(searchList, favoriteList, trashList, (result) => {
@@ -60,12 +60,12 @@ function App() {
         </button>
       </div>
 
-      {fatalError ? (
+      {error ? (
         <div
           className={styles.fatalErrorContainer}
           data-testid="fatal-error-container"
         >
-          <ErrorCard error={fatalError} />
+          <ErrorCard error={error} />
         </div>
       ) : (
         <>
@@ -94,7 +94,7 @@ function App() {
           />
 
           {activeTab === Tab.Search && totalErrors > 0 && !isScanning && (
-            <ErrorsPanel
+            <ScanErrors
               httpErrors={httpErrors}
               parseErrors={parseErrors}
               failedDetails={failedDetails}

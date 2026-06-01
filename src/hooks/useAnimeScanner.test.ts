@@ -369,7 +369,7 @@ describe("useAnimeScanner", () => {
       await result.current.handleScan();
     });
 
-    expect(result.current.fatalError).toBe(error);
+    expect(result.current.error).toBe(error);
   });
 
   it("handles ScraperParseError scan failure in catch block", async () => {
@@ -392,7 +392,7 @@ describe("useAnimeScanner", () => {
       await result.current.handleScan();
     });
 
-    expect(result.current.fatalError).toBe(error);
+    expect(result.current.error).toBe(error);
   });
 
   it("wraps generic Error into ScraperUnknownError when getTotalPages fails with unknown error", async () => {
@@ -413,8 +413,8 @@ describe("useAnimeScanner", () => {
       await result.current.handleScan();
     });
 
-    expect(result.current.fatalError).toBeInstanceOf(ScraperUnknownError);
-    expect(result.current.fatalError?.message).toBe("generic error");
+    expect(result.current.error).toBeInstanceOf(ScraperUnknownError);
+    expect(result.current.error?.message).toBe("generic error");
     expect(result.current.httpErrors).toHaveLength(0);
     expect(result.current.parseErrors).toHaveLength(0);
   });
@@ -436,13 +436,13 @@ describe("useAnimeScanner", () => {
       await result.current.handleScan();
     });
 
-    expect(result.current.fatalError).toBeInstanceOf(ScraperUnknownError);
-    expect(result.current.fatalError?.message).toBe("string error");
+    expect(result.current.error).toBeInstanceOf(ScraperUnknownError);
+    expect(result.current.error?.message).toBe("string error");
     expect(result.current.httpErrors).toHaveLength(0);
     expect(result.current.parseErrors).toHaveLength(0);
   });
 
-  it("sets fatalError directly without double wrapping when getTotalPages fails with ScraperUnknownError", async () => {
+  it("sets error directly without double wrapping when getTotalPages fails with ScraperUnknownError", async () => {
     const error = new ScraperUnknownError(
       new Error("pre-wrapped unknown error"),
     );
@@ -462,10 +462,10 @@ describe("useAnimeScanner", () => {
       await result.current.handleScan();
     });
 
-    expect(result.current.fatalError).toBe(error);
+    expect(result.current.error).toBe(error);
   });
 
-  it("clears fatalError when clearFatalError is called", async () => {
+  it("clears error when clearError is called", async () => {
     const error = new ScraperHttpError("http://err", "Failed", 500);
     vi.spyOn(scraperService, "getTotalPages").mockResolvedValue(error);
 
@@ -481,16 +481,16 @@ describe("useAnimeScanner", () => {
       await result.current.handleScan();
     });
 
-    expect(result.current.fatalError).toBe(error);
+    expect(result.current.error).toBe(error);
 
     act(() => {
-      result.current.clearFatalError();
+      result.current.clearError();
     });
 
-    expect(result.current.fatalError).toBeNull();
+    expect(result.current.error).toBeNull();
   });
 
-  it("clears fatalError when a new scan starts", async () => {
+  it("clears error when a new scan starts", async () => {
     const error = new ScraperHttpError("http://err", "Failed", 500);
     vi.spyOn(scraperService, "getTotalPages")
       .mockResolvedValueOnce(error)
@@ -514,12 +514,12 @@ describe("useAnimeScanner", () => {
     await act(async () => {
       await result.current.handleScan();
     });
-    expect(result.current.fatalError).toBe(error);
+    expect(result.current.error).toBe(error);
 
     await act(async () => {
       await result.current.handleScan();
     });
-    expect(result.current.fatalError).toBeNull();
+    expect(result.current.error).toBeNull();
   });
 
   it("handles progress calculation with zero totalPages or zero detailsTotal", async () => {
@@ -692,8 +692,8 @@ describe("useAnimeScanner", () => {
       await result.current.handleScan();
     });
 
-    expect(result.current.fatalError).toBeInstanceOf(ScraperUnknownError);
-    expect(result.current.fatalError?.message).toBe("pipeline crash");
+    expect(result.current.error).toBeInstanceOf(ScraperUnknownError);
+    expect(result.current.error?.message).toBe("pipeline crash");
     expect(result.current.isScanning).toBe(false);
   });
 
@@ -717,8 +717,8 @@ describe("useAnimeScanner", () => {
       await result.current.handleScan();
     });
 
-    expect(result.current.fatalError).toBeInstanceOf(ScraperUnknownError);
-    expect(result.current.fatalError?.message).toBe("pipeline standard error");
+    expect(result.current.error).toBeInstanceOf(ScraperUnknownError);
+    expect(result.current.error?.message).toBe("pipeline standard error");
   });
 
   it("handles retry scans by pre-populating merged items map and bypassing total page fetch", async () => {

@@ -70,21 +70,19 @@ describe("ErrorCard", () => {
   });
 
   it("renders Parser error with title correctly", () => {
-    const error = Object.assign(
-      new ScraperParseError(
-        ScraperErrorSource.TITLE,
-        "https://ani.gamer.com.tw/animeList.php?page=5",
-        "bad html",
-        "Parse failed",
-      ),
-      { title: "鬼滅之刃" },
+    const error = new ScraperParseError(
+      ScraperErrorSource.TITLE,
+      "https://ani.gamer.com.tw/animeList.php?page=5",
+      "bad html",
+      "Parse failed",
+      "鬼滅之刃",
     );
 
     render(<ErrorCard error={error} />);
 
     expect(screen.getByTestId("error-card-title").textContent).toBe("鬼滅之刃");
     expect(screen.getByTestId("error-card-subtitle").textContent).toBe(
-      "Page: 5",
+      "Page: 5, Source: 1",
     );
   });
 
@@ -100,6 +98,9 @@ describe("ErrorCard", () => {
 
     expect(screen.getByTestId("error-card-title").textContent).toBe(
       "Parser Error",
+    );
+    expect(screen.getByTestId("error-card-subtitle").textContent).toBe(
+      "Source: 7",
     );
   });
 
@@ -167,7 +168,43 @@ describe("ErrorCard", () => {
     expect(screen.queryByText("Copied! ✓")).toBeNull();
   });
 
-  it("handles copy failure gracefully", async () => {
+  it("handles copy failure and falls back to toString", async () => {
+    vi.useFakeTimers();
+    const error = new ScraperHttpError(
+      "https://ani.gamer.com.tw/animeList.php?page=1",
+      "HTTP 404",
+      404,
+    );
+    const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    // Reject first writeText call, then succeed on next (fallback)
+    writeTextMock
+      .mockRejectedValueOnce(new Error("First write block"))
+      .mockResolvedValueOnce(undefined);
+
+    render(<ErrorCard error={error} />);
+
+    const copyBtn = screen.getByTestId("error-card-copy-btn");
+    await act(async () => {
+      fireEvent.click(copyBtn);
+    });
+
+    await act(async () => {
+      await vi.runAllTicks();
+    });
+
+    expect(writeTextMock).toHaveBeenCalledTimes(2);
+    expect(screen.getByText("Copied! ✓")).toBeDefined();
+
+    await act(async () => {
+      vi.advanceTimersByTime(2000);
+    });
+    expect(screen.queryByText("Copied! ✓")).toBeNull();
+
+    consoleSpy.mockRestore();
+    vi.useRealTimers();
+  });
+
+  it("handles copy failure completely gracefully", async () => {
     const error = new ScraperHttpError(
       "https://ani.gamer.com.tw/animeList.php?page=1",
       "HTTP 404",
@@ -207,17 +244,18 @@ describe("ErrorCard", () => {
   });
 
   it("renders Parser error with title but without page correctly", () => {
-    const error = Object.assign(
-      new ScraperParseError(
-        ScraperErrorSource.TITLE,
-        "https://ani.gamer.com.tw/anime.php",
-        "bad html",
-        "Parse failed",
-      ),
-      { title: "鬼滅之刃" },
+    const error = new ScraperParseError(
+      ScraperErrorSource.TITLE,
+      "https://ani.gamer.com.tw/anime.php",
+      "bad html",
+      "Parse failed",
+      "鬼滅之刃",
     );
     render(<ErrorCard error={error} />);
-    expect(screen.queryByTestId("error-card-subtitle")).toBeNull();
+    expect(screen.getByTestId("error-card-title").textContent).toBe("鬼滅之刃");
+    expect(screen.getByTestId("error-card-subtitle").textContent).toBe(
+      "Source: 1",
+    );
   });
 
   it("handles copy of Parser error with source property", async () => {

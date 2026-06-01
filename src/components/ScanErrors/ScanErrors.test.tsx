@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
-import { ErrorsPanel } from "./ErrorsPanel";
+import { ScanErrors } from "./ScanErrors";
 import { ScraperHttpError, ScraperParseError } from "../../errors";
 import { ScraperErrorSource } from "../../errors/scraper-error-source";
 import { type AnimeItem } from "../../types/anime";
@@ -16,11 +16,11 @@ const makeAnime = (title: string): AnimeItem => ({
   description: "Desc",
 });
 
-describe("ErrorsPanel", () => {
+describe("ScanErrors", () => {
   it("renders nothing when no errors exist", () => {
     const onRetrySpy = vi.fn();
     const { container } = render(
-      <ErrorsPanel
+      <ScanErrors
         httpErrors={[]}
         parseErrors={[]}
         failedDetails={[]}
@@ -47,7 +47,7 @@ describe("ErrorsPanel", () => {
     );
 
     render(
-      <ErrorsPanel
+      <ScanErrors
         httpErrors={[httpErr]}
         parseErrors={[parseErr]}
         failedDetails={[]}
@@ -87,7 +87,7 @@ describe("ErrorsPanel", () => {
     const failedDetail = makeAnime("Failed Detail");
 
     render(
-      <ErrorsPanel
+      <ScanErrors
         httpErrors={[httpErr]}
         parseErrors={[]}
         failedDetails={[failedDetail]}
@@ -112,7 +112,7 @@ describe("ErrorsPanel", () => {
     );
 
     const { container } = render(
-      <ErrorsPanel
+      <ScanErrors
         httpErrors={[httpErr]}
         parseErrors={[]}
         failedDetails={[]}
@@ -145,7 +145,7 @@ describe("ErrorsPanel", () => {
     );
 
     render(
-      <ErrorsPanel
+      <ScanErrors
         httpErrors={[httpErrNoPage]}
         parseErrors={[parseErrLongHtml, parseErrNoHtml]}
         failedDetails={[]}
@@ -162,19 +162,19 @@ describe("ErrorsPanel", () => {
       "https://ani.gamer.com.tw/anime.php?sn=123",
       "Error html",
       500,
+      "葬送的芙莉蓮",
     );
-    httpErr.title = "葬送的芙莉蓮";
 
     const parseErr = new ScraperParseError(
       ScraperErrorSource.TITLE,
       "https://ani.gamer.com.tw/anime.php?sn=124",
       "Bad html",
       "Parsing failed",
+      "鬼滅之刃",
     );
-    parseErr.title = "鬼滅之刃";
 
     render(
-      <ErrorsPanel
+      <ScanErrors
         httpErrors={[httpErr]}
         parseErrors={[parseErr]}
         failedDetails={[]}
@@ -197,7 +197,7 @@ describe("ErrorsPanel", () => {
     );
 
     render(
-      <ErrorsPanel
+      <ScanErrors
         httpErrors={[]}
         parseErrors={[parseErr]}
         failedDetails={[]}
@@ -214,7 +214,7 @@ describe("ErrorsPanel", () => {
     const failedDetail = makeAnime("Failed Detail Sn");
 
     render(
-      <ErrorsPanel
+      <ScanErrors
         httpErrors={[]}
         parseErrors={[]}
         failedDetails={[failedDetail]}

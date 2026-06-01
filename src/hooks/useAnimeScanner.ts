@@ -9,13 +9,9 @@ import {
   ScraperHttpError,
   ScraperParseError,
   ScraperUnknownError,
+  ScraperError,
 } from "../errors";
 import { isError } from "../types/result";
-
-export type FatalError =
-  | ScraperHttpError
-  | ScraperParseError
-  | ScraperUnknownError;
 
 export function useAnimeScanner(
   searchList: AnimeItem[],
@@ -28,19 +24,19 @@ export function useAnimeScanner(
   const [progress, setProgress] = useState({ percent: 0, message: "" });
   const [httpErrors, setHttpErrors] = useState<ScraperHttpError[]>([]);
   const [parseErrors, setParseErrors] = useState<ScraperParseError[]>([]);
-  const [fatalError, setFatalError] = useState<FatalError | null>(null);
+  const [error, setError] = useState<ScraperError | null>(null);
   const [totalPagesCount, setTotalPagesCount] = useState(0);
   const [failedDetails, setFailedDetails] = useState<AnimeItem[]>([]);
 
-  const clearFatalError = () => {
-    setFatalError(null);
+  const clearError = () => {
+    setError(null);
   };
 
   const handleScan = async (options?: PipelineOptions) => {
     setHttpErrors([]);
     setParseErrors([]);
     setFailedDetails([]);
-    setFatalError(null);
+    setError(null);
     setIsScanning(true);
 
     const isRetry = !!(
@@ -60,13 +56,13 @@ export function useAnimeScanner(
           : new Error(String(totalPagesResult));
         console.error("Scan failed", error);
         if (error instanceof ScraperHttpError) {
-          setFatalError(error);
+          setError(error);
         } else if (error instanceof ScraperParseError) {
-          setFatalError(error);
+          setError(error);
         } else if (error instanceof ScraperUnknownError) {
-          setFatalError(error);
+          setError(error);
         } else {
-          setFatalError(new ScraperUnknownError(error));
+          setError(new ScraperUnknownError(error));
         }
         setIsScanning(false);
         setProgress({ percent: 0, message: "" });
@@ -218,7 +214,7 @@ export function useAnimeScanner(
         },
         error: (err: unknown) => {
           const error = err instanceof Error ? err : new Error(String(err));
-          setFatalError(new ScraperUnknownError(error));
+          setError(new ScraperUnknownError(error));
           setIsScanning(false);
           setProgress({ percent: 0, message: "" });
         },
@@ -230,8 +226,8 @@ export function useAnimeScanner(
     progress,
     httpErrors,
     parseErrors,
-    fatalError,
-    clearFatalError,
+    error,
+    clearError,
     handleScan,
     failedDetails,
   };

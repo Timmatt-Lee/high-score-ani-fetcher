@@ -1,12 +1,12 @@
 import type { Meta, StoryObj } from "@storybook/react";
-import { ErrorsPanel } from "./ErrorsPanel";
+import { ScanErrors } from "./ScanErrors";
 import { ScraperHttpError, ScraperParseError } from "../../errors";
 import { ScraperErrorSource } from "../../errors/scraper-error-source";
 import { type AnimeItem } from "../../types/anime";
 
-const meta: Meta<typeof ErrorsPanel> = {
-  title: "Components/ErrorsPanel",
-  component: ErrorsPanel,
+const meta: Meta<typeof ScanErrors> = {
+  title: "Components/ScanErrors",
+  component: ScanErrors,
   decorators: [
     (Story) => (
       <div style={{ maxWidth: "600px", width: "100%" }}>
@@ -17,16 +17,14 @@ const meta: Meta<typeof ErrorsPanel> = {
 };
 
 export default meta;
-type Story = StoryObj<typeof ErrorsPanel>;
+type Story = StoryObj<typeof ScanErrors>;
 
 const sampleHttpErrors = [
-  Object.assign(
-    new ScraperHttpError(
-      "https://ani.gamer.com.tw/animeList.php?page=2",
-      "Internal Server Error",
-      500,
-    ),
-    { title: "測試動畫第一季" },
+  new ScraperHttpError(
+    "https://ani.gamer.com.tw/animeList.php?page=2",
+    "Internal Server Error",
+    500,
+    "測試動畫第一季",
   ),
   new ScraperHttpError(
     "https://ani.gamer.com.tw/animeList.php?page=5",
@@ -36,14 +34,12 @@ const sampleHttpErrors = [
 ];
 
 const sampleParseErrors = [
-  Object.assign(
-    new ScraperParseError(
-      ScraperErrorSource.TITLE,
-      "https://ani.gamer.com.tw/animeList.php?page=3",
-      "Missing class theme-name inside theme-list-main anchor card",
-      "Anime title missing",
-    ),
-    { title: "測試動畫第二季" },
+  new ScraperParseError(
+    ScraperErrorSource.TITLE,
+    "https://ani.gamer.com.tw/animeList.php?page=3",
+    "Missing class theme-name inside theme-list-main anchor card",
+    "Anime title missing",
+    "測試動畫第二季",
   ),
 ];
 
