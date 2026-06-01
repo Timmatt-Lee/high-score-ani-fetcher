@@ -1,6 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { scraperService } from "./scraper";
-import { ScraperScanStep, ScraperHttpError, ScraperParseError } from "./index";
+import {
+  ScraperScanStep,
+  ScraperHttpError,
+  ScraperParseError,
+  ScraperUnknownError,
+} from "./index";
 import { type AnimeItem, type ScraperResult } from "../../types/anime";
 import { isError } from "../../types/result";
 
@@ -86,23 +91,25 @@ describe("scraperService.getTotalPages", () => {
     }
   });
 
-  it("handles fetch failure (network error) by returning ScraperHttpError", async () => {
+  it("handles fetch failure (network error) by returning ScraperUnknownError", async () => {
     vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("network")));
     const result = await scraperService.getTotalPages();
     expect(isError(result)).toBe(true);
     if (isError(result)) {
-      expect(result).toBeInstanceOf(ScraperHttpError);
-      expect((result as ScraperHttpError).html).toBe("network");
+      expect(result).toBeInstanceOf(ScraperUnknownError);
+      expect((result as ScraperUnknownError).message).toBe("network");
     }
   });
 
-  it("handles fetch failure with string by returning ScraperHttpError", async () => {
+  it("handles fetch failure with string by returning ScraperUnknownError", async () => {
     vi.stubGlobal("fetch", vi.fn().mockRejectedValue("network string error"));
     const result = await scraperService.getTotalPages();
     expect(isError(result)).toBe(true);
     if (isError(result)) {
-      expect(result).toBeInstanceOf(ScraperHttpError);
-      expect((result as ScraperHttpError).html).toBe("network string error");
+      expect(result).toBeInstanceOf(ScraperUnknownError);
+      expect((result as ScraperUnknownError).message).toBe(
+        "network string error",
+      );
     }
   });
 
@@ -117,9 +124,13 @@ describe("scraperService.getTotalPages", () => {
     );
     vi.spyOn(
       scraperService as unknown as {
-        fetchText: (url: string) => Promise<unknown>;
+        fetchUrl: (
+          url: string,
+          page: number,
+          scanStep: ScraperScanStep,
+        ) => Promise<unknown>;
       },
-      "fetchText",
+      "fetchUrl",
     ).mockResolvedValue(error);
 
     const result = await scraperService.getTotalPages();
@@ -272,14 +283,39 @@ describe("scraperService.scrapeListPage", () => {
     );
     vi.spyOn(
       scraperService as unknown as {
-        fetchText: (url: string) => Promise<unknown>;
+        fetchUrl: (
+          url: string,
+          page: number,
+          scanStep: ScraperScanStep,
+        ) => Promise<unknown>;
       },
-      "fetchText",
+      "fetchUrl",
     ).mockResolvedValue(error);
     const result = await scraperService.scrapeListPage(1);
     expect(result.items).toHaveLength(0);
     expect(result.httpErrors).toHaveLength(1);
     expect(result.httpErrors[0]).toBe(error);
+  });
+
+  it("throws ScraperUnknownError when fetchUrl returns ScraperUnknownError in scrapeListPage", async () => {
+    const error = new ScraperUnknownError(
+      new Error("unknown fetch failure"),
+      1,
+      ScraperScanStep.PAGINATION,
+      "http://x",
+      undefined,
+    );
+    vi.spyOn(
+      scraperService as unknown as {
+        fetchUrl: (
+          url: string,
+          page: number,
+          scanStep: ScraperScanStep,
+        ) => Promise<unknown>;
+      },
+      "fetchUrl",
+    ).mockResolvedValue(error);
+    await expect(scraperService.scrapeListPage(1)).rejects.toThrow(error);
   });
 
   it("collects ScraperParseError when episode count parsing fails", async () => {
@@ -421,8 +457,10 @@ describe("scraperService.scrapeAnimeDetails", () => {
       <div class="data-intro"><p>Great show</p></div>
     `),
     );
-    const result =
-      await scraperService.scrapeAnimeDetails("http://example.com");
+    const result = await scraperService.scrapeAnimeDetails(
+      "http://example.com",
+      1,
+    );
     expect(isError(result)).toBe(false);
     if (!isError(result)) {
       expect(result.score).toBe(8.5);
@@ -433,8 +471,10 @@ describe("scraperService.scrapeAnimeDetails", () => {
 
   it("returns ScraperParseError when score is missing", async () => {
     mockFetch(makeHtml("<div>No score</div>"));
-    const result =
-      await scraperService.scrapeAnimeDetails("http://example.com");
+    const result = await scraperService.scrapeAnimeDetails(
+      "http://example.com",
+      1,
+    );
     expect(isError(result)).toBe(true);
     if (isError(result)) {
       expect((result as ScraperParseError).scanStep).toBe(
@@ -445,8 +485,10 @@ describe("scraperService.scrapeAnimeDetails", () => {
 
   it("returns ScraperParseError when score is NaN", async () => {
     mockFetch(makeHtml('<div class="score-overall-number">ABC</div>'));
-    const result =
-      await scraperService.scrapeAnimeDetails("http://example.com");
+    const result = await scraperService.scrapeAnimeDetails(
+      "http://example.com",
+      1,
+    );
     expect(isError(result)).toBe(true);
     const err = result as ScraperParseError;
     expect(err.scanStep).toBe(ScraperScanStep.SCORE);
@@ -459,8 +501,10 @@ describe("scraperService.scrapeAnimeDetails", () => {
         '<div class="score-overall-number">8.5</div><div class="score-overall-people">NaN人評價</div>',
       ),
     );
-    const result =
-      await scraperService.scrapeAnimeDetails("http://example.com");
+    const result = await scraperService.scrapeAnimeDetails(
+      "http://example.com",
+      1,
+    );
     expect(isError(result)).toBe(true);
     const err = result as ScraperParseError;
     expect(err.scanStep).toBe(ScraperScanStep.RATING_COUNT);
@@ -473,8 +517,10 @@ describe("scraperService.scrapeAnimeDetails", () => {
         '<div class="score-overall-number">8.5</div><div class="data-intro"><p>Great show</p></div>',
       ),
     );
-    const result =
-      await scraperService.scrapeAnimeDetails("http://example.com");
+    const result = await scraperService.scrapeAnimeDetails(
+      "http://example.com",
+      1,
+    );
     expect(isError(result)).toBe(true);
     const err = result as ScraperParseError;
     expect(err.scanStep).toBe(ScraperScanStep.RATING_COUNT);
@@ -487,8 +533,10 @@ describe("scraperService.scrapeAnimeDetails", () => {
         '<div class="score-overall-number">8.5</div><div class="score-overall-people">1,234人評價</div>',
       ),
     );
-    const result =
-      await scraperService.scrapeAnimeDetails("http://example.com");
+    const result = await scraperService.scrapeAnimeDetails(
+      "http://example.com",
+      1,
+    );
     expect(isError(result)).toBe(true);
     const err = result as ScraperParseError;
     expect(err.scanStep).toBe(ScraperScanStep.DESCRIPTION);
@@ -506,11 +554,15 @@ describe("scraperService.scrapeAnimeDetails", () => {
     );
     vi.spyOn(
       scraperService as unknown as {
-        fetchText: (url: string) => Promise<unknown>;
+        fetchUrl: (
+          url: string,
+          page: number,
+          scanStep: ScraperScanStep,
+        ) => Promise<unknown>;
       },
-      "fetchText",
+      "fetchUrl",
     ).mockResolvedValue(error);
-    const result = await scraperService.scrapeAnimeDetails("http://x");
+    const result = await scraperService.scrapeAnimeDetails("http://x", 1);
     expect(result).toBe(error);
   });
 
@@ -519,7 +571,7 @@ describe("scraperService.scrapeAnimeDetails", () => {
     vi.spyOn(DOMParser.prototype, "parseFromString").mockImplementation(() => {
       throw new Error("crash");
     });
-    const result = await scraperService.scrapeAnimeDetails("http://x");
+    const result = await scraperService.scrapeAnimeDetails("http://x", 1);
     expect(isError(result)).toBe(true);
     if (isError(result)) {
       expect(result.message).toContain("Unexpected details parsing error");
@@ -531,7 +583,7 @@ describe("scraperService.scrapeAnimeDetails", () => {
     vi.spyOn(DOMParser.prototype, "parseFromString").mockImplementation(() => {
       throw "details string crash";
     });
-    const result = await scraperService.scrapeAnimeDetails("http://x");
+    const result = await scraperService.scrapeAnimeDetails("http://x", 1);
     expect(isError(result)).toBe(true);
     if (isError(result)) {
       expect(result.message).toContain("details string crash");

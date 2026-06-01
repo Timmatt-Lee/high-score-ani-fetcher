@@ -4,13 +4,13 @@ import {
   type AnimeItem,
   type AnimeDetails,
   type ScraperResult,
-  type ScanEvent,
 } from "../../types/anime";
 import {
   ScraperHttpError,
   ScraperParseError,
   ScraperScanStep,
   ScraperUnknownError,
+  type ScanEvent,
 } from "./index";
 
 const runPipeline = (pipeline: ScraperPipeline) => {
@@ -285,7 +285,7 @@ describe("ScraperPipeline", () => {
       ],
       httpErrors: [],
       parseErrors: [],
-    });
+    } as ScraperResult);
 
     detailSpy.mockImplementation(async (link: string) => {
       return {
@@ -296,7 +296,7 @@ describe("ScraperPipeline", () => {
     });
 
     const pipeline = new ScraperPipeline(
-      5, // total pages 5, but we only scan 1 because of failedPages option
+      5, // total pages 5, but we only scan 1 because of onlyPages option
       1,
       1,
       () => true,
@@ -307,8 +307,8 @@ describe("ScraperPipeline", () => {
         scanAllWithPipeline: vi.fn(),
       },
       {
-        failedPages: [3],
-        failedDetails: [failedDetail],
+        onlyPages: [3],
+        onlyAnimeItems: [failedDetail],
       },
     );
 
@@ -316,7 +316,7 @@ describe("ScraperPipeline", () => {
     expect(listSpy).toHaveBeenCalledTimes(1);
     expect(listSpy).toHaveBeenCalledWith(3); // only page 3 retried
     expect(detailSpy).toHaveBeenCalledTimes(2); // failedDetail + newPageItem
-    expect(detailSpy).toHaveBeenCalledWith("http://failedDetail", undefined);
+    expect(detailSpy).toHaveBeenCalledWith("http://failedDetail", 1);
     expect(detailSpy).toHaveBeenCalledWith("http://newPageItem", 3);
     expect(result.items).toHaveLength(2);
   });
@@ -470,7 +470,7 @@ describe("ScraperPipeline", () => {
         scanAllWithPipeline: vi.fn(),
       },
       {
-        failedDetails: [failedDetail],
+        onlyAnimeItems: [failedDetail],
       },
     );
 

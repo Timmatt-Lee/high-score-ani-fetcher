@@ -2,17 +2,15 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { renderHook, act } from "@testing-library/react";
 import { useAnimeScanner } from "./useAnimeScanner";
 import { scraperService } from "../services/scraper";
-import {
-  type AnimeItem,
-  type ScraperResult,
-  type ScanEvent,
-} from "../types/anime";
+import { type AnimeItem, type ScraperResult } from "../types/anime";
 import { ServiceProvider } from "../contexts/ServiceContext";
 import {
   ScraperHttpError,
   ScraperParseError,
   ScraperScanStep,
   ScraperUnknownError,
+  type ScanEvent,
+  ScanEventType,
 } from "../services/scraper";
 import { Observable } from "rxjs";
 
@@ -36,7 +34,7 @@ function createMockObservable(
       subscriber.next(event);
     }
     subscriber.next({
-      type: "completed",
+      type: ScanEventType.COMPLETED,
       result,
     });
     subscriber.complete();
@@ -68,11 +66,11 @@ describe("useAnimeScanner", () => {
               parseErrors: [],
             },
             [
-              { type: "page_completed", pageNum: 1, success: true },
+              { type: ScanEventType.PAGE_COMPLETED, page: 1, isSuccess: true },
               {
-                type: "detail_completed",
+                type: ScanEventType.DETAIL_COMPLETED,
                 title: mockAnime.title,
-                success: true,
+                isSuccess: true,
               },
             ],
           );
@@ -126,22 +124,26 @@ describe("useAnimeScanner", () => {
     });
 
     await act(async () => {
-      subject.next({ type: "page_completed", pageNum: 1, success: true });
+      subject.next({
+        type: ScanEventType.PAGE_COMPLETED,
+        page: 1,
+        isSuccess: true,
+      });
     });
     expect(result.current.progress.message).toContain("Scanning pages (1/1)");
 
     await act(async () => {
       subject.next({
-        type: "detail_completed",
+        type: ScanEventType.DETAIL_COMPLETED,
         title: "Halfway",
-        success: true,
+        isSuccess: true,
       });
     });
     expect(result.current.progress.message).toContain("Halfway");
 
     await act(async () => {
       subject.next({
-        type: "completed",
+        type: ScanEventType.COMPLETED,
         result: { items: [mockAnime], httpErrors: [], parseErrors: [] },
       });
       subject.complete();
@@ -579,13 +581,17 @@ describe("useAnimeScanner", () => {
     });
 
     await act(async () => {
-      subject.next({ type: "page_completed", pageNum: 0, success: true });
+      subject.next({
+        type: ScanEventType.PAGE_COMPLETED,
+        page: 0,
+        isSuccess: true,
+      });
     });
     expect(result.current.progress.percent).toBe(0);
 
     await act(async () => {
       subject.next({
-        type: "completed",
+        type: ScanEventType.COMPLETED,
         result: { items: [mockAnime], httpErrors: [], parseErrors: [] },
       });
       subject.complete();
@@ -774,9 +780,9 @@ describe("useAnimeScanner", () => {
           },
           [
             {
-              type: "page_completed",
-              pageNum: 3,
-              success: true,
+              type: ScanEventType.PAGE_COMPLETED,
+              page: 3,
+              isSuccess: true,
             },
           ],
         );
@@ -791,8 +797,8 @@ describe("useAnimeScanner", () => {
     // Call handleScan with retry options
     await act(async () => {
       await result.current.handleScan({
-        failedPages: [3],
-        failedDetails: [searchItem],
+        onlyPages: [3],
+        onlyAnimeItems: [searchItem],
       });
     });
 
@@ -807,8 +813,8 @@ describe("useAnimeScanner", () => {
       10,
       expect.any(Function),
       {
-        failedPages: [3],
-        failedDetails: [searchItem],
+        onlyPages: [3],
+        onlyAnimeItems: [searchItem],
       },
     );
 
@@ -829,9 +835,9 @@ describe("useAnimeScanner", () => {
           },
           [
             {
-              type: "detail_completed",
+              type: ScanEventType.DETAIL_COMPLETED,
               title: "Mocking Progress Details",
-              success: true,
+              isSuccess: true,
             },
           ],
         );
@@ -857,11 +863,11 @@ describe("useAnimeScanner", () => {
       undefined,
     );
 
-    // 2. Retry with failedDetails but no failedPages (failedPages is falsy/undefined)
+    // 2. Retry with onlyAnimeItems but no onlyPages (onlyPages is falsy/undefined)
     const detailItem = makeAnime("DetailItem");
     await act(async () => {
       await result.current.handleScan({
-        failedDetails: [detailItem],
+        onlyAnimeItems: [detailItem],
       });
     });
 
@@ -870,7 +876,7 @@ describe("useAnimeScanner", () => {
       5,
       10,
       expect.any(Function),
-      { failedDetails: [detailItem] },
+      { onlyAnimeItems: [detailItem] },
     );
   });
 

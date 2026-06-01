@@ -1,7 +1,5 @@
 import type { ScraperHttpError, ScraperParseError } from "../services/scraper";
-import { type Result } from "./result";
 import { z } from "zod";
-import { type Observable } from "rxjs";
 
 export const AnimeDetailsSchema = z.object({
   score: z.number(),
@@ -31,32 +29,4 @@ export interface ScraperResult {
   httpErrors: ScraperHttpError[];
   parseErrors: ScraperParseError[];
   failedDetails?: AnimeItem[];
-}
-
-export type ScanEvent =
-  | { type: "page_completed"; pageNum: number; success: boolean }
-  | { type: "detail_completed"; title: string; success: boolean }
-  | { type: "completed"; result: ScraperResult };
-
-export interface PipelineOptions {
-  failedPages?: number[];
-  failedDetails?: AnimeItem[];
-}
-
-export interface AnimeScraper {
-  getTotalPages(): Promise<
-    Result<number, ScraperHttpError | ScraperParseError>
-  >;
-  scrapeListPage(pageNum: number): Promise<ScraperResult>;
-  scrapeAnimeDetails(
-    link: string,
-    page?: number,
-  ): Promise<Result<AnimeDetails, ScraperHttpError | ScraperParseError>>;
-  scanAllWithPipeline(
-    totalPages: number,
-    pageConcurrency: number,
-    detailConcurrency: number,
-    filterItem: (item: AnimeItem) => boolean,
-    options?: PipelineOptions,
-  ): Observable<ScanEvent>;
 }

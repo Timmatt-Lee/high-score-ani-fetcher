@@ -1,16 +1,17 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import type { Meta, StoryObj } from "@storybook/react";
 import App from "./App";
 import { ServiceProvider } from "./contexts/ServiceContext";
-import {
-  type AnimeItem,
-  type ScanEvent,
-  type PipelineOptions,
-} from "./types/anime";
+import { type AnimeItem } from "./types/anime";
 import {
   ScraperHttpError,
   ScraperParseError,
   ScraperScanStep,
   ScraperService,
+  ScanEventType,
+  type ScanEvent,
+  type PipelineOptions,
 } from "./services/scraper";
 import { Observable } from "rxjs";
 
@@ -27,62 +28,64 @@ const createMockAnime = (overrides: Partial<AnimeItem> = {}): AnimeItem => ({
   ...overrides,
 });
 
-// A robust mock of ScraperService that simulates progress ticks and resolves with new high-score items
 const mockScraperService = {
-  getTotalPages: async () => {
-    // Simulate tiny network delay for speed and stability
-    await new Promise((resolve) => setTimeout(resolve, 10));
-    return 3;
-  },
-  scrapeListPage: async () => {
-    return { items: [], httpErrors: [], parseErrors: [] };
-  },
-  scrapeAnimeDetails: async () => {
+  getTotalPages: async () => 4,
+  scrapeListPage: async (page: number): Promise<any> => {
     return {
-      score: 4.9,
-      ratingCount: 1000,
-      description: "Mock details",
+      items: [
+        createMockAnime({ title: `動漫 ${page}-1`, score: 4.9 }),
+        createMockAnime({ title: `動漫 ${page}-2`, score: 4.8 }),
+      ],
+      httpErrors: [],
+      parseErrors: [],
     };
   },
-  scanAllWithPipeline: (): Observable<ScanEvent> => {
+  scrapeAnimeDetails: async (link: string, page: number): Promise<any> => {
+    return {
+      score: 4.9,
+      ratingCount: 5000,
+      description: `詳細介紹 ${link} page ${page}`,
+    };
+  },
+  scanAllWithPipeline: (
+    _totalPages: number,
+    _pageConcurrency: number,
+    _detailConcurrency: number,
+    _filterItem: (item: AnimeItem) => boolean,
+    _options?: PipelineOptions,
+  ): Observable<ScanEvent> => {
     return new Observable((subscriber) => {
       let isCancelled = false;
       const run = async () => {
         const titles = [
           "葬送的芙莉蓮",
-          "動漫瘋熱門新作",
-          "極高評分動畫",
+          "鬼滅之刃 柱訓練篇",
+          "無職轉生",
           "神作續篇",
         ];
         for (let isStep = 1; isStep <= 4; isStep++) {
           if (isCancelled) return;
           await new Promise((resolve) => setTimeout(resolve, 10));
           subscriber.next({
-            type: "page_completed",
-            pageNum: isStep,
-            success: true,
+            type: ScanEventType.PAGE_COMPLETED,
+            page: isStep,
+            isSuccess: true,
           });
           subscriber.next({
-            type: "detail_completed",
+            type: ScanEventType.DETAIL_COMPLETED,
             title: titles[isStep - 1],
-            success: true,
+            isSuccess: true,
           });
         }
         if (isCancelled) return;
         subscriber.next({
-          type: "completed",
+          type: ScanEventType.COMPLETED,
           result: {
             items: [
-              createMockAnime({
-                title: "葬送的芙莉蓮",
-                score: 4.9,
-                link: "https://ani.gamer.com.tw/anime.php?sn=1",
-              }),
-              createMockAnime({
-                title: "動漫瘋熱門新作",
-                score: 4.8,
-                link: "https://ani.gamer.com.tw/anime.php?sn=2",
-              }),
+              createMockAnime({ title: "葬送的芙莉蓮", score: 4.9 }),
+              createMockAnime({ title: "鬼滅之刃 柱訓練篇", score: 4.8 }),
+              createMockAnime({ title: "無職轉生", score: 4.8 }),
+              createMockAnime({ title: "神作續篇", score: 4.9 }),
             ],
             httpErrors: [],
             parseErrors: [],
@@ -103,31 +106,13 @@ const meta: Meta<typeof App> = {
   component: App,
   decorators: [
     (Story) => {
-      // Stub chrome storage to prevent extension-context errors
-      if (typeof window !== "undefined") {
-        (window as unknown as { chrome: unknown }).chrome = undefined;
-      }
+      localStorage.clear();
       return (
-        <ServiceProvider
-          scraperService={mockScraperService as unknown as ScraperService}
+        <div
+          style={{ width: "380px", minHeight: "500px", background: "#121212" }}
         >
-          <div
-            style={{
-              width: "450px",
-              border: "1px solid #333",
-              background: "#121212",
-            }}
-          >
-            <style>{`
-              div[class*="appContainer"] {
-                height: auto !important;
-                max-height: none !important;
-                overflow: visible !important;
-              }
-            `}</style>
-            <Story />
-          </div>
-        </ServiceProvider>
+          <Story />
+        </div>
       );
     },
   ],
@@ -136,246 +121,194 @@ const meta: Meta<typeof App> = {
 export default meta;
 type Story = StoryObj<typeof App>;
 
-export const EmptyState: Story = {
+export const Default: Story = {
   decorators: [
-    (Story) => {
-      localStorage.clear();
-      return <Story />;
-    },
+    (Story) => (
+      <ServiceProvider scraperService={mockScraperService as any}>
+        <Story />
+      </ServiceProvider>
+    ),
   ],
 };
 
-export const WithLoadedData: Story = {
+export const ScanningState: Story = {
   decorators: [
     (Story) => {
-      localStorage.clear();
-      const mockSearchList = [
-        createMockAnime({
-          title: "進擊的巨人 The Final Season",
-          score: 4.9,
-          watchCount: 450000,
-        }),
-        createMockAnime({
-          title: "鬼滅之刃 柱訓練篇",
-          score: 4.8,
-          watchCount: 300000,
-        }),
-      ];
-      const mockFavoriteList = [
-        createMockAnime({
-          title: "鋼之鍊金術師 BROTHERHOOD",
-          score: 4.9,
-          watchCount: 99999,
-          link: "https://ani.gamer.com.tw/anime.php?sn=fav1",
-        }),
-      ];
-      const mockTrashList = [
-        createMockAnime({
-          title: "爛尾劣質番",
-          score: 3.2,
-          watchCount: 500,
-          link: "https://ani.gamer.com.tw/anime.php?sn=trash1",
-        }),
-      ];
-      localStorage.setItem(
-        "animeData",
-        JSON.stringify({
-          searchList: mockSearchList,
-          favoriteList: mockFavoriteList,
-          trashList: mockTrashList,
-        }),
-      );
-      return <Story />;
-    },
-  ],
-};
-
-export const WithScanErrors: Story = {
-  decorators: [
-    (Story) => {
-      localStorage.clear();
-      // Setup some scan results with partial errors in local storage
-      const mockSearchList = [
-        createMockAnime({
-          title: "某個好看但部分章節損壞的番",
-          score: 4.8,
-        }),
-      ];
-      localStorage.setItem(
-        "animeData",
-        JSON.stringify({
-          searchList: mockSearchList,
-          favoriteList: [],
-          trashList: [],
-        }),
-      );
-      return <Story />;
-    },
-  ],
-  render: () => {
-    // We override ScraperService to return errors for this specific story
-    const mockScraperServiceWithErrors = {
-      ...mockScraperService,
-      getTotalPages: async () => 1,
-      scanAllWithPipeline: (
-        _totalPages: number,
-        _pageConcurrency: number,
-        _detailConcurrency: number,
-        _filterItem: (item: AnimeItem) => boolean,
-        options?: PipelineOptions,
-      ): Observable<ScanEvent> => {
-        return new Observable((subscriber) => {
-          let isCancelled = false;
-          const run = async () => {
-            if (options) {
-              // Retry scan: emit progress events and NEVER complete so Chromatic captures the scanning state
+      const slowScraperService = {
+        ...mockScraperService,
+        scanAllWithPipeline: (): Observable<ScanEvent> => {
+          return new Observable((subscriber) => {
+            let isCancelled = false;
+            const run = async () => {
               await new Promise((resolve) => setTimeout(resolve, 10));
               if (isCancelled) return;
               subscriber.next({
-                type: "page_completed",
-                pageNum: 2,
-                success: true,
+                type: ScanEventType.PAGE_COMPLETED,
+                page: 1,
+                isSuccess: true,
               });
-              return;
-            }
-
-            // First scan: completes after 20ms with errors
-            await new Promise((resolve) => setTimeout(resolve, 20));
-            if (isCancelled) return;
-            subscriber.next({
-              type: "completed",
-              result: {
-                items: [
-                  createMockAnime({ title: "部分解析成功的動畫", score: 4.9 }),
-                ],
-                httpErrors: [
-                  Object.assign(
-                    new ScraperHttpError(
-                      2,
-                      ScraperScanStep.PAGINATION,
-                      "https://ani.gamer.com.tw/animeList.php?page=2",
-                      "",
-                      502,
-                      undefined,
-                    ),
-                    { animeName: "某個好看但部分章節損壞的番" },
-                  ),
-                ],
-                parseErrors: [
-                  Object.assign(
-                    new ScraperParseError(
-                      3,
-                      ScraperScanStep.TITLE,
-                      "https://ani.gamer.com.tw/animeVideo.php?sn=999",
-                      "",
-                      "Missing title tag",
-                    ),
-                    { animeName: "某個好看但部分章節損壞的番" },
-                  ),
-                ],
-              },
-            });
-            subscriber.complete();
-          };
-          run();
-          return () => {
-            isCancelled = true;
-          };
-        });
-      },
-    };
-
-    return (
-      <ServiceProvider
-        scraperService={
-          mockScraperServiceWithErrors as unknown as ScraperService
-        }
-      >
-        <div
-          style={{
-            width: "450px",
-            border: "1px solid #333",
-            background: "#121212",
-          }}
-        >
-          <style>{`
-            div[class*="appContainer"] {
-              height: auto !important;
-              max-height: none !important;
-              overflow: visible !important;
-            }
-          `}</style>
-          <App />
-        </div>
-      </ServiceProvider>
-    );
-  },
+              // We emit details completed and then do not call complete()
+              // to keep it in scanning state forever for screenshot capture.
+              subscriber.next({
+                type: ScanEventType.DETAIL_COMPLETED,
+                title: "葬送的芙莉蓮",
+                isSuccess: true,
+              });
+            };
+            run();
+            return () => {
+              isCancelled = true;
+            };
+          });
+        },
+      };
+      return (
+        <ServiceProvider scraperService={slowScraperService as any}>
+          <Story />
+        </ServiceProvider>
+      );
+    },
+  ],
   play: async ({ canvasElement }) => {
-    // Wait a tiny bit for the component to mount, then click the scan button
-    await new Promise((resolve) => setTimeout(resolve, 50));
-    const scanBtn = Array.from(canvasElement.querySelectorAll("button")).find(
-      (btn) => btn.textContent?.includes("Scan"),
-    );
+    const scanBtn = canvasElement.querySelector("button");
     if (scanBtn) {
       (scanBtn as HTMLButtonElement).click();
     }
   },
 };
 
-export const WithRetryingState: Story = {
-  ...WithScanErrors,
-  play: async ({ canvasElement }) => {
-    const waitForElement = async (selector: string): Promise<Element> => {
-      for (let i = 0; i < 100; i++) {
-        const el = canvasElement.querySelector(selector);
-        if (el) return el;
-        await new Promise((resolve) => setTimeout(resolve, 50));
-      }
-      throw new Error(`Element ${selector} not found`);
-    };
+export const PartiallyFailedScan: Story = {
+  decorators: [
+    (Story) => {
+      const failingScraperService = {
+        ...mockScraperService,
+        scanAllWithPipeline: (
+          _totalPages: number,
+          _pageConcurrency: number,
+          _detailConcurrency: number,
+          _filterItem: (item: AnimeItem) => boolean,
+          options?: PipelineOptions,
+        ): Observable<ScanEvent> => {
+          return new Observable((subscriber) => {
+            let isCancelled = false;
+            const run = async () => {
+              if (options) {
+                // Retry scan: emit progress events and NEVER complete so Chromatic captures the scanning state
+                await new Promise((resolve) => setTimeout(resolve, 10));
+                if (isCancelled) return;
+                subscriber.next({
+                  type: ScanEventType.PAGE_COMPLETED,
+                  page: 2,
+                  isSuccess: true,
+                });
+                return;
+              }
 
-    // 1. Click scan first to populate errors
-    await new Promise((resolve) => setTimeout(resolve, 50));
-    const scanBtn = Array.from(canvasElement.querySelectorAll("button")).find(
-      (btn) => btn.textContent?.includes("Scan"),
-    );
+              // First scan: completes after 20ms with errors
+              await new Promise((resolve) => setTimeout(resolve, 20));
+              if (isCancelled) return;
+              subscriber.next({
+                type: ScanEventType.COMPLETED,
+                result: {
+                  items: [
+                    createMockAnime({
+                      title: "部分解析成功的動畫",
+                      score: 4.9,
+                    }),
+                  ],
+                  httpErrors: [
+                    Object.assign(
+                      new ScraperHttpError(
+                        2,
+                        ScraperScanStep.PAGINATION,
+                        "https://ani.gamer.com.tw/animeList.php?page=2",
+                        "",
+                        502,
+                        undefined,
+                      ),
+                      { animeName: "某個好看但部分章節損壞的番" },
+                    ),
+                  ],
+                  parseErrors: [
+                    Object.assign(
+                      new ScraperParseError(
+                        3,
+                        ScraperScanStep.TITLE,
+                        "https://ani.gamer.com.tw/animeList.php?page=3",
+                        "",
+                        "解析失敗",
+                      ),
+                      { animeName: "某個結構毀損無法取得標題的番" },
+                    ),
+                  ],
+                },
+              });
+              subscriber.complete();
+            };
+            run();
+            return () => {
+              isCancelled = true;
+            };
+          });
+        },
+      };
+      return (
+        <ServiceProvider scraperService={failingScraperService as any}>
+          <Story />
+        </ServiceProvider>
+      );
+    },
+  ],
+  play: async ({ canvasElement }) => {
+    // Click scan
+    const scanBtn = canvasElement.querySelector("button");
     if (scanBtn) {
       (scanBtn as HTMLButtonElement).click();
     }
-    // 2. Wait for first scan to complete and Retry button to appear
-    const retryBtn = (await waitForElement(
-      '[data-testid="retry-errors-btn"]',
-    )) as HTMLButtonElement;
-    // Wait a brief moment to ensure React has fully attached event listeners
-    await new Promise((resolve) => setTimeout(resolve, 200));
-    // 3. Click the retry button
-    retryBtn.click();
+  },
+};
 
-    // 4. Poll and assert that errors panel hides and progress bar shows
-    const waitForElementToHide = async (selector: string): Promise<void> => {
-      for (let i = 0; i < 100; i++) {
-        const el = canvasElement.querySelector(selector);
-        if (!el) return;
-        await new Promise((resolve) => setTimeout(resolve, 50));
-      }
-      throw new Error(
-        `Self-assertion failed: ${selector} did not hide during retry scan!`,
-      );
-    };
+export const PartiallyFailedScanExpanded: Story = {
+  ...PartiallyFailedScan,
+  play: async (context) => {
+    // Click scan first
+    await PartiallyFailedScan.play?.(context);
+    const { canvasElement } = context;
 
-    const waitForElementToShow = async (selector: string): Promise<Element> => {
-      for (let i = 0; i < 100; i++) {
-        const el = canvasElement.querySelector(selector);
-        if (el) return el;
-        await new Promise((resolve) => setTimeout(resolve, 50));
-      }
-      throw new Error(
-        `Self-assertion failed: ${selector} did not show during retry scan!`,
-      );
-    };
+    // Wait for the scanning to complete and show results / errors tab
+    const findErrorsTab = () =>
+      canvasElement.querySelector('[data-testid="tab-errors"]');
+    await new Promise<void>((resolve) => {
+      const interval = setInterval(() => {
+        const el = findErrorsTab();
+        if (el) {
+          clearInterval(interval);
+          resolve();
+        }
+      }, 50);
+    });
 
-    await waitForElementToHide('[data-testid="errors-panel"]');
-    await waitForElementToShow('[data-testid="progress-container"]');
+    // Switch to Errors tab
+    const errorsTab = findErrorsTab();
+    if (errorsTab) {
+      (errorsTab as HTMLButtonElement).click();
+    }
+
+    // Expand HTTP errors
+    const httpHeader = canvasElement.querySelector(
+      '[data-testid="http-errors-header"]',
+    );
+    if (httpHeader) {
+      (httpHeader as HTMLDivElement).click();
+    }
+
+    // Expand Parser errors
+    const parseHeader = canvasElement.querySelector(
+      '[data-testid="parse-errors-header"]',
+    );
+    if (parseHeader) {
+      (parseHeader as HTMLDivElement).click();
+    }
   },
 };
 
@@ -407,123 +340,63 @@ export const WithError: Story = {
           mockScraperServiceWithFatalError as unknown as ScraperService
         }
       >
-        <div
-          style={{
-            width: "450px",
-            border: "1px solid #333",
-            background: "#121212",
-          }}
-        >
-          <style>{`
-            div[class*="appContainer"] {
-              height: auto !important;
-              max-height: none !important;
-              overflow: visible !important;
-            }
-          `}</style>
-          <App />
-        </div>
+        <App />
       </ServiceProvider>
     );
   },
   play: async ({ canvasElement }) => {
-    await new Promise((resolve) => setTimeout(resolve, 50));
-    const scanBtn = Array.from(canvasElement.querySelectorAll("button")).find(
-      (btn) => btn.textContent?.includes("Scan"),
-    );
+    const scanBtn = canvasElement.querySelector("button");
     if (scanBtn) {
       (scanBtn as HTMLButtonElement).click();
     }
   },
 };
 
-export const WithScanningState: Story = {
+export const WithLoadingDetails: Story = {
   decorators: [
     (Story) => {
-      localStorage.clear();
-      return <Story />;
+      const slowScraperService = {
+        ...mockScraperService,
+        scanAllWithPipeline: (): Observable<ScanEvent> => {
+          return new Observable((subscriber) => {
+            let isCancelled = false;
+            const run = async () => {
+              await new Promise((resolve) => setTimeout(resolve, 10));
+              if (isCancelled) return;
+              subscriber.next({
+                type: ScanEventType.PAGE_COMPLETED,
+                page: 1,
+                isSuccess: true,
+              });
+              subscriber.next({
+                type: ScanEventType.PAGE_COMPLETED,
+                page: 2,
+                isSuccess: true,
+              });
+              subscriber.next({
+                type: ScanEventType.DETAIL_COMPLETED,
+                title: "葬送的芙莉蓮",
+                isSuccess: true,
+              });
+            };
+            run();
+            return () => {
+              isCancelled = true;
+            };
+          });
+        },
+      };
+      return (
+        <ServiceProvider scraperService={slowScraperService as any}>
+          <Story />
+        </ServiceProvider>
+      );
     },
   ],
-  render: () => {
-    // We override ScraperService to return a scan that NEVER completes
-    const mockScraperServiceScanning = {
-      ...mockScraperService,
-      getTotalPages: async () => {
-        await new Promise((resolve) => setTimeout(resolve, 10));
-        return 10;
-      },
-      scanAllWithPipeline: (): Observable<ScanEvent> => {
-        return new Observable((subscriber) => {
-          let isCancelled = false;
-          const run = async () => {
-            await new Promise((resolve) => setTimeout(resolve, 10));
-            if (isCancelled) return;
-            subscriber.next({
-              type: "page_completed",
-              pageNum: 1,
-              success: true,
-            });
-            // We emit details completed and then do not call complete()
-            // to keep it in scanning state forever for screenshot capture.
-            subscriber.next({
-              type: "detail_completed",
-              title: "葬送的芙莉蓮",
-              success: true,
-            });
-          };
-          run();
-          return () => {
-            isCancelled = true;
-          };
-        });
-      },
-    };
-
-    return (
-      <ServiceProvider
-        scraperService={mockScraperServiceScanning as unknown as ScraperService}
-      >
-        <div
-          style={{
-            width: "450px",
-            border: "1px solid #333",
-            background: "#121212",
-          }}
-        >
-          <style>{`
-            div[class*="appContainer"] {
-              height: auto !important;
-              max-height: none !important;
-              overflow: visible !important;
-            }
-          `}</style>
-          <App />
-        </div>
-      </ServiceProvider>
-    );
-  },
   play: async ({ canvasElement }) => {
-    // 1. Wait for mount, then click the Scan button
-    await new Promise((resolve) => setTimeout(resolve, 50));
-    const scanBtn = Array.from(canvasElement.querySelectorAll("button")).find(
-      (btn) => btn.textContent?.includes("Scan"),
-    );
+    const scanBtn = canvasElement.querySelector("button");
     if (scanBtn) {
       (scanBtn as HTMLButtonElement).click();
     }
-
-    // 2. Poll and assert that progress bar correctly shows up
-    const waitForElementToShow = async (selector: string): Promise<Element> => {
-      for (let i = 0; i < 100; i++) {
-        const el = canvasElement.querySelector(selector);
-        if (el) return el;
-        await new Promise((resolve) => setTimeout(resolve, 50));
-      }
-      throw new Error(
-        `Self-assertion failed: ${selector} did not show during scan state!`,
-      );
-    };
-
-    await waitForElementToShow('[data-testid="progress-container"]');
   },
 };

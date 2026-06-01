@@ -1,9 +1,5 @@
 import { useState } from "react";
-import {
-  type AnimeItem,
-  type ScanCompleteResult,
-  type PipelineOptions,
-} from "../types/anime";
+import { type AnimeItem, type ScanCompleteResult } from "../types/anime";
 import { useServices } from "../contexts/ServiceContext";
 import {
   ScraperHttpError,
@@ -11,6 +7,8 @@ import {
   ScraperUnknownError,
   ScraperError,
   ScraperScanStep,
+  ScanEventType,
+  type PipelineOptions,
 } from "../services/scraper";
 import { isError } from "../types/result";
 
@@ -42,7 +40,7 @@ export function useAnimeScanner(
 
     const isRetry = !!(
       options &&
-      (options.failedPages || options.failedDetails)
+      (options.onlyPages || options.onlyAnimeItems)
     );
     let totalPages = totalPagesCount;
 
@@ -108,9 +106,7 @@ export function useAnimeScanner(
     const updateProgress = (currentTitle?: string) => {
       // If retrying, we might have fewer pages to scan
       const pagesToScanCount =
-        isRetry && options.failedPages
-          ? options.failedPages.length
-          : totalPages;
+        isRetry && options.onlyPages ? options.onlyPages.length : totalPages;
       const pagesPercent =
         pagesToScanCount > 0 ? pagesCompletedCount / pagesToScanCount : 0;
       const detailsPercent =
@@ -144,15 +140,15 @@ export function useAnimeScanner(
       .subscribe({
         next: (event) => {
           switch (event.type) {
-            case "page_completed":
+            case ScanEventType.PAGE_COMPLETED:
               pagesCompletedCount++;
               updateProgress();
               break;
-            case "detail_completed":
+            case ScanEventType.DETAIL_COMPLETED:
               detailsCompletedCount++;
               updateProgress(event.title);
               break;
-            case "completed": {
+            case ScanEventType.COMPLETED: {
               const {
                 items,
                 httpErrors: scanHttpErrors,

@@ -1,4 +1,4 @@
-import { ScraperScanStep } from "./scraper-scan-step";
+import { ScraperScanStep } from "./scraperScanStep";
 
 /**
  * Base class for all scraper errors.
@@ -37,7 +37,7 @@ export class ScraperHttpError extends ScraperError {
     url: string,
     html: string,
     status: number,
-    animeName: string | undefined,
+    animeName?: string,
   ) {
     super(
       `HTTP request failed with status ${status} (URL: ${url})`,
@@ -87,7 +87,7 @@ export class ScraperUnknownError extends ScraperError {
     page: number,
     scanStep: ScraperScanStep,
     url: string,
-    animeName: string | undefined,
+    animeName?: string,
   ) {
     super(causeError.message, page, scanStep, url, animeName);
     this.name = "ScraperUnknownError";

@@ -9,15 +9,13 @@ import {
 import { ServiceProvider } from "./contexts/ServiceContext";
 import App from "./App";
 import { scraperService } from "./services/scraper";
-import {
-  type AnimeItem,
-  type ScraperResult,
-  type ScanEvent,
-} from "./types/anime";
+import { type AnimeItem, type ScraperResult } from "./types/anime";
 import {
   ScraperHttpError,
   ScraperParseError,
   ScraperScanStep,
+  ScanEventType,
+  type ScanEvent,
 } from "./services/scraper";
 import { Observable, Subject } from "rxjs";
 
@@ -30,7 +28,7 @@ function createMockObservable(
       subscriber.next(event);
     }
     subscriber.next({
-      type: "completed",
+      type: ScanEventType.COMPLETED,
       result,
     });
     subscriber.complete();
@@ -407,7 +405,7 @@ describe("Scan functionality", () => {
     await waitFor(() => expect(screen.getByText("Scanning...")).toBeDefined());
     await act(async () => {
       subject.next({
-        type: "completed",
+        type: ScanEventType.COMPLETED,
         result: { items: [], httpErrors: [], parseErrors: [] },
       });
       subject.complete();
@@ -446,11 +444,11 @@ describe("Scan functionality", () => {
             parseErrors: [],
           },
           [
-            { type: "page_completed", pageNum: 1, success: true },
+            { type: ScanEventType.PAGE_COMPLETED, page: 1, isSuccess: true },
             {
-              type: "detail_completed",
+              type: ScanEventType.DETAIL_COMPLETED,
               title: "Progress title",
-              success: true,
+              isSuccess: true,
             },
           ],
         );

@@ -115,8 +115,8 @@ function App() {
                       if (err.page) failedPagesSet.add(err.page);
                     });
                     handleScan({
-                      failedPages: Array.from(failedPagesSet),
-                      failedDetails,
+                      onlyPages: Array.from(failedPagesSet),
+                      onlyAnimeItems: failedDetails,
                     });
                   }}
                   disabled={isScanning || totalErrors === 0}

@@ -1,9 +1,15 @@
 export { ScraperService, scraperService } from "./scraper";
 export { ScraperPipeline } from "./scraperPipeline";
-export { ScraperScanStep } from "./scraper-scan-step";
+export { ScraperScanStep } from "./scraperScanStep";
 export {
   ScraperError,
   ScraperHttpError,
   ScraperParseError,
   ScraperUnknownError,
-} from "./scraper-error";
+} from "./scraperError";
+export {
+  ScanEventType,
+  type ScanEvent,
+  type PipelineOptions,
+  AnimeScraper,
+} from "./animeScraper";

@@ -2,24 +2,31 @@ import {
   type AnimeItem,
   type AnimeDetails,
   type ScraperResult,
-  type AnimeScraper,
-  type ScanEvent,
-  type PipelineOptions,
 } from "../../types/anime";
 import { type Result, isError } from "../../types/result";
-import { ScraperScanStep } from "./scraper-scan-step";
-import { ScraperHttpError, ScraperParseError } from "./scraper-error";
+import { ScraperScanStep } from "./scraperScanStep";
+import {
+  ScraperHttpError,
+  ScraperParseError,
+  ScraperUnknownError,
+  ScraperError,
+} from "./scraperError";
 import { ScraperPipeline } from "./scraperPipeline";
 import { type Observable } from "rxjs";
+import {
+  type ScanEvent,
+  type PipelineOptions,
+  AnimeScraper,
+} from "./animeScraper";
 
 const BASE_URL = "https://ani.gamer.com.tw";
 
-export class ScraperService implements AnimeScraper {
-  private async fetchText(
+export class ScraperService extends AnimeScraper {
+  private async fetchUrl(
     url: string,
-    page = 1,
-    scanStep = ScraperScanStep.PAGINATION,
-  ): Promise<Result<string, ScraperHttpError>> {
+    page: number,
+    scanStep: ScraperScanStep,
+  ): Promise<Result<string, ScraperHttpError | ScraperUnknownError>> {
     try {
       const response = await fetch(url);
       if (!response.ok) {
@@ -41,26 +48,18 @@ export class ScraperService implements AnimeScraper {
       }
       return await response.text();
     } catch (err) {
-      return new ScraperHttpError(
-        page,
-        scanStep,
-        url,
-        err instanceof Error ? err.message : String(err),
-        500,
-        undefined,
-      );
+      const error = err instanceof Error ? err : new Error(String(err));
+      return new ScraperUnknownError(error, page, scanStep, url, undefined);
     }
   }
 
   /**
    * Fetches the total number of pages from the anime list.
    */
-  async getTotalPages(): Promise<
-    Result<number, ScraperHttpError | ScraperParseError>
-  > {
+  async getTotalPages(): Promise<Result<number, ScraperError>> {
     const url = `${BASE_URL}/animeList.php?page=1`;
 
-    const text = await this.fetchText(url, 1);
+    const text = await this.fetchUrl(url, 1, ScraperScanStep.PAGINATION);
     if (isError(text)) return text;
 
     let doc: Document;
@@ -72,7 +71,7 @@ export class ScraperService implements AnimeScraper {
         1,
         ScraperScanStep.PAGINATION,
         url,
-        errMsg,
+        text,
         `Unexpected parsing error: ${errMsg}`,
       );
     }
@@ -256,15 +255,18 @@ export class ScraperService implements AnimeScraper {
   /**
    * Scrapes basic info for all items on a single page.
    */
-  async scrapeListPage(pageNum: number): Promise<ScraperResult> {
-    const url = `${BASE_URL}/animeList.php?page=${pageNum}`;
-    const text = await this.fetchText(url, pageNum);
+  async scrapeListPage(page: number): Promise<ScraperResult> {
+    const url = `${BASE_URL}/animeList.php?page=${page}`;
+    const text = await this.fetchUrl(url, page, ScraperScanStep.PAGINATION);
     if (isError(text)) {
-      return {
-        items: [],
-        httpErrors: [text],
-        parseErrors: [],
-      };
+      if (text instanceof ScraperHttpError) {
+        return {
+          items: [],
+          httpErrors: [text],
+          parseErrors: [],
+        };
+      }
+      throw text;
     }
 
     let doc: Document;
@@ -277,10 +279,10 @@ export class ScraperService implements AnimeScraper {
         httpErrors: [],
         parseErrors: [
           new ScraperParseError(
-            pageNum,
+            page,
             ScraperScanStep.TITLE,
             url,
-            errMsg,
+            text,
             `Unexpected page parsing error: ${errMsg}`,
           ),
         ],
@@ -294,7 +296,7 @@ export class ScraperService implements AnimeScraper {
     const parseErrors: ScraperParseError[] = [];
 
     for (const card of Array.from(cards)) {
-      const res = this.parseAnimeCard(card, url, pageNum);
+      const res = this.parseAnimeCard(card, url, page);
       if (isError(res)) {
         parseErrors.push(res);
       } else {
@@ -310,9 +312,9 @@ export class ScraperService implements AnimeScraper {
    */
   async scrapeAnimeDetails(
     link: string,
-    page = 1,
-  ): Promise<Result<AnimeDetails, ScraperHttpError | ScraperParseError>> {
-    const text = await this.fetchText(link, page, ScraperScanStep.TITLE);
+    page: number,
+  ): Promise<Result<AnimeDetails, ScraperError>> {
+    const text = await this.fetchUrl(link, page, ScraperScanStep.TITLE);
     if (isError(text)) return text;
 
     let doc: Document;
@@ -324,7 +326,7 @@ export class ScraperService implements AnimeScraper {
         page,
         ScraperScanStep.DESCRIPTION,
         link,
-        errMsg,
+        text,
         `Unexpected details parsing error: ${errMsg}`,
       );
     }
