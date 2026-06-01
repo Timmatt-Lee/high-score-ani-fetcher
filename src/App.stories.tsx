@@ -6,11 +6,7 @@ import {
   type ScanEvent,
   type PipelineOptions,
 } from "./types/anime";
-import {
-  ScraperHttpError,
-  ScraperParseError,
-  ScraperParseStep,
-} from "./errors";
+import { ScraperHttpError, ScraperParseError, ScraperScanStep } from "./errors";
 import { ScraperService } from "./services/scraper";
 import { Observable } from "rxjs";
 
@@ -263,7 +259,7 @@ export const WithScanErrors: Story = {
                   Object.assign(
                     new ScraperParseError(
                       3,
-                      ScraperParseStep.TITLE,
+                      ScraperScanStep.TITLE,
                       "https://ani.gamer.com.tw/animeVideo.php?sn=999",
                       "",
                       "Missing title tag",

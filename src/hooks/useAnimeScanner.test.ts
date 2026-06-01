@@ -11,7 +11,7 @@ import { ServiceProvider } from "../contexts/ServiceContext";
 import {
   ScraperHttpError,
   ScraperParseError,
-  ScraperParseStep,
+  ScraperScanStep,
   ScraperUnknownError,
 } from "../errors";
 import { Observable } from "rxjs";
@@ -303,7 +303,7 @@ describe("useAnimeScanner", () => {
     const mockAnime1 = makeAnime("SuccessAnime");
     const pageError = new ScraperParseError(
       1,
-      ScraperParseStep.TITLE,
+      ScraperScanStep.TITLE,
       "http://err-page",
       "Page error",
     );
@@ -377,7 +377,7 @@ describe("useAnimeScanner", () => {
   it("handles ScraperParseError scan failure in catch block", async () => {
     const error = new ScraperParseError(
       1,
-      ScraperParseStep.TITLE,
+      ScraperScanStep.TITLE,
       "http://err",
       "Failed page",
     );

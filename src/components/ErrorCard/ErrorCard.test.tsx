@@ -7,7 +7,7 @@ import {
   ScraperParseError,
   ScraperUnknownError,
 } from "../../errors";
-import { ScraperParseStep } from "../../errors/scraper-parse-step";
+import { ScraperScanStep } from "../../errors/scraper-scan-step";
 
 describe("ErrorCard", () => {
   const writeTextMock = vi.fn();
@@ -63,7 +63,7 @@ describe("ErrorCard", () => {
   it("renders Parser error with title correctly", () => {
     const error = new ScraperParseError(
       5,
-      ScraperParseStep.TITLE,
+      ScraperScanStep.TITLE,
       "https://ani.gamer.com.tw/animeList.php?page=5",
       "bad html",
       "Parse failed",
@@ -81,7 +81,7 @@ describe("ErrorCard", () => {
   it("renders Parser error without title or page correctly", () => {
     const error = new ScraperParseError(
       0,
-      ScraperParseStep.DESCRIPTION,
+      ScraperScanStep.DESCRIPTION,
       "https://ani.gamer.com.tw/anime.php",
       "bad html",
       "Parse failed",
@@ -97,33 +97,33 @@ describe("ErrorCard", () => {
     );
   });
 
-  it("renders Parser error with various other ScraperParseStep values", () => {
+  it("renders Parser error with various other ScraperScanStep values", () => {
     const sources = [
       {
-        source: ScraperParseStep.PAGINATION,
+        source: ScraperScanStep.PAGINATION,
         expected: "When doing: parsing Pagination",
       },
       {
-        source: ScraperParseStep.WATCH_COUNT,
+        source: ScraperScanStep.WATCH_COUNT,
         expected: "When doing: parsing Watch Count",
       },
       {
-        source: ScraperParseStep.EPISODE_COUNT,
+        source: ScraperScanStep.EPISODE_COUNT,
         expected: "When doing: parsing Episode Count",
       },
       {
-        source: ScraperParseStep.UPLOAD_DATE,
+        source: ScraperScanStep.UPLOAD_DATE,
         expected: "When doing: parsing Upload Date",
       },
       {
-        source: ScraperParseStep.SCORE,
+        source: ScraperScanStep.SCORE,
         expected: "When doing: parsing Score",
       },
       {
-        source: ScraperParseStep.RATING_COUNT,
+        source: ScraperScanStep.RATING_COUNT,
         expected: "When doing: parsing Rating Count",
       },
-      { source: 999 as ScraperParseStep, expected: "When doing: parsing" },
+      { source: 999 as ScraperScanStep, expected: "When doing: parsing" },
     ];
 
     for (const { source, expected } of sources) {
@@ -176,7 +176,7 @@ describe("ErrorCard", () => {
   it("renders fallbackTitle using error.name when page, title, and other properties are missing", () => {
     class CustomError extends ScraperError {
       constructor() {
-        super("Custom msg", 0);
+        super("Custom msg", 0, ScraperScanStep.SYSTEM, "unknown");
         this.name = "TestCustomError";
       }
     }

@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { scraperService } from "./scraper";
 import {
-  ScraperParseStep,
+  ScraperScanStep,
   ScraperHttpError,
   ScraperParseError,
 } from "../errors";
@@ -40,8 +40,8 @@ describe("scraperService.getTotalPages", () => {
     expect(isError(result)).toBe(true);
     if (isError(result)) {
       expect(result).toBeInstanceOf(ScraperParseError);
-      expect((result as ScraperParseError).parseStep).toBe(
-        ScraperParseStep.PAGINATION,
+      expect((result as ScraperParseError).scanStep).toBe(
+        ScraperScanStep.PAGINATION,
       );
     }
   });
@@ -178,7 +178,7 @@ describe("scraperService.scrapeListPage", () => {
     expect(result.parseErrors).toHaveLength(1);
     const err = result.parseErrors[0];
     if (err instanceof ScraperParseError) {
-      expect(err.parseStep).toBe(ScraperParseStep.TITLE);
+      expect(err.scanStep).toBe(ScraperScanStep.TITLE);
     }
   });
 
@@ -192,7 +192,7 @@ describe("scraperService.scrapeListPage", () => {
     expect(result.parseErrors).toHaveLength(1);
     const err = result.parseErrors[0];
     if (err instanceof ScraperParseError) {
-      expect(err.parseStep).toBe(ScraperParseStep.TITLE);
+      expect(err.scanStep).toBe(ScraperScanStep.TITLE);
     }
   });
 
@@ -218,7 +218,7 @@ describe("scraperService.scrapeListPage", () => {
     expect(result.parseErrors).toHaveLength(1);
     const err = result.parseErrors[0];
     if (err instanceof ScraperParseError) {
-      expect(err.parseStep).toBe(ScraperParseStep.WATCH_COUNT);
+      expect(err.scanStep).toBe(ScraperScanStep.WATCH_COUNT);
       expect(err.message).toContain("Watch count element missing");
     }
   });
@@ -236,7 +236,7 @@ describe("scraperService.scrapeListPage", () => {
     expect(result.parseErrors).toHaveLength(1);
     const err = result.parseErrors[0];
     if (err instanceof ScraperParseError) {
-      expect(err.parseStep).toBe(ScraperParseStep.WATCH_COUNT);
+      expect(err.scanStep).toBe(ScraperScanStep.WATCH_COUNT);
       expect(err.message).toContain("Failed to parse watch count");
     }
   });
@@ -289,7 +289,7 @@ describe("scraperService.scrapeListPage", () => {
     expect(result.parseErrors).toHaveLength(1);
     const err = result.parseErrors[0];
     if (err instanceof ScraperParseError) {
-      expect(err.parseStep).toBe(ScraperParseStep.EPISODE_COUNT);
+      expect(err.scanStep).toBe(ScraperScanStep.EPISODE_COUNT);
       expect(err.message).toContain("Failed to parse episode count");
     }
   });
@@ -311,7 +311,7 @@ describe("scraperService.scrapeListPage", () => {
     expect(result.parseErrors).toHaveLength(1);
     const err = result.parseErrors[0];
     if (err instanceof ScraperParseError) {
-      expect(err.parseStep).toBe(ScraperParseStep.UPLOAD_DATE);
+      expect(err.scanStep).toBe(ScraperScanStep.UPLOAD_DATE);
       expect(err.message).toContain("Failed to parse upload date");
     }
   });
@@ -329,7 +329,7 @@ describe("scraperService.scrapeListPage", () => {
     expect(result.parseErrors).toHaveLength(1);
     const err = result.parseErrors[0];
     if (err instanceof ScraperParseError) {
-      expect(err.parseStep).toBe(ScraperParseStep.EPISODE_COUNT);
+      expect(err.scanStep).toBe(ScraperScanStep.EPISODE_COUNT);
       expect(err.message).toContain("Detail block missing");
     }
   });
@@ -350,7 +350,7 @@ describe("scraperService.scrapeListPage", () => {
     expect(result.parseErrors).toHaveLength(1);
     const err = result.parseErrors[0];
     if (err instanceof ScraperParseError) {
-      expect(err.parseStep).toBe(ScraperParseStep.EPISODE_COUNT);
+      expect(err.scanStep).toBe(ScraperScanStep.EPISODE_COUNT);
       expect(err.message).toContain("Episode count missing");
     }
   });
@@ -371,7 +371,7 @@ describe("scraperService.scrapeListPage", () => {
     expect(result.parseErrors).toHaveLength(1);
     const err = result.parseErrors[0];
     if (err instanceof ScraperParseError) {
-      expect(err.parseStep).toBe(ScraperParseStep.UPLOAD_DATE);
+      expect(err.scanStep).toBe(ScraperScanStep.UPLOAD_DATE);
       expect(err.message).toContain("Upload date missing");
     }
   });
@@ -427,8 +427,8 @@ describe("scraperService.scrapeAnimeDetails", () => {
       await scraperService.scrapeAnimeDetails("http://example.com");
     expect(isError(result)).toBe(true);
     if (isError(result)) {
-      expect((result as ScraperParseError).parseStep).toBe(
-        ScraperParseStep.SCORE,
+      expect((result as ScraperParseError).scanStep).toBe(
+        ScraperScanStep.SCORE,
       );
     }
   });
@@ -439,7 +439,7 @@ describe("scraperService.scrapeAnimeDetails", () => {
       await scraperService.scrapeAnimeDetails("http://example.com");
     expect(isError(result)).toBe(true);
     const err = result as ScraperParseError;
-    expect(err.parseStep).toBe(ScraperParseStep.SCORE);
+    expect(err.scanStep).toBe(ScraperScanStep.SCORE);
     expect(err.message).toContain("Failed to parse score");
   });
 
@@ -453,7 +453,7 @@ describe("scraperService.scrapeAnimeDetails", () => {
       await scraperService.scrapeAnimeDetails("http://example.com");
     expect(isError(result)).toBe(true);
     const err = result as ScraperParseError;
-    expect(err.parseStep).toBe(ScraperParseStep.RATING_COUNT);
+    expect(err.scanStep).toBe(ScraperScanStep.RATING_COUNT);
     expect(err.message).toContain("Failed to parse rating count");
   });
 
@@ -467,7 +467,7 @@ describe("scraperService.scrapeAnimeDetails", () => {
       await scraperService.scrapeAnimeDetails("http://example.com");
     expect(isError(result)).toBe(true);
     const err = result as ScraperParseError;
-    expect(err.parseStep).toBe(ScraperParseStep.RATING_COUNT);
+    expect(err.scanStep).toBe(ScraperScanStep.RATING_COUNT);
     expect(err.message).toContain("Rating count element missing");
   });
 
@@ -481,7 +481,7 @@ describe("scraperService.scrapeAnimeDetails", () => {
       await scraperService.scrapeAnimeDetails("http://example.com");
     expect(isError(result)).toBe(true);
     const err = result as ScraperParseError;
-    expect(err.parseStep).toBe(ScraperParseStep.DESCRIPTION);
+    expect(err.scanStep).toBe(ScraperScanStep.DESCRIPTION);
     expect(err.message).toContain("Description missing");
   });
 

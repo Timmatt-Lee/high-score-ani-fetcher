@@ -1,7 +1,7 @@
 /**
- * Defines the specific step or field that failed during document parsing.
+ * Defines the specific step or field that failed during the scraping process.
  */
-export enum ScraperParseStep {
+export enum ScraperScanStep {
   PAGINATION,
   TITLE,
   WATCH_COUNT,
@@ -10,4 +10,5 @@ export enum ScraperParseStep {
   SCORE,
   RATING_COUNT,
   DESCRIPTION,
+  SYSTEM,
 }

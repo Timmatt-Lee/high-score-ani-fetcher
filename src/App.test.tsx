@@ -14,11 +14,7 @@ import {
   type ScraperResult,
   type ScanEvent,
 } from "./types/anime";
-import {
-  ScraperHttpError,
-  ScraperParseError,
-  ScraperParseStep,
-} from "./errors";
+import { ScraperHttpError, ScraperParseError, ScraperScanStep } from "./errors";
 import { Observable, Subject } from "rxjs";
 
 function createMockObservable(
@@ -784,7 +780,7 @@ describe("Scan functionality", () => {
 
     const parseError = new ScraperParseError(
       1,
-      ScraperParseStep.TITLE,
+      ScraperScanStep.TITLE,
       "https://ani.gamer.com.tw/anime.php",
       "fail parse",
       "Parsing failed",
@@ -792,7 +788,7 @@ describe("Scan functionality", () => {
 
     const parseErrorNoUrl = new ScraperParseError(
       0,
-      ScraperParseStep.TITLE,
+      ScraperScanStep.TITLE,
       undefined as unknown as string,
       "fail parse no url",
       "Parsing failed",
@@ -800,7 +796,7 @@ describe("Scan functionality", () => {
 
     const parseErrorWithPage = new ScraperParseError(
       3,
-      ScraperParseStep.TITLE,
+      ScraperScanStep.TITLE,
       "https://ani.gamer.com.tw/animeList.php?page=3",
       "fail parse page",
       "Parsing failed",

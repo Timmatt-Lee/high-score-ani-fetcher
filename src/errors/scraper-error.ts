@@ -1,23 +1,31 @@
-import { ScraperParseStep } from "./scraper-parse-step";
+import { ScraperScanStep } from "./scraper-scan-step";
 
 /**
  * Base class for all scraper errors.
  */
 export abstract class ScraperError extends Error {
   page: number;
+  scanStep: ScraperScanStep;
+  url: string;
   animeName?: string;
-  url?: string;
 
-  constructor(message: string, page: number, animeName?: string, url?: string) {
+  constructor(
+    message: string,
+    page: number,
+    scanStep: ScraperScanStep,
+    url: string,
+    animeName?: string,
+  ) {
     super(message);
     this.page = page;
-    this.animeName = animeName;
+    this.scanStep = scanStep;
     this.url = url;
+    this.animeName = animeName;
   }
 }
 
 /**
- * Represents failures during HTTP communication with the target site (e.g. status code >= 400).
+ * Represents communication failures with the target site, such as receiving non-2xx/3xx HTTP response status codes (e.g., 404, 500, 502).
  */
 export class ScraperHttpError extends ScraperError {
   status: number;
@@ -29,12 +37,14 @@ export class ScraperHttpError extends ScraperError {
     rawHtml: string,
     status: number = 500,
     animeName?: string,
+    scanStep: ScraperScanStep = ScraperScanStep.PAGINATION,
   ) {
     super(
       `HTTP request failed with status ${status} (URL: ${url})`,
       page,
-      animeName,
+      scanStep,
       url,
+      animeName,
     );
     this.name = "ScraperHttpError";
     this.status = status;
@@ -46,25 +56,24 @@ export class ScraperHttpError extends ScraperError {
  * Represents failures during document parsing (e.g. missing elements, malformed text).
  */
 export class ScraperParseError extends ScraperError {
-  parseStep: ScraperParseStep;
   rawHtml: string;
 
   constructor(
     page: number,
-    parseStep: ScraperParseStep,
+    scanStep: ScraperScanStep,
     url: string,
     rawHtml: string,
     message?: string,
     animeName?: string,
   ) {
     super(
-      message || `Parsing failed at ${parseStep} (URL: ${url})`,
+      message || `Parsing failed at ${scanStep} (URL: ${url})`,
       page,
-      animeName,
+      scanStep,
       url,
+      animeName,
     );
     this.name = "ScraperParseError";
-    this.parseStep = parseStep;
     this.rawHtml = rawHtml;
   }
 }
@@ -74,7 +83,7 @@ export class ScraperParseError extends ScraperError {
  */
 export class ScraperUnknownError extends ScraperError {
   constructor(causeError: Error) {
-    super(causeError.message, 1);
+    super(causeError.message, 1, ScraperScanStep.SYSTEM, "unknown");
     this.name = "ScraperUnknownError";
     this.stack = causeError.stack;
   }

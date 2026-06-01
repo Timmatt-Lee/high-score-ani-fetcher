@@ -4,31 +4,33 @@ import {
   ScraperParseError,
   ScraperError,
 } from "../../errors";
-import { ScraperParseStep } from "../../errors/scraper-parse-step";
+import { ScraperScanStep } from "../../errors/scraper-scan-step";
 import styles from "./ErrorCard.module.css";
 
 interface ErrorCardProps {
   error: ScraperError;
 }
 
-const getParseStepLabel = (step: ScraperParseStep) => {
+const getParseStepLabel = (step: ScraperScanStep) => {
   switch (step) {
-    case ScraperParseStep.PAGINATION:
+    case ScraperScanStep.PAGINATION:
       return "parsing Pagination";
-    case ScraperParseStep.TITLE:
+    case ScraperScanStep.TITLE:
       return "parsing Title";
-    case ScraperParseStep.WATCH_COUNT:
+    case ScraperScanStep.WATCH_COUNT:
       return "parsing Watch Count";
-    case ScraperParseStep.EPISODE_COUNT:
+    case ScraperScanStep.EPISODE_COUNT:
       return "parsing Episode Count";
-    case ScraperParseStep.UPLOAD_DATE:
+    case ScraperScanStep.UPLOAD_DATE:
       return "parsing Upload Date";
-    case ScraperParseStep.SCORE:
+    case ScraperScanStep.SCORE:
       return "parsing Score";
-    case ScraperParseStep.RATING_COUNT:
+    case ScraperScanStep.RATING_COUNT:
       return "parsing Rating Count";
-    case ScraperParseStep.DESCRIPTION:
+    case ScraperScanStep.DESCRIPTION:
       return "parsing Description";
+    case ScraperScanStep.SYSTEM:
+      return undefined;
     default:
       return "parsing";
   }
@@ -43,16 +45,13 @@ export function ErrorCard({ error }: ErrorCardProps) {
     error.page
       ? `Page: ${error.page}`
       : undefined;
-  const parseStepLabel =
-    error instanceof ScraperParseError
-      ? getParseStepLabel(error.parseStep)
-      : undefined;
+  const scanStepLabel = getParseStepLabel(error.scanStep);
 
   const suffixStr =
     error instanceof ScraperHttpError
       ? `Status: ${error.status}`
-      : parseStepLabel
-        ? `When doing: ${parseStepLabel}`
+      : scanStepLabel
+        ? `When doing: ${scanStepLabel}`
         : undefined;
 
   const fallbackTitle =
