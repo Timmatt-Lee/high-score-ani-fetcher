@@ -12,8 +12,8 @@ console.log(
 );
 
 // Helper to recursively find files matching a suffix
-function getFiles(dir: string, suffix: string): string[] {
-  let results: string[] = [];
+function getFiles(dir, suffix) {
+  let results = [];
   const list = fs.readdirSync(dir);
   for (const file of list) {
     const filePath = path.join(dir, file);

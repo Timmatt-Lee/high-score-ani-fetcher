@@ -4,30 +4,30 @@ import {
   ScraperParseError,
   ScraperError,
 } from "../../errors";
-import { ScraperErrorSource } from "../../errors/scraper-error-source";
+import { ScraperParseStep } from "../../errors/scraper-parse-step";
 import styles from "./ErrorCard.module.css";
 
 interface ErrorCardProps {
   error: ScraperError;
 }
 
-const getSourceLabel = (src: ScraperErrorSource) => {
-  switch (src) {
-    case ScraperErrorSource.PAGINATION:
+const getParseStepLabel = (step: ScraperParseStep) => {
+  switch (step) {
+    case ScraperParseStep.PAGINATION:
       return "parsing Pagination";
-    case ScraperErrorSource.TITLE:
+    case ScraperParseStep.TITLE:
       return "parsing Title";
-    case ScraperErrorSource.WATCH_COUNT:
+    case ScraperParseStep.WATCH_COUNT:
       return "parsing Watch Count";
-    case ScraperErrorSource.EPISODE_COUNT:
+    case ScraperParseStep.EPISODE_COUNT:
       return "parsing Episode Count";
-    case ScraperErrorSource.UPLOAD_DATE:
+    case ScraperParseStep.UPLOAD_DATE:
       return "parsing Upload Date";
-    case ScraperErrorSource.SCORE:
+    case ScraperParseStep.SCORE:
       return "parsing Score";
-    case ScraperErrorSource.RATING_COUNT:
+    case ScraperParseStep.RATING_COUNT:
       return "parsing Rating Count";
-    case ScraperErrorSource.DESCRIPTION:
+    case ScraperParseStep.DESCRIPTION:
       return "parsing Description";
     default:
       return "parsing";
@@ -37,22 +37,22 @@ const getSourceLabel = (src: ScraperErrorSource) => {
 export function ErrorCard({ error }: ErrorCardProps) {
   const [isCopied, setIsCopied] = useState(false);
 
-  const title = error.title;
+  const animeName = error.animeName;
   const pageStr =
     (error instanceof ScraperHttpError || error instanceof ScraperParseError) &&
     error.page
       ? `Page: ${error.page}`
       : undefined;
-  const sourceLabel =
+  const parseStepLabel =
     error instanceof ScraperParseError
-      ? getSourceLabel(error.source)
+      ? getParseStepLabel(error.parseStep)
       : undefined;
 
   const suffixStr =
     error instanceof ScraperHttpError
       ? `Status: ${error.status}`
-      : sourceLabel
-        ? `When doing: ${sourceLabel}`
+      : parseStepLabel
+        ? `When doing: ${parseStepLabel}`
         : undefined;
 
   const fallbackTitle =
@@ -62,8 +62,8 @@ export function ErrorCard({ error }: ErrorCardProps) {
         ? "Parser Error"
         : error.name;
 
-  const cardTitle = title || pageStr || fallbackTitle;
-  const cardSubtitle = title
+  const cardAnimeName = animeName || pageStr || fallbackTitle;
+  const cardAnimeSubtitle = animeName
     ? [pageStr, suffixStr].filter(Boolean).join(", ")
     : suffixStr;
 
@@ -82,14 +82,14 @@ export function ErrorCard({ error }: ErrorCardProps) {
       <div className={styles.cardHeader}>
         <div className={styles.titleGroup}>
           <div className={styles.errorTitle} data-testid="error-card-title">
-            {cardTitle}
+            {cardAnimeName}
           </div>
-          {cardSubtitle && (
+          {cardAnimeSubtitle && (
             <div
               className={styles.errorSubtitle}
               data-testid="error-card-subtitle"
             >
-              {cardSubtitle}
+              {cardAnimeSubtitle}
             </div>
           )}
         </div>

@@ -115,7 +115,7 @@ export class ScraperPipeline {
     let isSuccessful = true;
     if (isError(res)) {
       isSuccessful = false;
-      res.title = item.title;
+      res.animeName = item.title;
       this.failedDetails.push(item);
       if (res instanceof ScraperHttpError) {
         this.httpErrors.push(res);

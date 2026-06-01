@@ -7,7 +7,7 @@ import {
   ScraperParseError,
   ScraperUnknownError,
 } from "../../errors";
-import { ScraperErrorSource } from "../../errors/scraper-error-source";
+import { ScraperParseStep } from "../../errors/scraper-parse-step";
 
 describe("ErrorCard", () => {
   const writeTextMock = vi.fn();
@@ -63,7 +63,7 @@ describe("ErrorCard", () => {
   it("renders Parser error with title correctly", () => {
     const error = new ScraperParseError(
       5,
-      ScraperErrorSource.TITLE,
+      ScraperParseStep.TITLE,
       "https://ani.gamer.com.tw/animeList.php?page=5",
       "bad html",
       "Parse failed",
@@ -81,7 +81,7 @@ describe("ErrorCard", () => {
   it("renders Parser error without title or page correctly", () => {
     const error = new ScraperParseError(
       0,
-      ScraperErrorSource.DESCRIPTION,
+      ScraperParseStep.DESCRIPTION,
       "https://ani.gamer.com.tw/anime.php",
       "bad html",
       "Parse failed",
@@ -97,33 +97,33 @@ describe("ErrorCard", () => {
     );
   });
 
-  it("renders Parser error with various other ScraperErrorSource values", () => {
+  it("renders Parser error with various other ScraperParseStep values", () => {
     const sources = [
       {
-        source: ScraperErrorSource.PAGINATION,
+        source: ScraperParseStep.PAGINATION,
         expected: "When doing: parsing Pagination",
       },
       {
-        source: ScraperErrorSource.WATCH_COUNT,
+        source: ScraperParseStep.WATCH_COUNT,
         expected: "When doing: parsing Watch Count",
       },
       {
-        source: ScraperErrorSource.EPISODE_COUNT,
+        source: ScraperParseStep.EPISODE_COUNT,
         expected: "When doing: parsing Episode Count",
       },
       {
-        source: ScraperErrorSource.UPLOAD_DATE,
+        source: ScraperParseStep.UPLOAD_DATE,
         expected: "When doing: parsing Upload Date",
       },
       {
-        source: ScraperErrorSource.SCORE,
+        source: ScraperParseStep.SCORE,
         expected: "When doing: parsing Score",
       },
       {
-        source: ScraperErrorSource.RATING_COUNT,
+        source: ScraperParseStep.RATING_COUNT,
         expected: "When doing: parsing Rating Count",
       },
-      { source: 999 as ScraperErrorSource, expected: "When doing: parsing" },
+      { source: 999 as ScraperParseStep, expected: "When doing: parsing" },
     ];
 
     for (const { source, expected } of sources) {

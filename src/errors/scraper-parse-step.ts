@@ -1,7 +1,7 @@
 /**
- * Defines the specific source or field that failed during document parsing.
+ * Defines the specific step or field that failed during document parsing.
  */
-export enum ScraperErrorSource {
+export enum ScraperParseStep {
   PAGINATION,
   TITLE,
   WATCH_COUNT,

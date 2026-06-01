@@ -17,7 +17,7 @@ import {
 import {
   ScraperHttpError,
   ScraperParseError,
-  ScraperErrorSource,
+  ScraperParseStep,
 } from "./errors";
 import { Observable, Subject } from "rxjs";
 
@@ -784,7 +784,7 @@ describe("Scan functionality", () => {
 
     const parseError = new ScraperParseError(
       1,
-      ScraperErrorSource.TITLE,
+      ScraperParseStep.TITLE,
       "https://ani.gamer.com.tw/anime.php",
       "fail parse",
       "Parsing failed",
@@ -792,7 +792,7 @@ describe("Scan functionality", () => {
 
     const parseErrorNoUrl = new ScraperParseError(
       0,
-      ScraperErrorSource.TITLE,
+      ScraperParseStep.TITLE,
       undefined as unknown as string,
       "fail parse no url",
       "Parsing failed",
@@ -800,7 +800,7 @@ describe("Scan functionality", () => {
 
     const parseErrorWithPage = new ScraperParseError(
       3,
-      ScraperErrorSource.TITLE,
+      ScraperParseStep.TITLE,
       "https://ani.gamer.com.tw/animeList.php?page=3",
       "fail parse page",
       "Parsing failed",

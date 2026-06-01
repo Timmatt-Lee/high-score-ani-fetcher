@@ -9,7 +9,7 @@ import {
 import {
   ScraperHttpError,
   ScraperParseError,
-  ScraperErrorSource,
+  ScraperParseStep,
 } from "../errors";
 
 const runPipeline = (pipeline: ScraperPipeline) => {
@@ -164,7 +164,7 @@ describe("ScraperPipeline", () => {
 
     const parseError = new ScraperParseError(
       1,
-      ScraperErrorSource.SCORE,
+      ScraperParseStep.SCORE,
       "http://a",
       "html",
     );

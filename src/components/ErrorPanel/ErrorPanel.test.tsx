@@ -6,7 +6,7 @@ import {
   ScraperParseError,
   ScraperUnknownError,
 } from "../../errors";
-import { ScraperErrorSource } from "../../errors/scraper-error-source";
+import { ScraperParseStep } from "../../errors/scraper-parse-step";
 
 describe("ErrorPanel", () => {
   const sampleErrors = [
@@ -82,7 +82,7 @@ describe("ErrorPanel", () => {
   it("renders document parser errors with proper titles and empty message", () => {
     const parseErr = new ScraperParseError(
       3,
-      ScraperErrorSource.TITLE,
+      ScraperParseStep.TITLE,
       "https://ani.gamer.com.tw/animeList.php?page=3",
       "Bad html",
       "Parsing failed",

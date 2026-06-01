@@ -5,7 +5,7 @@ import {
   ScraperParseError,
   ScraperUnknownError,
 } from "../../errors";
-import { ScraperErrorSource } from "../../errors/scraper-error-source";
+import { ScraperParseStep } from "../../errors/scraper-parse-step";
 
 const meta: Meta<typeof ErrorCard> = {
   title: "Components/ErrorCard",
@@ -42,7 +42,7 @@ export const ParseErrorWithTitle: Story = {
   args: {
     error: new ScraperParseError(
       3,
-      ScraperErrorSource.TITLE,
+      ScraperParseStep.TITLE,
       "https://ani.gamer.com.tw/animeList.php?page=3",
       "Failed to parse title tag",
       "Parser failed",
@@ -55,7 +55,7 @@ export const ParseErrorNoTitle: Story = {
   args: {
     error: new ScraperParseError(
       5,
-      ScraperErrorSource.EPISODE_COUNT,
+      ScraperParseStep.EPISODE_COUNT,
       "https://ani.gamer.com.tw/animeList.php?page=5",
       "Failed to parse episode number",
       "Parser failed",

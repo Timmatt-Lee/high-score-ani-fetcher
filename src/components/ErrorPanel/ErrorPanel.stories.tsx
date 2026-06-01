@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/react";
 import { ErrorPanel } from "./ErrorPanel";
 import { ScraperHttpError, ScraperParseError } from "../../errors";
-import { ScraperErrorSource } from "../../errors/scraper-error-source";
+import { ScraperParseStep } from "../../errors/scraper-parse-step";
 
 const meta: Meta<typeof ErrorPanel> = {
   title: "Components/ErrorPanel",
@@ -44,7 +44,7 @@ const sampleHttpErrors = [
 const sampleParseErrors = [
   new ScraperParseError(
     3,
-    ScraperErrorSource.TITLE,
+    ScraperParseStep.TITLE,
     "https://ani.gamer.com.tw/animeList.php?page=3",
     "Missing class theme-name inside theme-list-main anchor card",
     "Anime title missing",

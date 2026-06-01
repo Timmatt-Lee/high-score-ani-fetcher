@@ -9,7 +9,7 @@ import {
 import {
   ScraperHttpError,
   ScraperParseError,
-  ScraperErrorSource,
+  ScraperParseStep,
 } from "./errors";
 import { ScraperService } from "./services/scraper";
 import { Observable } from "rxjs";
@@ -256,19 +256,19 @@ export const WithScanErrors: Story = {
                       "",
                       502,
                     ),
-                    { title: "某個好看但部分章節損壞的番" },
+                    { animeName: "某個好看但部分章節損壞的番" },
                   ),
                 ],
                 parseErrors: [
                   Object.assign(
                     new ScraperParseError(
                       3,
-                      ScraperErrorSource.TITLE,
+                      ScraperParseStep.TITLE,
                       "https://ani.gamer.com.tw/animeVideo.php?sn=999",
                       "",
                       "Missing title tag",
                     ),
-                    { title: "某個好看但部分章節損壞的番" },
+                    { animeName: "某個好看但部分章節損壞的番" },
                   ),
                 ],
               },
