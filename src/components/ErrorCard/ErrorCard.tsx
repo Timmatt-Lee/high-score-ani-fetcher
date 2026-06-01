@@ -11,8 +11,7 @@ interface ErrorCardProps {
   error: ScraperError;
 }
 
-const getSourceLabel = (src?: ScraperErrorSource) => {
-  if (src === undefined) return undefined;
+const getSourceLabel = (src: ScraperErrorSource) => {
   switch (src) {
     case ScraperErrorSource.PAGINATION:
       return "parsing Pagination";
@@ -44,7 +43,10 @@ export function ErrorCard({ error }: ErrorCardProps) {
     error.page
       ? `Page: ${error.page}`
       : undefined;
-  const sourceLabel = getSourceLabel(error.source);
+  const sourceLabel =
+    error instanceof ScraperParseError
+      ? getSourceLabel(error.source)
+      : undefined;
 
   const suffixStr =
     error instanceof ScraperHttpError
@@ -53,14 +55,12 @@ export function ErrorCard({ error }: ErrorCardProps) {
         ? `When doing: ${sourceLabel}`
         : undefined;
 
-  let fallbackTitle = "Error";
-  if (error instanceof ScraperHttpError) {
-    fallbackTitle = "HTTP Error";
-  } else if (error instanceof ScraperParseError) {
-    fallbackTitle = "Parser Error";
-  } else if (error.name) {
-    fallbackTitle = error.name;
-  }
+  const fallbackTitle =
+    error instanceof ScraperHttpError
+      ? "HTTP Error"
+      : error instanceof ScraperParseError
+        ? "Parser Error"
+        : error.name;
 
   const cardTitle = title || pageStr || fallbackTitle;
   const cardSubtitle = title

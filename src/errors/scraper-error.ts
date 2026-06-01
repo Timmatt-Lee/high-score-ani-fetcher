@@ -3,25 +3,14 @@ import { ScraperErrorSource } from "./scraper-error-source";
 /**
  * Base class for all scraper errors.
  */
-export class ScraperError extends Error {
+export abstract class ScraperError extends Error {
   page: number;
   title?: string;
-  source?: ScraperErrorSource;
-  url?: string;
 
-  constructor(
-    message: string,
-    page: number,
-    title?: string,
-    source?: ScraperErrorSource,
-    url?: string,
-  ) {
+  constructor(message: string, page: number, title?: string) {
     super(message);
-    this.name = "ScraperError";
     this.page = page;
     this.title = title;
-    this.source = source;
-    this.url = url;
   }
 }
 
@@ -29,6 +18,7 @@ export class ScraperError extends Error {
  * Represents failures during HTTP communication with the target site (e.g. status code >= 400).
  */
 export class ScraperHttpError extends ScraperError {
+  url: string;
   status: number;
   html: string;
 
@@ -38,16 +28,14 @@ export class ScraperHttpError extends ScraperError {
     html: string,
     status: number = 500,
     title?: string,
-    source?: ScraperErrorSource,
   ) {
     super(
       `HTTP request failed with status ${status} (URL: ${url})`,
       page,
       title,
-      source,
-      url,
     );
     this.name = "ScraperHttpError";
+    this.url = url;
     this.status = status;
     this.html = html;
   }
@@ -57,6 +45,8 @@ export class ScraperHttpError extends ScraperError {
  * Represents failures during document parsing (e.g. missing elements, malformed text).
  */
 export class ScraperParseError extends ScraperError {
+  source: ScraperErrorSource;
+  url: string;
   html: string;
 
   constructor(
@@ -67,14 +57,10 @@ export class ScraperParseError extends ScraperError {
     message?: string,
     title?: string,
   ) {
-    super(
-      message || `Parsing failed at ${source} (URL: ${url})`,
-      page,
-      title,
-      source,
-      url,
-    );
+    super(message || `Parsing failed at ${source} (URL: ${url})`, page, title);
     this.name = "ScraperParseError";
+    this.source = source;
+    this.url = url;
     this.html = html;
   }
 }
