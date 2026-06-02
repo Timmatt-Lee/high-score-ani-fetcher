@@ -14,8 +14,6 @@ export {
 } from "./animeScraper";
 export {
   type AnimeItem,
-  type AnimeDetails,
-  type AnimeInfo,
   type ScraperResult,
   type ScanCompleteResult,
   AnimeItemSchema,
