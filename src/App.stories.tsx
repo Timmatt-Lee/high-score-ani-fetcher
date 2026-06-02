@@ -292,6 +292,8 @@ export const PartiallyFailedScanExpanded: Story = {
     const errorsTab = findErrorsTab();
     if (errorsTab) {
       (errorsTab as HTMLButtonElement).click();
+      // Allow minor delay for rendering tab transition/switch
+      await new Promise((resolve) => setTimeout(resolve, 50));
     }
 
     // Expand HTTP errors
