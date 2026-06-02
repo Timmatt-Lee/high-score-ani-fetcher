@@ -9,20 +9,7 @@ import {
 const meta: Meta<typeof ErrorPanel> = {
   title: "Components/ErrorPanel",
   component: ErrorPanel,
-  decorators: [
-    (Story) => (
-      <div
-        style={{
-          maxWidth: "600px",
-          width: "100%",
-          background: "#121212",
-          padding: "20px",
-        }}
-      >
-        <Story />
-      </div>
-    ),
-  ],
+  decorators: [(Story) => <Story />],
 };
 
 export default meta;
