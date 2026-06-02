@@ -109,7 +109,7 @@ const meta: Meta<typeof App> = {
       localStorage.clear();
       return (
         <div
-          style={{ width: "380px", minHeight: "500px", background: "#121212" }}
+          style={{ width: "450px", minHeight: "600px", background: "#121212" }}
         >
           <Story />
         </div>
