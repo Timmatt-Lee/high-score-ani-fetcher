@@ -2,7 +2,7 @@ import { describe, it, expect, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { AnimeList } from "./AnimeList";
 import { Tab } from "../Tabs";
-import { type AnimeItem } from "../../types/anime";
+import { type AnimeItem } from "../../services/scraper";
 
 const makeAnime = (title: string): AnimeItem => ({
   link: `http://${title}`,

@@ -3,7 +3,6 @@
 import type { Meta, StoryObj } from "@storybook/react";
 import App from "./App";
 import { ServiceProvider } from "./contexts/ServiceContext";
-import { type AnimeItem } from "./types/anime";
 import {
   ScraperHttpError,
   ScraperParseError,
@@ -12,6 +11,7 @@ import {
   ScanEventType,
   type ScanEvent,
   type PipelineOptions,
+  type AnimeItem,
 } from "./services/scraper";
 import { Observable } from "rxjs";
 
@@ -220,7 +220,7 @@ export const PartiallyFailedScan: Story = {
                     Object.assign(
                       new ScraperHttpError(
                         2,
-                        ScraperScanStep.PAGINATION,
+                        ScraperScanStep.GET_TOTAL_PAGES,
                         "https://ani.gamer.com.tw/animeList.php?page=2",
                         "",
                         502,
@@ -233,7 +233,7 @@ export const PartiallyFailedScan: Story = {
                     Object.assign(
                       new ScraperParseError(
                         3,
-                        ScraperScanStep.TITLE,
+                        ScraperScanStep.PARSE_ANIME_INFO,
                         "https://ani.gamer.com.tw/animeList.php?page=3",
                         "",
                         "解析失敗",
@@ -276,25 +276,17 @@ export const PartiallyFailedScanExpanded: Story = {
     const { canvasElement } = context;
 
     // Wait for the scanning to complete and show results / errors tab
-    const findErrorsTab = () =>
-      canvasElement.querySelector('[data-testid="tab-errors"]');
+    const findErrorsPanel = () =>
+      canvasElement.querySelector('[data-testid="errors-panel"]');
     await new Promise<void>((resolve) => {
       const interval = setInterval(() => {
-        const el = findErrorsTab();
+        const el = findErrorsPanel();
         if (el) {
           clearInterval(interval);
           resolve();
         }
       }, 50);
     });
-
-    // Switch to Errors tab
-    const errorsTab = findErrorsTab();
-    if (errorsTab) {
-      (errorsTab as HTMLButtonElement).click();
-      // Allow minor delay for rendering tab transition/switch
-      await new Promise((resolve) => setTimeout(resolve, 50));
-    }
 
     // Expand HTTP errors
     const httpHeader = canvasElement.querySelector(
@@ -327,7 +319,7 @@ export const WithError: Story = {
       getTotalPages: async () => {
         return new ScraperHttpError(
           1,
-          ScraperScanStep.PAGINATION,
+          ScraperScanStep.GET_TOTAL_PAGES,
           "https://ani.gamer.com.tw/animeList.php",
           "",
           500,

@@ -1,14 +1,8 @@
-import {
-  type AnimeItem,
-  type AnimeDetails,
-  type ScraperResult,
-} from "../../types/anime";
 import { type Result, isError } from "../../types/result";
 import { ScraperScanStep } from "./scraperScanStep";
 import {
   ScraperHttpError,
   ScraperParseError,
-  ScraperUnknownError,
   ScraperError,
 } from "./scraperError";
 import { ScraperPipeline } from "./scraperPipeline";
@@ -18,6 +12,7 @@ import {
   type PipelineOptions,
   AnimeScraper,
 } from "./animeScraper";
+import { type AnimeItem, type AnimeDetails, type ScraperResult } from "./types";
 
 const BASE_URL = "https://ani.gamer.com.tw";
 
@@ -26,31 +21,26 @@ export class ScraperService extends AnimeScraper {
     url: string,
     page: number,
     scanStep: ScraperScanStep,
-  ): Promise<Result<string, ScraperHttpError | ScraperUnknownError>> {
-    try {
-      const response = await fetch(url);
-      if (!response.ok) {
-        let snippet = "";
-        try {
-          const t = await response.text();
-          snippet = t.slice(0, 200);
-        } catch {
-          // ignore
-        }
-        return new ScraperHttpError(
-          page,
-          scanStep,
-          url,
-          snippet,
-          response.status,
-          undefined,
-        );
+  ): Promise<Result<string, ScraperHttpError>> {
+    const response = await fetch(url);
+    if (!response.ok) {
+      let snippet = "";
+      try {
+        const t = await response.text();
+        snippet = t.slice(0, 200);
+      } catch {
+        // ignore
       }
-      return await response.text();
-    } catch (err) {
-      const error = err instanceof Error ? err : new Error(String(err));
-      return new ScraperUnknownError(error, page, scanStep, url, undefined);
+      return new ScraperHttpError(
+        page,
+        scanStep,
+        url,
+        snippet,
+        response.status,
+        undefined,
+      );
     }
+    return await response.text();
   }
 
   /**
@@ -59,28 +49,15 @@ export class ScraperService extends AnimeScraper {
   async getTotalPages(): Promise<Result<number, ScraperError>> {
     const url = `${BASE_URL}/animeList.php?page=1`;
 
-    const text = await this.fetchUrl(url, 1, ScraperScanStep.PAGINATION);
+    const text = await this.fetchUrl(url, 1, ScraperScanStep.GET_TOTAL_PAGES);
     if (isError(text)) return text;
 
-    let doc: Document;
-    try {
-      doc = new DOMParser().parseFromString(text, "text/html");
-    } catch (err) {
-      const errMsg = err instanceof Error ? err.message : String(err);
-      return new ScraperParseError(
-        1,
-        ScraperScanStep.PAGINATION,
-        url,
-        text,
-        `Unexpected parsing error: ${errMsg}`,
-      );
-    }
-
+    const doc = new DOMParser().parseFromString(text, "text/html");
     const pageLinks = doc.querySelectorAll(".page_number a");
     if (pageLinks.length === 0) {
       return new ScraperParseError(
         1,
-        ScraperScanStep.PAGINATION,
+        ScraperScanStep.GET_TOTAL_PAGES,
         url,
         doc.body.innerHTML.substring(0, 500),
         "Pagination element not found",
@@ -91,7 +68,7 @@ export class ScraperService extends AnimeScraper {
     if (!lastPageText) {
       return new ScraperParseError(
         1,
-        ScraperScanStep.PAGINATION,
+        ScraperScanStep.GET_TOTAL_PAGES,
         url,
         doc.body.innerHTML.substring(0, 500),
         "No pagination text",
@@ -102,7 +79,7 @@ export class ScraperService extends AnimeScraper {
     if (isNaN(totalPages)) {
       return new ScraperParseError(
         1,
-        ScraperScanStep.PAGINATION,
+        ScraperScanStep.GET_TOTAL_PAGES,
         url,
         doc.body.innerHTML.substring(0, 500),
         "Invalid page number",
@@ -124,7 +101,7 @@ export class ScraperService extends AnimeScraper {
     if (!href) {
       return new ScraperParseError(
         page,
-        ScraperScanStep.TITLE,
+        ScraperScanStep.PARSE_ANIME_INFO,
         url,
         card.outerHTML.substring(0, 500),
         "Missing href",
@@ -144,7 +121,7 @@ export class ScraperService extends AnimeScraper {
     if (!title) {
       return new ScraperParseError(
         page,
-        ScraperScanStep.TITLE,
+        ScraperScanStep.PARSE_ANIME_INFO,
         url,
         card.outerHTML.substring(0, 500),
         "Anime title missing",
@@ -157,7 +134,7 @@ export class ScraperService extends AnimeScraper {
     if (!watchCountEl || !watchCountEl.textContent) {
       return new ScraperParseError(
         page,
-        ScraperScanStep.WATCH_COUNT,
+        ScraperScanStep.PARSE_ANIME_INFO,
         url,
         card.outerHTML.substring(0, 500),
         "Watch count element missing",
@@ -172,7 +149,7 @@ export class ScraperService extends AnimeScraper {
     if (isNaN(watchCount)) {
       return new ScraperParseError(
         page,
-        ScraperScanStep.WATCH_COUNT,
+        ScraperScanStep.PARSE_ANIME_INFO,
         url,
         card.outerHTML.substring(0, 500),
         "Failed to parse watch count",
@@ -183,7 +160,7 @@ export class ScraperService extends AnimeScraper {
     if (!detailBlock) {
       return new ScraperParseError(
         page,
-        ScraperScanStep.EPISODE_COUNT,
+        ScraperScanStep.PARSE_ANIME_INFO,
         url,
         card.outerHTML.substring(0, 500),
         "Detail block missing",
@@ -195,7 +172,7 @@ export class ScraperService extends AnimeScraper {
     if (!epEl || !epEl.textContent) {
       return new ScraperParseError(
         page,
-        ScraperScanStep.EPISODE_COUNT,
+        ScraperScanStep.PARSE_ANIME_INFO,
         url,
         detailBlock.outerHTML,
         "Episode count missing",
@@ -206,7 +183,7 @@ export class ScraperService extends AnimeScraper {
     if (!timeEl || !timeEl.textContent) {
       return new ScraperParseError(
         page,
-        ScraperScanStep.UPLOAD_DATE,
+        ScraperScanStep.PARSE_ANIME_INFO,
         url,
         detailBlock.outerHTML,
         "Upload date missing",
@@ -221,7 +198,7 @@ export class ScraperService extends AnimeScraper {
     if (isNaN(episodeCount)) {
       return new ScraperParseError(
         page,
-        ScraperScanStep.EPISODE_COUNT,
+        ScraperScanStep.PARSE_ANIME_INFO,
         url,
         epEl.outerHTML,
         "Failed to parse episode count",
@@ -233,7 +210,7 @@ export class ScraperService extends AnimeScraper {
     if (isNaN(uploadDate.getTime())) {
       return new ScraperParseError(
         page,
-        ScraperScanStep.UPLOAD_DATE,
+        ScraperScanStep.PARSE_ANIME_INFO,
         url,
         timeEl.outerHTML,
         "Failed to parse upload date",
@@ -255,40 +232,22 @@ export class ScraperService extends AnimeScraper {
   /**
    * Scrapes basic info for all items on a single page.
    */
-  async scrapeListPage(page: number): Promise<ScraperResult> {
+  async scrapeAnimesOnPage(page: number): Promise<ScraperResult> {
     const url = `${BASE_URL}/animeList.php?page=${page}`;
-    const text = await this.fetchUrl(url, page, ScraperScanStep.PAGINATION);
+    const text = await this.fetchUrl(
+      url,
+      page,
+      ScraperScanStep.SCRAPE_LIST_PAGE,
+    );
     if (isError(text)) {
-      if (text instanceof ScraperHttpError) {
-        return {
-          items: [],
-          httpErrors: [text],
-          parseErrors: [],
-        };
-      }
-      throw text;
-    }
-
-    let doc: Document;
-    try {
-      doc = new DOMParser().parseFromString(text, "text/html");
-    } catch (err) {
-      const errMsg = err instanceof Error ? err.message : String(err);
       return {
         items: [],
-        httpErrors: [],
-        parseErrors: [
-          new ScraperParseError(
-            page,
-            ScraperScanStep.TITLE,
-            url,
-            text,
-            `Unexpected page parsing error: ${errMsg}`,
-          ),
-        ],
+        httpErrors: [text],
+        parseErrors: [],
       };
     }
 
+    const doc = new DOMParser().parseFromString(text, "text/html");
     const cards = doc.querySelectorAll("a.theme-list-main");
 
     const items: AnimeItem[] = [];
@@ -314,28 +273,19 @@ export class ScraperService extends AnimeScraper {
     link: string,
     page: number,
   ): Promise<Result<AnimeDetails, ScraperError>> {
-    const text = await this.fetchUrl(link, page, ScraperScanStep.TITLE);
+    const text = await this.fetchUrl(
+      link,
+      page,
+      ScraperScanStep.PARSE_ANIME_DETAIL,
+    );
     if (isError(text)) return text;
 
-    let doc: Document;
-    try {
-      doc = new DOMParser().parseFromString(text, "text/html");
-    } catch (err) {
-      const errMsg = err instanceof Error ? err.message : String(err);
-      return new ScraperParseError(
-        page,
-        ScraperScanStep.DESCRIPTION,
-        link,
-        text,
-        `Unexpected details parsing error: ${errMsg}`,
-      );
-    }
-
+    const doc = new DOMParser().parseFromString(text, "text/html");
     const scoreNumDiv = doc.querySelector(".score-overall-number");
     if (!scoreNumDiv || !scoreNumDiv.textContent) {
       return new ScraperParseError(
         page,
-        ScraperScanStep.SCORE,
+        ScraperScanStep.PARSE_ANIME_DETAIL,
         link,
         doc.body.innerHTML.substring(0, 200),
         "Score element missing",
@@ -345,7 +295,7 @@ export class ScraperService extends AnimeScraper {
     if (isNaN(score)) {
       return new ScraperParseError(
         page,
-        ScraperScanStep.SCORE,
+        ScraperScanStep.PARSE_ANIME_DETAIL,
         link,
         scoreNumDiv.outerHTML,
         "Failed to parse score",
@@ -356,7 +306,7 @@ export class ScraperService extends AnimeScraper {
     if (!scorePeopleDiv || !scorePeopleDiv.textContent) {
       return new ScraperParseError(
         page,
-        ScraperScanStep.RATING_COUNT,
+        ScraperScanStep.PARSE_ANIME_DETAIL,
         link,
         doc.body.innerHTML.substring(0, 200),
         "Rating count element missing",
@@ -369,7 +319,7 @@ export class ScraperService extends AnimeScraper {
     if (isNaN(ratingCount)) {
       return new ScraperParseError(
         page,
-        ScraperScanStep.RATING_COUNT,
+        ScraperScanStep.PARSE_ANIME_DETAIL,
         link,
         scorePeopleDiv.outerHTML,
         "Failed to parse rating count",
@@ -380,7 +330,7 @@ export class ScraperService extends AnimeScraper {
     if (!descDiv || !descDiv.textContent?.trim()) {
       return new ScraperParseError(
         page,
-        ScraperScanStep.DESCRIPTION,
+        ScraperScanStep.PARSE_ANIME_DETAIL,
         link,
         doc.body.innerHTML.substring(0, 200),
         "Description missing",

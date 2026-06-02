@@ -26,27 +26,19 @@ function App() {
     saveData,
   } = useAnimeData();
 
-  const {
-    isScanning,
-    progress,
-    httpErrors,
-    parseErrors,
-    error,
-    handleScan,
-    failedDetails,
-  } = useAnimeScanner(searchList, favoriteList, trashList, (result) => {
-    setSearchList(result.newSearchItems);
-    setFavoriteList(result.updatedFavoriteList);
-    setTrashList(result.updatedTrashList);
-    saveData(
-      result.newSearchItems,
-      result.updatedFavoriteList,
-      result.updatedTrashList,
-    );
-  });
+  const { isScanning, progress, httpErrors, parseErrors, error, handleScan } =
+    useAnimeScanner(searchList, favoriteList, trashList, (result) => {
+      setSearchList(result.newSearchItems);
+      setFavoriteList(result.updatedFavoriteList);
+      setTrashList(result.updatedTrashList);
+      saveData(
+        result.newSearchItems,
+        result.updatedFavoriteList,
+        result.updatedTrashList,
+      );
+    });
 
-  const totalErrors =
-    httpErrors.length + parseErrors.length + failedDetails.length;
+  const totalErrors = httpErrors.length + parseErrors.length;
 
   return (
     <div className={styles.appContainer} data-testid="app-container">
@@ -116,7 +108,6 @@ function App() {
                     });
                     handleScan({
                       onlyPages: Array.from(failedPagesSet),
-                      onlyAnimeItems: failedDetails,
                     });
                   }}
                   disabled={isScanning || totalErrors === 0}

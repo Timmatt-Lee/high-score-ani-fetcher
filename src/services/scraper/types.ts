@@ -1,5 +1,5 @@
-import type { ScraperHttpError, ScraperParseError } from "../services/scraper";
 import { z } from "zod";
+import { type ScraperHttpError, type ScraperParseError } from "./scraperError";
 
 export const AnimeDetailsSchema = z.object({
   score: z.number(),
@@ -7,7 +7,7 @@ export const AnimeDetailsSchema = z.object({
   description: z.string(),
 });
 
-export const AnimeItemSchema = AnimeDetailsSchema.extend({
+export const AnimeInfoSchema = z.object({
   link: z.string(),
   title: z.string(),
   watchCount: z.number(),
@@ -15,18 +15,20 @@ export const AnimeItemSchema = AnimeDetailsSchema.extend({
   uploadDate: z.coerce.date(),
 });
 
-export type AnimeDetails = z.infer<typeof AnimeDetailsSchema>;
-export type AnimeItem = z.infer<typeof AnimeItemSchema>;
+export const AnimeItemSchema = AnimeInfoSchema.merge(AnimeDetailsSchema);
 
-export interface ScanCompleteResult {
-  newSearchItems: AnimeItem[];
-  updatedFavoriteList: AnimeItem[];
-  updatedTrashList: AnimeItem[];
-}
+export type AnimeDetails = z.infer<typeof AnimeDetailsSchema>;
+export type AnimeInfo = z.infer<typeof AnimeInfoSchema>;
+export type AnimeItem = z.infer<typeof AnimeItemSchema>;
 
 export interface ScraperResult {
   items: AnimeItem[];
   httpErrors: ScraperHttpError[];
   parseErrors: ScraperParseError[];
-  failedDetails?: AnimeItem[];
+}
+
+export interface ScanCompleteResult {
+  newSearchItems: AnimeItem[];
+  updatedFavoriteList: AnimeItem[];
+  updatedTrashList: AnimeItem[];
 }

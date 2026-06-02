@@ -1,11 +1,7 @@
 import { type Observable } from "rxjs";
-import {
-  type AnimeItem,
-  type AnimeDetails,
-  type ScraperResult,
-} from "../../types/anime";
 import { type Result } from "../../types/result";
 import { type ScraperError } from "./scraperError";
+import { type AnimeItem, type AnimeDetails, type ScraperResult } from "./types";
 
 export enum ScanEventType {
   PAGE_COMPLETED = "page_completed",
@@ -20,12 +16,11 @@ export type ScanEvent =
 
 export interface PipelineOptions {
   onlyPages?: number[];
-  onlyAnimeItems?: AnimeItem[];
 }
 
 export abstract class AnimeScraper {
   abstract getTotalPages(): Promise<Result<number, ScraperError>>;
-  abstract scrapeListPage(page: number): Promise<ScraperResult>;
+  abstract scrapeAnimesOnPage(page: number): Promise<ScraperResult>;
   abstract scrapeAnimeDetails(
     link: string,
     page: number,

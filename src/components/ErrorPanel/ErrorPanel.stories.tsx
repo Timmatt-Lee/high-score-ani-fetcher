@@ -18,7 +18,7 @@ type Story = StoryObj<typeof ErrorPanel>;
 const sampleHttpErrors = [
   new ScraperHttpError(
     2,
-    ScraperScanStep.PAGINATION,
+    ScraperScanStep.GET_TOTAL_PAGES,
     "https://ani.gamer.com.tw/animeList.php?page=2",
     "Internal Server Error",
     500,
@@ -26,7 +26,7 @@ const sampleHttpErrors = [
   ),
   new ScraperHttpError(
     5,
-    ScraperScanStep.PAGINATION,
+    ScraperScanStep.GET_TOTAL_PAGES,
     "https://ani.gamer.com.tw/animeList.php?page=5",
     "Bad Gateway",
     502,
@@ -37,7 +37,7 @@ const sampleHttpErrors = [
 const sampleParseErrors = [
   new ScraperParseError(
     3,
-    ScraperScanStep.TITLE,
+    ScraperScanStep.PARSE_ANIME_INFO,
     "https://ani.gamer.com.tw/animeList.php?page=3",
     "Missing class theme-name inside theme-list-main anchor card",
     "Anime title missing",

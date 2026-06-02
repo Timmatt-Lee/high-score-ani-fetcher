@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { z } from "zod";
-import { type AnimeItem, AnimeItemSchema } from "../types/anime";
+import { type AnimeItem, AnimeItemSchema } from "../services/scraper";
 
 export function useAnimeData() {
   const [searchList, setSearchList] = useState<AnimeItem[]>([]);

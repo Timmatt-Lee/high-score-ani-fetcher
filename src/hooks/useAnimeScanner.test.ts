@@ -2,15 +2,15 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { renderHook, act } from "@testing-library/react";
 import { useAnimeScanner } from "./useAnimeScanner";
 import { scraperService } from "../services/scraper";
-import { type AnimeItem, type ScraperResult } from "../types/anime";
 import { ServiceProvider } from "../contexts/ServiceContext";
 import {
   ScraperHttpError,
   ScraperParseError,
   ScraperScanStep,
-  ScraperUnknownError,
   type ScanEvent,
   ScanEventType,
+  type AnimeItem,
+  type ScraperResult,
 } from "../services/scraper";
 import { Observable } from "rxjs";
 
@@ -156,7 +156,7 @@ describe("useAnimeScanner", () => {
     vi.spyOn(scraperService, "getTotalPages").mockResolvedValue(
       new ScraperHttpError(
         1,
-        ScraperScanStep.PAGINATION,
+        ScraperScanStep.GET_TOTAL_PAGES,
         "",
         "network down",
         500,
@@ -312,13 +312,13 @@ describe("useAnimeScanner", () => {
     const mockAnime1 = makeAnime("SuccessAnime");
     const pageError = new ScraperParseError(
       1,
-      ScraperScanStep.TITLE,
+      ScraperScanStep.PARSE_ANIME_INFO,
       "http://err-page",
       "Page error",
     );
     const detailError = new ScraperHttpError(
       1,
-      ScraperScanStep.PAGINATION,
+      ScraperScanStep.GET_TOTAL_PAGES,
       "http://err-detail",
       "Detail error",
       404,
@@ -369,7 +369,7 @@ describe("useAnimeScanner", () => {
   it("handles ScraperHttpError scan failure in catch block", async () => {
     const error = new ScraperHttpError(
       1,
-      ScraperScanStep.PAGINATION,
+      ScraperScanStep.GET_TOTAL_PAGES,
       "http://err",
       "Failed page",
       500,
@@ -395,7 +395,7 @@ describe("useAnimeScanner", () => {
   it("handles ScraperParseError scan failure in catch block", async () => {
     const error = new ScraperParseError(
       1,
-      ScraperScanStep.TITLE,
+      ScraperScanStep.PARSE_ANIME_INFO,
       "http://err",
       "Failed page",
     );
@@ -416,7 +416,7 @@ describe("useAnimeScanner", () => {
     expect(result.current.error).toBe(error);
   });
 
-  it("wraps generic Error into ScraperUnknownError when getTotalPages fails with unknown error", async () => {
+  it("sets error to the generic Error when getTotalPages fails with unknown error", async () => {
     const error = new Error("generic error");
     vi.spyOn(scraperService, "getTotalPages").mockResolvedValue(
       error as unknown as ScraperHttpError,
@@ -434,13 +434,13 @@ describe("useAnimeScanner", () => {
       await result.current.handleScan();
     });
 
-    expect(result.current.error).toBeInstanceOf(ScraperUnknownError);
+    expect(result.current.error).toBe(error);
     expect(result.current.error?.message).toBe("generic error");
     expect(result.current.httpErrors).toHaveLength(0);
     expect(result.current.parseErrors).toHaveLength(0);
   });
 
-  it("wraps non-Error object into ScraperUnknownError when getTotalPages fails with a string error", async () => {
+  it("sets error to a new Error with string message when getTotalPages fails with a string error", async () => {
     vi.spyOn(scraperService, "getTotalPages").mockResolvedValue(
       "string error" as unknown as ScraperHttpError,
     );
@@ -457,43 +457,16 @@ describe("useAnimeScanner", () => {
       await result.current.handleScan();
     });
 
-    expect(result.current.error).toBeInstanceOf(ScraperUnknownError);
+    expect(result.current.error).toBeInstanceOf(Error);
     expect(result.current.error?.message).toBe("string error");
     expect(result.current.httpErrors).toHaveLength(0);
     expect(result.current.parseErrors).toHaveLength(0);
   });
 
-  it("sets error directly without double wrapping when getTotalPages fails with ScraperUnknownError", async () => {
-    const error = new ScraperUnknownError(
-      new Error("pre-wrapped unknown error"),
-      1,
-      ScraperScanStep.PAGINATION,
-      "unknown",
-      undefined,
-    );
-    vi.spyOn(scraperService, "getTotalPages").mockResolvedValue(
-      error as unknown as ScraperHttpError,
-    );
-
-    const onComplete = vi.fn();
-    const { result } = renderHook(
-      () => useAnimeScanner([], [], [], onComplete),
-      {
-        wrapper: ServiceProvider,
-      },
-    );
-
-    await act(async () => {
-      await result.current.handleScan();
-    });
-
-    expect(result.current.error).toBe(error);
-  });
-
   it("clears error when clearError is called", async () => {
     const error = new ScraperHttpError(
       1,
-      ScraperScanStep.PAGINATION,
+      ScraperScanStep.GET_TOTAL_PAGES,
       "http://err",
       "Failed",
       500,
@@ -525,7 +498,7 @@ describe("useAnimeScanner", () => {
   it("clears error when a new scan starts", async () => {
     const error = new ScraperHttpError(
       1,
-      ScraperScanStep.PAGINATION,
+      ScraperScanStep.GET_TOTAL_PAGES,
       "http://err",
       "Failed",
       500,
@@ -715,11 +688,11 @@ describe("useAnimeScanner", () => {
     });
   });
 
-  it("handles pipeline errors during scanning by wrapping them in ScraperUnknownError", async () => {
+  it("handles pipeline errors during scanning by setting error directly", async () => {
     vi.spyOn(scraperService, "getTotalPages").mockResolvedValue(1);
     vi.spyOn(scraperService, "scanAllWithPipeline").mockImplementation(() => {
       return new Observable((subscriber) => {
-        subscriber.error("pipeline crash");
+        subscriber.error(new Error("pipeline crash"));
       });
     });
 
@@ -735,33 +708,9 @@ describe("useAnimeScanner", () => {
       await result.current.handleScan();
     });
 
-    expect(result.current.error).toBeInstanceOf(ScraperUnknownError);
+    expect(result.current.error).toBeInstanceOf(Error);
     expect(result.current.error?.message).toBe("pipeline crash");
     expect(result.current.isScanning).toBe(false);
-  });
-
-  it("handles pipeline standard Error during scanning by wrapping it in ScraperUnknownError", async () => {
-    vi.spyOn(scraperService, "getTotalPages").mockResolvedValue(1);
-    vi.spyOn(scraperService, "scanAllWithPipeline").mockImplementation(() => {
-      return new Observable((subscriber) => {
-        subscriber.error(new Error("pipeline standard error"));
-      });
-    });
-
-    const onComplete = vi.fn();
-    const { result } = renderHook(
-      () => useAnimeScanner([], [], [], onComplete),
-      {
-        wrapper: ServiceProvider,
-      },
-    );
-
-    await act(async () => {
-      await result.current.handleScan();
-    });
-
-    expect(result.current.error).toBeInstanceOf(ScraperUnknownError);
-    expect(result.current.error?.message).toBe("pipeline standard error");
   });
 
   it("handles retry scans by pre-populating merged items map and bypassing total page fetch", async () => {
@@ -798,7 +747,6 @@ describe("useAnimeScanner", () => {
     await act(async () => {
       await result.current.handleScan({
         onlyPages: [3],
-        onlyAnimeItems: [searchItem],
       });
     });
 
@@ -814,14 +762,13 @@ describe("useAnimeScanner", () => {
       expect.any(Function),
       {
         onlyPages: [3],
-        onlyAnimeItems: [searchItem],
       },
     );
 
     expect(onComplete).toHaveBeenCalled();
   });
 
-  it("handles empty options object as non-retry and detail-only retry branch conditions", async () => {
+  it("handles empty options object as non-retry conditions", async () => {
     // 1. Empty options should be treated as non-retry
     vi.spyOn(scraperService, "getTotalPages").mockResolvedValue(2);
     const pipelineSpy = vi
@@ -862,37 +809,55 @@ describe("useAnimeScanner", () => {
       expect.any(Function),
       undefined,
     );
+  });
 
-    // 2. Retry with onlyAnimeItems but no onlyPages (onlyPages is falsy/undefined)
-    const detailItem = makeAnime("DetailItem");
+  it("handles getTotalPages throwing a generic exception", async () => {
+    const error = new Error("getTotalPages throw error");
+    vi.spyOn(scraperService, "getTotalPages").mockRejectedValue(error);
+
+    const onComplete = vi.fn();
+    const { result } = renderHook(
+      () => useAnimeScanner([], [], [], onComplete),
+      {
+        wrapper: ServiceProvider,
+      },
+    );
+
     await act(async () => {
-      await result.current.handleScan({
-        onlyAnimeItems: [detailItem],
-      });
+      await result.current.handleScan();
     });
 
-    expect(pipelineSpy).toHaveBeenLastCalledWith(
-      2,
-      5,
-      10,
-      expect.any(Function),
-      { onlyAnimeItems: [detailItem] },
+    expect(result.current.error).toBe(error);
+  });
+
+  it("handles getTotalPages throwing a string exception", async () => {
+    vi.spyOn(scraperService, "getTotalPages").mockRejectedValue(
+      "getTotalPages string throw error",
+    );
+
+    const onComplete = vi.fn();
+    const { result } = renderHook(
+      () => useAnimeScanner([], [], [], onComplete),
+      {
+        wrapper: ServiceProvider,
+      },
+    );
+
+    await act(async () => {
+      await result.current.handleScan();
+    });
+
+    expect(result.current.error).toBeInstanceOf(Error);
+    expect(result.current.error?.message).toBe(
+      "getTotalPages string throw error",
     );
   });
 
-  it("handles pipeline ScraperUnknownError during scanning by setting it directly", async () => {
-    const error = new ScraperUnknownError(
-      new Error("pipeline crash"),
-      1,
-      ScraperScanStep.PAGINATION,
-      "http://some-url",
-      undefined,
-    );
+  it("handles scanAllWithPipeline throwing a generic exception synchronously", async () => {
+    const error = new Error("scanAllWithPipeline sync throw error");
     vi.spyOn(scraperService, "getTotalPages").mockResolvedValue(1);
     vi.spyOn(scraperService, "scanAllWithPipeline").mockImplementation(() => {
-      return new Observable((subscriber) => {
-        subscriber.error(error);
-      });
+      throw error;
     });
 
     const onComplete = vi.fn();
@@ -908,5 +873,29 @@ describe("useAnimeScanner", () => {
     });
 
     expect(result.current.error).toBe(error);
+  });
+
+  it("handles scanAllWithPipeline throwing a string exception synchronously", async () => {
+    vi.spyOn(scraperService, "getTotalPages").mockResolvedValue(1);
+    vi.spyOn(scraperService, "scanAllWithPipeline").mockImplementation(() => {
+      throw "scanAllWithPipeline sync string throw error";
+    });
+
+    const onComplete = vi.fn();
+    const { result } = renderHook(
+      () => useAnimeScanner([], [], [], onComplete),
+      {
+        wrapper: ServiceProvider,
+      },
+    );
+
+    await act(async () => {
+      await result.current.handleScan();
+    });
+
+    expect(result.current.error).toBeInstanceOf(Error);
+    expect(result.current.error?.message).toBe(
+      "scanAllWithPipeline sync string throw error",
+    );
   });
 });

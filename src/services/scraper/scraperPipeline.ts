@@ -1,10 +1,4 @@
-import { type AnimeItem } from "../../types/anime";
-import {
-  ScraperHttpError,
-  ScraperParseError,
-  ScraperUnknownError,
-} from "./scraperError";
-import { ScraperScanStep } from "./scraperScanStep";
+import { ScraperHttpError, ScraperParseError } from "./scraperError";
 import { isError } from "../../types/result";
 import PQueue from "p-queue";
 import { Subject, type Observable } from "rxjs";
@@ -14,6 +8,7 @@ import {
   type PipelineOptions,
   AnimeScraper,
 } from "./animeScraper";
+import { type AnimeItem } from "./types";
 
 /**
  * Encapsulates the state and logic for a two-stage concurrent scraping pipeline.
@@ -24,7 +19,6 @@ export class ScraperPipeline {
   private results: AnimeItem[] = [];
   private httpErrors: ScraperHttpError[] = [];
   private parseErrors: ScraperParseError[] = [];
-  private failedDetails: AnimeItem[] = [];
   private pageQueue: PQueue;
   private detailQueue: PQueue;
   private pagesCompletedCount = 0;
@@ -65,14 +59,6 @@ export class ScraperPipeline {
           pagePromises.push(this.pageQueue.add(() => this.fetchPage(page)));
         }
 
-        // If there are pre-specified failed details, add them directly to the detailQueue
-        if (this.options?.onlyAnimeItems) {
-          this.detailsTotalCount += this.options.onlyAnimeItems.length;
-          this.options.onlyAnimeItems.forEach((item) => {
-            this.detailQueue.add(() => this.fetchDetail(item));
-          });
-        }
-
         await Promise.all(pagePromises);
         await this.detailQueue.onIdle();
         this.eventSubject.next({
@@ -81,7 +67,6 @@ export class ScraperPipeline {
             items: this.results,
             httpErrors: this.httpErrors,
             parseErrors: this.parseErrors,
-            failedDetails: this.failedDetails,
           },
         });
         this.eventSubject.complete();
@@ -96,73 +81,51 @@ export class ScraperPipeline {
   }
 
   private async fetchPage(page: number): Promise<void> {
-    try {
-      const pageResult = await this.scraper.scrapeListPage(page);
-      this.httpErrors.push(...pageResult.httpErrors);
-      this.parseErrors.push(...pageResult.parseErrors);
+    const pageResult = await this.scraper.scrapeAnimesOnPage(page);
+    this.httpErrors.push(...pageResult.httpErrors);
+    this.parseErrors.push(...pageResult.parseErrors);
 
-      pageResult.items.forEach((item) => {
-        if (this.filterItem(item)) {
-          this.detailsTotalCount++;
-          this.detailQueue.add(() => this.fetchDetail(item, page));
-        }
-      });
-      this.pagesCompletedCount++;
-      this.eventSubject.next({
-        type: ScanEventType.PAGE_COMPLETED,
-        page,
-        isSuccess:
-          pageResult.httpErrors.length === 0 &&
-          pageResult.parseErrors.length === 0,
-      });
-    } catch (err) {
-      const error = err instanceof Error ? err : new Error(String(err));
-      const url = `https://ani.gamer.com.tw/animeList.php?page=${page}`;
-      this.eventSubject.error(
-        new ScraperUnknownError(
-          error,
-          page,
-          ScraperScanStep.PAGINATION,
-          url,
-          undefined,
-        ),
-      );
-    }
+    pageResult.items.forEach((item) => {
+      if (this.filterItem(item)) {
+        this.detailsTotalCount++;
+        this.detailQueue
+          .add(() => this.fetchDetail(item, page))
+          .catch((err) => {
+            this.eventSubject.error(
+              err instanceof Error ? err : new Error(String(err)),
+            );
+          });
+      }
+    });
+    this.pagesCompletedCount++;
+    this.eventSubject.next({
+      type: ScanEventType.PAGE_COMPLETED,
+      page,
+      isSuccess:
+        pageResult.httpErrors.length === 0 &&
+        pageResult.parseErrors.length === 0,
+    });
   }
 
   private async fetchDetail(item: AnimeItem, page?: number): Promise<void> {
-    try {
-      const res = await this.scraper.scrapeAnimeDetails(item.link, page ?? 1);
-      let isSuccessful = true;
-      if (isError(res)) {
-        isSuccessful = false;
-        res.animeName = item.title;
-        this.failedDetails.push(item);
-        if (res instanceof ScraperHttpError) {
-          this.httpErrors.push(res);
-        } else {
-          this.parseErrors.push(res as ScraperParseError);
-        }
+    const res = await this.scraper.scrapeAnimeDetails(item.link, page ?? 1);
+    let isSuccessful = true;
+    if (isError(res)) {
+      isSuccessful = false;
+      res.animeName = item.title;
+      if (res instanceof ScraperHttpError) {
+        this.httpErrors.push(res);
       } else {
-        this.results.push({ ...item, ...res });
+        this.parseErrors.push(res as ScraperParseError);
       }
-      this.detailsCompletedCount++;
-      this.eventSubject.next({
-        type: ScanEventType.DETAIL_COMPLETED,
-        title: item.title,
-        isSuccess: isSuccessful,
-      });
-    } catch (err) {
-      const error = err instanceof Error ? err : new Error(String(err));
-      this.eventSubject.error(
-        new ScraperUnknownError(
-          error,
-          page ?? 1,
-          ScraperScanStep.TITLE,
-          item.link,
-          item.title,
-        ),
-      );
+    } else {
+      this.results.push({ ...item, ...res });
     }
+    this.detailsCompletedCount++;
+    this.eventSubject.next({
+      type: ScanEventType.DETAIL_COMPLETED,
+      title: item.title,
+      isSuccess: isSuccessful,
+    });
   }
 }

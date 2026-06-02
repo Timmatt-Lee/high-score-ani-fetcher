@@ -8,27 +8,19 @@ import {
 import styles from "./ErrorCard.module.css";
 
 interface ErrorCardProps {
-  error: ScraperError;
+  error: Error;
 }
 
 const getParseStepLabel = (step: ScraperScanStep) => {
   switch (step) {
-    case ScraperScanStep.PAGINATION:
-      return "parsing Pagination";
-    case ScraperScanStep.TITLE:
-      return "parsing Title";
-    case ScraperScanStep.WATCH_COUNT:
-      return "parsing Watch Count";
-    case ScraperScanStep.EPISODE_COUNT:
-      return "parsing Episode Count";
-    case ScraperScanStep.UPLOAD_DATE:
-      return "parsing Upload Date";
-    case ScraperScanStep.SCORE:
-      return "parsing Score";
-    case ScraperScanStep.RATING_COUNT:
-      return "parsing Rating Count";
-    case ScraperScanStep.DESCRIPTION:
-      return "parsing Description";
+    case ScraperScanStep.GET_TOTAL_PAGES:
+      return "fetching total pages";
+    case ScraperScanStep.SCRAPE_LIST_PAGE:
+      return "scraping list page";
+    case ScraperScanStep.PARSE_ANIME_INFO:
+      return "parsing anime info";
+    case ScraperScanStep.PARSE_ANIME_DETAIL:
+      return "parsing anime detail";
     default:
       return "parsing";
   }
@@ -37,13 +29,16 @@ const getParseStepLabel = (step: ScraperScanStep) => {
 export function ErrorCard({ error }: ErrorCardProps) {
   const [isCopied, setIsCopied] = useState(false);
 
-  const animeName = error.animeName;
+  const animeName = error instanceof ScraperError ? error.animeName : undefined;
   const pageStr =
     (error instanceof ScraperHttpError || error instanceof ScraperParseError) &&
     error.page
       ? `Page: ${error.page}`
       : undefined;
-  const scanStepLabel = getParseStepLabel(error.scanStep);
+  const scanStepLabel =
+    error instanceof ScraperError
+      ? getParseStepLabel(error.scanStep)
+      : "unknown";
 
   const suffixStr =
     error instanceof ScraperHttpError
@@ -55,7 +50,7 @@ export function ErrorCard({ error }: ErrorCardProps) {
       ? "HTTP Error"
       : error instanceof ScraperParseError
         ? "Parser Error"
-        : error.name;
+        : error.name || "Error";
 
   const cardAnimeName = animeName || pageStr || fallbackTitle;
   const cardAnimeSubtitle = animeName

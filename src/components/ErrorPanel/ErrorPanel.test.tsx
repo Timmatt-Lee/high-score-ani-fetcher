@@ -4,7 +4,7 @@ import { ErrorPanel } from "./ErrorPanel";
 import {
   ScraperHttpError,
   ScraperParseError,
-  ScraperUnknownError,
+  ScraperError,
   ScraperScanStep,
 } from "../../services/scraper";
 
@@ -12,7 +12,7 @@ describe("ErrorPanel", () => {
   const sampleErrors = [
     new ScraperHttpError(
       2,
-      ScraperScanStep.PAGINATION,
+      ScraperScanStep.GET_TOTAL_PAGES,
       "https://ani.gamer.com.tw/animeList.php?page=2",
       "Error html",
       502,
@@ -83,7 +83,7 @@ describe("ErrorPanel", () => {
   it("renders document parser errors with proper titles and empty message", () => {
     const parseErr = new ScraperParseError(
       3,
-      ScraperScanStep.TITLE,
+      ScraperScanStep.PARSE_ANIME_INFO,
       "https://ani.gamer.com.tw/animeList.php?page=3",
       "Bad html",
       "Parsing failed",
@@ -111,16 +111,16 @@ describe("ErrorPanel", () => {
   });
 
   it("renders generic/unknown errors with default title and empty message", () => {
-    const error = new ScraperUnknownError(
-      new Error("Fatal"),
-      1,
-      ScraperScanStep.PAGINATION,
-      "unknown",
-      undefined,
-    );
+    class CustomScraperError extends ScraperError {
+      constructor() {
+        super("Fatal", 1, ScraperScanStep.GET_TOTAL_PAGES, "unknown");
+        this.name = "CustomScraperError";
+      }
+    }
+    const error = new CustomScraperError();
     const { rerender } = render(
       <ErrorPanel
-        errorClass={ScraperUnknownError}
+        errorClass={CustomScraperError}
         errors={[error]}
         isExpandedByDefault={true}
       />,
@@ -130,7 +130,7 @@ describe("ErrorPanel", () => {
 
     rerender(
       <ErrorPanel
-        errorClass={ScraperUnknownError}
+        errorClass={CustomScraperError}
         errors={[]}
         isExpandedByDefault={true}
       />,

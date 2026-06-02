@@ -77,20 +77,3 @@ export class ScraperParseError extends ScraperError {
     this.html = html;
   }
 }
-
-/**
- * Represents unexpected runtime errors that occurred during scraping.
- */
-export class ScraperUnknownError extends ScraperError {
-  constructor(
-    causeError: Error,
-    page: number,
-    scanStep: ScraperScanStep,
-    url: string,
-    animeName?: string,
-  ) {
-    super(causeError.message, page, scanStep, url, animeName);
-    this.name = "ScraperUnknownError";
-    this.stack = causeError.stack;
-  }
-}

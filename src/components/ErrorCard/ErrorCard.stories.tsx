@@ -3,7 +3,6 @@ import { ErrorCard } from "./ErrorCard";
 import {
   ScraperHttpError,
   ScraperParseError,
-  ScraperUnknownError,
   ScraperScanStep,
 } from "../../services/scraper";
 
@@ -19,7 +18,7 @@ export const HttpErrorWithTitle: Story = {
   args: {
     error: new ScraperHttpError(
       2,
-      ScraperScanStep.PAGINATION,
+      ScraperScanStep.GET_TOTAL_PAGES,
       "https://ani.gamer.com.tw/animeList.php?page=2",
       "Internal Server Error",
       500,
@@ -32,7 +31,7 @@ export const HttpErrorNoTitle: Story = {
   args: {
     error: new ScraperHttpError(
       4,
-      ScraperScanStep.PAGINATION,
+      ScraperScanStep.GET_TOTAL_PAGES,
       "https://ani.gamer.com.tw/animeList.php?page=4",
       "Bad Gateway",
       502,
@@ -45,7 +44,7 @@ export const ParseErrorWithTitle: Story = {
   args: {
     error: new ScraperParseError(
       3,
-      ScraperScanStep.TITLE,
+      ScraperScanStep.PARSE_ANIME_INFO,
       "https://ani.gamer.com.tw/animeList.php?page=3",
       "Failed to parse title tag",
       "Parser failed",
@@ -58,7 +57,7 @@ export const ParseErrorNoTitle: Story = {
   args: {
     error: new ScraperParseError(
       5,
-      ScraperScanStep.EPISODE_COUNT,
+      ScraperScanStep.PARSE_ANIME_DETAIL,
       "https://ani.gamer.com.tw/animeList.php?page=5",
       "Failed to parse episode number",
       "Parser failed",
@@ -68,13 +67,7 @@ export const ParseErrorNoTitle: Story = {
 
 export const FatalUnknownError: Story = {
   args: {
-    error: new ScraperUnknownError(
-      new Error("Connection reset by peer"),
-      1,
-      ScraperScanStep.PAGINATION,
-      "unknown",
-      undefined,
-    ),
+    error: new Error("Connection reset by peer"),
   },
 };
 
@@ -82,7 +75,7 @@ export const WithCopiedState: Story = {
   args: {
     error: new ScraperHttpError(
       2,
-      ScraperScanStep.PAGINATION,
+      ScraperScanStep.GET_TOTAL_PAGES,
       "https://ani.gamer.com.tw/animeList.php?page=2",
       "Internal Server Error",
       500,

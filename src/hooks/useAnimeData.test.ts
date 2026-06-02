@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { renderHook, act } from "@testing-library/react";
 import { useAnimeData } from "./useAnimeData";
-import { type AnimeItem } from "../types/anime";
+import { type AnimeItem } from "../services/scraper";
 
 const storageMock: Record<string, unknown> = {};
 
