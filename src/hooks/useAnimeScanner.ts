@@ -6,9 +6,14 @@ import {
   ScanEventType,
   type PipelineOptions,
   type AnimeItem,
-  type ScanCompleteResult,
 } from "../services/scraper";
 import { isError } from "../types/result";
+
+export interface ScanCompleteResult {
+  newSearchItems: AnimeItem[];
+  updatedFavoriteList: AnimeItem[];
+  updatedTrashList: AnimeItem[];
+}
 
 export function useAnimeScanner(
   searchList: AnimeItem[],
@@ -129,17 +134,17 @@ export function useAnimeScanner(
         .subscribe({
           next: (event) => {
             switch (event.type) {
-              case ScanEventType.PAGE_COMPLETED:
+              case ScanEventType.PAGE:
                 pagesCompletedCount++;
                 updateProgress();
                 break;
-              case ScanEventType.DETAIL_COMPLETED:
+              case ScanEventType.ANIME_DETAIL:
                 detailsCompletedCount++;
                 updateProgress(event.title);
                 break;
               case ScanEventType.COMPLETED: {
                 const {
-                  items,
+                  animeItems,
                   httpErrors: scanHttpErrors,
                   parseErrors: scanParseErrors,
                 } = event.result;
@@ -157,7 +162,7 @@ export function useAnimeScanner(
                   );
                 }
 
-                for (const item of items) {
+                for (const item of animeItems) {
                   mergedItemsMap.set(item.link, item);
                 }
 

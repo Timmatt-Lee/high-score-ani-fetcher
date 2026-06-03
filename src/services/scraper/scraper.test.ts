@@ -1,6 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { scraperService } from "./scraper";
-import { ScraperScanStep, ScraperHttpError, ScraperParseError } from "./index";
+import {
+  ScraperScanStep,
+  ScraperHttpError,
+  ScraperParseError,
+  ScanEventType,
+} from "./index";
 import { type AnimeItem, type ScraperResult } from "./types";
 import { isError } from "../../types/result";
 
@@ -160,17 +165,17 @@ describe("scraperService.scrapeAnimesOnPage", () => {
     `),
     );
     const result = await scraperService.scrapeAnimesOnPage(1);
-    expect(result.items).toHaveLength(1);
-    expect(result.items[0].title).toBe("Test Anime");
-    expect(result.items[0].episodeCount).toBe(12);
-    expect(result.items[0].watchCount).toBe(25000);
-    expect(result.items[0].uploadDate.getFullYear()).toBe(2024);
+    expect(result.animeItems).toHaveLength(1);
+    expect(result.animeItems[0].title).toBe("Test Anime");
+    expect(result.animeItems[0].episodeCount).toBe(12);
+    expect(result.animeItems[0].watchCount).toBe(25000);
+    expect(result.animeItems[0].uploadDate.getFullYear()).toBe(2024);
   });
 
   it("collects ScraperParseError when title is missing", async () => {
     mockFetch(makeHtml('<a class="theme-list-main" href="/x"></a>'));
     const result = await scraperService.scrapeAnimesOnPage(1);
-    expect(result.items).toHaveLength(0);
+    expect(result.animeItems).toHaveLength(0);
     expect(result.parseErrors).toHaveLength(1);
     const err = result.parseErrors[0];
     if (err instanceof ScraperParseError) {
@@ -251,7 +256,7 @@ describe("scraperService.scrapeAnimesOnPage", () => {
     `),
     );
     const result = await scraperService.scrapeAnimesOnPage(1);
-    expect(result.items[0].watchCount).toBe(25000);
+    expect(result.animeItems[0].watchCount).toBe(25000);
   });
 
   it("returns error when fetchUrl fails in scrapeAnimesOnPage", async () => {
@@ -274,7 +279,7 @@ describe("scraperService.scrapeAnimesOnPage", () => {
       "fetchUrl",
     ).mockResolvedValue(error);
     const result = await scraperService.scrapeAnimesOnPage(1);
-    expect(result.items).toHaveLength(0);
+    expect(result.animeItems).toHaveLength(0);
     expect(result.httpErrors).toHaveLength(1);
     expect(result.httpErrors[0]).toBe(error);
   });
@@ -549,7 +554,7 @@ describe("ScraperService pipeline methods", () => {
   it("scanAllWithPipeline delegates execution to ScraperPipeline", async () => {
     const item = { link: "http://a", title: "A" } as AnimeItem;
     vi.spyOn(scraperService, "scrapeAnimesOnPage").mockResolvedValue({
-      items: [item],
+      animeItems: [item],
       httpErrors: [],
       parseErrors: [],
     });
@@ -565,7 +570,7 @@ describe("ScraperService pipeline methods", () => {
         .scanAllWithPipeline(1, 1, 1, () => true)
         .subscribe({
           next: (event) => {
-            if (event.type === "completed") {
+            if (event.type === ScanEventType.COMPLETED) {
               completedResult = event.result;
             }
           },
@@ -576,9 +581,9 @@ describe("ScraperService pipeline methods", () => {
 
     expect(completedResult).not.toBeNull();
     const result = completedResult!;
-    expect(result.items).toHaveLength(1);
-    expect(result.items[0].title).toBe("A");
-    expect(result.items[0].score).toBe(9.5);
+    expect(result.animeItems).toHaveLength(1);
+    expect(result.animeItems[0].title).toBe("A");
+    expect(result.animeItems[0].score).toBe(9.5);
     expect(result.httpErrors).toHaveLength(0);
     expect(result.parseErrors).toHaveLength(0);
   });

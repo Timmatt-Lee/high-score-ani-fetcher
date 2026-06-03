@@ -64,7 +64,7 @@ export class ScraperPipeline {
         this.eventSubject.next({
           type: ScanEventType.COMPLETED,
           result: {
-            items: this.results,
+            animeItems: this.results,
             httpErrors: this.httpErrors,
             parseErrors: this.parseErrors,
           },
@@ -85,7 +85,7 @@ export class ScraperPipeline {
     this.httpErrors.push(...pageResult.httpErrors);
     this.parseErrors.push(...pageResult.parseErrors);
 
-    pageResult.items.forEach((item) => {
+    pageResult.animeItems.forEach((item) => {
       if (this.filterItem(item)) {
         this.detailsTotalCount++;
         this.detailQueue
@@ -99,7 +99,7 @@ export class ScraperPipeline {
     });
     this.pagesCompletedCount++;
     this.eventSubject.next({
-      type: ScanEventType.PAGE_COMPLETED,
+      type: ScanEventType.PAGE,
       page,
       isSuccess:
         pageResult.httpErrors.length === 0 &&
@@ -123,7 +123,7 @@ export class ScraperPipeline {
     }
     this.detailsCompletedCount++;
     this.eventSubject.next({
-      type: ScanEventType.DETAIL_COMPLETED,
+      type: ScanEventType.ANIME_DETAIL,
       title: item.title,
       isSuccess: isSuccessful,
     });

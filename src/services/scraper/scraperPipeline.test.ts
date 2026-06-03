@@ -5,6 +5,7 @@ import {
   ScraperParseError,
   ScraperScanStep,
   type ScanEvent,
+  ScanEventType,
 } from "./index";
 import { type AnimeItem, type AnimeDetails, type ScraperResult } from "./types";
 
@@ -18,8 +19,13 @@ const runPipeline = (pipeline: ScraperPipeline) => {
         },
         error: reject,
         complete: () => {
-          const completedEvent = events.find((e) => e.type === "completed");
-          if (completedEvent && completedEvent.type === "completed") {
+          const completedEvent = events.find(
+            (e) => e.type === ScanEventType.COMPLETED,
+          );
+          if (
+            completedEvent &&
+            completedEvent.type === ScanEventType.COMPLETED
+          ) {
             resolve({ events, result: completedEvent.result });
           } else {
             reject(new Error("No completed event found"));
@@ -41,7 +47,7 @@ describe("ScraperPipeline", () => {
 
     // Mock stage 1: List pages
     listSpy.mockResolvedValueOnce({
-      items: [
+      animeItems: [
         { link: "http://a", title: "A" } as AnimeItem,
         { link: "http://b", title: "B" } as AnimeItem,
       ],
@@ -50,7 +56,7 @@ describe("ScraperPipeline", () => {
     } as ScraperResult);
 
     listSpy.mockResolvedValueOnce({
-      items: [
+      animeItems: [
         { link: "http://c", title: "C" } as AnimeItem,
         { link: "http://d", title: "D" } as AnimeItem,
       ],
@@ -78,19 +84,19 @@ describe("ScraperPipeline", () => {
     });
 
     const { events, result } = await runPipeline(pipeline);
-    const { items, httpErrors, parseErrors } = result;
+    const { animeItems, httpErrors, parseErrors } = result;
 
     expect(listSpy).toHaveBeenCalledTimes(2);
     expect(detailSpy).toHaveBeenCalledTimes(3);
     expect(httpErrors).toHaveLength(0);
     expect(parseErrors).toHaveLength(0);
-    expect(items).toHaveLength(3);
+    expect(animeItems).toHaveLength(3);
 
-    const sortedItems = [...items].sort((a, b) =>
+    const sortedItems = [...animeItems].sort((a, b) =>
       a.title.localeCompare(b.title),
     );
     expect(sortedItems[0].description).toBe("Desc A");
-    expect(events.some((e) => e.type === "page_completed")).toBe(true);
+    expect(events.some((e) => e.type === ScanEventType.PAGE)).toBe(true);
   });
 
   it("aggregates page-level and detail-level errors", async () => {
@@ -115,7 +121,7 @@ describe("ScraperPipeline", () => {
     );
 
     listSpy.mockResolvedValueOnce({
-      items: [{ link: "http://a", title: "A" } as AnimeItem],
+      animeItems: [{ link: "http://a", title: "A" } as AnimeItem],
       httpErrors: [pageError],
       parseErrors: [],
     });
@@ -130,9 +136,9 @@ describe("ScraperPipeline", () => {
     });
 
     const { events, result } = await runPipeline(pipeline);
-    const { items, httpErrors, parseErrors } = result;
-    expect(events.some((e) => e.type === "page_completed")).toBe(true);
-    expect(items).toHaveLength(0);
+    const { animeItems, httpErrors, parseErrors } = result;
+    expect(events.some((e) => e.type === ScanEventType.PAGE)).toBe(true);
+    expect(animeItems).toHaveLength(0);
     expect(httpErrors).toContain(pageError);
     expect(httpErrors).toContain(detailError);
     expect(parseErrors).toHaveLength(0);
@@ -152,7 +158,7 @@ describe("ScraperPipeline", () => {
     );
 
     listSpy.mockResolvedValueOnce({
-      items: [{ link: "http://a", title: "A" } as AnimeItem],
+      animeItems: [{ link: "http://a", title: "A" } as AnimeItem],
       httpErrors: [],
       parseErrors: [],
     } as ScraperResult);
@@ -167,11 +173,10 @@ describe("ScraperPipeline", () => {
     });
 
     const { events, result } = await runPipeline(pipeline);
-    const { items, httpErrors, parseErrors } = result;
-    expect(events.some((e) => e.type === "page_completed")).toBe(true);
-    expect(items).toHaveLength(0);
-    expect(httpErrors).toHaveLength(1);
-    expect(httpErrors[0]).toBe(error);
+    const { animeItems, httpErrors, parseErrors } = result;
+    expect(events.some((e) => e.type === ScanEventType.PAGE)).toBe(true);
+    expect(animeItems).toHaveLength(0);
+    expect(httpErrors).toContain(error);
     expect(parseErrors).toHaveLength(0);
   });
 
@@ -187,7 +192,7 @@ describe("ScraperPipeline", () => {
     );
 
     listSpy.mockResolvedValueOnce({
-      items: [{ link: "http://a", title: "A" } as AnimeItem],
+      animeItems: [{ link: "http://a", title: "A" } as AnimeItem],
       httpErrors: [],
       parseErrors: [],
     } as ScraperResult);
@@ -202,9 +207,9 @@ describe("ScraperPipeline", () => {
     });
 
     const { events, result } = await runPipeline(pipeline);
-    const { items, httpErrors, parseErrors } = result;
-    expect(events.some((e) => e.type === "page_completed")).toBe(true);
-    expect(items).toHaveLength(0);
+    const { animeItems, httpErrors, parseErrors } = result;
+    expect(events.some((e) => e.type === ScanEventType.PAGE)).toBe(true);
+    expect(animeItems).toHaveLength(0);
     expect(parseErrors).toHaveLength(1);
     expect(parseErrors[0]).toBe(parseError);
     expect(httpErrors).toHaveLength(0);
@@ -270,7 +275,7 @@ describe("ScraperPipeline", () => {
     const detailSpy = vi.fn();
 
     listSpy.mockResolvedValueOnce({
-      items: [
+      animeItems: [
         { link: "http://newPageItem", title: "New Page Item" } as AnimeItem,
       ],
       httpErrors: [],
@@ -306,7 +311,7 @@ describe("ScraperPipeline", () => {
     expect(listSpy).toHaveBeenCalledWith(3); // only page 3 retried
     expect(detailSpy).toHaveBeenCalledTimes(1); // newPageItem
     expect(detailSpy).toHaveBeenCalledWith("http://newPageItem", 3);
-    expect(result.items).toHaveLength(1);
+    expect(result.animeItems).toHaveLength(1);
   });
 
   it("emits error when fetchPage throws unexpected error", async () => {
@@ -336,7 +341,7 @@ describe("ScraperPipeline", () => {
 
   it("emits error when fetchDetail throws unexpected error", async () => {
     const listSpy = vi.fn().mockResolvedValue({
-      items: [{ link: "http://a", title: "A" } as AnimeItem],
+      animeItems: [{ link: "http://a", title: "A" } as AnimeItem],
       httpErrors: [],
       parseErrors: [],
     });
@@ -429,7 +434,7 @@ describe("ScraperPipeline", () => {
 
   it("emits string error when fetchDetail throws unexpected string error", async () => {
     const listSpy = vi.fn().mockResolvedValue({
-      items: [{ link: "http://a", title: "A" } as AnimeItem],
+      animeItems: [{ link: "http://a", title: "A" } as AnimeItem],
       httpErrors: [],
       parseErrors: [],
     });

@@ -4,14 +4,14 @@ import { type ScraperError } from "./scraperError";
 import { type AnimeItem, type AnimeDetails, type ScraperResult } from "./types";
 
 export enum ScanEventType {
-  PAGE_COMPLETED = "page_completed",
-  DETAIL_COMPLETED = "detail_completed",
-  COMPLETED = "completed",
+  PAGE,
+  ANIME_DETAIL,
+  COMPLETED,
 }
 
 export type ScanEvent =
-  | { type: ScanEventType.PAGE_COMPLETED; page: number; isSuccess: boolean }
-  | { type: ScanEventType.DETAIL_COMPLETED; title: string; isSuccess: boolean }
+  | { type: ScanEventType.PAGE; page: number; isSuccess: boolean }
+  | { type: ScanEventType.ANIME_DETAIL; title: string; isSuccess: boolean }
   | { type: ScanEventType.COMPLETED; result: ScraperResult };
 
 export interface PipelineOptions {

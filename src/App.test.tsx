@@ -407,7 +407,7 @@ describe("Scan functionality", () => {
     await act(async () => {
       subject.next({
         type: ScanEventType.COMPLETED,
-        result: { items: [], httpErrors: [], parseErrors: [] },
+        result: { animeItems: [], httpErrors: [], parseErrors: [] },
       });
       subject.complete();
     });
@@ -432,7 +432,7 @@ describe("Scan functionality", () => {
         const filtered = [highScore, lowScore].filter(filterItem);
         return createMockObservable(
           {
-            items: [
+            animeItems: [
               {
                 ...highScore,
                 score: 5.0,
@@ -445,9 +445,9 @@ describe("Scan functionality", () => {
             parseErrors: [],
           },
           [
-            { type: ScanEventType.PAGE_COMPLETED, page: 1, isSuccess: true },
+            { type: ScanEventType.PAGE, page: 1, isSuccess: true },
             {
-              type: ScanEventType.DETAIL_COMPLETED,
+              type: ScanEventType.ANIME_DETAIL,
               title: "Progress title",
               isSuccess: true,
             },
@@ -482,7 +482,7 @@ describe("Scan functionality", () => {
       (_pages, _pc, _dc, filterItem) => {
         const filtered = [shortShow].filter(filterItem);
         return createMockObservable({
-          items: filtered.map((item) => ({
+          animeItems: filtered.map((item) => ({
             ...item,
             score: 9.0,
             ratingCount: 100,
@@ -519,7 +519,7 @@ describe("Scan functionality", () => {
       (_pages, _pc, _dc, filterItem) => {
         const filtered = [ova].filter(filterItem);
         return createMockObservable({
-          items: filtered.map((item) => ({
+          animeItems: filtered.map((item) => ({
             ...item,
             score: 9.0,
             ratingCount: 100,
@@ -557,7 +557,7 @@ describe("Scan functionality", () => {
       (_pages, _pc, _dc, filterItem) => {
         const filtered = [trashItem].filter(filterItem);
         return createMockObservable({
-          items: filtered.map((item) => ({
+          animeItems: filtered.map((item) => ({
             ...item,
             score: 9.0,
             ratingCount: 100,
@@ -595,7 +595,7 @@ describe("Scan functionality", () => {
       (_pages, _pc, _dc, filterItem) => {
         const filtered = [favItem].filter(filterItem);
         return createMockObservable({
-          items: filtered.map((item) => ({
+          animeItems: filtered.map((item) => ({
             ...item,
             score: 9.0,
             ratingCount: 100,
@@ -632,7 +632,7 @@ describe("Scan functionality", () => {
       (_pages, _pc, _dc, filterItem) => {
         const filtered = [naEp].filter(filterItem);
         return createMockObservable({
-          items: filtered.map((item) => ({
+          animeItems: filtered.map((item) => ({
             ...item,
             score: 9.0,
             ratingCount: 100,
@@ -672,7 +672,9 @@ describe("Scan functionality", () => {
     vi.spyOn(scraperService, "getTotalPages").mockResolvedValue(2);
     vi.spyOn(scraperService, "scanAllWithPipeline").mockImplementation(() => {
       return createMockObservable({
-        items: [{ ...anime, score: 9.0, ratingCount: 100, description: "x" }],
+        animeItems: [
+          { ...anime, score: 9.0, ratingCount: 100, description: "x" },
+        ],
         httpErrors: [mockError],
         parseErrors: [],
       });
@@ -716,7 +718,9 @@ describe("Scan functionality", () => {
     vi.spyOn(scraperService, "getTotalPages").mockResolvedValue(1);
     vi.spyOn(scraperService, "scanAllWithPipeline").mockImplementation(() => {
       return createMockObservable({
-        items: [{ ...anime, score: 9.0, ratingCount: 100, description: "x" }],
+        animeItems: [
+          { ...anime, score: 9.0, ratingCount: 100, description: "x" },
+        ],
         httpErrors: errorsList,
         parseErrors: [],
       });
@@ -826,7 +830,7 @@ describe("Scan functionality", () => {
     const pipelineMock = vi.spyOn(scraperService, "scanAllWithPipeline");
     pipelineMock.mockImplementationOnce(() => {
       return createMockObservable({
-        items: [{ ...anime }],
+        animeItems: [{ ...anime }],
         httpErrors: [error, errorNoPage],
         parseErrors: [parseError, parseErrorNoUrl, parseErrorWithPage],
       });
@@ -852,7 +856,7 @@ describe("Scan functionality", () => {
     // Mock second scan (retry) to succeed with no errors
     pipelineMock.mockImplementationOnce(() => {
       return createMockObservable({
-        items: [{ ...anime }],
+        animeItems: [{ ...anime }],
         httpErrors: [],
         parseErrors: [],
       });

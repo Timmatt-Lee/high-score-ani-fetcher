@@ -12,9 +12,4 @@ export {
   type PipelineOptions,
   AnimeScraper,
 } from "./animeScraper";
-export {
-  type AnimeItem,
-  type ScraperResult,
-  type ScanCompleteResult,
-  AnimeItemSchema,
-} from "./types";
+export { type AnimeItem, type ScraperResult, AnimeItemSchema } from "./types";

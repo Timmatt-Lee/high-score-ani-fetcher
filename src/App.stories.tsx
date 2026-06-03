@@ -30,9 +30,9 @@ const createMockAnime = (overrides: Partial<AnimeItem> = {}): AnimeItem => ({
 
 const mockScraperService = {
   getTotalPages: async () => 4,
-  scrapeListPage: async (page: number): Promise<any> => {
+  scrapeAnimesOnPage: async (page: number): Promise<any> => {
     return {
-      items: [
+      animeItems: [
         createMockAnime({ title: `動漫 ${page}-1`, score: 4.9 }),
         createMockAnime({ title: `動漫 ${page}-2`, score: 4.8 }),
       ],
@@ -67,12 +67,12 @@ const mockScraperService = {
           if (isCancelled) return;
           await new Promise((resolve) => setTimeout(resolve, 10));
           subscriber.next({
-            type: ScanEventType.PAGE_COMPLETED,
+            type: ScanEventType.PAGE,
             page: isStep,
             isSuccess: true,
           });
           subscriber.next({
-            type: ScanEventType.DETAIL_COMPLETED,
+            type: ScanEventType.ANIME_DETAIL,
             title: titles[isStep - 1],
             isSuccess: true,
           });
@@ -81,7 +81,7 @@ const mockScraperService = {
         subscriber.next({
           type: ScanEventType.COMPLETED,
           result: {
-            items: [
+            animeItems: [
               createMockAnime({ title: "葬送的芙莉蓮", score: 4.9 }),
               createMockAnime({ title: "鬼滅之刃 柱訓練篇", score: 4.8 }),
               createMockAnime({ title: "無職轉生", score: 4.8 }),
@@ -143,14 +143,14 @@ export const ScanningState: Story = {
               await new Promise((resolve) => setTimeout(resolve, 10));
               if (isCancelled) return;
               subscriber.next({
-                type: ScanEventType.PAGE_COMPLETED,
+                type: ScanEventType.PAGE,
                 page: 1,
                 isSuccess: true,
               });
               // We emit details completed and then do not call complete()
               // to keep it in scanning state forever for screenshot capture.
               subscriber.next({
-                type: ScanEventType.DETAIL_COMPLETED,
+                type: ScanEventType.ANIME_DETAIL,
                 title: "葬送的芙莉蓮",
                 isSuccess: true,
               });
@@ -197,7 +197,7 @@ export const PartiallyFailedScan: Story = {
                 await new Promise((resolve) => setTimeout(resolve, 10));
                 if (isCancelled) return;
                 subscriber.next({
-                  type: ScanEventType.PAGE_COMPLETED,
+                  type: ScanEventType.PAGE,
                   page: 2,
                   isSuccess: true,
                 });
@@ -210,7 +210,7 @@ export const PartiallyFailedScan: Story = {
               subscriber.next({
                 type: ScanEventType.COMPLETED,
                 result: {
-                  items: [
+                  animeItems: [
                     createMockAnime({
                       title: "部分解析成功的動畫",
                       score: 4.9,
@@ -358,17 +358,17 @@ export const WithLoadingDetails: Story = {
               await new Promise((resolve) => setTimeout(resolve, 10));
               if (isCancelled) return;
               subscriber.next({
-                type: ScanEventType.PAGE_COMPLETED,
+                type: ScanEventType.PAGE,
                 page: 1,
                 isSuccess: true,
               });
               subscriber.next({
-                type: ScanEventType.PAGE_COMPLETED,
+                type: ScanEventType.PAGE,
                 page: 2,
                 isSuccess: true,
               });
               subscriber.next({
-                type: ScanEventType.DETAIL_COMPLETED,
+                type: ScanEventType.ANIME_DETAIL,
                 title: "葬送的芙莉蓮",
                 isSuccess: true,
               });

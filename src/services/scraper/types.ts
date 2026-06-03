@@ -22,13 +22,7 @@ export type AnimeInfo = z.infer<typeof AnimeInfoSchema>;
 export type AnimeItem = z.infer<typeof AnimeItemSchema>;
 
 export interface ScraperResult {
-  items: AnimeItem[];
+  animeItems: AnimeItem[];
   httpErrors: ScraperHttpError[];
   parseErrors: ScraperParseError[];
-}
-
-export interface ScanCompleteResult {
-  newSearchItems: AnimeItem[];
-  updatedFavoriteList: AnimeItem[];
-  updatedTrashList: AnimeItem[];
 }

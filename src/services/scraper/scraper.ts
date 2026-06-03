@@ -241,7 +241,7 @@ export class ScraperService extends AnimeScraper {
     );
     if (isError(text)) {
       return {
-        items: [],
+        animeItems: [],
         httpErrors: [text],
         parseErrors: [],
       };
@@ -250,7 +250,7 @@ export class ScraperService extends AnimeScraper {
     const doc = new DOMParser().parseFromString(text, "text/html");
     const cards = doc.querySelectorAll("a.theme-list-main");
 
-    const items: AnimeItem[] = [];
+    const animeItems: AnimeItem[] = [];
     const httpErrors: ScraperHttpError[] = [];
     const parseErrors: ScraperParseError[] = [];
 
@@ -259,11 +259,11 @@ export class ScraperService extends AnimeScraper {
       if (isError(res)) {
         parseErrors.push(res);
       } else {
-        items.push(res);
+        animeItems.push(res);
       }
     }
 
-    return { items, httpErrors, parseErrors };
+    return { animeItems, httpErrors, parseErrors };
   }
 
   /**

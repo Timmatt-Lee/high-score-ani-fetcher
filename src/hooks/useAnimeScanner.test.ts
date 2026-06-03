@@ -54,7 +54,7 @@ describe("useAnimeScanner", () => {
         if (filterItem(mockAnime)) {
           return createMockObservable(
             {
-              items: [
+              animeItems: [
                 {
                   ...mockAnime,
                   score: 9.0,
@@ -66,9 +66,9 @@ describe("useAnimeScanner", () => {
               parseErrors: [],
             },
             [
-              { type: ScanEventType.PAGE_COMPLETED, page: 1, isSuccess: true },
+              { type: ScanEventType.PAGE, page: 1, isSuccess: true },
               {
-                type: ScanEventType.DETAIL_COMPLETED,
+                type: ScanEventType.ANIME_DETAIL,
                 title: mockAnime.title,
                 isSuccess: true,
               },
@@ -76,7 +76,7 @@ describe("useAnimeScanner", () => {
           );
         }
         return createMockObservable({
-          items: [],
+          animeItems: [],
           httpErrors: [],
           parseErrors: [],
         });
@@ -125,7 +125,7 @@ describe("useAnimeScanner", () => {
 
     await act(async () => {
       subject.next({
-        type: ScanEventType.PAGE_COMPLETED,
+        type: ScanEventType.PAGE,
         page: 1,
         isSuccess: true,
       });
@@ -134,7 +134,7 @@ describe("useAnimeScanner", () => {
 
     await act(async () => {
       subject.next({
-        type: ScanEventType.DETAIL_COMPLETED,
+        type: ScanEventType.ANIME_DETAIL,
         title: "Halfway",
         isSuccess: true,
       });
@@ -144,7 +144,7 @@ describe("useAnimeScanner", () => {
     await act(async () => {
       subject.next({
         type: ScanEventType.COMPLETED,
-        result: { items: [mockAnime], httpErrors: [], parseErrors: [] },
+        result: { animeItems: [mockAnime], httpErrors: [], parseErrors: [] },
       });
       subject.complete();
     });
@@ -187,7 +187,7 @@ describe("useAnimeScanner", () => {
       (_pages, _pc, _dc, filterItem) => {
         const items = [trashItem, favItem].filter(filterItem);
         return createMockObservable({
-          items: items.map((item) => ({
+          animeItems: items.map((item) => ({
             ...item,
             score: 9.0,
             ratingCount: 100,
@@ -245,7 +245,7 @@ describe("useAnimeScanner", () => {
       (_pages, _pc, _dc, filterItem) => {
         const items = [shortShow, ovaShow, naShow].filter(filterItem);
         return createMockObservable({
-          items: items.map((item) => ({
+          animeItems: items.map((item) => ({
             ...item,
             score: 9.0,
             ratingCount: 100,
@@ -281,7 +281,7 @@ describe("useAnimeScanner", () => {
     vi.spyOn(scraperService, "getTotalPages").mockResolvedValue(1);
     vi.spyOn(scraperService, "scanAllWithPipeline").mockImplementation(() => {
       return createMockObservable({
-        items: [
+        animeItems: [
           { ...lowScore, score: 4.0, ratingCount: 10, description: "Meh" },
         ],
         httpErrors: [],
@@ -328,7 +328,7 @@ describe("useAnimeScanner", () => {
     vi.spyOn(scraperService, "getTotalPages").mockResolvedValue(1);
     vi.spyOn(scraperService, "scanAllWithPipeline").mockImplementation(() => {
       return createMockObservable({
-        items: [
+        animeItems: [
           {
             ...mockAnime1,
             score: 9.0,
@@ -509,7 +509,7 @@ describe("useAnimeScanner", () => {
       .mockResolvedValueOnce(1);
     vi.spyOn(scraperService, "scanAllWithPipeline").mockImplementation(() => {
       return createMockObservable({
-        items: [],
+        animeItems: [],
         httpErrors: [],
         parseErrors: [],
       });
@@ -555,7 +555,7 @@ describe("useAnimeScanner", () => {
 
     await act(async () => {
       subject.next({
-        type: ScanEventType.PAGE_COMPLETED,
+        type: ScanEventType.PAGE,
         page: 0,
         isSuccess: true,
       });
@@ -565,7 +565,7 @@ describe("useAnimeScanner", () => {
     await act(async () => {
       subject.next({
         type: ScanEventType.COMPLETED,
-        result: { items: [mockAnime], httpErrors: [], parseErrors: [] },
+        result: { animeItems: [mockAnime], httpErrors: [], parseErrors: [] },
       });
       subject.complete();
     });
@@ -579,7 +579,7 @@ describe("useAnimeScanner", () => {
     vi.spyOn(scraperService, "getTotalPages").mockResolvedValue(1);
     vi.spyOn(scraperService, "scanAllWithPipeline").mockImplementation(() => {
       return createMockObservable({
-        items: [itemA, itemB, itemC],
+        animeItems: [itemA, itemB, itemC],
         httpErrors: [],
         parseErrors: [],
       });
@@ -615,7 +615,7 @@ describe("useAnimeScanner", () => {
       (_pages, _pc, _dc, filterItem) => {
         const items = [trashItem, favItem].filter(filterItem);
         return createMockObservable({
-          items: items.map((item) => ({
+          animeItems: items.map((item) => ({
             ...item,
             score: 9.0,
             ratingCount: 100,
@@ -665,7 +665,7 @@ describe("useAnimeScanner", () => {
     vi.spyOn(scraperService, "getTotalPages").mockResolvedValue(1);
     vi.spyOn(scraperService, "scanAllWithPipeline").mockImplementation(() => {
       return createMockObservable({
-        items: [],
+        animeItems: [],
         httpErrors: [],
         parseErrors: [],
       });
@@ -723,13 +723,13 @@ describe("useAnimeScanner", () => {
       .mockImplementation(() => {
         return createMockObservable(
           {
-            items: [{ ...searchItem, score: 9.0 }],
+            animeItems: [{ ...searchItem, score: 9.0 }],
             httpErrors: [],
             parseErrors: [],
           },
           [
             {
-              type: ScanEventType.PAGE_COMPLETED,
+              type: ScanEventType.PAGE,
               page: 3,
               isSuccess: true,
             },
@@ -776,13 +776,13 @@ describe("useAnimeScanner", () => {
       .mockImplementation(() => {
         return createMockObservable(
           {
-            items: [],
+            animeItems: [],
             httpErrors: [],
             parseErrors: [],
           },
           [
             {
-              type: ScanEventType.DETAIL_COMPLETED,
+              type: ScanEventType.ANIME_DETAIL,
               title: "Mocking Progress Details",
               isSuccess: true,
             },
