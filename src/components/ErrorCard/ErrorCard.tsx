@@ -11,7 +11,7 @@ interface ErrorCardProps {
   error: Error;
 }
 
-const getParseStepLabel = (step: ScraperScanStep) => {
+const getParseStepLabel = (step: ScraperScanStep): string => {
   switch (step) {
     case ScraperScanStep.GET_TOTAL_PAGES:
       return "fetching total pages";
@@ -21,9 +21,9 @@ const getParseStepLabel = (step: ScraperScanStep) => {
       return "parsing anime info";
     case ScraperScanStep.PARSE_ANIME_DETAIL:
       return "parsing anime detail";
-    default:
-      return "parsing";
   }
+  const _exhaustiveCheck: never = step;
+  return typeof _exhaustiveCheck === "string" ? _exhaustiveCheck : "parsing";
 };
 
 export function ErrorCard({ error }: ErrorCardProps) {

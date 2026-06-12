@@ -1,3 +1,10 @@
+/**
+ * TypeScript migration rationale for verify-visual-coverage:
+ * - Consistency: Aligning build/utility tools with the codebase's language (TypeScript) maintains code standards and unified tooling.
+ * - Type Safety: Static typing prevents runtime property typos and ensures correctness in Node filesystem path manipulations.
+ * - Maintenance: Utilizing native tools like `tsx` allows executing this TypeScript script directly in dev and CI environments without overhead.
+ */
+
 import * as fs from "fs";
 import * as path from "path";
 import { fileURLToPath } from "url";
@@ -12,8 +19,8 @@ console.log(
 );
 
 // Helper to recursively find files matching a suffix
-function getFiles(dir, suffix) {
-  let results = [];
+function getFiles(dir: string, suffix: string): string[] {
+  let results: string[] = [];
   const list = fs.readdirSync(dir);
   for (const file of list) {
     const filePath = path.join(dir, file);

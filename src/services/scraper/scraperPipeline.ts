@@ -2,13 +2,13 @@ import { ScraperHttpError, ScraperParseError } from "./scraperError";
 import { isError } from "../../types/result";
 import PQueue from "p-queue";
 import { Subject, type Observable } from "rxjs";
+import { ScraperService } from "./scraper";
 import {
   ScanEventType,
   type ScanEvent,
   type PipelineOptions,
-  AnimeScraper,
-} from "./animeScraper";
-import { type AnimeItem } from "./types";
+  type AnimeItem,
+} from "./types";
 
 /**
  * Encapsulates the state and logic for a two-stage concurrent scraping pipeline.
@@ -27,7 +27,7 @@ export class ScraperPipeline {
 
   private totalPages: number;
   private filterItem: (item: AnimeItem) => boolean;
-  private scraper: AnimeScraper;
+  private scraper: ScraperService;
   private options?: PipelineOptions;
   private eventSubject = new Subject<ScanEvent>();
 
@@ -36,7 +36,7 @@ export class ScraperPipeline {
     pageConcurrency: number,
     detailConcurrency: number,
     filterItem: (item: AnimeItem) => boolean,
-    scraper: AnimeScraper,
+    scraper: ScraperService,
     options?: PipelineOptions,
   ) {
     this.totalPages = totalPages;
@@ -98,13 +98,6 @@ export class ScraperPipeline {
       }
     });
     this.pagesCompletedCount++;
-    this.eventSubject.next({
-      type: ScanEventType.PAGE,
-      page,
-      isSuccess:
-        pageResult.httpErrors.length === 0 &&
-        pageResult.parseErrors.length === 0,
-    });
   }
 
   private async fetchDetail(item: AnimeItem, page?: number): Promise<void> {

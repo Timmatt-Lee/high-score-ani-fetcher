@@ -83,7 +83,7 @@ describe("ScraperPipeline", () => {
       scanAllWithPipeline: vi.fn(),
     });
 
-    const { events, result } = await runPipeline(pipeline);
+    const { result } = await runPipeline(pipeline);
     const { animeItems, httpErrors, parseErrors } = result;
 
     expect(listSpy).toHaveBeenCalledTimes(2);
@@ -96,7 +96,6 @@ describe("ScraperPipeline", () => {
       a.title.localeCompare(b.title),
     );
     expect(sortedItems[0].description).toBe("Desc A");
-    expect(events.some((e) => e.type === ScanEventType.PAGE)).toBe(true);
   });
 
   it("aggregates page-level and detail-level errors", async () => {
@@ -135,9 +134,8 @@ describe("ScraperPipeline", () => {
       scanAllWithPipeline: vi.fn(),
     });
 
-    const { events, result } = await runPipeline(pipeline);
+    const { result } = await runPipeline(pipeline);
     const { animeItems, httpErrors, parseErrors } = result;
-    expect(events.some((e) => e.type === ScanEventType.PAGE)).toBe(true);
     expect(animeItems).toHaveLength(0);
     expect(httpErrors).toContain(pageError);
     expect(httpErrors).toContain(detailError);
@@ -172,9 +170,8 @@ describe("ScraperPipeline", () => {
       scanAllWithPipeline: vi.fn(),
     });
 
-    const { events, result } = await runPipeline(pipeline);
+    const { result } = await runPipeline(pipeline);
     const { animeItems, httpErrors, parseErrors } = result;
-    expect(events.some((e) => e.type === ScanEventType.PAGE)).toBe(true);
     expect(animeItems).toHaveLength(0);
     expect(httpErrors).toContain(error);
     expect(parseErrors).toHaveLength(0);
@@ -206,9 +203,8 @@ describe("ScraperPipeline", () => {
       scanAllWithPipeline: vi.fn(),
     });
 
-    const { events, result } = await runPipeline(pipeline);
+    const { result } = await runPipeline(pipeline);
     const { animeItems, httpErrors, parseErrors } = result;
-    expect(events.some((e) => e.type === ScanEventType.PAGE)).toBe(true);
     expect(animeItems).toHaveLength(0);
     expect(parseErrors).toHaveLength(1);
     expect(parseErrors[0]).toBe(parseError);

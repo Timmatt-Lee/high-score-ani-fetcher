@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "npm run verify:visual && tsc -b && vite build",
-    "verify:visual": "node scripts/verify-visual-coverage.js",
+    "verify:visual": "tsx scripts/verify-visual-coverage.ts",
     "lint": "eslint .",
     "lint:md": "markdownlint \"**/*.md\" --ignore node_modules",
     "format": "prettier --write \"**/*.{ts,tsx,css,html,md,json}\"",

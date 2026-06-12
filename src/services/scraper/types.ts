@@ -1,6 +1,19 @@
 import { z } from "zod";
 import { type ScraperHttpError, type ScraperParseError } from "./scraperError";
 
+export enum ScanEventType {
+  ANIME_DETAIL,
+  COMPLETED,
+}
+
+export type ScanEvent =
+  | { type: ScanEventType.ANIME_DETAIL; title: string; isSuccess: boolean }
+  | { type: ScanEventType.COMPLETED; result: ScraperResult };
+
+export interface PipelineOptions {
+  onlyPages?: number[];
+}
+
 export const AnimeDetailsSchema = z.object({
   score: z.number(),
   ratingCount: z.number(),

@@ -10,6 +10,7 @@ export {
   ScanEventType,
   type ScanEvent,
   type PipelineOptions,
-  AnimeScraper,
-} from "./animeScraper";
-export { type AnimeItem, type ScraperResult, AnimeItemSchema } from "./types";
+  type AnimeItem,
+  type ScraperResult,
+  AnimeItemSchema,
+} from "./types";

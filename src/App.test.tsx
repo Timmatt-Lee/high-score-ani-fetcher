@@ -17,6 +17,7 @@ import {
   type ScanEvent,
   type AnimeItem,
   type ScraperResult,
+  ScraperPipeline,
 } from "./services/scraper";
 import { Observable, Subject } from "rxjs";
 
@@ -390,7 +391,7 @@ describe("Scan functionality", () => {
   it("shows Scanning... and progress bar while running", async () => {
     const subject = new Subject<ScanEvent>();
     vi.spyOn(scraperService, "getTotalPages").mockResolvedValue(1);
-    vi.spyOn(scraperService, "scanAllWithPipeline").mockReturnValue(subject);
+    vi.spyOn(ScraperPipeline.prototype, "execute").mockReturnValue(subject);
 
     await act(async () => {
       render(
@@ -427,9 +428,9 @@ describe("Scan functionality", () => {
     });
 
     vi.spyOn(scraperService, "getTotalPages").mockResolvedValue(1);
-    vi.spyOn(scraperService, "scanAllWithPipeline").mockImplementation(
-      (_pages, _pc, _dc, filterItem) => {
-        const filtered = [highScore, lowScore].filter(filterItem);
+    vi.spyOn(ScraperPipeline.prototype, "execute").mockImplementation(
+      function (this: { filterItem: (item: AnimeItem) => boolean }) {
+        const filtered = [highScore, lowScore].filter(this.filterItem);
         return createMockObservable(
           {
             animeItems: [
@@ -445,7 +446,6 @@ describe("Scan functionality", () => {
             parseErrors: [],
           },
           [
-            { type: ScanEventType.PAGE, page: 1, isSuccess: true },
             {
               type: ScanEventType.ANIME_DETAIL,
               title: "Progress title",
@@ -478,9 +478,9 @@ describe("Scan functionality", () => {
       score: 9.0,
     });
     vi.spyOn(scraperService, "getTotalPages").mockResolvedValue(1);
-    vi.spyOn(scraperService, "scanAllWithPipeline").mockImplementation(
-      (_pages, _pc, _dc, filterItem) => {
-        const filtered = [shortShow].filter(filterItem);
+    vi.spyOn(ScraperPipeline.prototype, "execute").mockImplementation(
+      function (this: { filterItem: (item: AnimeItem) => boolean }) {
+        const filtered = [shortShow].filter(this.filterItem);
         return createMockObservable({
           animeItems: filtered.map((item) => ({
             ...item,
@@ -515,9 +515,9 @@ describe("Scan functionality", () => {
       score: 9.0,
     });
     vi.spyOn(scraperService, "getTotalPages").mockResolvedValue(1);
-    vi.spyOn(scraperService, "scanAllWithPipeline").mockImplementation(
-      (_pages, _pc, _dc, filterItem) => {
-        const filtered = [ova].filter(filterItem);
+    vi.spyOn(ScraperPipeline.prototype, "execute").mockImplementation(
+      function (this: { filterItem: (item: AnimeItem) => boolean }) {
+        const filtered = [ova].filter(this.filterItem);
         return createMockObservable({
           animeItems: filtered.map((item) => ({
             ...item,
@@ -553,9 +553,9 @@ describe("Scan functionality", () => {
     });
     storageMock["trashList"] = [trashItem];
     vi.spyOn(scraperService, "getTotalPages").mockResolvedValue(1);
-    vi.spyOn(scraperService, "scanAllWithPipeline").mockImplementation(
-      (_pages, _pc, _dc, filterItem) => {
-        const filtered = [trashItem].filter(filterItem);
+    vi.spyOn(ScraperPipeline.prototype, "execute").mockImplementation(
+      function (this: { filterItem: (item: AnimeItem) => boolean }) {
+        const filtered = [trashItem].filter(this.filterItem);
         return createMockObservable({
           animeItems: filtered.map((item) => ({
             ...item,
@@ -591,9 +591,9 @@ describe("Scan functionality", () => {
     });
     storageMock["favoriteList"] = [favItem];
     vi.spyOn(scraperService, "getTotalPages").mockResolvedValue(1);
-    vi.spyOn(scraperService, "scanAllWithPipeline").mockImplementation(
-      (_pages, _pc, _dc, filterItem) => {
-        const filtered = [favItem].filter(filterItem);
+    vi.spyOn(ScraperPipeline.prototype, "execute").mockImplementation(
+      function (this: { filterItem: (item: AnimeItem) => boolean }) {
+        const filtered = [favItem].filter(this.filterItem);
         return createMockObservable({
           animeItems: filtered.map((item) => ({
             ...item,
@@ -628,9 +628,9 @@ describe("Scan functionality", () => {
       score: 9.0,
     });
     vi.spyOn(scraperService, "getTotalPages").mockResolvedValue(1);
-    vi.spyOn(scraperService, "scanAllWithPipeline").mockImplementation(
-      (_pages, _pc, _dc, filterItem) => {
-        const filtered = [naEp].filter(filterItem);
+    vi.spyOn(ScraperPipeline.prototype, "execute").mockImplementation(
+      function (this: { filterItem: (item: AnimeItem) => boolean }) {
+        const filtered = [naEp].filter(this.filterItem);
         return createMockObservable({
           animeItems: filtered.map((item) => ({
             ...item,
@@ -670,7 +670,7 @@ describe("Scan functionality", () => {
     );
 
     vi.spyOn(scraperService, "getTotalPages").mockResolvedValue(2);
-    vi.spyOn(scraperService, "scanAllWithPipeline").mockImplementation(() => {
+    vi.spyOn(ScraperPipeline.prototype, "execute").mockImplementation(() => {
       return createMockObservable({
         animeItems: [
           { ...anime, score: 9.0, ratingCount: 100, description: "x" },
@@ -716,7 +716,7 @@ describe("Scan functionality", () => {
     );
 
     vi.spyOn(scraperService, "getTotalPages").mockResolvedValue(1);
-    vi.spyOn(scraperService, "scanAllWithPipeline").mockImplementation(() => {
+    vi.spyOn(ScraperPipeline.prototype, "execute").mockImplementation(() => {
       return createMockObservable({
         animeItems: [
           { ...anime, score: 9.0, ratingCount: 100, description: "x" },
@@ -827,7 +827,7 @@ describe("Scan functionality", () => {
     );
 
     // First scan yields error
-    const pipelineMock = vi.spyOn(scraperService, "scanAllWithPipeline");
+    const pipelineMock = vi.spyOn(ScraperPipeline.prototype, "execute");
     pipelineMock.mockImplementationOnce(() => {
       return createMockObservable({
         animeItems: [{ ...anime }],

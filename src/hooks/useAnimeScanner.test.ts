@@ -11,6 +11,7 @@ import {
   ScanEventType,
   type AnimeItem,
   type ScraperResult,
+  ScraperPipeline,
 } from "../services/scraper";
 import { Observable } from "rxjs";
 
@@ -49,9 +50,9 @@ describe("useAnimeScanner", () => {
   it("scans and calls onScanComplete with filtered results", async () => {
     const mockAnime = makeAnime("Test");
     vi.spyOn(scraperService, "getTotalPages").mockResolvedValue(1);
-    vi.spyOn(scraperService, "scanAllWithPipeline").mockImplementation(
-      (_pages, _pc, _dc, filterItem) => {
-        if (filterItem(mockAnime)) {
+    vi.spyOn(ScraperPipeline.prototype, "execute").mockImplementation(
+      function (this: { filterItem: (item: AnimeItem) => boolean }) {
+        if (this.filterItem(mockAnime)) {
           return createMockObservable(
             {
               animeItems: [
@@ -109,7 +110,7 @@ describe("useAnimeScanner", () => {
     vi.spyOn(scraperService, "getTotalPages").mockResolvedValue(1);
     const { Subject } = await import("rxjs");
     const subject = new Subject<ScanEvent>();
-    vi.spyOn(scraperService, "scanAllWithPipeline").mockReturnValue(subject);
+    vi.spyOn(ScraperPipeline.prototype, "execute").mockReturnValue(subject);
 
     const onComplete = vi.fn();
     const { result } = renderHook(
@@ -125,21 +126,21 @@ describe("useAnimeScanner", () => {
 
     await act(async () => {
       subject.next({
-        type: ScanEventType.PAGE,
-        page: 1,
-        isSuccess: true,
-      });
-    });
-    expect(result.current.progress.message).toContain("Scanning pages (1/1)");
-
-    await act(async () => {
-      subject.next({
         type: ScanEventType.ANIME_DETAIL,
         title: "Halfway",
         isSuccess: true,
       });
     });
     expect(result.current.progress.message).toContain("Halfway");
+
+    await act(async () => {
+      subject.next({
+        type: ScanEventType.ANIME_DETAIL,
+        title: "",
+        isSuccess: true,
+      });
+    });
+    expect(result.current.progress.message).not.toContain("Halfway");
 
     await act(async () => {
       subject.next({
@@ -183,9 +184,9 @@ describe("useAnimeScanner", () => {
     const trashItem = makeAnime("InTrash");
     const favItem = makeAnime("InFav");
     vi.spyOn(scraperService, "getTotalPages").mockResolvedValue(1);
-    vi.spyOn(scraperService, "scanAllWithPipeline").mockImplementation(
-      (_pages, _pc, _dc, filterItem) => {
-        const items = [trashItem, favItem].filter(filterItem);
+    vi.spyOn(ScraperPipeline.prototype, "execute").mockImplementation(
+      function (this: { filterItem: (item: AnimeItem) => boolean }) {
+        const items = [trashItem, favItem].filter(this.filterItem);
         return createMockObservable({
           animeItems: items.map((item) => ({
             ...item,
@@ -241,9 +242,9 @@ describe("useAnimeScanner", () => {
     naShow.episodeCount = NaN;
 
     vi.spyOn(scraperService, "getTotalPages").mockResolvedValue(1);
-    vi.spyOn(scraperService, "scanAllWithPipeline").mockImplementation(
-      (_pages, _pc, _dc, filterItem) => {
-        const items = [shortShow, ovaShow, naShow].filter(filterItem);
+    vi.spyOn(ScraperPipeline.prototype, "execute").mockImplementation(
+      function (this: { filterItem: (item: AnimeItem) => boolean }) {
+        const items = [shortShow, ovaShow, naShow].filter(this.filterItem);
         return createMockObservable({
           animeItems: items.map((item) => ({
             ...item,
@@ -279,7 +280,7 @@ describe("useAnimeScanner", () => {
   it("filters out new items with score below 4.8", async () => {
     const lowScore = makeAnime("LowScore");
     vi.spyOn(scraperService, "getTotalPages").mockResolvedValue(1);
-    vi.spyOn(scraperService, "scanAllWithPipeline").mockImplementation(() => {
+    vi.spyOn(ScraperPipeline.prototype, "execute").mockImplementation(() => {
       return createMockObservable({
         animeItems: [
           { ...lowScore, score: 4.0, ratingCount: 10, description: "Meh" },
@@ -326,7 +327,7 @@ describe("useAnimeScanner", () => {
     );
 
     vi.spyOn(scraperService, "getTotalPages").mockResolvedValue(1);
-    vi.spyOn(scraperService, "scanAllWithPipeline").mockImplementation(() => {
+    vi.spyOn(ScraperPipeline.prototype, "execute").mockImplementation(() => {
       return createMockObservable({
         animeItems: [
           {
@@ -507,7 +508,7 @@ describe("useAnimeScanner", () => {
     vi.spyOn(scraperService, "getTotalPages")
       .mockResolvedValueOnce(error)
       .mockResolvedValueOnce(1);
-    vi.spyOn(scraperService, "scanAllWithPipeline").mockImplementation(() => {
+    vi.spyOn(ScraperPipeline.prototype, "execute").mockImplementation(() => {
       return createMockObservable({
         animeItems: [],
         httpErrors: [],
@@ -539,7 +540,7 @@ describe("useAnimeScanner", () => {
     vi.spyOn(scraperService, "getTotalPages").mockResolvedValue(0);
     const { Subject } = await import("rxjs");
     const subject = new Subject<ScanEvent>();
-    vi.spyOn(scraperService, "scanAllWithPipeline").mockReturnValue(subject);
+    vi.spyOn(ScraperPipeline.prototype, "execute").mockReturnValue(subject);
 
     const onComplete = vi.fn();
     const { result } = renderHook(
@@ -577,7 +578,7 @@ describe("useAnimeScanner", () => {
     const itemC = { ...makeAnime("M_Anime"), score: 9.5 };
 
     vi.spyOn(scraperService, "getTotalPages").mockResolvedValue(1);
-    vi.spyOn(scraperService, "scanAllWithPipeline").mockImplementation(() => {
+    vi.spyOn(ScraperPipeline.prototype, "execute").mockImplementation(() => {
       return createMockObservable({
         animeItems: [itemA, itemB, itemC],
         httpErrors: [],
@@ -611,9 +612,9 @@ describe("useAnimeScanner", () => {
     favItem.title = "Something OVA Else"; // fails OVA filter
 
     vi.spyOn(scraperService, "getTotalPages").mockResolvedValue(1);
-    vi.spyOn(scraperService, "scanAllWithPipeline").mockImplementation(
-      (_pages, _pc, _dc, filterItem) => {
-        const items = [trashItem, favItem].filter(filterItem);
+    vi.spyOn(ScraperPipeline.prototype, "execute").mockImplementation(
+      function (this: { filterItem: (item: AnimeItem) => boolean }) {
+        const items = [trashItem, favItem].filter(this.filterItem);
         return createMockObservable({
           animeItems: items.map((item) => ({
             ...item,
@@ -663,7 +664,7 @@ describe("useAnimeScanner", () => {
     const favItem = makeAnime("NotFoundFav");
 
     vi.spyOn(scraperService, "getTotalPages").mockResolvedValue(1);
-    vi.spyOn(scraperService, "scanAllWithPipeline").mockImplementation(() => {
+    vi.spyOn(ScraperPipeline.prototype, "execute").mockImplementation(() => {
       return createMockObservable({
         animeItems: [],
         httpErrors: [],
@@ -690,7 +691,7 @@ describe("useAnimeScanner", () => {
 
   it("handles pipeline errors during scanning by setting error directly", async () => {
     vi.spyOn(scraperService, "getTotalPages").mockResolvedValue(1);
-    vi.spyOn(scraperService, "scanAllWithPipeline").mockImplementation(() => {
+    vi.spyOn(ScraperPipeline.prototype, "execute").mockImplementation(() => {
       return new Observable((subscriber) => {
         subscriber.error(new Error("pipeline crash"));
       });
@@ -718,22 +719,20 @@ describe("useAnimeScanner", () => {
     const favItem = makeAnime("FavItem");
     const trashItem = makeAnime("TrashItem");
 
-    const pipelineSpy = vi
-      .spyOn(scraperService, "scanAllWithPipeline")
-      .mockImplementation(() => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let capturedPipeline: any = null;
+    vi.spyOn(ScraperPipeline.prototype, "execute")
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .mockImplementation(function (this: any) {
+        // eslint-disable-next-line @typescript-eslint/no-this-alias
+        capturedPipeline = this;
         return createMockObservable(
           {
             animeItems: [{ ...searchItem, score: 9.0 }],
             httpErrors: [],
             parseErrors: [],
           },
-          [
-            {
-              type: ScanEventType.PAGE,
-              page: 3,
-              isSuccess: true,
-            },
-          ],
+          [],
         );
       });
 
@@ -754,16 +753,12 @@ describe("useAnimeScanner", () => {
     const pagesSpy = vi.spyOn(scraperService, "getTotalPages");
     expect(pagesSpy).not.toHaveBeenCalled();
 
-    // Check that scanAllWithPipeline was called with option args
-    expect(pipelineSpy).toHaveBeenCalledWith(
-      0, // totalPages defaults to 0 since we didn't fetch it, but retry option page list is used
-      5,
-      10,
-      expect.any(Function),
-      {
-        onlyPages: [3],
-      },
-    );
+    // Check that ScraperPipeline was instantiated with option args
+    expect(capturedPipeline).not.toBeNull();
+    expect(capturedPipeline.totalPages).toBe(0);
+    expect(capturedPipeline.options).toEqual({
+      onlyPages: [3],
+    });
 
     expect(onComplete).toHaveBeenCalled();
   });
@@ -771,9 +766,13 @@ describe("useAnimeScanner", () => {
   it("handles empty options object as non-retry conditions", async () => {
     // 1. Empty options should be treated as non-retry
     vi.spyOn(scraperService, "getTotalPages").mockResolvedValue(2);
-    const pipelineSpy = vi
-      .spyOn(scraperService, "scanAllWithPipeline")
-      .mockImplementation(() => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let capturedPipeline: any = null;
+    vi.spyOn(ScraperPipeline.prototype, "execute")
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .mockImplementation(function (this: any) {
+        // eslint-disable-next-line @typescript-eslint/no-this-alias
+        capturedPipeline = this;
         return createMockObservable(
           {
             animeItems: [],
@@ -802,13 +801,9 @@ describe("useAnimeScanner", () => {
       await result.current.handleScan({}); // empty options
     });
 
-    expect(pipelineSpy).toHaveBeenLastCalledWith(
-      2,
-      5,
-      10,
-      expect.any(Function),
-      undefined,
-    );
+    expect(capturedPipeline).not.toBeNull();
+    expect(capturedPipeline.totalPages).toBe(2);
+    expect(capturedPipeline.options).toBeUndefined();
   });
 
   it("handles getTotalPages throwing a generic exception", async () => {
@@ -856,7 +851,7 @@ describe("useAnimeScanner", () => {
   it("handles scanAllWithPipeline throwing a generic exception synchronously", async () => {
     const error = new Error("scanAllWithPipeline sync throw error");
     vi.spyOn(scraperService, "getTotalPages").mockResolvedValue(1);
-    vi.spyOn(scraperService, "scanAllWithPipeline").mockImplementation(() => {
+    vi.spyOn(ScraperPipeline.prototype, "execute").mockImplementation(() => {
       throw error;
     });
 
@@ -877,7 +872,7 @@ describe("useAnimeScanner", () => {
 
   it("handles scanAllWithPipeline throwing a string exception synchronously", async () => {
     vi.spyOn(scraperService, "getTotalPages").mockResolvedValue(1);
-    vi.spyOn(scraperService, "scanAllWithPipeline").mockImplementation(() => {
+    vi.spyOn(ScraperPipeline.prototype, "execute").mockImplementation(() => {
       throw "scanAllWithPipeline sync string throw error";
     });
 

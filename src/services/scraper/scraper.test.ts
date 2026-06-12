@@ -5,6 +5,7 @@ import {
   ScraperHttpError,
   ScraperParseError,
   ScanEventType,
+  ScraperPipeline,
 } from "./index";
 import { type AnimeItem, type ScraperResult } from "./types";
 import { isError } from "../../types/result";
@@ -566,17 +567,16 @@ describe("ScraperService pipeline methods", () => {
 
     let completedResult: ScraperResult | null = null;
     await new Promise<void>((resolve, reject) => {
-      scraperService
-        .scanAllWithPipeline(1, 1, 1, () => true)
-        .subscribe({
-          next: (event) => {
-            if (event.type === ScanEventType.COMPLETED) {
-              completedResult = event.result;
-            }
-          },
-          error: reject,
-          complete: resolve,
-        });
+      const pipeline = new ScraperPipeline(1, 1, 1, () => true, scraperService);
+      pipeline.execute().subscribe({
+        next: (event) => {
+          if (event.type === ScanEventType.COMPLETED) {
+            completedResult = event.result;
+          }
+        },
+        error: reject,
+        complete: resolve,
+      });
     });
 
     expect(completedResult).not.toBeNull();

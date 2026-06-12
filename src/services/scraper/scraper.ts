@@ -5,18 +5,11 @@ import {
   ScraperParseError,
   ScraperError,
 } from "./scraperError";
-import { ScraperPipeline } from "./scraperPipeline";
-import { type Observable } from "rxjs";
-import {
-  type ScanEvent,
-  type PipelineOptions,
-  AnimeScraper,
-} from "./animeScraper";
 import { type AnimeItem, type AnimeDetails, type ScraperResult } from "./types";
 
 const BASE_URL = "https://ani.gamer.com.tw";
 
-export class ScraperService extends AnimeScraper {
+export class ScraperService {
   private async fetchUrl(
     url: string,
     page: number,
@@ -344,23 +337,6 @@ export class ScraperService extends AnimeScraper {
   /**
    * Pipeline scraping where stage 1 page fetching feeds items dynamically to stage 2 details fetching.
    */
-  scanAllWithPipeline(
-    totalPages: number,
-    pageConcurrency: number,
-    detailConcurrency: number,
-    filterItem: (item: AnimeItem) => boolean,
-    options?: PipelineOptions,
-  ): Observable<ScanEvent> {
-    const pipeline = new ScraperPipeline(
-      totalPages,
-      pageConcurrency,
-      detailConcurrency,
-      filterItem,
-      this,
-      options,
-    );
-    return pipeline.execute();
-  }
 }
 
 export const scraperService = new ScraperService();

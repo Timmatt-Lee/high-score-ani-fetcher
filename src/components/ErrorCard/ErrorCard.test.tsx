@@ -121,6 +121,10 @@ describe("ErrorCard", () => {
         source: 999 as unknown as ScraperScanStep,
         expected: "When doing: parsing",
       },
+      {
+        source: "invalid_string_step" as unknown as ScraperScanStep,
+        expected: "When doing: invalid_string_step",
+      },
     ];
 
     for (const { source, expected } of sources) {
@@ -176,10 +180,16 @@ describe("ErrorCard", () => {
       }
     }
     const error = new CustomError();
-    render(<ErrorCard error={error} />);
+    const { unmount } = render(<ErrorCard error={error} />);
     expect(screen.getByTestId("error-card-title").textContent).toBe(
       "TestCustomError",
     );
+    unmount();
+
+    const errorWithNoName = new Error("Fatal System Error");
+    Object.defineProperty(errorWithNoName, "name", { value: "" });
+    render(<ErrorCard error={errorWithNoName} />);
+    expect(screen.getByTestId("error-card-title").textContent).toBe("Error");
   });
 
   it("handles copy failure gracefully", async () => {
