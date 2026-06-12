@@ -9,14 +9,9 @@ const preview: Preview = {
       React.useEffect(() => {
         const style = document.createElement("style");
         style.innerHTML = `
-          html, body, #storybook-root, #storybook-root > div, #root, #root > div, .sb-show-main, .sb-main-fullscreen, .sb-main-padded {
+          html, body, #storybook-root {
             height: auto !important;
             min-height: 0 !important;
-            max-height: none !important;
-            margin: 0 !important;
-            padding: 0 !important;
-            overflow: visible !important;
-            display: block !important;
           }
         `;
         document.head.appendChild(style);
@@ -24,13 +19,7 @@ const preview: Preview = {
           document.head.removeChild(style);
         };
       }, []);
-      return (
-        <div
-          style={{ display: "flow-root", width: "100%", overflow: "visible" }}
-        >
-          <Story />
-        </div>
-      );
+      return <Story />;
     },
   ],
   parameters: {
