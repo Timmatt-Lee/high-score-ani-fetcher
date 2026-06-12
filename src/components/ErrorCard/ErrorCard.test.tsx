@@ -117,14 +117,6 @@ describe("ErrorCard", () => {
         source: ScraperScanStep.PARSE_ANIME_DETAIL,
         expected: "When doing: parsing anime detail",
       },
-      {
-        source: 999 as unknown as ScraperScanStep,
-        expected: "When doing: parsing",
-      },
-      {
-        source: "invalid_string_step" as unknown as ScraperScanStep,
-        expected: "When doing: invalid_string_step",
-      },
     ];
 
     for (const { source, expected } of sources) {
@@ -141,6 +133,21 @@ describe("ErrorCard", () => {
       );
       unmount();
     }
+  });
+
+  it("throws error when getParseStepLabel encounters an unhandled step value", () => {
+    const error = new ScraperParseError(
+      0,
+      999 as unknown as ScraperScanStep,
+      "https://ani.gamer.com.tw/anime.php",
+      "bad html",
+      "Parse failed",
+    );
+    const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    expect(() => render(<ErrorCard error={error} />)).toThrow(
+      "Unhandled ScraperScanStep: 999",
+    );
+    consoleSpy.mockRestore();
   });
 
   it("renders Unknown/Fatal error and handles copy click", async () => {

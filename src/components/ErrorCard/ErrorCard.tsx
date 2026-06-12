@@ -23,7 +23,9 @@ const getParseStepLabel = (step: ScraperScanStep): string => {
       return "parsing anime detail";
   }
   const _exhaustiveCheck: never = step;
-  return typeof _exhaustiveCheck === "string" ? _exhaustiveCheck : "parsing";
+  throw new Error(
+    `Unhandled ScraperScanStep: ${JSON.stringify(_exhaustiveCheck)}`,
+  );
 };
 
 export function ErrorCard({ error }: ErrorCardProps) {
