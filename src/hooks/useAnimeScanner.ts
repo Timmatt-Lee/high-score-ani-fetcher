@@ -50,9 +50,7 @@ export function useAnimeScanner(
       setProgress({ percent: 0, message: "Getting total pages..." });
       try {
         const totalPagesResult = await animeScraper.getTotalPages();
-        const isResultError =
-          isError(totalPagesResult) || typeof totalPagesResult !== "number";
-        if (isResultError) {
+        if (isError(totalPagesResult) || typeof totalPagesResult !== "number") {
           const error = isError(totalPagesResult)
             ? totalPagesResult
             : new Error(String(totalPagesResult));
