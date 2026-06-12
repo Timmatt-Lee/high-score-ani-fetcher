@@ -12,6 +12,7 @@ const preview: Preview = {
           html, body, #storybook-root {
             height: auto !important;
             min-height: 0 !important;
+            overflow: hidden !important;
           }
         `;
         document.head.appendChild(style);
@@ -19,7 +20,13 @@ const preview: Preview = {
           document.head.removeChild(style);
         };
       }, []);
-      return <Story />;
+      return (
+        <div
+          style={{ display: "flow-root", width: "100%", overflow: "hidden" }}
+        >
+          <Story />
+        </div>
+      );
     },
   ],
   parameters: {
