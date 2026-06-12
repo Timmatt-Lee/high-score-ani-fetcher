@@ -24,24 +24,28 @@ const getCardTitleAndSubtitle = (
   const animeName = error.animeName;
   const pageStr = error.page ? `Page: ${error.page}` : undefined;
   const scanStepLabel = getScanStepLabel(error.scanStep);
+  const scanStepStr = `When doing: ${scanStepLabel}`;
 
-  const suffixStr =
+  const statusCodeStr =
     error instanceof AnimeScanHttpError
-      ? `Status: ${error.status}`
-      : `When doing: ${scanStepLabel}`;
+      ? `Status Code: ${error.status}`
+      : undefined;
 
-  let fallbackTitle = error.name || "Error";
+  let fallbackTitle = error.name || "Unexpected Error";
   if (error instanceof AnimeScanHttpError) {
     fallbackTitle = "HTTP Error";
   } else if (error instanceof AnimeScanParseError) {
     fallbackTitle = "Parser Error";
   }
 
+  const subtitleParts = [statusCodeStr, scanStepStr];
+  if (animeName) {
+    subtitleParts.unshift(pageStr);
+  }
+
   return {
-    title: animeName ?? pageStr ?? fallbackTitle,
-    subtitle: animeName
-      ? [pageStr, suffixStr].filter(Boolean).join(", ")
-      : suffixStr,
+    title: animeName || pageStr || fallbackTitle,
+    subtitle: subtitleParts.filter(Boolean).join(", "),
   };
 };
 

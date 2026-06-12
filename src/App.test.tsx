@@ -663,7 +663,9 @@ describe("Scan functionality", () => {
     // Verify errors panel renders HTTP error details
     expect(screen.getByTestId("errors-panel")).toBeDefined();
     expect(screen.getByText(/HTTP Network Errors \(1\)/)).toBeDefined();
-    expect(screen.getAllByText(/Status: 502/).length).toBeGreaterThanOrEqual(1);
+    expect(
+      screen.getAllByText(/Status Code: 502/).length,
+    ).toBeGreaterThanOrEqual(1);
   });
 
   it("renders page numbers and failed details counts in Errors tab summary when there are many errors", async () => {

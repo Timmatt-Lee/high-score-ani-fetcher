@@ -38,7 +38,7 @@ describe("ErrorCard", () => {
       "葬送的芙莉蓮",
     );
     expect(screen.getByTestId("error-card-subtitle").textContent).toBe(
-      "Page: 2, Status: 500",
+      "Page: 2, Status Code: 500, When doing: fetching total pages",
     );
     expect(screen.getByTestId("error-card-message").textContent).toBe(
       error.message,
@@ -65,7 +65,7 @@ describe("ErrorCard", () => {
 
     expect(screen.getByTestId("error-card-title").textContent).toBe("Page: 3");
     expect(screen.getByTestId("error-card-subtitle").textContent).toBe(
-      "Status: 502",
+      "Status Code: 502, When doing: fetching total pages",
     );
   });
 
@@ -220,8 +220,11 @@ describe("ErrorCard", () => {
       }
     }
     const errorNoName = new CustomErrorNoName();
-    render(<ErrorCard error={errorNoName} />);
-    expect(screen.getByTestId("error-card-title").textContent).toBe("Error");
+    const { unmount: unmount3 } = render(<ErrorCard error={errorNoName} />);
+    expect(screen.getByTestId("error-card-title").textContent).toBe(
+      "Unexpected Error",
+    );
+    unmount3();
   });
 
   it("handles copy failure gracefully", async () => {
