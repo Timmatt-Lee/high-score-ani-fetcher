@@ -101,7 +101,11 @@ export class ScraperPipeline {
   }
 
   private async fetchDetail(item: AnimeItem, page?: number): Promise<void> {
-    const res = await this.scraper.scrapeAnimeDetails(item.link, page ?? 1);
+    const res = await this.scraper.scrapeAnimeDetails(
+      item.link,
+      page ?? 1,
+      item.title,
+    );
     let isSuccessful = true;
     if (isError(res)) {
       isSuccessful = false;

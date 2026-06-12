@@ -198,7 +198,9 @@ export function useAnimeScanner(
             }
             default: {
               const _exhaustiveCheck: never = event;
-              return _exhaustiveCheck;
+              throw new Error(
+                `Unhandled ScanEvent: ${JSON.stringify(_exhaustiveCheck)}`,
+              );
             }
           }
         },

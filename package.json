@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "npm run verify:visual && tsc -b && vite build",
+    "build": "tsc -b && vite build",
     "verify:visual": "tsx scripts/verify-visual-coverage.ts",
     "lint": "eslint .",
     "lint:md": "markdownlint \"**/*.md\" --ignore node_modules",

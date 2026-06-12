@@ -300,7 +300,11 @@ describe("ScraperPipeline", () => {
     expect(listSpy).toHaveBeenCalledTimes(1);
     expect(listSpy).toHaveBeenCalledWith(3); // only page 3 retried
     expect(detailSpy).toHaveBeenCalledTimes(1); // newPageItem
-    expect(detailSpy).toHaveBeenCalledWith("http://newPageItem", 3);
+    expect(detailSpy).toHaveBeenCalledWith(
+      "http://newPageItem",
+      3,
+      "New Page Item",
+    );
     expect(result.animeItems).toHaveLength(1);
   });
 
@@ -469,6 +473,6 @@ describe("ScraperPipeline", () => {
       link: "http://a",
       title: "A",
     } as AnimeItem);
-    expect(detailSpy).toHaveBeenCalledWith("http://a", 1);
+    expect(detailSpy).toHaveBeenCalledWith("http://a", 1, "A");
   });
 });

@@ -14,6 +14,7 @@ export class ScraperService {
     url: string,
     page: number,
     scanStep: ScraperScanStep,
+    animeName?: string,
   ): Promise<Result<string, ScraperHttpError>> {
     const response = await fetch(url);
     if (!response.ok) {
@@ -31,7 +32,7 @@ export class ScraperService {
         url,
         snippet,
         response.status,
-        undefined,
+        animeName,
       );
     }
     return await response.text();
@@ -266,11 +267,13 @@ export class ScraperService {
   async scrapeAnimeDetails(
     link: string,
     page: number,
+    animeName?: string,
   ): Promise<Result<AnimeDetails, ScraperError>> {
     const text = await this.fetchUrl(
       link,
       page,
       ScraperScanStep.PARSE_ANIME_DETAIL,
+      animeName,
     );
     if (isError(text)) return text;
 
@@ -283,6 +286,7 @@ export class ScraperService {
         link,
         doc.body.innerHTML.substring(0, 200),
         "Score element missing",
+        animeName,
       );
     }
     const score = parseFloat(scoreNumDiv.textContent);
@@ -293,6 +297,7 @@ export class ScraperService {
         link,
         scoreNumDiv.outerHTML,
         "Failed to parse score",
+        animeName,
       );
     }
 
@@ -304,6 +309,7 @@ export class ScraperService {
         link,
         doc.body.innerHTML.substring(0, 200),
         "Rating count element missing",
+        animeName,
       );
     }
     const ratingCount = parseInt(
@@ -317,6 +323,7 @@ export class ScraperService {
         link,
         scorePeopleDiv.outerHTML,
         "Failed to parse rating count",
+        animeName,
       );
     }
 
@@ -328,6 +335,7 @@ export class ScraperService {
         link,
         doc.body.innerHTML.substring(0, 200),
         "Description missing",
+        animeName,
       );
     }
     const description = descDiv.textContent.trim();
