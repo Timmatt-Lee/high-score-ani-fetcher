@@ -9,9 +9,10 @@ const preview: Preview = {
       React.useEffect(() => {
         const style = document.createElement("style");
         style.innerHTML = `
-          html, body, #storybook-root, .sb-show-main, .sb-main-fullscreen, .sb-main-padded {
+          html, body, #storybook-root, #storybook-root > div, #root, #root > div, .sb-show-main, .sb-main-fullscreen, .sb-main-padded {
             height: auto !important;
             min-height: 0 !important;
+            max-height: none !important;
             margin: 0 !important;
             padding: 0 !important;
             overflow: visible !important;
