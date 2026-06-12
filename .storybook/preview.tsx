@@ -14,7 +14,7 @@ const preview: Preview = {
             min-height: 0 !important;
             margin: 0 !important;
             padding: 0 !important;
-            overflow: hidden !important;
+            overflow: visible !important;
           }
         `;
         document.head.appendChild(style);
@@ -24,7 +24,7 @@ const preview: Preview = {
       }, []);
       return (
         <div
-          style={{ display: "flow-root", width: "100%", overflow: "hidden" }}
+          style={{ display: "flow-root", width: "100%", overflow: "visible" }}
         >
           <Story />
         </div>
