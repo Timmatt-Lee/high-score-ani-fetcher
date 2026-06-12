@@ -104,6 +104,11 @@ const meta: Meta<typeof App> = {
       );
     },
   ],
+  parameters: {
+    chromatic: {
+      cropToViewport: true,
+    },
+  },
 };
 
 export default meta;

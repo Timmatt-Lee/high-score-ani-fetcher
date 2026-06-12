@@ -24,10 +24,11 @@ const preview: Preview = {
   ],
   parameters: {
     layout: "fullscreen",
-    // Configure Chromatic to capture all snapshots at 450px width and crop to viewport
+    // Configure Chromatic to capture all snapshots at 450px width
     chromatic: {
       viewports: [450],
-      cropToViewport: true,
+      // By default, capture content height. For App story or viewport-specific components, we can override cropToViewport: true.
+      cropToViewport: false,
     },
     // Configure Storybook UI viewport options for developers
     viewport: {
