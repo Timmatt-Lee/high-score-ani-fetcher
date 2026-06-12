@@ -67,7 +67,6 @@ describe("useAnimeScanner", () => {
               parseErrors: [],
             },
             [
-              { type: ScanEventType.PAGE, page: 1, isSuccess: true },
               {
                 type: ScanEventType.ANIME_DETAIL,
                 title: mockAnime.title,
@@ -556,8 +555,8 @@ describe("useAnimeScanner", () => {
 
     await act(async () => {
       subject.next({
-        type: ScanEventType.PAGE,
-        page: 0,
+        type: ScanEventType.ANIME_DETAIL,
+        title: "ZeroProgressDetail",
         isSuccess: true,
       });
     });

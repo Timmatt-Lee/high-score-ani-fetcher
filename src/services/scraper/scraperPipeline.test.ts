@@ -6,6 +6,7 @@ import {
   ScraperScanStep,
   type ScanEvent,
   ScanEventType,
+  ScraperService,
 } from "./index";
 import { type AnimeItem, type AnimeDetails, type ScraperResult } from "./types";
 
@@ -80,8 +81,7 @@ describe("ScraperPipeline", () => {
       getTotalPages: vi.fn(),
       scrapeAnimesOnPage: listSpy,
       scrapeAnimeDetails: detailSpy,
-      scanAllWithPipeline: vi.fn(),
-    });
+    } as unknown as ScraperService);
 
     const { result } = await runPipeline(pipeline);
     const { animeItems, httpErrors, parseErrors } = result;
@@ -131,8 +131,7 @@ describe("ScraperPipeline", () => {
       getTotalPages: vi.fn(),
       scrapeAnimesOnPage: listSpy,
       scrapeAnimeDetails: detailSpy,
-      scanAllWithPipeline: vi.fn(),
-    });
+    } as unknown as ScraperService);
 
     const { result } = await runPipeline(pipeline);
     const { animeItems, httpErrors, parseErrors } = result;
@@ -167,8 +166,7 @@ describe("ScraperPipeline", () => {
       getTotalPages: vi.fn(),
       scrapeAnimesOnPage: listSpy,
       scrapeAnimeDetails: detailSpy,
-      scanAllWithPipeline: vi.fn(),
-    });
+    } as unknown as ScraperService);
 
     const { result } = await runPipeline(pipeline);
     const { animeItems, httpErrors, parseErrors } = result;
@@ -200,8 +198,7 @@ describe("ScraperPipeline", () => {
       getTotalPages: vi.fn(),
       scrapeAnimesOnPage: listSpy,
       scrapeAnimeDetails: detailSpy,
-      scanAllWithPipeline: vi.fn(),
-    });
+    } as unknown as ScraperService);
 
     const { result } = await runPipeline(pipeline);
     const { animeItems, httpErrors, parseErrors } = result;
@@ -220,8 +217,7 @@ describe("ScraperPipeline", () => {
       getTotalPages: vi.fn(),
       scrapeAnimesOnPage: listSpy,
       scrapeAnimeDetails: vi.fn(),
-      scanAllWithPipeline: vi.fn(),
-    });
+    } as unknown as ScraperService);
 
     const runPromise = new Promise<void>((resolve, reject) => {
       pipeline.execute().subscribe({
@@ -246,8 +242,7 @@ describe("ScraperPipeline", () => {
       getTotalPages: vi.fn(),
       scrapeAnimesOnPage: listSpy,
       scrapeAnimeDetails: vi.fn(),
-      scanAllWithPipeline: vi.fn(),
-    });
+    } as unknown as ScraperService);
 
     const runPromise = new Promise<void>((resolve, reject) => {
       pipeline.execute().subscribe({
@@ -295,8 +290,7 @@ describe("ScraperPipeline", () => {
         getTotalPages: vi.fn(),
         scrapeAnimesOnPage: listSpy,
         scrapeAnimeDetails: detailSpy,
-        scanAllWithPipeline: vi.fn(),
-      },
+      } as unknown as ScraperService,
       {
         onlyPages: [3],
       },
@@ -316,8 +310,7 @@ describe("ScraperPipeline", () => {
       getTotalPages: vi.fn(),
       scrapeAnimesOnPage: listSpy,
       scrapeAnimeDetails: vi.fn(),
-      scanAllWithPipeline: vi.fn(),
-    });
+    } as unknown as ScraperService);
 
     const runPromise = new Promise<void>((resolve, reject) => {
       pipeline.execute().subscribe({
@@ -348,8 +341,7 @@ describe("ScraperPipeline", () => {
       getTotalPages: vi.fn(),
       scrapeAnimesOnPage: listSpy,
       scrapeAnimeDetails: detailSpy,
-      scanAllWithPipeline: vi.fn(),
-    });
+    } as unknown as ScraperService);
 
     const runPromise = new Promise<void>((resolve, reject) => {
       pipeline.execute().subscribe({
@@ -372,8 +364,7 @@ describe("ScraperPipeline", () => {
       getTotalPages: vi.fn(),
       scrapeAnimesOnPage: vi.fn(),
       scrapeAnimeDetails: vi.fn(),
-      scanAllWithPipeline: vi.fn(),
-    });
+    } as unknown as ScraperService);
     vi.spyOn(pipeline["pageQueue"], "add").mockImplementation(() => {
       throw new Error("sync queue error");
     });
@@ -402,8 +393,7 @@ describe("ScraperPipeline", () => {
       getTotalPages: vi.fn(),
       scrapeAnimesOnPage: vi.fn(),
       scrapeAnimeDetails: vi.fn(),
-      scanAllWithPipeline: vi.fn(),
-    });
+    } as unknown as ScraperService);
     vi.spyOn(pipeline["pageQueue"], "add").mockImplementation(() => {
       throw "sync string queue error";
     });
@@ -439,8 +429,7 @@ describe("ScraperPipeline", () => {
       getTotalPages: vi.fn(),
       scrapeAnimesOnPage: listSpy,
       scrapeAnimeDetails: detailSpy,
-      scanAllWithPipeline: vi.fn(),
-    });
+    } as unknown as ScraperService);
 
     const runPromise = new Promise<void>((resolve, reject) => {
       pipeline.execute().subscribe({
@@ -474,8 +463,7 @@ describe("ScraperPipeline", () => {
       getTotalPages: vi.fn(),
       scrapeAnimesOnPage: listSpy,
       scrapeAnimeDetails: detailSpy,
-      scanAllWithPipeline: vi.fn(),
-    });
+    } as unknown as ScraperService);
 
     await pipeline["fetchDetail"]({
       link: "http://a",

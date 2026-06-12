@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import type { Meta, StoryObj } from "@storybook/react";
 import App from "./App";
@@ -9,8 +8,7 @@ import {
   ScraperScanStep,
   ScraperService,
   ScanEventType,
-  type ScanEvent,
-  type PipelineOptions,
+  ScraperPipeline,
   type AnimeItem,
 } from "./services/scraper";
 import { Observable } from "rxjs";
@@ -47,58 +45,6 @@ const mockScraperService = {
       description: `詳細介紹 ${link} page ${page}`,
     };
   },
-  scanAllWithPipeline: (
-    _totalPages: number,
-    _pageConcurrency: number,
-    _detailConcurrency: number,
-    _filterItem: (item: AnimeItem) => boolean,
-    _options?: PipelineOptions,
-  ): Observable<ScanEvent> => {
-    return new Observable((subscriber) => {
-      let isCancelled = false;
-      const run = async () => {
-        const titles = [
-          "葬送的芙莉蓮",
-          "鬼滅之刃 柱訓練篇",
-          "無職轉生",
-          "神作續篇",
-        ];
-        for (let isStep = 1; isStep <= 4; isStep++) {
-          if (isCancelled) return;
-          await new Promise((resolve) => setTimeout(resolve, 10));
-          subscriber.next({
-            type: ScanEventType.PAGE,
-            page: isStep,
-            isSuccess: true,
-          });
-          subscriber.next({
-            type: ScanEventType.ANIME_DETAIL,
-            title: titles[isStep - 1],
-            isSuccess: true,
-          });
-        }
-        if (isCancelled) return;
-        subscriber.next({
-          type: ScanEventType.COMPLETED,
-          result: {
-            animeItems: [
-              createMockAnime({ title: "葬送的芙莉蓮", score: 4.9 }),
-              createMockAnime({ title: "鬼滅之刃 柱訓練篇", score: 4.8 }),
-              createMockAnime({ title: "無職轉生", score: 4.8 }),
-              createMockAnime({ title: "神作續篇", score: 4.9 }),
-            ],
-            httpErrors: [],
-            parseErrors: [],
-          },
-        });
-        subscriber.complete();
-      };
-      run();
-      return () => {
-        isCancelled = true;
-      };
-    });
-  },
 };
 
 const meta: Meta<typeof App> = {
@@ -107,6 +53,48 @@ const meta: Meta<typeof App> = {
   decorators: [
     (Story) => {
       localStorage.clear();
+      // Define a default mock implementation for ScraperPipeline.prototype.execute
+      ScraperPipeline.prototype.execute = function (this: any) {
+        return new Observable((subscriber) => {
+          let isCancelled = false;
+          const run = async () => {
+            const titles = [
+              "葬送的芙莉蓮",
+              "鬼滅之刃 柱訓練篇",
+              "無職轉生",
+              "神作續篇",
+            ];
+            for (let isStep = 1; isStep <= 4; isStep++) {
+              if (isCancelled) return;
+              await new Promise((resolve) => setTimeout(resolve, 10));
+              subscriber.next({
+                type: ScanEventType.ANIME_DETAIL,
+                title: titles[isStep - 1],
+                isSuccess: true,
+              });
+            }
+            if (isCancelled) return;
+            subscriber.next({
+              type: ScanEventType.COMPLETED,
+              result: {
+                animeItems: [
+                  createMockAnime({ title: "葬送的芙莉蓮", score: 4.9 }),
+                  createMockAnime({ title: "鬼滅之刃 柱訓練篇", score: 4.8 }),
+                  createMockAnime({ title: "無職轉生", score: 4.8 }),
+                  createMockAnime({ title: "神作續篇", score: 4.9 }),
+                ],
+                httpErrors: [],
+                parseErrors: [],
+              },
+            });
+            subscriber.complete();
+          };
+          run();
+          return () => {
+            isCancelled = true;
+          };
+        });
+      };
       return (
         <div
           style={{ width: "450px", minHeight: "600px", background: "#121212" }}
@@ -134,36 +122,28 @@ export const Default: Story = {
 export const ScanningState: Story = {
   decorators: [
     (Story) => {
-      const slowScraperService = {
-        ...mockScraperService,
-        scanAllWithPipeline: (): Observable<ScanEvent> => {
-          return new Observable((subscriber) => {
-            let isCancelled = false;
-            const run = async () => {
-              await new Promise((resolve) => setTimeout(resolve, 10));
-              if (isCancelled) return;
-              subscriber.next({
-                type: ScanEventType.PAGE,
-                page: 1,
-                isSuccess: true,
-              });
-              // We emit details completed and then do not call complete()
-              // to keep it in scanning state forever for screenshot capture.
-              subscriber.next({
-                type: ScanEventType.ANIME_DETAIL,
-                title: "葬送的芙莉蓮",
-                isSuccess: true,
-              });
-            };
-            run();
-            return () => {
-              isCancelled = true;
-            };
-          });
-        },
+      ScraperPipeline.prototype.execute = function (this: any) {
+        return new Observable((subscriber) => {
+          let isCancelled = false;
+          const run = async () => {
+            await new Promise((resolve) => setTimeout(resolve, 10));
+            if (isCancelled) return;
+            // We emit details completed and then do not call complete()
+            // to keep it in scanning state forever for screenshot capture.
+            subscriber.next({
+              type: ScanEventType.ANIME_DETAIL,
+              title: "葬送的芙莉蓮",
+              isSuccess: true,
+            });
+          };
+          run();
+          return () => {
+            isCancelled = true;
+          };
+        });
       };
       return (
-        <ServiceProvider scraperService={slowScraperService as any}>
+        <ServiceProvider scraperService={mockScraperService as any}>
           <Story />
         </ServiceProvider>
       );
@@ -180,80 +160,72 @@ export const ScanningState: Story = {
 export const PartiallyFailedScan: Story = {
   decorators: [
     (Story) => {
-      const failingScraperService = {
-        ...mockScraperService,
-        scanAllWithPipeline: (
-          _totalPages: number,
-          _pageConcurrency: number,
-          _detailConcurrency: number,
-          _filterItem: (item: AnimeItem) => boolean,
-          options?: PipelineOptions,
-        ): Observable<ScanEvent> => {
-          return new Observable((subscriber) => {
-            let isCancelled = false;
-            const run = async () => {
-              if (options) {
-                // Retry scan: emit progress events and NEVER complete so Chromatic captures the scanning state
-                await new Promise((resolve) => setTimeout(resolve, 10));
-                if (isCancelled) return;
-                subscriber.next({
-                  type: ScanEventType.PAGE,
-                  page: 2,
-                  isSuccess: true,
-                });
-                return;
-              }
-
-              // First scan: completes after 20ms with errors
-              await new Promise((resolve) => setTimeout(resolve, 20));
+      ScraperPipeline.prototype.execute = function (this: any) {
+        const options = this.options;
+        return new Observable((subscriber) => {
+          let isCancelled = false;
+          const run = async () => {
+            if (options) {
+              // Retry scan: emit progress events and NEVER complete so Chromatic captures the scanning state
+              await new Promise((resolve) => setTimeout(resolve, 10));
               if (isCancelled) return;
               subscriber.next({
-                type: ScanEventType.COMPLETED,
-                result: {
-                  animeItems: [
-                    createMockAnime({
-                      title: "部分解析成功的動畫",
-                      score: 4.9,
-                    }),
-                  ],
-                  httpErrors: [
-                    Object.assign(
-                      new ScraperHttpError(
-                        2,
-                        ScraperScanStep.GET_TOTAL_PAGES,
-                        "https://ani.gamer.com.tw/animeList.php?page=2",
-                        "",
-                        502,
-                        undefined,
-                      ),
-                      { animeName: "某個好看但部分章節損壞的番" },
-                    ),
-                  ],
-                  parseErrors: [
-                    Object.assign(
-                      new ScraperParseError(
-                        3,
-                        ScraperScanStep.PARSE_ANIME_INFO,
-                        "https://ani.gamer.com.tw/animeList.php?page=3",
-                        "",
-                        "解析失敗",
-                      ),
-                      { animeName: "某個結構毀損無法取得標題的番" },
-                    ),
-                  ],
-                },
+                type: ScanEventType.ANIME_DETAIL,
+                title: "Retry Progress Detail",
+                isSuccess: true,
               });
-              subscriber.complete();
-            };
-            run();
-            return () => {
-              isCancelled = true;
-            };
-          });
-        },
+              return;
+            }
+
+            // First scan: completes after 20ms with errors
+            await new Promise((resolve) => setTimeout(resolve, 20));
+            if (isCancelled) return;
+            subscriber.next({
+              type: ScanEventType.COMPLETED,
+              result: {
+                animeItems: [
+                  createMockAnime({
+                    title: "部分解析成功的動畫",
+                    score: 4.9,
+                  }),
+                ],
+                httpErrors: [
+                  Object.assign(
+                    new ScraperHttpError(
+                      2,
+                      ScraperScanStep.GET_TOTAL_PAGES,
+                      "https://ani.gamer.com.tw/animeList.php?page=2",
+                      "",
+                      502,
+                      undefined,
+                    ),
+                    { animeName: "某個好看但部分章節損壞的番" },
+                  ),
+                ],
+                parseErrors: [
+                  Object.assign(
+                    new ScraperParseError(
+                      3,
+                      ScraperScanStep.PARSE_ANIME_INFO,
+                      "https://ani.gamer.com.tw/animeList.php?page=3",
+                      "",
+                      "解析失敗",
+                    ),
+                    { animeName: "某個結構毀損無法取得標題的番" },
+                  ),
+                ],
+              },
+            });
+            subscriber.complete();
+          };
+          run();
+          return () => {
+            isCancelled = true;
+          };
+        });
       };
       return (
-        <ServiceProvider scraperService={failingScraperService as any}>
+        <ServiceProvider scraperService={mockScraperService as any}>
           <Story />
         </ServiceProvider>
       );
@@ -349,39 +321,26 @@ export const WithError: Story = {
 export const WithLoadingDetails: Story = {
   decorators: [
     (Story) => {
-      const slowScraperService = {
-        ...mockScraperService,
-        scanAllWithPipeline: (): Observable<ScanEvent> => {
-          return new Observable((subscriber) => {
-            let isCancelled = false;
-            const run = async () => {
-              await new Promise((resolve) => setTimeout(resolve, 10));
-              if (isCancelled) return;
-              subscriber.next({
-                type: ScanEventType.PAGE,
-                page: 1,
-                isSuccess: true,
-              });
-              subscriber.next({
-                type: ScanEventType.PAGE,
-                page: 2,
-                isSuccess: true,
-              });
-              subscriber.next({
-                type: ScanEventType.ANIME_DETAIL,
-                title: "葬送的芙莉蓮",
-                isSuccess: true,
-              });
-            };
-            run();
-            return () => {
-              isCancelled = true;
-            };
-          });
-        },
+      ScraperPipeline.prototype.execute = function (this: any) {
+        return new Observable((subscriber) => {
+          let isCancelled = false;
+          const run = async () => {
+            await new Promise((resolve) => setTimeout(resolve, 10));
+            if (isCancelled) return;
+            subscriber.next({
+              type: ScanEventType.ANIME_DETAIL,
+              title: "葬送的芙莉蓮",
+              isSuccess: true,
+            });
+          };
+          run();
+          return () => {
+            isCancelled = true;
+          };
+        });
       };
       return (
-        <ServiceProvider scraperService={slowScraperService as any}>
+        <ServiceProvider scraperService={mockScraperService as any}>
           <Story />
         </ServiceProvider>
       );
