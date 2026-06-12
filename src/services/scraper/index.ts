@@ -1,5 +1,5 @@
-export { ScraperService, scraperService } from "./scraper";
-export { ScraperPipeline } from "./scraperPipeline";
+export { AnimeScraper, animeScraper } from "./animeScraper";
+export { AnimeScanner } from "./animeScanner";
 export { ScraperScanStep, getScanStepLabel } from "./scraperScanStep";
 export {
   ScraperError,

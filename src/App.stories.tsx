@@ -6,8 +6,8 @@ import {
   ScraperHttpError,
   ScraperParseError,
   ScraperScanStep,
-  ScraperService,
-  ScraperPipeline,
+  AnimeScraper,
+  AnimeScanner,
   type AnimeItem,
 } from "./services/scraper";
 import { Observable } from "rxjs";
@@ -25,7 +25,7 @@ const createMockAnime = (overrides: Partial<AnimeItem> = {}): AnimeItem => ({
   ...overrides,
 });
 
-const mockScraperService = {
+const mockAnimeScraper = {
   getTotalPages: async () => 4,
   scrapeAnimesOnPage: async (page: number): Promise<any> => {
     return {
@@ -52,8 +52,8 @@ const meta: Meta<typeof App> = {
   decorators: [
     (Story) => {
       localStorage.clear();
-      // Define a default mock implementation for ScraperPipeline.prototype.execute
-      ScraperPipeline.prototype.execute = function (this: any) {
+      // Define a default mock implementation for AnimeScanner.prototype.scan
+      AnimeScanner.prototype.scan = function (this: any) {
         return new Observable((subscriber) => {
           let isCancelled = false;
           const run = async () => {
@@ -99,7 +99,7 @@ type Story = StoryObj<typeof App>;
 export const Default: Story = {
   decorators: [
     (Story) => (
-      <ServiceProvider scraperService={mockScraperService as any}>
+      <ServiceProvider animeScraper={mockAnimeScraper as any}>
         <Story />
       </ServiceProvider>
     ),
@@ -109,7 +109,7 @@ export const Default: Story = {
 export const ScanningState: Story = {
   decorators: [
     (Story) => {
-      ScraperPipeline.prototype.execute = function (this: any) {
+      AnimeScanner.prototype.scan = function (this: any) {
         return new Observable((subscriber) => {
           let isCancelled = false;
           const run = async () => {
@@ -128,7 +128,7 @@ export const ScanningState: Story = {
         });
       };
       return (
-        <ServiceProvider scraperService={mockScraperService as any}>
+        <ServiceProvider animeScraper={mockAnimeScraper as any}>
           <Story />
         </ServiceProvider>
       );
@@ -145,7 +145,7 @@ export const ScanningState: Story = {
 export const PartiallyFailedScan: Story = {
   decorators: [
     (Story) => {
-      ScraperPipeline.prototype.execute = function (this: any) {
+      AnimeScanner.prototype.scan = function (this: any) {
         const options = this.options;
         return new Observable((subscriber) => {
           let isCancelled = false;
@@ -203,7 +203,7 @@ export const PartiallyFailedScan: Story = {
         });
       };
       return (
-        <ServiceProvider scraperService={mockScraperService as any}>
+        <ServiceProvider animeScraper={mockAnimeScraper as any}>
           <Story />
         </ServiceProvider>
       );
@@ -264,8 +264,8 @@ export const WithError: Story = {
     },
   ],
   render: () => {
-    const mockScraperServiceWithFatalError = {
-      ...mockScraperService,
+    const mockAnimeScraperWithFatalError = {
+      ...mockAnimeScraper,
       getTotalPages: async () => {
         return new ScraperHttpError(
           1,
@@ -280,9 +280,7 @@ export const WithError: Story = {
 
     return (
       <ServiceProvider
-        scraperService={
-          mockScraperServiceWithFatalError as unknown as ScraperService
-        }
+        animeScraper={mockAnimeScraperWithFatalError as unknown as AnimeScraper}
       >
         <App />
       </ServiceProvider>
@@ -299,7 +297,7 @@ export const WithError: Story = {
 export const WithLoadingDetails: Story = {
   decorators: [
     (Story) => {
-      ScraperPipeline.prototype.execute = function (this: any) {
+      AnimeScanner.prototype.scan = function (this: any) {
         return new Observable((subscriber) => {
           let isCancelled = false;
           const run = async () => {
@@ -316,7 +314,7 @@ export const WithLoadingDetails: Story = {
         });
       };
       return (
-        <ServiceProvider scraperService={mockScraperService as any}>
+        <ServiceProvider animeScraper={mockAnimeScraper as any}>
           <Story />
         </ServiceProvider>
       );

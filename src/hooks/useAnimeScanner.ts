@@ -3,7 +3,7 @@ import { useServices } from "../contexts/ServiceContext";
 import {
   ScraperHttpError,
   ScraperParseError,
-  ScraperPipeline,
+  AnimeScanner,
   type PipelineOptions,
   type AnimeItem,
 } from "../services/scraper";
@@ -21,7 +21,7 @@ export function useAnimeScanner(
   trashList: AnimeItem[],
   onScanComplete: (result: ScanCompleteResult) => void,
 ) {
-  const { scraperService } = useServices();
+  const { animeScraper } = useServices();
   const [isScanning, setIsScanning] = useState(false);
   const [progress, setProgress] = useState({ percent: 0, message: "" });
   const [httpErrors, setHttpErrors] = useState<ScraperHttpError[]>([]);
@@ -49,7 +49,7 @@ export function useAnimeScanner(
     if (!isRetry) {
       setProgress({ percent: 0, message: "Getting total pages..." });
       try {
-        const totalPagesResult = await scraperService.getTotalPages();
+        const totalPagesResult = await animeScraper.getTotalPages();
         const isResultError =
           isError(totalPagesResult) || typeof totalPagesResult !== "number";
         if (isResultError) {
@@ -120,16 +120,16 @@ export function useAnimeScanner(
     const scanParseErrors: ScraperParseError[] = [];
 
     try {
-      const pipeline = new ScraperPipeline(
+      const pipeline = new AnimeScanner(
         totalPages,
         5,
         10,
         wrappedFilterItem,
-        scraperService,
+        animeScraper,
         isRetry ? options : undefined,
       );
 
-      pipeline.execute().subscribe({
+      pipeline.scan().subscribe({
         next: (event) => {
           if (event instanceof ScraperHttpError) {
             scanHttpErrors.push(event);

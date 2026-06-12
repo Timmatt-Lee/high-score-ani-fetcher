@@ -8,14 +8,14 @@ import {
 } from "@testing-library/react";
 import { ServiceProvider } from "./contexts/ServiceContext";
 import App from "./App";
-import { scraperService } from "./services/scraper";
+import { animeScraper } from "./services/scraper";
 import {
   ScraperHttpError,
   ScraperParseError,
   ScraperScanStep,
   type ScanEvent,
   type AnimeItem,
-  ScraperPipeline,
+  AnimeScanner,
 } from "./services/scraper";
 import { Observable, Subject } from "rxjs";
 
@@ -381,8 +381,8 @@ describe("Card actions", () => {
 describe("Scan functionality", () => {
   it("shows Scanning... and progress bar while running", async () => {
     const subject = new Subject<ScanEvent>();
-    vi.spyOn(scraperService, "getTotalPages").mockResolvedValue(1);
-    vi.spyOn(ScraperPipeline.prototype, "execute").mockReturnValue(subject);
+    vi.spyOn(animeScraper, "getTotalPages").mockResolvedValue(1);
+    vi.spyOn(AnimeScanner.prototype, "scan").mockReturnValue(subject);
 
     await act(async () => {
       render(
@@ -414,8 +414,8 @@ describe("Scan functionality", () => {
       link: "http://other",
     });
 
-    vi.spyOn(scraperService, "getTotalPages").mockResolvedValue(1);
-    vi.spyOn(ScraperPipeline.prototype, "execute").mockImplementation(
+    vi.spyOn(animeScraper, "getTotalPages").mockResolvedValue(1);
+    vi.spyOn(AnimeScanner.prototype, "scan").mockImplementation(
       function (this: { filterItem: (item: AnimeItem) => boolean }) {
         const filtered = [highScore, lowScore].filter(this.filterItem);
         const details = [
@@ -452,8 +452,8 @@ describe("Scan functionality", () => {
       episodeCount: 5,
       score: 9.0,
     });
-    vi.spyOn(scraperService, "getTotalPages").mockResolvedValue(1);
-    vi.spyOn(ScraperPipeline.prototype, "execute").mockImplementation(
+    vi.spyOn(animeScraper, "getTotalPages").mockResolvedValue(1);
+    vi.spyOn(AnimeScanner.prototype, "scan").mockImplementation(
       function (this: { filterItem: (item: AnimeItem) => boolean }) {
         const filtered = [shortShow].filter(this.filterItem);
         return createMockObservable(
@@ -487,8 +487,8 @@ describe("Scan functionality", () => {
       episodeCount: 12,
       score: 9.0,
     });
-    vi.spyOn(scraperService, "getTotalPages").mockResolvedValue(1);
-    vi.spyOn(ScraperPipeline.prototype, "execute").mockImplementation(
+    vi.spyOn(animeScraper, "getTotalPages").mockResolvedValue(1);
+    vi.spyOn(AnimeScanner.prototype, "scan").mockImplementation(
       function (this: { filterItem: (item: AnimeItem) => boolean }) {
         const filtered = [ova].filter(this.filterItem);
         return createMockObservable(
@@ -523,8 +523,8 @@ describe("Scan functionality", () => {
       score: 9.0,
     });
     storageMock["trashList"] = [trashItem];
-    vi.spyOn(scraperService, "getTotalPages").mockResolvedValue(1);
-    vi.spyOn(ScraperPipeline.prototype, "execute").mockImplementation(
+    vi.spyOn(animeScraper, "getTotalPages").mockResolvedValue(1);
+    vi.spyOn(AnimeScanner.prototype, "scan").mockImplementation(
       function (this: { filterItem: (item: AnimeItem) => boolean }) {
         const filtered = [trashItem].filter(this.filterItem);
         return createMockObservable(
@@ -559,8 +559,8 @@ describe("Scan functionality", () => {
       score: 9.0,
     });
     storageMock["favoriteList"] = [favItem];
-    vi.spyOn(scraperService, "getTotalPages").mockResolvedValue(1);
-    vi.spyOn(ScraperPipeline.prototype, "execute").mockImplementation(
+    vi.spyOn(animeScraper, "getTotalPages").mockResolvedValue(1);
+    vi.spyOn(AnimeScanner.prototype, "scan").mockImplementation(
       function (this: { filterItem: (item: AnimeItem) => boolean }) {
         const filtered = [favItem].filter(this.filterItem);
         return createMockObservable(
@@ -594,8 +594,8 @@ describe("Scan functionality", () => {
       episodeCount: NaN,
       score: 9.0,
     });
-    vi.spyOn(scraperService, "getTotalPages").mockResolvedValue(1);
-    vi.spyOn(ScraperPipeline.prototype, "execute").mockImplementation(
+    vi.spyOn(animeScraper, "getTotalPages").mockResolvedValue(1);
+    vi.spyOn(AnimeScanner.prototype, "scan").mockImplementation(
       function (this: { filterItem: (item: AnimeItem) => boolean }) {
         const filtered = [naEp].filter(this.filterItem);
         return createMockObservable(
@@ -634,8 +634,8 @@ describe("Scan functionality", () => {
       undefined,
     );
 
-    vi.spyOn(scraperService, "getTotalPages").mockResolvedValue(2);
-    vi.spyOn(ScraperPipeline.prototype, "execute").mockImplementation(() => {
+    vi.spyOn(animeScraper, "getTotalPages").mockResolvedValue(2);
+    vi.spyOn(AnimeScanner.prototype, "scan").mockImplementation(() => {
       return createMockObservable([
         { ...anime, score: 9.0, ratingCount: 100, description: "x" },
         mockError,
@@ -677,8 +677,8 @@ describe("Scan functionality", () => {
         ),
     );
 
-    vi.spyOn(scraperService, "getTotalPages").mockResolvedValue(1);
-    vi.spyOn(ScraperPipeline.prototype, "execute").mockImplementation(() => {
+    vi.spyOn(animeScraper, "getTotalPages").mockResolvedValue(1);
+    vi.spyOn(AnimeScanner.prototype, "scan").mockImplementation(() => {
       return createMockObservable([
         { ...anime, score: 9.0, ratingCount: 100, description: "x" },
         ...errorsList,
@@ -713,7 +713,7 @@ describe("Scan functionality", () => {
       undefined,
     );
     const spy = vi
-      .spyOn(scraperService, "getTotalPages")
+      .spyOn(animeScraper, "getTotalPages")
       .mockResolvedValue(fatalErr);
 
     await act(async () => {
@@ -750,7 +750,7 @@ describe("Scan functionality", () => {
       undefined,
     );
 
-    vi.spyOn(scraperService, "getTotalPages").mockResolvedValue(1);
+    vi.spyOn(animeScraper, "getTotalPages").mockResolvedValue(1);
 
     const parseError = new ScraperParseError(
       1,
@@ -786,7 +786,7 @@ describe("Scan functionality", () => {
     );
 
     // First scan yields error
-    const pipelineMock = vi.spyOn(ScraperPipeline.prototype, "execute");
+    const pipelineMock = vi.spyOn(AnimeScanner.prototype, "scan");
     pipelineMock.mockImplementationOnce(() => {
       return createMockObservable([
         { ...anime },

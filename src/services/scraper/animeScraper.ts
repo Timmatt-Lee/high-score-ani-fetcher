@@ -9,7 +9,7 @@ import { type AnimeItem, type AnimeDetails } from "./types";
 
 const BASE_URL = "https://ani.gamer.com.tw";
 
-export class ScraperService {
+export class AnimeScraper {
   private async fetchUrl(
     url: string,
     page: number,
@@ -346,10 +346,6 @@ export class ScraperService {
 
     return { score, ratingCount, description };
   }
-
-  /**
-   * Pipeline scraping where stage 1 page fetching feeds items dynamically to stage 2 details fetching.
-   */
 }
 
-export const scraperService = new ScraperService();
+export const animeScraper = new AnimeScraper();

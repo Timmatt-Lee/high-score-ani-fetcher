@@ -1,11 +1,12 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { ScraperPipeline } from "./scraperPipeline";
+import { AnimeScanner } from "./animeScanner";
 import {
   ScraperHttpError,
   ScraperParseError,
   ScraperScanStep,
   type ScanEvent,
-  ScraperService,
+  AnimeScraper,
 } from "./index";
 import { type AnimeItem, type AnimeDetails } from "./types";
 
@@ -16,14 +17,14 @@ interface TestRunResult {
   parseErrors: ScraperParseError[];
 }
 
-const runPipeline = (pipeline: ScraperPipeline) => {
+const runPipeline = (pipeline: AnimeScanner) => {
   return new Promise<TestRunResult>((resolve, reject) => {
     const events: ScanEvent[] = [];
     const animeItems: AnimeItem[] = [];
     const httpErrors: ScraperHttpError[] = [];
     const parseErrors: ScraperParseError[] = [];
 
-    pipeline.execute().subscribe({
+    pipeline.scan().subscribe({
       next: (event: ScanEvent) => {
         events.push(event);
         if (event instanceof ScraperHttpError) {
@@ -42,7 +43,7 @@ const runPipeline = (pipeline: ScraperPipeline) => {
   });
 };
 
-describe("ScraperPipeline", () => {
+describe("AnimeScanner", () => {
   beforeEach(() => {
     vi.restoreAllMocks();
   });
@@ -82,11 +83,11 @@ describe("ScraperPipeline", () => {
 
     const filterItem = (item: AnimeItem) => item.title !== "B";
 
-    const pipeline = new ScraperPipeline(2, 2, 2, filterItem, {
+    const pipeline = new AnimeScanner(2, 2, 2, filterItem, {
       getTotalPages: vi.fn(),
       scrapeAnimesOnPage: listSpy,
       scrapeAnimeDetails: detailSpy,
-    } as unknown as ScraperService);
+    } as unknown as AnimeScraper);
 
     const { animeItems, httpErrors, parseErrors } = await runPipeline(pipeline);
 
@@ -131,11 +132,11 @@ describe("ScraperPipeline", () => {
 
     detailSpy.mockResolvedValueOnce(detailError);
 
-    const pipeline = new ScraperPipeline(1, 1, 1, () => true, {
+    const pipeline = new AnimeScanner(1, 1, 1, () => true, {
       getTotalPages: vi.fn(),
       scrapeAnimesOnPage: listSpy,
       scrapeAnimeDetails: detailSpy,
-    } as unknown as ScraperService);
+    } as unknown as AnimeScraper);
 
     const { animeItems, httpErrors, parseErrors } = await runPipeline(pipeline);
     expect(animeItems).toHaveLength(0);
@@ -165,11 +166,11 @@ describe("ScraperPipeline", () => {
 
     detailSpy.mockResolvedValueOnce(error);
 
-    const pipeline = new ScraperPipeline(1, 1, 1, () => true, {
+    const pipeline = new AnimeScanner(1, 1, 1, () => true, {
       getTotalPages: vi.fn(),
       scrapeAnimesOnPage: listSpy,
       scrapeAnimeDetails: detailSpy,
-    } as unknown as ScraperService);
+    } as unknown as AnimeScraper);
 
     const { animeItems, httpErrors, parseErrors } = await runPipeline(pipeline);
     expect(animeItems).toHaveLength(0);
@@ -196,11 +197,11 @@ describe("ScraperPipeline", () => {
 
     detailSpy.mockResolvedValueOnce(parseError);
 
-    const pipeline = new ScraperPipeline(1, 1, 1, () => true, {
+    const pipeline = new AnimeScanner(1, 1, 1, () => true, {
       getTotalPages: vi.fn(),
       scrapeAnimesOnPage: listSpy,
       scrapeAnimeDetails: detailSpy,
-    } as unknown as ScraperService);
+    } as unknown as AnimeScraper);
 
     const { animeItems, httpErrors, parseErrors } = await runPipeline(pipeline);
     expect(animeItems).toHaveLength(0);
@@ -214,16 +215,16 @@ describe("ScraperPipeline", () => {
       .fn()
       .mockRejectedValue(new Error("unexpected queue error"));
 
-    const pipeline = new ScraperPipeline(1, 1, 1, () => true, {
+    const pipeline = new AnimeScanner(1, 1, 1, () => true, {
       getTotalPages: vi.fn(),
       scrapeAnimesOnPage: listSpy,
       scrapeAnimeDetails: vi.fn(),
-    } as unknown as ScraperService);
+    } as unknown as AnimeScraper);
 
     const runPromise = new Promise<void>((resolve, reject) => {
-      pipeline.execute().subscribe({
+      pipeline.scan().subscribe({
         next: () => {},
-        error: (err) => {
+        error: (err: any) => {
           expect(err.message).toBe("unexpected queue error");
           resolve();
         },
@@ -239,16 +240,16 @@ describe("ScraperPipeline", () => {
   it("emits non-Error string catches as Error inside pipeline", async () => {
     const listSpy = vi.fn().mockRejectedValue("unexpected string queue error");
 
-    const pipeline = new ScraperPipeline(1, 1, 1, () => true, {
+    const pipeline = new AnimeScanner(1, 1, 1, () => true, {
       getTotalPages: vi.fn(),
       scrapeAnimesOnPage: listSpy,
       scrapeAnimeDetails: vi.fn(),
-    } as unknown as ScraperService);
+    } as unknown as AnimeScraper);
 
     const runPromise = new Promise<void>((resolve, reject) => {
-      pipeline.execute().subscribe({
+      pipeline.scan().subscribe({
         next: () => {},
-        error: (err) => {
+        error: (err: any) => {
           expect(err).toBeInstanceOf(Error);
           expect(err.message).toBe("unexpected string queue error");
           resolve();
@@ -282,7 +283,7 @@ describe("ScraperPipeline", () => {
       };
     });
 
-    const pipeline = new ScraperPipeline(
+    const pipeline = new AnimeScanner(
       5, // total pages 5, but we only scan 1 because of onlyPages option
       1,
       1,
@@ -291,7 +292,7 @@ describe("ScraperPipeline", () => {
         getTotalPages: vi.fn(),
         scrapeAnimesOnPage: listSpy,
         scrapeAnimeDetails: detailSpy,
-      } as unknown as ScraperService,
+      } as unknown as AnimeScraper,
       {
         onlyPages: [3],
       },
@@ -311,16 +312,16 @@ describe("ScraperPipeline", () => {
 
   it("emits error when fetchPage throws unexpected error", async () => {
     const listSpy = vi.fn().mockRejectedValue(new Error("fetch page crashed"));
-    const pipeline = new ScraperPipeline(1, 1, 1, () => true, {
+    const pipeline = new AnimeScanner(1, 1, 1, () => true, {
       getTotalPages: vi.fn(),
       scrapeAnimesOnPage: listSpy,
       scrapeAnimeDetails: vi.fn(),
-    } as unknown as ScraperService);
+    } as unknown as AnimeScraper);
 
     const runPromise = new Promise<void>((resolve, reject) => {
-      pipeline.execute().subscribe({
+      pipeline.scan().subscribe({
         next: () => {},
-        error: (err) => {
+        error: (err: any) => {
           expect(err).toBeInstanceOf(Error);
           expect(err.message).toBe("fetch page crashed");
           resolve();
@@ -342,16 +343,16 @@ describe("ScraperPipeline", () => {
     const detailSpy = vi
       .fn()
       .mockRejectedValue(new Error("fetch detail crashed"));
-    const pipeline = new ScraperPipeline(1, 1, 1, () => true, {
+    const pipeline = new AnimeScanner(1, 1, 1, () => true, {
       getTotalPages: vi.fn(),
       scrapeAnimesOnPage: listSpy,
       scrapeAnimeDetails: detailSpy,
-    } as unknown as ScraperService);
+    } as unknown as AnimeScraper);
 
     const runPromise = new Promise<void>((resolve, reject) => {
-      pipeline.execute().subscribe({
+      pipeline.scan().subscribe({
         next: () => {},
-        error: (err) => {
+        error: (err: any) => {
           expect(err).toBeInstanceOf(Error);
           expect(err.message).toBe("fetch detail crashed");
           resolve();
@@ -365,19 +366,19 @@ describe("ScraperPipeline", () => {
   });
 
   it("emits error when queueing page task throws synchronously", async () => {
-    const pipeline = new ScraperPipeline(1, 1, 1, () => true, {
+    const pipeline = new AnimeScanner(1, 1, 1, () => true, {
       getTotalPages: vi.fn(),
       scrapeAnimesOnPage: vi.fn(),
       scrapeAnimeDetails: vi.fn(),
-    } as unknown as ScraperService);
+    } as unknown as AnimeScraper);
     vi.spyOn(pipeline["pageQueue"], "add").mockImplementation(() => {
       throw new Error("sync queue error");
     });
 
     const runPromise = new Promise<void>((resolve, reject) => {
-      pipeline.execute().subscribe({
+      pipeline.scan().subscribe({
         next: () => {},
-        error: (err) => {
+        error: (err: any) => {
           try {
             expect(err.message).toBe("sync queue error");
             resolve();
@@ -394,19 +395,19 @@ describe("ScraperPipeline", () => {
   });
 
   it("emits string error when queueing page task throws string synchronously", async () => {
-    const pipeline = new ScraperPipeline(1, 1, 1, () => true, {
+    const pipeline = new AnimeScanner(1, 1, 1, () => true, {
       getTotalPages: vi.fn(),
       scrapeAnimesOnPage: vi.fn(),
       scrapeAnimeDetails: vi.fn(),
-    } as unknown as ScraperService);
+    } as unknown as AnimeScraper);
     vi.spyOn(pipeline["pageQueue"], "add").mockImplementation(() => {
       throw "sync string queue error";
     });
 
     const runPromise = new Promise<void>((resolve, reject) => {
-      pipeline.execute().subscribe({
+      pipeline.scan().subscribe({
         next: () => {},
-        error: (err) => {
+        error: (err: any) => {
           try {
             expect(err).toBeInstanceOf(Error);
             expect(err.message).toBe("sync string queue error");
@@ -430,16 +431,16 @@ describe("ScraperPipeline", () => {
       parseErrors: [],
     });
     const detailSpy = vi.fn().mockRejectedValue("detail string crash");
-    const pipeline = new ScraperPipeline(1, 1, 1, () => true, {
+    const pipeline = new AnimeScanner(1, 1, 1, () => true, {
       getTotalPages: vi.fn(),
       scrapeAnimesOnPage: listSpy,
       scrapeAnimeDetails: detailSpy,
-    } as unknown as ScraperService);
+    } as unknown as AnimeScraper);
 
     const runPromise = new Promise<void>((resolve, reject) => {
-      pipeline.execute().subscribe({
+      pipeline.scan().subscribe({
         next: () => {},
-        error: (err) => {
+        error: (err: any) => {
           try {
             expect(err).toBeInstanceOf(Error);
             expect(err.message).toBe("detail string crash");
@@ -464,11 +465,11 @@ describe("ScraperPipeline", () => {
       description: "Fallback page",
     });
 
-    const pipeline = new ScraperPipeline(1, 1, 1, () => true, {
+    const pipeline = new AnimeScanner(1, 1, 1, () => true, {
       getTotalPages: vi.fn(),
       scrapeAnimesOnPage: listSpy,
       scrapeAnimeDetails: detailSpy,
-    } as unknown as ScraperService);
+    } as unknown as AnimeScraper);
 
     await pipeline["fetchDetail"]({
       link: "http://a",

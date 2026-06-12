@@ -2,15 +2,15 @@ import { ScraperHttpError, ScraperParseError } from "./scraperError";
 import { isError } from "../../types/result";
 import PQueue from "p-queue";
 import { Subject, type Observable } from "rxjs";
-import { ScraperService } from "./scraper";
+import { AnimeScraper } from "./animeScraper";
 import { type ScanEvent, type PipelineOptions, type AnimeItem } from "./types";
 
 /**
- * Encapsulates the state and logic for a two-stage concurrent scraping pipeline.
+ * Encapsulates the state and logic for a two-stage concurrent scanning process.
  * Stage 1: Fetches list pages and enqueues items.
  * Stage 2: Fetches details for each enqueued item.
  */
-export class ScraperPipeline {
+export class AnimeScanner {
   private results: AnimeItem[] = [];
   private httpErrors: ScraperHttpError[] = [];
   private parseErrors: ScraperParseError[] = [];
@@ -22,7 +22,7 @@ export class ScraperPipeline {
 
   private totalPages: number;
   private filterItem: (item: AnimeItem) => boolean;
-  private scraper: ScraperService;
+  private scraper: AnimeScraper;
   private options?: PipelineOptions;
   private eventSubject = new Subject<ScanEvent>();
 
@@ -31,7 +31,7 @@ export class ScraperPipeline {
     pageConcurrency: number,
     detailConcurrency: number,
     filterItem: (item: AnimeItem) => boolean,
-    scraper: ScraperService,
+    scraper: AnimeScraper,
     options?: PipelineOptions,
   ) {
     this.totalPages = totalPages;
@@ -42,7 +42,7 @@ export class ScraperPipeline {
     this.detailQueue = new PQueue({ concurrency: detailConcurrency });
   }
 
-  execute(): Observable<ScanEvent> {
+  scan(): Observable<ScanEvent> {
     const run = async () => {
       try {
         const pagePromises = [];
@@ -58,7 +58,9 @@ export class ScraperPipeline {
         await this.detailQueue.onIdle();
         this.eventSubject.complete();
       } catch (err) {
-        this.eventSubject.error(err);
+        this.eventSubject.error(
+          err instanceof Error ? err : new Error(String(err)),
+        );
       }
     };
     run();
