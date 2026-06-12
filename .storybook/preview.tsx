@@ -12,6 +12,8 @@ const preview: Preview = {
           html, body, #storybook-root {
             height: auto !important;
             min-height: 0 !important;
+            margin: 0 !important;
+            padding: 0 !important;
             overflow: hidden !important;
           }
         `;
