@@ -102,9 +102,10 @@ export function useAnimeScanner(
       const rawPercent = Math.floor(detailsPercent * 99);
       const percent = Math.min(99, rawPercent);
 
-      let msg = "Scanning...";
+      const actionPrefix = isRetry ? "Retrying failed items" : "Scanning";
+      let msg = `${actionPrefix}...`;
       if (detailsTotalCount > 0) {
-        msg = `Scanning details (${detailsCompletedCount}/${detailsTotalCount})`;
+        msg = `${actionPrefix} (${detailsCompletedCount}/${detailsTotalCount})`;
       }
       if (currentTitle) {
         msg += `... [${currentTitle}]`;
