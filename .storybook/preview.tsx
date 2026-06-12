@@ -4,9 +4,10 @@ import "../src/index.css";
 const preview: Preview = {
   parameters: {
     layout: "fullscreen",
-    // Configure Chromatic to capture all snapshots at 450px width
+    // Configure Chromatic to capture all snapshots at 450px width and crop to viewport
     chromatic: {
       viewports: [450],
+      cropToViewport: true,
     },
     // Configure Storybook UI viewport options for developers
     viewport: {
