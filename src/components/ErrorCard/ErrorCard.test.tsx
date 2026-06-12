@@ -135,7 +135,7 @@ describe("ErrorCard", () => {
     }
   });
 
-  it("throws error when getParseStepLabel encounters an unhandled step value", () => {
+  it("throws error when getScanStepLabel encounters an unhandled step value", () => {
     const error = new ScraperParseError(
       0,
       999 as unknown as ScraperScanStep,

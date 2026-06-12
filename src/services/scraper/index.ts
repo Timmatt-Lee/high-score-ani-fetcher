@@ -1,6 +1,6 @@
 export { ScraperService, scraperService } from "./scraper";
 export { ScraperPipeline } from "./scraperPipeline";
-export { ScraperScanStep } from "./scraperScanStep";
+export { ScraperScanStep, getScanStepLabel } from "./scraperScanStep";
 export {
   ScraperError,
   ScraperHttpError,

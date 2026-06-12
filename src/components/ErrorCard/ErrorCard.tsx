@@ -3,30 +3,13 @@ import {
   ScraperHttpError,
   ScraperParseError,
   ScraperError,
-  ScraperScanStep,
+  getScanStepLabel,
 } from "../../services/scraper";
 import styles from "./ErrorCard.module.css";
 
 interface ErrorCardProps {
   error: Error;
 }
-
-const getParseStepLabel = (step: ScraperScanStep): string => {
-  switch (step) {
-    case ScraperScanStep.GET_TOTAL_PAGES:
-      return "fetching total pages";
-    case ScraperScanStep.SCRAPE_LIST_PAGE:
-      return "scraping list page";
-    case ScraperScanStep.PARSE_ANIME_INFO:
-      return "parsing anime info";
-    case ScraperScanStep.PARSE_ANIME_DETAIL:
-      return "parsing anime detail";
-  }
-  const _exhaustiveCheck: never = step;
-  throw new Error(
-    `Unhandled ScraperScanStep: ${JSON.stringify(_exhaustiveCheck)}`,
-  );
-};
 
 export function ErrorCard({ error }: ErrorCardProps) {
   const [isCopied, setIsCopied] = useState(false);
@@ -39,7 +22,7 @@ export function ErrorCard({ error }: ErrorCardProps) {
       : undefined;
   const scanStepLabel =
     error instanceof ScraperError
-      ? getParseStepLabel(error.scanStep)
+      ? getScanStepLabel(error.scanStep)
       : "unknown";
 
   const suffixStr =
