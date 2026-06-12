@@ -46,19 +46,19 @@ export class AnimeScanner {
         this.options?.onlyPages ??
         Array.from({ length: this.totalPages }, (_, i) => i + 1);
 
-      try {
-        for (const page of pagesToScan) {
-          pagePromises.push(this.pageQueue.add(() => this.fetchPage(page)));
-        }
+      for (const page of pagesToScan) {
+        pagePromises.push(this.pageQueue.add(() => this.fetchPage(page)));
+      }
 
+      try {
         await Promise.all(pagePromises);
         await this.detailQueue.onIdle();
-        this.eventSubject.complete();
       } catch (err) {
-        this.eventSubject.error(
-          err instanceof Error ? err : new Error(String(err)),
-        );
+        this.eventSubject.error(err);
+        return;
       }
+
+      this.eventSubject.complete();
     };
     run();
     return this.eventSubject.asObservable();
@@ -77,11 +77,7 @@ export class AnimeScanner {
       if (this.filterItem(item)) {
         this.detailQueue
           .add(() => this.fetchDetail(item, page))
-          .catch((err) => {
-            this.eventSubject.error(
-              err instanceof Error ? err : new Error(String(err)),
-            );
-          });
+          .catch((err) => this.eventSubject.error(err));
       }
     });
   }

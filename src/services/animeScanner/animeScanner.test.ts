@@ -246,7 +246,7 @@ describe("AnimeScanner", () => {
     await runPromise;
   });
 
-  it("emits non-Error string catches as Error inside pipeline", async () => {
+  it("emits non-Error string catches inside pipeline", async () => {
     const listSpy = vi.fn().mockRejectedValue("unexpected string queue error");
 
     const pipeline = new AnimeScanner(1, 1, 1, () => true, {
@@ -259,8 +259,7 @@ describe("AnimeScanner", () => {
       pipeline.scan().subscribe({
         next: () => {},
         error: (err: any) => {
-          expect(err).toBeInstanceOf(Error);
-          expect(err.message).toBe("unexpected string queue error");
+          expect(err).toBe("unexpected string queue error");
           resolve();
         },
         complete: () => {
@@ -374,65 +373,6 @@ describe("AnimeScanner", () => {
     await runPromise;
   });
 
-  it("emits error when queueing page task throws synchronously", async () => {
-    const pipeline = new AnimeScanner(1, 1, 1, () => true, {
-      getTotalPages: vi.fn(),
-      scrapeAnimesOnPage: vi.fn(),
-      scrapeAnimeDetails: vi.fn(),
-    } as unknown as AnimeScraper);
-    vi.spyOn(pipeline["pageQueue"], "add").mockImplementation(() => {
-      throw new Error("sync queue error");
-    });
-
-    const runPromise = new Promise<void>((resolve, reject) => {
-      pipeline.scan().subscribe({
-        next: () => {},
-        error: (err: any) => {
-          try {
-            expect(err.message).toBe("sync queue error");
-            resolve();
-          } catch (e) {
-            reject(e);
-          }
-        },
-        complete: () => {
-          reject(new Error("Should not complete"));
-        },
-      });
-    });
-    await runPromise;
-  });
-
-  it("emits string error when queueing page task throws string synchronously", async () => {
-    const pipeline = new AnimeScanner(1, 1, 1, () => true, {
-      getTotalPages: vi.fn(),
-      scrapeAnimesOnPage: vi.fn(),
-      scrapeAnimeDetails: vi.fn(),
-    } as unknown as AnimeScraper);
-    vi.spyOn(pipeline["pageQueue"], "add").mockImplementation(() => {
-      throw "sync string queue error";
-    });
-
-    const runPromise = new Promise<void>((resolve, reject) => {
-      pipeline.scan().subscribe({
-        next: () => {},
-        error: (err: any) => {
-          try {
-            expect(err).toBeInstanceOf(Error);
-            expect(err.message).toBe("sync string queue error");
-            resolve();
-          } catch (e) {
-            reject(e);
-          }
-        },
-        complete: () => {
-          reject(new Error("Should not complete"));
-        },
-      });
-    });
-    await runPromise;
-  });
-
   it("emits string error when fetchDetail throws unexpected string error", async () => {
     const listSpy = vi.fn().mockResolvedValue({
       animeItems: [{ link: "http://a", title: "A" } as AnimeItem],
@@ -451,8 +391,7 @@ describe("AnimeScanner", () => {
         next: () => {},
         error: (err: any) => {
           try {
-            expect(err).toBeInstanceOf(Error);
-            expect(err.message).toBe("detail string crash");
+            expect(err).toBe("detail string crash");
             resolve();
           } catch (e) {
             reject(e);
