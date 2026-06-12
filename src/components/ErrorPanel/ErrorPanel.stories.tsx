@@ -47,7 +47,9 @@ const sampleParseErrors = [
 
 export const CollapsedHttp: Story = {
   args: {
-    errorClass: AnimeScanHttpError,
+    title: "HTTP Network Errors",
+    testIdPrefix: "http-errors",
+    emptyMessage: "No network errors.",
     errors: sampleHttpErrors,
     isExpandedByDefault: false,
   },
@@ -55,7 +57,9 @@ export const CollapsedHttp: Story = {
 
 export const ExpandedHttp: Story = {
   args: {
-    errorClass: AnimeScanHttpError,
+    title: "HTTP Network Errors",
+    testIdPrefix: "http-errors",
+    emptyMessage: "No network errors.",
     errors: sampleHttpErrors,
     isExpandedByDefault: true,
   },
@@ -63,7 +67,9 @@ export const ExpandedHttp: Story = {
 
 export const CollapsedParse: Story = {
   args: {
-    errorClass: AnimeScanParseError,
+    title: "Document Parser Errors",
+    testIdPrefix: "parse-errors",
+    emptyMessage: "No parser errors.",
     errors: sampleParseErrors,
     isExpandedByDefault: false,
   },
@@ -71,7 +77,9 @@ export const CollapsedParse: Story = {
 
 export const ExpandedParse: Story = {
   args: {
-    errorClass: AnimeScanParseError,
+    title: "Document Parser Errors",
+    testIdPrefix: "parse-errors",
+    emptyMessage: "No parser errors.",
     errors: sampleParseErrors,
     isExpandedByDefault: true,
   },
@@ -79,7 +87,9 @@ export const ExpandedParse: Story = {
 
 export const EmptyGroup: Story = {
   args: {
-    errorClass: AnimeScanHttpError,
+    title: "HTTP Network Errors",
+    testIdPrefix: "http-errors",
+    emptyMessage: "No network errors.",
     errors: [],
     isExpandedByDefault: true,
   },

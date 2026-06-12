@@ -1,39 +1,24 @@
 import { useState } from "react";
-import {
-  AnimeScanError,
-  AnimeScanHttpError,
-  AnimeScanParseError,
-} from "../../services/animeScanner";
+import { AnimeScanError } from "../../services/animeScanner";
 import { ErrorCard } from "../ErrorCard/ErrorCard";
 import styles from "./ErrorPanel.module.css";
 
-interface ErrorPanelProps<E extends AnimeScanError> {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  errorClass: { new (...args: any[]): E };
-  errors: E[];
+interface ErrorPanelProps {
+  title: string;
+  testIdPrefix: string;
+  emptyMessage?: string;
+  errors: AnimeScanError[];
   isExpandedByDefault?: boolean;
 }
 
-export function ErrorPanel<E extends AnimeScanError>({
-  errorClass,
+export function ErrorPanel({
+  title,
+  testIdPrefix,
+  emptyMessage = "No errors.",
   errors,
   isExpandedByDefault = false,
-}: ErrorPanelProps<E>) {
+}: ErrorPanelProps) {
   const [isOpen, setIsOpen] = useState(isExpandedByDefault);
-
-  let title = "Errors";
-  let emptyMessage = "No errors found.";
-  let testIdPrefix = "errors";
-
-  if ((errorClass as unknown) === AnimeScanHttpError) {
-    title = "HTTP Network Errors";
-    emptyMessage = "No network errors.";
-    testIdPrefix = "http-errors";
-  } else if ((errorClass as unknown) === AnimeScanParseError) {
-    title = "Document Parser Errors";
-    emptyMessage = "No parser errors.";
-    testIdPrefix = "parse-errors";
-  }
 
   return (
     <div

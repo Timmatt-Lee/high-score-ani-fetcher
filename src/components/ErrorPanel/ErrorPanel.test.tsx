@@ -4,7 +4,6 @@ import { ErrorPanel } from "./ErrorPanel";
 import {
   AnimeScanHttpError,
   AnimeScanParseError,
-  AnimeScanError,
   AnimeScanStep,
 } from "../../services/animeScanner";
 
@@ -23,7 +22,9 @@ describe("ErrorPanel", () => {
   it("renders collapsed by default", () => {
     render(
       <ErrorPanel
-        errorClass={AnimeScanHttpError}
+        title="HTTP Network Errors"
+        testIdPrefix="http-errors"
+        emptyMessage="No network errors."
         errors={sampleErrors}
         isExpandedByDefault={false}
       />,
@@ -37,7 +38,9 @@ describe("ErrorPanel", () => {
   it("renders open when isExpandedByDefault is true", () => {
     render(
       <ErrorPanel
-        errorClass={AnimeScanHttpError}
+        title="HTTP Network Errors"
+        testIdPrefix="http-errors"
+        emptyMessage="No network errors."
         errors={sampleErrors}
         isExpandedByDefault={true}
       />,
@@ -50,7 +53,9 @@ describe("ErrorPanel", () => {
   it("toggles open state when header is clicked", () => {
     render(
       <ErrorPanel
-        errorClass={AnimeScanHttpError}
+        title="HTTP Network Errors"
+        testIdPrefix="http-errors"
+        emptyMessage="No network errors."
         errors={sampleErrors}
         isExpandedByDefault={false}
       />,
@@ -71,7 +76,9 @@ describe("ErrorPanel", () => {
   it("displays empty message when errors list is empty", () => {
     render(
       <ErrorPanel
-        errorClass={AnimeScanHttpError}
+        title="HTTP Network Errors"
+        testIdPrefix="http-errors"
+        emptyMessage="No network errors."
         errors={[]}
         isExpandedByDefault={true}
       />,
@@ -91,7 +98,9 @@ describe("ErrorPanel", () => {
 
     const { rerender } = render(
       <ErrorPanel
-        errorClass={AnimeScanParseError}
+        title="Document Parser Errors"
+        testIdPrefix="parse-errors"
+        emptyMessage="No parser errors."
         errors={[parseErr]}
         isExpandedByDefault={true}
       />,
@@ -101,41 +110,14 @@ describe("ErrorPanel", () => {
 
     rerender(
       <ErrorPanel
-        errorClass={AnimeScanParseError}
+        title="Document Parser Errors"
+        testIdPrefix="parse-errors"
+        emptyMessage="No parser errors."
         errors={[]}
         isExpandedByDefault={true}
       />,
     );
 
     expect(screen.getByText("No parser errors.")).toBeDefined();
-  });
-
-  it("renders generic/unknown errors with default title and empty message", () => {
-    class CustomAnimeScanError extends AnimeScanError {
-      constructor() {
-        super("Fatal", 1, AnimeScanStep.GET_TOTAL_PAGES, "unknown");
-        this.name = "CustomAnimeScanError";
-      }
-    }
-    const error = new CustomAnimeScanError();
-    const { rerender } = render(
-      <ErrorPanel
-        errorClass={CustomAnimeScanError}
-        errors={[error]}
-        isExpandedByDefault={true}
-      />,
-    );
-
-    expect(screen.getByText("Errors (1)")).toBeDefined();
-
-    rerender(
-      <ErrorPanel
-        errorClass={CustomAnimeScanError}
-        errors={[]}
-        isExpandedByDefault={true}
-      />,
-    );
-
-    expect(screen.getByText("No errors found.")).toBeDefined();
   });
 });

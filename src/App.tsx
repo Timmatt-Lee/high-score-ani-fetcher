@@ -6,10 +6,6 @@ import { ProgressBar } from "./components/ProgressBar";
 import { Tabs, Tab } from "./components/Tabs";
 import { ErrorPanel } from "./components/ErrorPanel/ErrorPanel";
 import { ErrorCard } from "./components/ErrorCard/ErrorCard";
-import {
-  AnimeScanHttpError,
-  AnimeScanParseError,
-} from "./services/animeScanner";
 import styles from "./App.module.css";
 import "./index.css";
 
@@ -122,11 +118,15 @@ function App() {
 
               <div className={styles.accordion}>
                 <ErrorPanel
-                  errorClass={AnimeScanHttpError}
+                  title="HTTP Network Errors"
+                  testIdPrefix="http-errors"
+                  emptyMessage="No network errors."
                   errors={httpErrors}
                 />
                 <ErrorPanel
-                  errorClass={AnimeScanParseError}
+                  title="Document Parser Errors"
+                  testIdPrefix="parse-errors"
+                  emptyMessage="No parser errors."
                   errors={parseErrors}
                 />
               </div>
