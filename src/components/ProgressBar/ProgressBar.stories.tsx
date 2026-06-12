@@ -4,7 +4,6 @@ import { ProgressBar } from "./ProgressBar";
 const meta: Meta<typeof ProgressBar> = {
   title: "Components/ProgressBar",
   component: ProgressBar,
-  tags: ["autodocs"],
   argTypes: {
     isScanning: { control: "boolean" },
     percent: { control: { type: "range", min: 0, max: 100 } },

@@ -6,7 +6,6 @@ import { type AnimeItem } from "../../services/scraper";
 const meta: Meta<typeof AnimeList> = {
   title: "Components/AnimeList",
   component: AnimeList,
-  tags: ["autodocs"],
   argTypes: {
     activeTab: {
       control: "select",
