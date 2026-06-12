@@ -16,7 +16,21 @@ export class AnimeScraper {
     scanStep: AnimeScanStep,
     animeName?: string,
   ): Promise<Result<string, AnimeScanHttpError>> {
-    const response = await fetch(url);
+    let response: Response;
+    try {
+      response = await fetch(url);
+    } catch (err) {
+      const errorMsg = err instanceof Error ? err.message : String(err);
+      return new AnimeScanHttpError(
+        page,
+        scanStep,
+        url,
+        errorMsg,
+        0, // Status code 0 indicates a network/fetch exception
+        animeName,
+      );
+    }
+
     if (!response.ok) {
       let snippet = "";
       try {

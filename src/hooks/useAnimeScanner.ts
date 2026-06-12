@@ -106,93 +106,86 @@ export function useAnimeScanner(
     const scanHttpErrors: AnimeScanHttpError[] = [];
     const scanParseErrors: AnimeScanParseError[] = [];
 
-    try {
-      const pipeline = new AnimeScanner(
-        totalPages,
-        5,
-        10,
-        filterAndCountItem,
-        animeScraper,
-        isRetry ? options : undefined,
-      );
+    const pipeline = new AnimeScanner(
+      totalPages,
+      5,
+      10,
+      filterAndCountItem,
+      animeScraper,
+      isRetry ? options : undefined,
+    );
 
-      pipeline.scan().subscribe({
-        next: (event) => {
-          if (event instanceof AnimeScanHttpError) {
-            scanHttpErrors.push(event);
-            setHttpErrors([...scanHttpErrors]);
-            updateProgress(event.animeName);
-          } else if (event instanceof AnimeScanParseError) {
-            scanParseErrors.push(event);
-            setParseErrors([...scanParseErrors]);
-            updateProgress(event.animeName);
-          } else if (!(event instanceof Error)) {
-            results.push(event);
-            detailsCompletedCount++;
-            updateProgress(event.title);
+    pipeline.scan().subscribe({
+      next: (event) => {
+        if (event instanceof AnimeScanHttpError) {
+          scanHttpErrors.push(event);
+          setHttpErrors([...scanHttpErrors]);
+          updateProgress(event.animeName);
+        } else if (event instanceof AnimeScanParseError) {
+          scanParseErrors.push(event);
+          setParseErrors([...scanParseErrors]);
+          updateProgress(event.animeName);
+        } else if (!(event instanceof Error)) {
+          results.push(event);
+          detailsCompletedCount++;
+          updateProgress(event.title);
+        }
+      },
+      complete: () => {
+        const mergedItemsMap = new Map<string, AnimeItem>();
+        if (isRetry) {
+          searchList.forEach((item) => mergedItemsMap.set(item.link, item));
+          favoriteList.forEach((item) => mergedItemsMap.set(item.link, item));
+          trashList.forEach((item) => mergedItemsMap.set(item.link, item));
+        }
+
+        for (const item of results) {
+          mergedItemsMap.set(item.link, item);
+        }
+
+        const updatedFavMap = new Map<string, AnimeItem>();
+        const updatedTrashMap = new Map<string, AnimeItem>();
+        const newItems: AnimeItem[] = [];
+
+        for (const item of mergedItemsMap.values()) {
+          if (favLinks.has(item.link)) {
+            updatedFavMap.set(item.link, item);
+          } else if (trashLinks.has(item.link)) {
+            updatedTrashMap.set(item.link, item);
+          } else {
+            newItems.push(item);
           }
-        },
-        complete: () => {
-          const mergedItemsMap = new Map<string, AnimeItem>();
-          if (isRetry) {
-            searchList.forEach((item) => mergedItemsMap.set(item.link, item));
-            favoriteList.forEach((item) => mergedItemsMap.set(item.link, item));
-            trashList.forEach((item) => mergedItemsMap.set(item.link, item));
-          }
+        }
 
-          for (const item of results) {
-            mergedItemsMap.set(item.link, item);
-          }
-
-          const updatedFavMap = new Map<string, AnimeItem>();
-          const updatedTrashMap = new Map<string, AnimeItem>();
-          const newItems: AnimeItem[] = [];
-
-          for (const item of mergedItemsMap.values()) {
-            if (favLinks.has(item.link)) {
-              updatedFavMap.set(item.link, item);
-            } else if (trashLinks.has(item.link)) {
-              updatedTrashMap.set(item.link, item);
-            } else {
-              newItems.push(item);
-            }
-          }
-
-          const filteredNewItems = newItems
-            .filter((item) => item.score >= 4.8)
-            .sort((a, b) => {
-              if (b.score !== a.score) return b.score - a.score;
-              return a.title.localeCompare(b.title);
-            });
-
-          const updatedFavoriteList = favoriteList.map(
-            (fav) => updatedFavMap.get(fav.link) ?? fav,
-          );
-          const updatedTrashList = trashList.map(
-            (trash) => updatedTrashMap.get(trash.link) ?? trash,
-          );
-
-          onScanComplete({
-            newSearchItems: filteredNewItems,
-            updatedFavoriteList,
-            updatedTrashList,
+        const filteredNewItems = newItems
+          .filter((item) => item.score >= 4.8)
+          .sort((a, b) => {
+            if (b.score !== a.score) return b.score - a.score;
+            return a.title.localeCompare(b.title);
           });
-          setIsScanning(false);
-          setProgress({ percent: 100, message: "Done!" });
-        },
-        error: (err: unknown) => {
-          const error = err instanceof Error ? err : new Error(String(err));
-          setError(error);
-          setIsScanning(false);
-          setProgress({ percent: 0, message: "" });
-        },
-      });
-    } catch (err) {
-      const error = err instanceof Error ? err : new Error(String(err));
-      setError(error);
-      setIsScanning(false);
-      setProgress({ percent: 0, message: "" });
-    }
+
+        const updatedFavoriteList = favoriteList.map(
+          (fav) => updatedFavMap.get(fav.link) ?? fav,
+        );
+        const updatedTrashList = trashList.map(
+          (trash) => updatedTrashMap.get(trash.link) ?? trash,
+        );
+
+        onScanComplete({
+          newSearchItems: filteredNewItems,
+          updatedFavoriteList,
+          updatedTrashList,
+        });
+        setIsScanning(false);
+        setProgress({ percent: 100, message: "Done!" });
+      },
+      error: (err: unknown) => {
+        const error = err instanceof Error ? err : new Error(String(err));
+        setError(error);
+        setIsScanning(false);
+        setProgress({ percent: 0, message: "" });
+      },
+    });
   };
 
   return {
