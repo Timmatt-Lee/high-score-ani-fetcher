@@ -13,26 +13,17 @@ import {
   ScraperHttpError,
   ScraperParseError,
   ScraperScanStep,
-  ScanEventType,
   type ScanEvent,
   type AnimeItem,
-  type ScraperResult,
   ScraperPipeline,
 } from "./services/scraper";
 import { Observable, Subject } from "rxjs";
 
-function createMockObservable(
-  result: ScraperResult,
-  progressEvents: ScanEvent[] = [],
-): Observable<ScanEvent> {
+function createMockObservable(events: ScanEvent[] = []): Observable<ScanEvent> {
   return new Observable<ScanEvent>((subscriber) => {
-    for (const event of progressEvents) {
+    for (const event of events) {
       subscriber.next(event);
     }
-    subscriber.next({
-      type: ScanEventType.COMPLETED,
-      result,
-    });
     subscriber.complete();
   });
 }
@@ -406,10 +397,6 @@ describe("Scan functionality", () => {
 
     await waitFor(() => expect(screen.getByText("Scanning...")).toBeDefined());
     await act(async () => {
-      subject.next({
-        type: ScanEventType.COMPLETED,
-        result: { animeItems: [], httpErrors: [], parseErrors: [] },
-      });
       subject.complete();
     });
   });
@@ -431,28 +418,16 @@ describe("Scan functionality", () => {
     vi.spyOn(ScraperPipeline.prototype, "execute").mockImplementation(
       function (this: { filterItem: (item: AnimeItem) => boolean }) {
         const filtered = [highScore, lowScore].filter(this.filterItem);
-        return createMockObservable(
+        const details = [
           {
-            animeItems: [
-              {
-                ...highScore,
-                score: 5.0,
-                ratingCount: 100,
-                description: "Good",
-              },
-              { ...lowScore, score: 4.0, ratingCount: 10, description: "Meh" },
-            ].filter((item) => filtered.some((f) => f.link === item.link)),
-            httpErrors: [],
-            parseErrors: [],
+            ...highScore,
+            score: 5.0,
+            ratingCount: 100,
+            description: "Good",
           },
-          [
-            {
-              type: ScanEventType.ANIME_DETAIL,
-              title: "Progress title",
-              isSuccess: true,
-            },
-          ],
-        );
+          { ...lowScore, score: 4.0, ratingCount: 10, description: "Meh" },
+        ].filter((item) => filtered.some((f) => f.link === item.link));
+        return createMockObservable(details);
       },
     );
 
@@ -481,16 +456,14 @@ describe("Scan functionality", () => {
     vi.spyOn(ScraperPipeline.prototype, "execute").mockImplementation(
       function (this: { filterItem: (item: AnimeItem) => boolean }) {
         const filtered = [shortShow].filter(this.filterItem);
-        return createMockObservable({
-          animeItems: filtered.map((item) => ({
+        return createMockObservable(
+          filtered.map((item) => ({
             ...item,
             score: 9.0,
             ratingCount: 100,
             description: "x",
           })),
-          httpErrors: [],
-          parseErrors: [],
-        });
+        );
       },
     );
 
@@ -518,16 +491,14 @@ describe("Scan functionality", () => {
     vi.spyOn(ScraperPipeline.prototype, "execute").mockImplementation(
       function (this: { filterItem: (item: AnimeItem) => boolean }) {
         const filtered = [ova].filter(this.filterItem);
-        return createMockObservable({
-          animeItems: filtered.map((item) => ({
+        return createMockObservable(
+          filtered.map((item) => ({
             ...item,
             score: 9.0,
             ratingCount: 100,
             description: "x",
           })),
-          httpErrors: [],
-          parseErrors: [],
-        });
+        );
       },
     );
 
@@ -556,16 +527,14 @@ describe("Scan functionality", () => {
     vi.spyOn(ScraperPipeline.prototype, "execute").mockImplementation(
       function (this: { filterItem: (item: AnimeItem) => boolean }) {
         const filtered = [trashItem].filter(this.filterItem);
-        return createMockObservable({
-          animeItems: filtered.map((item) => ({
+        return createMockObservable(
+          filtered.map((item) => ({
             ...item,
             score: 9.0,
             ratingCount: 100,
             description: "x",
           })),
-          httpErrors: [],
-          parseErrors: [],
-        });
+        );
       },
     );
 
@@ -594,16 +563,14 @@ describe("Scan functionality", () => {
     vi.spyOn(ScraperPipeline.prototype, "execute").mockImplementation(
       function (this: { filterItem: (item: AnimeItem) => boolean }) {
         const filtered = [favItem].filter(this.filterItem);
-        return createMockObservable({
-          animeItems: filtered.map((item) => ({
+        return createMockObservable(
+          filtered.map((item) => ({
             ...item,
             score: 9.0,
             ratingCount: 100,
             description: "x",
           })),
-          httpErrors: [],
-          parseErrors: [],
-        });
+        );
       },
     );
 
@@ -631,16 +598,14 @@ describe("Scan functionality", () => {
     vi.spyOn(ScraperPipeline.prototype, "execute").mockImplementation(
       function (this: { filterItem: (item: AnimeItem) => boolean }) {
         const filtered = [naEp].filter(this.filterItem);
-        return createMockObservable({
-          animeItems: filtered.map((item) => ({
+        return createMockObservable(
+          filtered.map((item) => ({
             ...item,
             score: 9.0,
             ratingCount: 100,
             description: "x",
           })),
-          httpErrors: [],
-          parseErrors: [],
-        });
+        );
       },
     );
 
@@ -671,13 +636,10 @@ describe("Scan functionality", () => {
 
     vi.spyOn(scraperService, "getTotalPages").mockResolvedValue(2);
     vi.spyOn(ScraperPipeline.prototype, "execute").mockImplementation(() => {
-      return createMockObservable({
-        animeItems: [
-          { ...anime, score: 9.0, ratingCount: 100, description: "x" },
-        ],
-        httpErrors: [mockError],
-        parseErrors: [],
-      });
+      return createMockObservable([
+        { ...anime, score: 9.0, ratingCount: 100, description: "x" },
+        mockError,
+      ]);
     });
 
     await act(async () => {
@@ -717,13 +679,10 @@ describe("Scan functionality", () => {
 
     vi.spyOn(scraperService, "getTotalPages").mockResolvedValue(1);
     vi.spyOn(ScraperPipeline.prototype, "execute").mockImplementation(() => {
-      return createMockObservable({
-        animeItems: [
-          { ...anime, score: 9.0, ratingCount: 100, description: "x" },
-        ],
-        httpErrors: errorsList,
-        parseErrors: [],
-      });
+      return createMockObservable([
+        { ...anime, score: 9.0, ratingCount: 100, description: "x" },
+        ...errorsList,
+      ]);
     });
 
     await act(async () => {
@@ -829,11 +788,14 @@ describe("Scan functionality", () => {
     // First scan yields error
     const pipelineMock = vi.spyOn(ScraperPipeline.prototype, "execute");
     pipelineMock.mockImplementationOnce(() => {
-      return createMockObservable({
-        animeItems: [{ ...anime }],
-        httpErrors: [error, errorNoPage],
-        parseErrors: [parseError, parseErrorNoUrl, parseErrorWithPage],
-      });
+      return createMockObservable([
+        { ...anime },
+        error,
+        errorNoPage,
+        parseError,
+        parseErrorNoUrl,
+        parseErrorWithPage,
+      ]);
     });
 
     await act(async () => {
@@ -855,11 +817,7 @@ describe("Scan functionality", () => {
 
     // Mock second scan (retry) to succeed with no errors
     pipelineMock.mockImplementationOnce(() => {
-      return createMockObservable({
-        animeItems: [{ ...anime }],
-        httpErrors: [],
-        parseErrors: [],
-      });
+      return createMockObservable([{ ...anime }]);
     });
 
     // Click retry button in ErrorsPanel

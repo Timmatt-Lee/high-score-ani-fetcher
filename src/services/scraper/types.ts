@@ -1,14 +1,7 @@
 import { z } from "zod";
-import { type ScraperHttpError, type ScraperParseError } from "./scraperError";
+import { type ScraperError } from "./scraperError";
 
-export enum ScanEventType {
-  ANIME_DETAIL,
-  COMPLETED,
-}
-
-export type ScanEvent =
-  | { type: ScanEventType.ANIME_DETAIL; title: string; isSuccess: boolean }
-  | { type: ScanEventType.COMPLETED; result: ScraperResult };
+export type ScanEvent = AnimeItem | ScraperError;
 
 export interface PipelineOptions {
   onlyPages?: number[];
@@ -33,9 +26,3 @@ export const AnimeItemSchema = AnimeInfoSchema.merge(AnimeDetailsSchema);
 export type AnimeDetails = z.infer<typeof AnimeDetailsSchema>;
 export type AnimeInfo = z.infer<typeof AnimeInfoSchema>;
 export type AnimeItem = z.infer<typeof AnimeItemSchema>;
-
-export interface ScraperResult {
-  animeItems: AnimeItem[];
-  httpErrors: ScraperHttpError[];
-  parseErrors: ScraperParseError[];
-}

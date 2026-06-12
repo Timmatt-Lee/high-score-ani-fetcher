@@ -3,12 +3,7 @@ import { isError } from "../../types/result";
 import PQueue from "p-queue";
 import { Subject, type Observable } from "rxjs";
 import { ScraperService } from "./scraper";
-import {
-  ScanEventType,
-  type ScanEvent,
-  type PipelineOptions,
-  type AnimeItem,
-} from "./types";
+import { type ScanEvent, type PipelineOptions, type AnimeItem } from "./types";
 
 /**
  * Encapsulates the state and logic for a two-stage concurrent scraping pipeline.
@@ -61,14 +56,6 @@ export class ScraperPipeline {
 
         await Promise.all(pagePromises);
         await this.detailQueue.onIdle();
-        this.eventSubject.next({
-          type: ScanEventType.COMPLETED,
-          result: {
-            animeItems: this.results,
-            httpErrors: this.httpErrors,
-            parseErrors: this.parseErrors,
-          },
-        });
         this.eventSubject.complete();
       } catch (err) {
         this.eventSubject.error(
@@ -82,8 +69,14 @@ export class ScraperPipeline {
 
   private async fetchPage(page: number): Promise<void> {
     const pageResult = await this.scraper.scrapeAnimesOnPage(page);
-    this.httpErrors.push(...pageResult.httpErrors);
-    this.parseErrors.push(...pageResult.parseErrors);
+    for (const error of pageResult.httpErrors) {
+      this.httpErrors.push(error);
+      this.eventSubject.next(error);
+    }
+    for (const error of pageResult.parseErrors) {
+      this.parseErrors.push(error);
+      this.eventSubject.next(error);
+    }
 
     pageResult.animeItems.forEach((item) => {
       if (this.filterItem(item)) {
@@ -106,23 +99,20 @@ export class ScraperPipeline {
       page ?? 1,
       item.title,
     );
-    let isSuccessful = true;
     if (isError(res)) {
-      isSuccessful = false;
       res.animeName = item.title;
       if (res instanceof ScraperHttpError) {
         this.httpErrors.push(res);
       } else {
         this.parseErrors.push(res as ScraperParseError);
       }
+      this.detailsCompletedCount++;
+      this.eventSubject.next(res);
     } else {
-      this.results.push({ ...item, ...res });
+      const fullItem = { ...item, ...res };
+      this.results.push(fullItem);
+      this.detailsCompletedCount++;
+      this.eventSubject.next(fullItem);
     }
-    this.detailsCompletedCount++;
-    this.eventSubject.next({
-      type: ScanEventType.ANIME_DETAIL,
-      title: item.title,
-      isSuccess: isSuccessful,
-    });
   }
 }

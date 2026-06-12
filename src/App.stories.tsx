@@ -7,7 +7,6 @@ import {
   ScraperParseError,
   ScraperScanStep,
   ScraperService,
-  ScanEventType,
   ScraperPipeline,
   type AnimeItem,
 } from "./services/scraper";
@@ -58,35 +57,18 @@ const meta: Meta<typeof App> = {
         return new Observable((subscriber) => {
           let isCancelled = false;
           const run = async () => {
-            const titles = [
-              "葬送的芙莉蓮",
-              "鬼滅之刃 柱訓練篇",
-              "無職轉生",
-              "神作續篇",
+            const items = [
+              createMockAnime({ title: "葬送的芙莉蓮", score: 4.9 }),
+              createMockAnime({ title: "鬼滅之刃 柱訓練篇", score: 4.8 }),
+              createMockAnime({ title: "無職轉生", score: 4.8 }),
+              createMockAnime({ title: "神作續篇", score: 4.9 }),
             ];
-            for (let isStep = 1; isStep <= 4; isStep++) {
+            for (const item of items) {
               if (isCancelled) return;
               await new Promise((resolve) => setTimeout(resolve, 10));
-              subscriber.next({
-                type: ScanEventType.ANIME_DETAIL,
-                title: titles[isStep - 1],
-                isSuccess: true,
-              });
+              subscriber.next(item);
             }
             if (isCancelled) return;
-            subscriber.next({
-              type: ScanEventType.COMPLETED,
-              result: {
-                animeItems: [
-                  createMockAnime({ title: "葬送的芙莉蓮", score: 4.9 }),
-                  createMockAnime({ title: "鬼滅之刃 柱訓練篇", score: 4.8 }),
-                  createMockAnime({ title: "無職轉生", score: 4.8 }),
-                  createMockAnime({ title: "神作續篇", score: 4.9 }),
-                ],
-                httpErrors: [],
-                parseErrors: [],
-              },
-            });
             subscriber.complete();
           };
           run();
@@ -135,11 +117,9 @@ export const ScanningState: Story = {
             if (isCancelled) return;
             // We emit details completed and then do not call complete()
             // to keep it in scanning state forever for screenshot capture.
-            subscriber.next({
-              type: ScanEventType.ANIME_DETAIL,
-              title: "葬送的芙莉蓮",
-              isSuccess: true,
-            });
+            subscriber.next(
+              createMockAnime({ title: "葬送的芙莉蓮", score: 4.9 }),
+            );
           };
           run();
           return () => {
@@ -174,53 +154,46 @@ export const PartiallyFailedScan: Story = {
               // Retry scan: emit progress events and NEVER complete so Chromatic captures the scanning state
               await new Promise((resolve) => setTimeout(resolve, 10));
               if (isCancelled) return;
-              subscriber.next({
-                type: ScanEventType.ANIME_DETAIL,
-                title: "Retry Progress Detail",
-                isSuccess: true,
-              });
+              subscriber.next(
+                createMockAnime({ title: "Retry Progress Detail", score: 4.9 }),
+              );
               return;
             }
 
             // First scan: completes after 20ms with errors
             await new Promise((resolve) => setTimeout(resolve, 20));
             if (isCancelled) return;
-            subscriber.next({
-              type: ScanEventType.COMPLETED,
-              result: {
-                animeItems: [
-                  createMockAnime({
-                    title: "部分解析成功的動畫",
-                    score: 4.9,
-                  }),
-                ],
-                httpErrors: [
-                  Object.assign(
-                    new ScraperHttpError(
-                      2,
-                      ScraperScanStep.GET_TOTAL_PAGES,
-                      "https://ani.gamer.com.tw/animeList.php?page=2",
-                      "",
-                      502,
-                      undefined,
-                    ),
-                    { animeName: "某個好看但部分章節損壞的番" },
-                  ),
-                ],
-                parseErrors: [
-                  Object.assign(
-                    new ScraperParseError(
-                      3,
-                      ScraperScanStep.PARSE_ANIME_INFO,
-                      "https://ani.gamer.com.tw/animeList.php?page=3",
-                      "",
-                      "解析失敗",
-                    ),
-                    { animeName: "某個結構毀損無法取得標題的番" },
-                  ),
-                ],
-              },
-            });
+            subscriber.next(
+              createMockAnime({
+                title: "部分解析成功的動畫",
+                score: 4.9,
+              }),
+            );
+            subscriber.next(
+              Object.assign(
+                new ScraperHttpError(
+                  2,
+                  ScraperScanStep.GET_TOTAL_PAGES,
+                  "https://ani.gamer.com.tw/animeList.php?page=2",
+                  "",
+                  502,
+                  undefined,
+                ),
+                { animeName: "某個好看但部分章節損壞的番" },
+              ),
+            );
+            subscriber.next(
+              Object.assign(
+                new ScraperParseError(
+                  3,
+                  ScraperScanStep.PARSE_ANIME_INFO,
+                  "https://ani.gamer.com.tw/animeList.php?page=3",
+                  "",
+                  "解析失敗",
+                ),
+                { animeName: "某個結構毀損無法取得標題的番" },
+              ),
+            );
             subscriber.complete();
           };
           run();
@@ -332,11 +305,9 @@ export const WithLoadingDetails: Story = {
           const run = async () => {
             await new Promise((resolve) => setTimeout(resolve, 10));
             if (isCancelled) return;
-            subscriber.next({
-              type: ScanEventType.ANIME_DETAIL,
-              title: "葬送的芙莉蓮",
-              isSuccess: true,
-            });
+            subscriber.next(
+              createMockAnime({ title: "葬送的芙莉蓮", score: 4.9 }),
+            );
           };
           run();
           return () => {

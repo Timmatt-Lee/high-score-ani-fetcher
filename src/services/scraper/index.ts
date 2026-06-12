@@ -7,10 +7,8 @@ export {
   ScraperParseError,
 } from "./scraperError";
 export {
-  ScanEventType,
   type ScanEvent,
   type PipelineOptions,
   type AnimeItem,
-  type ScraperResult,
   AnimeItemSchema,
 } from "./types";
