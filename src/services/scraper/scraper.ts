@@ -22,7 +22,8 @@ export class ScraperService {
         const t = await response.text();
         snippet = t.slice(0, 200);
       } catch {
-        // ignore
+        // Swallowing the error is safe and intentional here because extracting the response body snippet
+        // is best-effort; failing to read the text should not prevent reporting the primary HTTP error.
       }
       return new ScraperHttpError(
         page,
