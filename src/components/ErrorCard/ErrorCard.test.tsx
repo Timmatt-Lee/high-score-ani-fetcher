@@ -21,7 +21,7 @@ describe("ErrorCard", () => {
     vi.useRealTimers();
   });
 
-  it("renders HTTP error with title correctly", () => {
+  it("renders HTTP error with title correctly and handles copy", async () => {
     const error = new ScraperHttpError(
       2,
       ScraperScanStep.GET_TOTAL_PAGES,
@@ -30,6 +30,7 @@ describe("ErrorCard", () => {
       500,
       "葬送的芙莉蓮",
     );
+    writeTextMock.mockResolvedValue(undefined);
 
     render(<ErrorCard error={error} />);
 
@@ -42,6 +43,12 @@ describe("ErrorCard", () => {
     expect(screen.getByTestId("error-card-message").textContent).toBe(
       error.message,
     );
+
+    const copyBtn = screen.getByTestId("error-card-copy-btn");
+    await act(async () => {
+      fireEvent.click(copyBtn);
+    });
+    expect(copyBtn.textContent).toBe("Copied! ✓");
   });
 
   it("renders HTTP error without title correctly", () => {
@@ -179,7 +186,7 @@ describe("ErrorCard", () => {
     expect(copyBtn.textContent).toBe("Copy");
   });
 
-  it("renders fallbackTitle using error.name when page, title, and other properties are missing", () => {
+  it("renders fallbackTitle using error.name when page, title, and other properties are missing", async () => {
     class CustomError extends ScraperError {
       constructor() {
         super("Custom msg", 0, ScraperScanStep.GET_TOTAL_PAGES, "unknown");
@@ -195,7 +202,25 @@ describe("ErrorCard", () => {
 
     const errorWithNoName = new Error("Fatal System Error");
     Object.defineProperty(errorWithNoName, "name", { value: "" });
-    render(<ErrorCard error={errorWithNoName} />);
+    const { unmount: unmount2 } = render(<ErrorCard error={errorWithNoName} />);
+    expect(screen.getByTestId("error-card-title").textContent).toBe("Error");
+
+    // Trigger copy click on non-ScraperError to cover isCopied branch in early return
+    const copyBtn = screen.getByTestId("error-card-copy-btn");
+    await act(async () => {
+      fireEvent.click(copyBtn);
+    });
+    expect(copyBtn.textContent).toBe("Copied! ✓");
+    unmount2();
+
+    class CustomErrorNoName extends ScraperError {
+      constructor() {
+        super("No name msg", 0, ScraperScanStep.GET_TOTAL_PAGES, "unknown");
+        this.name = "";
+      }
+    }
+    const errorNoName = new CustomErrorNoName();
+    render(<ErrorCard error={errorNoName} />);
     expect(screen.getByTestId("error-card-title").textContent).toBe("Error");
   });
 

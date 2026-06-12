@@ -14,16 +14,47 @@ interface ErrorCardProps {
 export function ErrorCard({ error }: ErrorCardProps) {
   const [isCopied, setIsCopied] = useState(false);
 
-  const animeName = error instanceof ScraperError ? error.animeName : undefined;
-  const pageStr =
-    (error instanceof ScraperHttpError || error instanceof ScraperParseError) &&
-    error.page
-      ? `Page: ${error.page}`
-      : undefined;
-  const scanStepLabel =
-    error instanceof ScraperError
-      ? getScanStepLabel(error.scanStep)
-      : "unknown";
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(error.toString());
+      setIsCopied(true);
+      setTimeout(() => setIsCopied(false), 2000);
+    } catch (err) {
+      console.error("Failed to copy error details", err);
+    }
+  };
+
+  if (!(error instanceof ScraperError)) {
+    return (
+      <div className={styles.errorCard} data-testid="error-card">
+        <div className={styles.cardHeader}>
+          <div className={styles.titleGroup}>
+            <div className={styles.errorTitle} data-testid="error-card-title">
+              {error.name || "Error"}
+            </div>
+          </div>
+          <div className={styles.actionGroup}>
+            <button
+              className={styles.copyBtn}
+              onClick={handleCopy}
+              data-testid="error-card-copy-btn"
+              title="Copy full error details"
+            >
+              {isCopied ? "Copied! ✓" : "Copy"}
+            </button>
+          </div>
+        </div>
+        <div className={styles.errorMessage} data-testid="error-card-message">
+          {error.message}
+        </div>
+      </div>
+    );
+  }
+
+  // At this point, error is guaranteed to be a ScraperError
+  const animeName = error.animeName;
+  const pageStr = error.page ? `Page: ${error.page}` : undefined;
+  const scanStepLabel = getScanStepLabel(error.scanStep);
 
   const suffixStr =
     error instanceof ScraperHttpError
@@ -41,16 +72,6 @@ export function ErrorCard({ error }: ErrorCardProps) {
   const cardAnimeSubtitle = animeName
     ? [pageStr, suffixStr].filter(Boolean).join(", ")
     : suffixStr;
-
-  const handleCopy = async () => {
-    try {
-      await navigator.clipboard.writeText(error.toString());
-      setIsCopied(true);
-      setTimeout(() => setIsCopied(false), 2000);
-    } catch (err) {
-      console.error("Failed to copy error details", err);
-    }
-  };
 
   return (
     <div className={styles.errorCard} data-testid="error-card">
