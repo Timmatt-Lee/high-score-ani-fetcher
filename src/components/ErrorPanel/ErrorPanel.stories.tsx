@@ -10,6 +10,9 @@ const meta: Meta<typeof ErrorPanel> = {
   title: "Components/ErrorPanel",
   component: ErrorPanel,
   decorators: [(Story) => <Story />],
+  parameters: {
+    layout: "fullscreen",
+  },
 };
 
 export default meta;

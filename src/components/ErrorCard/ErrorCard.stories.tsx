@@ -9,6 +9,9 @@ import {
 const meta: Meta<typeof ErrorCard> = {
   title: "Components/ErrorCard",
   component: ErrorCard,
+  parameters: {
+    layout: "fullscreen",
+  },
 };
 
 export default meta;
