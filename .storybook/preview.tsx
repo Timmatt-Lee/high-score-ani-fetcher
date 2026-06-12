@@ -3,6 +3,7 @@ import "../src/index.css";
 
 const preview: Preview = {
   parameters: {
+    layout: "fullscreen",
     // Configure Chromatic to capture all snapshots at 450px width
     chromatic: {
       viewports: [450],
