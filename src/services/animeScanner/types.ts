@@ -1,7 +1,7 @@
 import { z } from "zod";
-import { type ScraperError } from "./scraperError";
+import { type AnimeScanError } from "./animeScanError";
 
-export type ScanEvent = AnimeItem | ScraperError;
+export type AnimeScanEvent = AnimeItem | AnimeScanError;
 
 export interface PipelineOptions {
   onlyPages?: number[];

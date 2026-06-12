@@ -1,20 +1,20 @@
 import { useState } from "react";
 import {
-  ScraperError,
-  ScraperHttpError,
-  ScraperParseError,
-} from "../../services/scraper";
+  AnimeScanError,
+  AnimeScanHttpError,
+  AnimeScanParseError,
+} from "../../services/animeScanner";
 import { ErrorCard } from "../ErrorCard/ErrorCard";
 import styles from "./ErrorPanel.module.css";
 
-interface ErrorPanelProps<E extends ScraperError> {
+interface ErrorPanelProps<E extends AnimeScanError> {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   errorClass: { new (...args: any[]): E };
   errors: E[];
   isExpandedByDefault?: boolean;
 }
 
-export function ErrorPanel<E extends ScraperError>({
+export function ErrorPanel<E extends AnimeScanError>({
   errorClass,
   errors,
   isExpandedByDefault = false,
@@ -25,11 +25,11 @@ export function ErrorPanel<E extends ScraperError>({
   let emptyMessage = "No errors found.";
   let testIdPrefix = "errors";
 
-  if ((errorClass as unknown) === ScraperHttpError) {
+  if ((errorClass as unknown) === AnimeScanHttpError) {
     title = "HTTP Network Errors";
     emptyMessage = "No network errors.";
     testIdPrefix = "http-errors";
-  } else if ((errorClass as unknown) === ScraperParseError) {
+  } else if ((errorClass as unknown) === AnimeScanParseError) {
     title = "Document Parser Errors";
     emptyMessage = "No parser errors.";
     testIdPrefix = "parse-errors";

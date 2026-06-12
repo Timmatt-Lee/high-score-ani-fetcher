@@ -2,34 +2,37 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { AnimeScanner } from "./animeScanner";
 import {
-  ScraperHttpError,
-  ScraperParseError,
-  ScraperScanStep,
-  type ScanEvent,
-  AnimeScraper,
+  AnimeScanHttpError,
+  AnimeScanParseError,
+  AnimeScanStep,
 } from "./index";
-import { type AnimeItem, type AnimeDetails } from "./types";
+import {
+  type AnimeScanEvent,
+  type AnimeItem,
+  type AnimeDetails,
+} from "./types";
+import { AnimeScraper } from "./animeScraper";
 
 interface TestRunResult {
-  events: ScanEvent[];
+  events: AnimeScanEvent[];
   animeItems: AnimeItem[];
-  httpErrors: ScraperHttpError[];
-  parseErrors: ScraperParseError[];
+  httpErrors: AnimeScanHttpError[];
+  parseErrors: AnimeScanParseError[];
 }
 
 const runPipeline = (pipeline: AnimeScanner) => {
   return new Promise<TestRunResult>((resolve, reject) => {
-    const events: ScanEvent[] = [];
+    const events: AnimeScanEvent[] = [];
     const animeItems: AnimeItem[] = [];
-    const httpErrors: ScraperHttpError[] = [];
-    const parseErrors: ScraperParseError[] = [];
+    const httpErrors: AnimeScanHttpError[] = [];
+    const parseErrors: AnimeScanParseError[] = [];
 
     pipeline.scan().subscribe({
-      next: (event: ScanEvent) => {
+      next: (event: AnimeScanEvent) => {
         events.push(event);
-        if (event instanceof ScraperHttpError) {
+        if (event instanceof AnimeScanHttpError) {
           httpErrors.push(event);
-        } else if (event instanceof ScraperParseError) {
+        } else if (event instanceof AnimeScanParseError) {
           parseErrors.push(event);
         } else if (!(event instanceof Error)) {
           animeItems.push(event);
@@ -107,17 +110,23 @@ describe("AnimeScanner", () => {
     const listSpy = vi.fn();
     const detailSpy = vi.fn();
 
-    const pageError = new ScraperHttpError(
+    const pageError = new AnimeScanHttpError(
       1,
-      ScraperScanStep.GET_TOTAL_PAGES,
+      AnimeScanStep.GET_TOTAL_PAGES,
       "http://page1",
       "fail",
       404,
       undefined,
     );
-    const detailError = new ScraperHttpError(
+    const pageParseError = new AnimeScanParseError(
       1,
-      ScraperScanStep.GET_TOTAL_PAGES,
+      AnimeScanStep.PARSE_ANIME_INFO,
+      "http://page1",
+      "fail",
+    );
+    const detailError = new AnimeScanHttpError(
+      1,
+      AnimeScanStep.GET_TOTAL_PAGES,
       "http://a",
       "fail",
       500,
@@ -127,7 +136,7 @@ describe("AnimeScanner", () => {
     listSpy.mockResolvedValueOnce({
       animeItems: [{ link: "http://a", title: "A" } as AnimeItem],
       httpErrors: [pageError],
-      parseErrors: [],
+      parseErrors: [pageParseError],
     });
 
     detailSpy.mockResolvedValueOnce(detailError);
@@ -142,16 +151,16 @@ describe("AnimeScanner", () => {
     expect(animeItems).toHaveLength(0);
     expect(httpErrors).toContain(pageError);
     expect(httpErrors).toContain(detailError);
-    expect(parseErrors).toHaveLength(0);
+    expect(parseErrors).toContain(pageParseError);
   });
 
   it("aggregates returned details-level errors without throwing", async () => {
     const listSpy = vi.fn();
     const detailSpy = vi.fn();
 
-    const error = new ScraperHttpError(
+    const error = new AnimeScanHttpError(
       1,
-      ScraperScanStep.GET_TOTAL_PAGES,
+      AnimeScanStep.GET_TOTAL_PAGES,
       "http://a",
       "fail",
       500,
@@ -182,9 +191,9 @@ describe("AnimeScanner", () => {
     const listSpy = vi.fn();
     const detailSpy = vi.fn();
 
-    const parseError = new ScraperParseError(
+    const parseError = new AnimeScanParseError(
       1,
-      ScraperScanStep.PARSE_ANIME_DETAIL,
+      AnimeScanStep.PARSE_ANIME_DETAIL,
       "http://a",
       "html",
     );
@@ -457,7 +466,7 @@ describe("AnimeScanner", () => {
     await runPromise;
   });
 
-  it("supports undefined page parameter in fetchDetail", async () => {
+  it("supports page parameter in fetchDetail", async () => {
     const listSpy = vi.fn();
     const detailSpy = vi.fn().mockResolvedValue({
       score: 9.5,
@@ -471,10 +480,13 @@ describe("AnimeScanner", () => {
       scrapeAnimeDetails: detailSpy,
     } as unknown as AnimeScraper);
 
-    await pipeline["fetchDetail"]({
-      link: "http://a",
-      title: "A",
-    } as AnimeItem);
+    await pipeline["fetchDetail"](
+      {
+        link: "http://a",
+        title: "A",
+      } as AnimeItem,
+      1,
+    );
     expect(detailSpy).toHaveBeenCalledWith("http://a", 1, "A");
   });
 });

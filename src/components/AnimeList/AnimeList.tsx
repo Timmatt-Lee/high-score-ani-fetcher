@@ -1,5 +1,5 @@
 import { AnimeCard } from "../AnimeCard";
-import { type AnimeItem } from "../../services/scraper";
+import { type AnimeItem } from "../../services/animeScanner";
 import { Tab } from "../Tabs";
 import styles from "./AnimeList.module.css";
 

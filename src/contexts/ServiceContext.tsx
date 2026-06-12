@@ -1,5 +1,8 @@
 import { createContext, useContext, type ReactNode } from "react";
-import { animeScraper, AnimeScraper } from "../services/scraper";
+import {
+  animeScraper,
+  AnimeScraper,
+} from "../services/animeScanner/animeScraper";
 
 interface ServiceContextType {
   animeScraper: AnimeScraper;

@@ -1,10 +1,10 @@
 import type { Meta, StoryObj } from "@storybook/react";
 import { ErrorCard } from "./ErrorCard";
 import {
-  ScraperHttpError,
-  ScraperParseError,
-  ScraperScanStep,
-} from "../../services/scraper";
+  AnimeScanHttpError,
+  AnimeScanParseError,
+  AnimeScanStep,
+} from "../../services/animeScanner";
 
 const meta: Meta<typeof ErrorCard> = {
   title: "Components/ErrorCard",
@@ -16,9 +16,9 @@ type Story = StoryObj<typeof ErrorCard>;
 
 export const HttpErrorWithTitle: Story = {
   args: {
-    error: new ScraperHttpError(
+    error: new AnimeScanHttpError(
       2,
-      ScraperScanStep.GET_TOTAL_PAGES,
+      AnimeScanStep.GET_TOTAL_PAGES,
       "https://ani.gamer.com.tw/animeList.php?page=2",
       "Internal Server Error",
       500,
@@ -29,9 +29,9 @@ export const HttpErrorWithTitle: Story = {
 
 export const HttpErrorNoTitle: Story = {
   args: {
-    error: new ScraperHttpError(
+    error: new AnimeScanHttpError(
       4,
-      ScraperScanStep.GET_TOTAL_PAGES,
+      AnimeScanStep.GET_TOTAL_PAGES,
       "https://ani.gamer.com.tw/animeList.php?page=4",
       "Bad Gateway",
       502,
@@ -42,9 +42,9 @@ export const HttpErrorNoTitle: Story = {
 
 export const ParseErrorWithTitle: Story = {
   args: {
-    error: new ScraperParseError(
+    error: new AnimeScanParseError(
       3,
-      ScraperScanStep.PARSE_ANIME_INFO,
+      AnimeScanStep.PARSE_ANIME_INFO,
       "https://ani.gamer.com.tw/animeList.php?page=3",
       "Failed to parse title tag",
       "Parser failed",
@@ -55,9 +55,9 @@ export const ParseErrorWithTitle: Story = {
 
 export const ParseErrorNoTitle: Story = {
   args: {
-    error: new ScraperParseError(
+    error: new AnimeScanParseError(
       5,
-      ScraperScanStep.PARSE_ANIME_DETAIL,
+      AnimeScanStep.PARSE_ANIME_DETAIL,
       "https://ani.gamer.com.tw/animeList.php?page=5",
       "Failed to parse episode number",
       "Parser failed",
@@ -73,9 +73,9 @@ export const FatalUnknownError: Story = {
 
 export const WithCopiedState: Story = {
   args: {
-    error: new ScraperHttpError(
+    error: new AnimeScanHttpError(
       2,
-      ScraperScanStep.GET_TOTAL_PAGES,
+      AnimeScanStep.GET_TOTAL_PAGES,
       "https://ani.gamer.com.tw/animeList.php?page=2",
       "Internal Server Error",
       500,

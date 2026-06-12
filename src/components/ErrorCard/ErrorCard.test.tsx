@@ -2,11 +2,11 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent, act } from "@testing-library/react";
 import { ErrorCard } from "./ErrorCard";
 import {
-  ScraperError,
-  ScraperHttpError,
-  ScraperParseError,
-  ScraperScanStep,
-} from "../../services/scraper";
+  AnimeScanError,
+  AnimeScanHttpError,
+  AnimeScanParseError,
+  AnimeScanStep,
+} from "../../services/animeScanner";
 
 describe("ErrorCard", () => {
   const writeTextMock = vi.fn();
@@ -22,9 +22,9 @@ describe("ErrorCard", () => {
   });
 
   it("renders HTTP error with title correctly and handles copy", async () => {
-    const error = new ScraperHttpError(
+    const error = new AnimeScanHttpError(
       2,
-      ScraperScanStep.GET_TOTAL_PAGES,
+      AnimeScanStep.GET_TOTAL_PAGES,
       "https://ani.gamer.com.tw/animeList.php?page=2",
       "HTTP 500",
       500,
@@ -52,9 +52,9 @@ describe("ErrorCard", () => {
   });
 
   it("renders HTTP error without title correctly", () => {
-    const error = new ScraperHttpError(
+    const error = new AnimeScanHttpError(
       3,
-      ScraperScanStep.GET_TOTAL_PAGES,
+      AnimeScanStep.GET_TOTAL_PAGES,
       "https://ani.gamer.com.tw/animeList.php?page=3",
       "HTTP 502",
       502,
@@ -70,9 +70,9 @@ describe("ErrorCard", () => {
   });
 
   it("renders Parser error with title correctly", () => {
-    const error = new ScraperParseError(
+    const error = new AnimeScanParseError(
       5,
-      ScraperScanStep.PARSE_ANIME_INFO,
+      AnimeScanStep.PARSE_ANIME_INFO,
       "https://ani.gamer.com.tw/animeList.php?page=5",
       "bad html",
       "Parse failed",
@@ -88,9 +88,9 @@ describe("ErrorCard", () => {
   });
 
   it("renders Parser error without title or page correctly", () => {
-    const error = new ScraperParseError(
+    const error = new AnimeScanParseError(
       0,
-      ScraperScanStep.PARSE_ANIME_DETAIL,
+      AnimeScanStep.PARSE_ANIME_DETAIL,
       "https://ani.gamer.com.tw/anime.php",
       "bad html",
       "Parse failed",
@@ -106,28 +106,28 @@ describe("ErrorCard", () => {
     );
   });
 
-  it("renders Parser error with various other ScraperScanStep values", () => {
+  it("renders Parser error with various other AnimeScanStep values", () => {
     const sources = [
       {
-        source: ScraperScanStep.GET_TOTAL_PAGES,
+        source: AnimeScanStep.GET_TOTAL_PAGES,
         expected: "When doing: fetching total pages",
       },
       {
-        source: ScraperScanStep.SCRAPE_LIST_PAGE,
+        source: AnimeScanStep.SCRAPE_LIST_PAGE,
         expected: "When doing: scraping list page",
       },
       {
-        source: ScraperScanStep.PARSE_ANIME_INFO,
+        source: AnimeScanStep.PARSE_ANIME_INFO,
         expected: "When doing: parsing anime info",
       },
       {
-        source: ScraperScanStep.PARSE_ANIME_DETAIL,
+        source: AnimeScanStep.PARSE_ANIME_DETAIL,
         expected: "When doing: parsing anime detail",
       },
     ];
 
     for (const { source, expected } of sources) {
-      const error = new ScraperParseError(
+      const error = new AnimeScanParseError(
         0,
         source,
         "https://ani.gamer.com.tw/anime.php",
@@ -143,16 +143,16 @@ describe("ErrorCard", () => {
   });
 
   it("throws error when getScanStepLabel encounters an unhandled step value", () => {
-    const error = new ScraperParseError(
+    const error = new AnimeScanParseError(
       0,
-      999 as unknown as ScraperScanStep,
+      999 as unknown as AnimeScanStep,
       "https://ani.gamer.com.tw/anime.php",
       "bad html",
       "Parse failed",
     );
     const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
     expect(() => render(<ErrorCard error={error} />)).toThrow(
-      "Unhandled ScraperScanStep: 999",
+      "Unhandled AnimeScanStep: 999",
     );
     consoleSpy.mockRestore();
   });
@@ -187,9 +187,9 @@ describe("ErrorCard", () => {
   });
 
   it("renders fallbackTitle using error.name when page, title, and other properties are missing", async () => {
-    class CustomError extends ScraperError {
+    class CustomError extends AnimeScanError {
       constructor() {
-        super("Custom msg", 0, ScraperScanStep.GET_TOTAL_PAGES, "unknown");
+        super("Custom msg", 0, AnimeScanStep.GET_TOTAL_PAGES, "unknown");
         this.name = "TestCustomError";
       }
     }
@@ -205,7 +205,7 @@ describe("ErrorCard", () => {
     const { unmount: unmount2 } = render(<ErrorCard error={errorWithNoName} />);
     expect(screen.getByTestId("error-card-title").textContent).toBe("Error");
 
-    // Trigger copy click on non-ScraperError to cover isCopied branch in early return
+    // Trigger copy click on non-AnimeScanError to cover isCopied branch in early return
     const copyBtn = screen.getByTestId("error-card-copy-btn");
     await act(async () => {
       fireEvent.click(copyBtn);
@@ -213,9 +213,9 @@ describe("ErrorCard", () => {
     expect(copyBtn.textContent).toBe("Copied! ✓");
     unmount2();
 
-    class CustomErrorNoName extends ScraperError {
+    class CustomErrorNoName extends AnimeScanError {
       constructor() {
-        super("No name msg", 0, ScraperScanStep.GET_TOTAL_PAGES, "unknown");
+        super("No name msg", 0, AnimeScanStep.GET_TOTAL_PAGES, "unknown");
         this.name = "";
       }
     }
@@ -225,9 +225,9 @@ describe("ErrorCard", () => {
   });
 
   it("handles copy failure gracefully", async () => {
-    const error = new ScraperHttpError(
+    const error = new AnimeScanHttpError(
       1,
-      ScraperScanStep.GET_TOTAL_PAGES,
+      AnimeScanStep.GET_TOTAL_PAGES,
       "https://ani.gamer.com.tw/animeList.php?page=1",
       "HTTP 404",
       404,

@@ -1,12 +1,12 @@
 import { useState } from "react";
 import { useServices } from "../contexts/ServiceContext";
 import {
-  ScraperHttpError,
-  ScraperParseError,
+  AnimeScanHttpError,
+  AnimeScanParseError,
   AnimeScanner,
   type PipelineOptions,
   type AnimeItem,
-} from "../services/scraper";
+} from "../services/animeScanner";
 import { isError } from "../types/result";
 
 export interface ScanCompleteResult {
@@ -24,8 +24,8 @@ export function useAnimeScanner(
   const { animeScraper } = useServices();
   const [isScanning, setIsScanning] = useState(false);
   const [progress, setProgress] = useState({ percent: 0, message: "" });
-  const [httpErrors, setHttpErrors] = useState<ScraperHttpError[]>([]);
-  const [parseErrors, setParseErrors] = useState<ScraperParseError[]>([]);
+  const [httpErrors, setHttpErrors] = useState<AnimeScanHttpError[]>([]);
+  const [parseErrors, setParseErrors] = useState<AnimeScanParseError[]>([]);
   const [error, setError] = useState<Error | null>(null);
   const [totalPagesCount, setTotalPagesCount] = useState(0);
 
@@ -116,8 +116,8 @@ export function useAnimeScanner(
     };
 
     const results: AnimeItem[] = [];
-    const scanHttpErrors: ScraperHttpError[] = [];
-    const scanParseErrors: ScraperParseError[] = [];
+    const scanHttpErrors: AnimeScanHttpError[] = [];
+    const scanParseErrors: AnimeScanParseError[] = [];
 
     try {
       const pipeline = new AnimeScanner(
@@ -131,11 +131,11 @@ export function useAnimeScanner(
 
       pipeline.scan().subscribe({
         next: (event) => {
-          if (event instanceof ScraperHttpError) {
+          if (event instanceof AnimeScanHttpError) {
             scanHttpErrors.push(event);
             setHttpErrors([...scanHttpErrors]);
             updateProgress(event.animeName);
-          } else if (event instanceof ScraperParseError) {
+          } else if (event instanceof AnimeScanParseError) {
             scanParseErrors.push(event);
             setParseErrors([...scanParseErrors]);
             updateProgress(event.animeName);

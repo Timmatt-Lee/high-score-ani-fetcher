@@ -8,19 +8,23 @@ import {
 } from "@testing-library/react";
 import { ServiceProvider } from "./contexts/ServiceContext";
 import App from "./App";
-import { animeScraper } from "./services/scraper";
+import { animeScraper } from "./services/animeScanner/animeScraper";
 import {
-  ScraperHttpError,
-  ScraperParseError,
-  ScraperScanStep,
-  type ScanEvent,
-  type AnimeItem,
+  AnimeScanHttpError,
+  AnimeScanParseError,
+  AnimeScanStep,
   AnimeScanner,
-} from "./services/scraper";
+} from "./services/animeScanner";
+import {
+  type AnimeScanEvent,
+  type AnimeItem,
+} from "./services/animeScanner/types";
 import { Observable, Subject } from "rxjs";
 
-function createMockObservable(events: ScanEvent[] = []): Observable<ScanEvent> {
-  return new Observable<ScanEvent>((subscriber) => {
+function createMockObservable(
+  events: AnimeScanEvent[] = [],
+): Observable<AnimeScanEvent> {
+  return new Observable<AnimeScanEvent>((subscriber) => {
     for (const event of events) {
       subscriber.next(event);
     }
@@ -380,7 +384,7 @@ describe("Card actions", () => {
 // --- Scan ---
 describe("Scan functionality", () => {
   it("shows Scanning... and progress bar while running", async () => {
-    const subject = new Subject<ScanEvent>();
+    const subject = new Subject<AnimeScanEvent>();
     vi.spyOn(animeScraper, "getTotalPages").mockResolvedValue(1);
     vi.spyOn(AnimeScanner.prototype, "scan").mockReturnValue(subject);
 
@@ -625,9 +629,9 @@ describe("Scan functionality", () => {
 
   it("renders warning alert when scan encounters errors and supports details toggle", async () => {
     const anime = makeAnime({ title: "Partial Success", score: 9.0 });
-    const mockError = new ScraperHttpError(
+    const mockError = new AnimeScanHttpError(
       1,
-      ScraperScanStep.GET_TOTAL_PAGES,
+      AnimeScanStep.GET_TOTAL_PAGES,
       "https://ani.gamer.com.tw/animeList.php?page=1",
       "HTTP 502",
       502,
@@ -667,9 +671,9 @@ describe("Scan functionality", () => {
     const errorsList = Array.from(
       { length: 11 },
       (_, i) =>
-        new ScraperHttpError(
+        new AnimeScanHttpError(
           i + 1,
-          ScraperScanStep.GET_TOTAL_PAGES,
+          AnimeScanStep.GET_TOTAL_PAGES,
           `https://ani.gamer.com.tw/animeList.php?page=${i + 1}`,
           `Error ${i}`,
           500,
@@ -704,9 +708,9 @@ describe("Scan functionality", () => {
   });
 
   it("renders fatal error screen when scan fails", async () => {
-    const fatalErr = new ScraperHttpError(
+    const fatalErr = new AnimeScanHttpError(
       1,
-      ScraperScanStep.GET_TOTAL_PAGES,
+      AnimeScanStep.GET_TOTAL_PAGES,
       "https://ani.gamer.com.tw/error",
       "Bad Request",
       400,
@@ -741,9 +745,9 @@ describe("Scan functionality", () => {
 
   it("renders ErrorsPanel inside Results tab and hides it when retry clears the errors", async () => {
     const anime = makeAnime({ title: "Partial Success", score: 9.0 });
-    const error = new ScraperHttpError(
+    const error = new AnimeScanHttpError(
       1,
-      ScraperScanStep.GET_TOTAL_PAGES,
+      AnimeScanStep.GET_TOTAL_PAGES,
       "https://ani.gamer.com.tw/animeList.php?page=1",
       "fail",
       500,
@@ -752,33 +756,33 @@ describe("Scan functionality", () => {
 
     vi.spyOn(animeScraper, "getTotalPages").mockResolvedValue(1);
 
-    const parseError = new ScraperParseError(
+    const parseError = new AnimeScanParseError(
       1,
-      ScraperScanStep.PARSE_ANIME_INFO,
+      AnimeScanStep.PARSE_ANIME_INFO,
       "https://ani.gamer.com.tw/anime.php",
       "fail parse",
       "Parsing failed",
     );
 
-    const parseErrorNoUrl = new ScraperParseError(
+    const parseErrorNoUrl = new AnimeScanParseError(
       0,
-      ScraperScanStep.PARSE_ANIME_INFO,
+      AnimeScanStep.PARSE_ANIME_INFO,
       undefined as unknown as string,
       "fail parse no url",
       "Parsing failed",
     );
 
-    const parseErrorWithPage = new ScraperParseError(
+    const parseErrorWithPage = new AnimeScanParseError(
       3,
-      ScraperScanStep.PARSE_ANIME_INFO,
+      AnimeScanStep.PARSE_ANIME_INFO,
       "https://ani.gamer.com.tw/animeList.php?page=3",
       "fail parse page",
       "Parsing failed",
     );
 
-    const errorNoPage = new ScraperHttpError(
+    const errorNoPage = new AnimeScanHttpError(
       0,
-      ScraperScanStep.GET_TOTAL_PAGES,
+      AnimeScanStep.GET_TOTAL_PAGES,
       "https://ani.gamer.com.tw/anime.php",
       "fail no page",
       500,

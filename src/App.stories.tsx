@@ -3,13 +3,13 @@ import type { Meta, StoryObj } from "@storybook/react";
 import App from "./App";
 import { ServiceProvider } from "./contexts/ServiceContext";
 import {
-  ScraperHttpError,
-  ScraperParseError,
-  ScraperScanStep,
-  AnimeScraper,
+  AnimeScanHttpError,
+  AnimeScanParseError,
+  AnimeScanStep,
   AnimeScanner,
   type AnimeItem,
-} from "./services/scraper";
+} from "./services/animeScanner";
+import { AnimeScraper } from "./services/animeScanner/animeScraper";
 import { Observable } from "rxjs";
 
 // Helper to create sample anime items
@@ -171,9 +171,9 @@ export const PartiallyFailedScan: Story = {
             );
             subscriber.next(
               Object.assign(
-                new ScraperHttpError(
+                new AnimeScanHttpError(
                   2,
-                  ScraperScanStep.GET_TOTAL_PAGES,
+                  AnimeScanStep.GET_TOTAL_PAGES,
                   "https://ani.gamer.com.tw/animeList.php?page=2",
                   "",
                   502,
@@ -184,9 +184,9 @@ export const PartiallyFailedScan: Story = {
             );
             subscriber.next(
               Object.assign(
-                new ScraperParseError(
+                new AnimeScanParseError(
                   3,
-                  ScraperScanStep.PARSE_ANIME_INFO,
+                  AnimeScanStep.PARSE_ANIME_INFO,
                   "https://ani.gamer.com.tw/animeList.php?page=3",
                   "",
                   "解析失敗",
@@ -267,9 +267,9 @@ export const WithError: Story = {
     const mockAnimeScraperWithFatalError = {
       ...mockAnimeScraper,
       getTotalPages: async () => {
-        return new ScraperHttpError(
+        return new AnimeScanHttpError(
           1,
-          ScraperScanStep.GET_TOTAL_PAGES,
+          AnimeScanStep.GET_TOTAL_PAGES,
           "https://ani.gamer.com.tw/animeList.php",
           "",
           500,

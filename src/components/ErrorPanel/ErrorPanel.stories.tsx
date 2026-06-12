@@ -1,10 +1,10 @@
 import type { Meta, StoryObj } from "@storybook/react";
 import { ErrorPanel } from "./ErrorPanel";
 import {
-  ScraperHttpError,
-  ScraperParseError,
-  ScraperScanStep,
-} from "../../services/scraper";
+  AnimeScanHttpError,
+  AnimeScanParseError,
+  AnimeScanStep,
+} from "../../services/animeScanner";
 
 const meta: Meta<typeof ErrorPanel> = {
   title: "Components/ErrorPanel",
@@ -16,17 +16,17 @@ export default meta;
 type Story = StoryObj<typeof ErrorPanel>;
 
 const sampleHttpErrors = [
-  new ScraperHttpError(
+  new AnimeScanHttpError(
     2,
-    ScraperScanStep.GET_TOTAL_PAGES,
+    AnimeScanStep.GET_TOTAL_PAGES,
     "https://ani.gamer.com.tw/animeList.php?page=2",
     "Internal Server Error",
     500,
     "測試動畫第一季",
   ),
-  new ScraperHttpError(
+  new AnimeScanHttpError(
     5,
-    ScraperScanStep.GET_TOTAL_PAGES,
+    AnimeScanStep.GET_TOTAL_PAGES,
     "https://ani.gamer.com.tw/animeList.php?page=5",
     "Bad Gateway",
     502,
@@ -35,9 +35,9 @@ const sampleHttpErrors = [
 ];
 
 const sampleParseErrors = [
-  new ScraperParseError(
+  new AnimeScanParseError(
     3,
-    ScraperScanStep.PARSE_ANIME_INFO,
+    AnimeScanStep.PARSE_ANIME_INFO,
     "https://ani.gamer.com.tw/animeList.php?page=3",
     "Missing class theme-name inside theme-list-main anchor card",
     "Anime title missing",
@@ -47,7 +47,7 @@ const sampleParseErrors = [
 
 export const CollapsedHttp: Story = {
   args: {
-    errorClass: ScraperHttpError,
+    errorClass: AnimeScanHttpError,
     errors: sampleHttpErrors,
     isExpandedByDefault: false,
   },
@@ -55,7 +55,7 @@ export const CollapsedHttp: Story = {
 
 export const ExpandedHttp: Story = {
   args: {
-    errorClass: ScraperHttpError,
+    errorClass: AnimeScanHttpError,
     errors: sampleHttpErrors,
     isExpandedByDefault: true,
   },
@@ -63,7 +63,7 @@ export const ExpandedHttp: Story = {
 
 export const CollapsedParse: Story = {
   args: {
-    errorClass: ScraperParseError,
+    errorClass: AnimeScanParseError,
     errors: sampleParseErrors,
     isExpandedByDefault: false,
   },
@@ -71,7 +71,7 @@ export const CollapsedParse: Story = {
 
 export const ExpandedParse: Story = {
   args: {
-    errorClass: ScraperParseError,
+    errorClass: AnimeScanParseError,
     errors: sampleParseErrors,
     isExpandedByDefault: true,
   },
@@ -79,7 +79,7 @@ export const ExpandedParse: Story = {
 
 export const EmptyGroup: Story = {
   args: {
-    errorClass: ScraperHttpError,
+    errorClass: AnimeScanHttpError,
     errors: [],
     isExpandedByDefault: true,
   },

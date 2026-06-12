@@ -1,18 +1,18 @@
-import { ScraperScanStep } from "./scraperScanStep";
+import { AnimeScanStep } from "./animeScanStep";
 
 /**
  * Base class for all scraper errors.
  */
-export abstract class ScraperError extends Error {
+export abstract class AnimeScanError extends Error {
   page: number;
-  scanStep: ScraperScanStep;
+  scanStep: AnimeScanStep;
   url: string;
   animeName?: string;
 
   constructor(
     message: string,
     page: number,
-    scanStep: ScraperScanStep,
+    scanStep: AnimeScanStep,
     url: string,
     animeName?: string,
   ) {
@@ -27,13 +27,13 @@ export abstract class ScraperError extends Error {
 /**
  * Represents communication failures with the target site, such as receiving non-2xx/3xx HTTP response status codes (e.g., 404, 500, 502).
  */
-export class ScraperHttpError extends ScraperError {
+export class AnimeScanHttpError extends AnimeScanError {
   status: number;
   html: string;
 
   constructor(
     page: number,
-    scanStep: ScraperScanStep,
+    scanStep: AnimeScanStep,
     url: string,
     html: string,
     status: number,
@@ -46,7 +46,7 @@ export class ScraperHttpError extends ScraperError {
       url,
       animeName,
     );
-    this.name = "ScraperHttpError";
+    this.name = "AnimeScanHttpError";
     this.status = status;
     this.html = html;
   }
@@ -55,12 +55,12 @@ export class ScraperHttpError extends ScraperError {
 /**
  * Represents failures during document parsing (e.g. missing elements, malformed text).
  */
-export class ScraperParseError extends ScraperError {
+export class AnimeScanParseError extends AnimeScanError {
   html: string;
 
   constructor(
     page: number,
-    scanStep: ScraperScanStep,
+    scanStep: AnimeScanStep,
     url: string,
     html: string,
     message?: string,
@@ -73,7 +73,7 @@ export class ScraperParseError extends ScraperError {
       url,
       animeName,
     );
-    this.name = "ScraperParseError";
+    this.name = "AnimeScanParseError";
     this.html = html;
   }
 }

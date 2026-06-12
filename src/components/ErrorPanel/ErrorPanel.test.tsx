@@ -2,17 +2,17 @@ import { describe, it, expect } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
 import { ErrorPanel } from "./ErrorPanel";
 import {
-  ScraperHttpError,
-  ScraperParseError,
-  ScraperError,
-  ScraperScanStep,
-} from "../../services/scraper";
+  AnimeScanHttpError,
+  AnimeScanParseError,
+  AnimeScanError,
+  AnimeScanStep,
+} from "../../services/animeScanner";
 
 describe("ErrorPanel", () => {
   const sampleErrors = [
-    new ScraperHttpError(
+    new AnimeScanHttpError(
       2,
-      ScraperScanStep.GET_TOTAL_PAGES,
+      AnimeScanStep.GET_TOTAL_PAGES,
       "https://ani.gamer.com.tw/animeList.php?page=2",
       "Error html",
       502,
@@ -23,7 +23,7 @@ describe("ErrorPanel", () => {
   it("renders collapsed by default", () => {
     render(
       <ErrorPanel
-        errorClass={ScraperHttpError}
+        errorClass={AnimeScanHttpError}
         errors={sampleErrors}
         isExpandedByDefault={false}
       />,
@@ -37,7 +37,7 @@ describe("ErrorPanel", () => {
   it("renders open when isExpandedByDefault is true", () => {
     render(
       <ErrorPanel
-        errorClass={ScraperHttpError}
+        errorClass={AnimeScanHttpError}
         errors={sampleErrors}
         isExpandedByDefault={true}
       />,
@@ -50,7 +50,7 @@ describe("ErrorPanel", () => {
   it("toggles open state when header is clicked", () => {
     render(
       <ErrorPanel
-        errorClass={ScraperHttpError}
+        errorClass={AnimeScanHttpError}
         errors={sampleErrors}
         isExpandedByDefault={false}
       />,
@@ -71,7 +71,7 @@ describe("ErrorPanel", () => {
   it("displays empty message when errors list is empty", () => {
     render(
       <ErrorPanel
-        errorClass={ScraperHttpError}
+        errorClass={AnimeScanHttpError}
         errors={[]}
         isExpandedByDefault={true}
       />,
@@ -81,9 +81,9 @@ describe("ErrorPanel", () => {
   });
 
   it("renders document parser errors with proper titles and empty message", () => {
-    const parseErr = new ScraperParseError(
+    const parseErr = new AnimeScanParseError(
       3,
-      ScraperScanStep.PARSE_ANIME_INFO,
+      AnimeScanStep.PARSE_ANIME_INFO,
       "https://ani.gamer.com.tw/animeList.php?page=3",
       "Bad html",
       "Parsing failed",
@@ -91,7 +91,7 @@ describe("ErrorPanel", () => {
 
     const { rerender } = render(
       <ErrorPanel
-        errorClass={ScraperParseError}
+        errorClass={AnimeScanParseError}
         errors={[parseErr]}
         isExpandedByDefault={true}
       />,
@@ -101,7 +101,7 @@ describe("ErrorPanel", () => {
 
     rerender(
       <ErrorPanel
-        errorClass={ScraperParseError}
+        errorClass={AnimeScanParseError}
         errors={[]}
         isExpandedByDefault={true}
       />,
@@ -111,16 +111,16 @@ describe("ErrorPanel", () => {
   });
 
   it("renders generic/unknown errors with default title and empty message", () => {
-    class CustomScraperError extends ScraperError {
+    class CustomAnimeScanError extends AnimeScanError {
       constructor() {
-        super("Fatal", 1, ScraperScanStep.GET_TOTAL_PAGES, "unknown");
-        this.name = "CustomScraperError";
+        super("Fatal", 1, AnimeScanStep.GET_TOTAL_PAGES, "unknown");
+        this.name = "CustomAnimeScanError";
       }
     }
-    const error = new CustomScraperError();
+    const error = new CustomAnimeScanError();
     const { rerender } = render(
       <ErrorPanel
-        errorClass={CustomScraperError}
+        errorClass={CustomAnimeScanError}
         errors={[error]}
         isExpandedByDefault={true}
       />,
@@ -130,7 +130,7 @@ describe("ErrorPanel", () => {
 
     rerender(
       <ErrorPanel
-        errorClass={CustomScraperError}
+        errorClass={CustomAnimeScanError}
         errors={[]}
         isExpandedByDefault={true}
       />,

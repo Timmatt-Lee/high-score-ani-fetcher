@@ -1,10 +1,10 @@
 import { useState } from "react";
 import {
-  ScraperHttpError,
-  ScraperParseError,
-  ScraperError,
+  AnimeScanHttpError,
+  AnimeScanParseError,
+  AnimeScanError,
   getScanStepLabel,
-} from "../../services/scraper";
+} from "../../services/animeScanner";
 import styles from "./ErrorCard.module.css";
 
 interface ErrorCardProps {
@@ -14,7 +14,7 @@ interface ErrorCardProps {
 const getCardTitleAndSubtitle = (
   error: Error,
 ): { title: string; subtitle?: string } => {
-  if (!(error instanceof ScraperError)) {
+  if (!(error instanceof AnimeScanError)) {
     return {
       title: error.name || "Error",
       subtitle: undefined,
@@ -26,14 +26,14 @@ const getCardTitleAndSubtitle = (
   const scanStepLabel = getScanStepLabel(error.scanStep);
 
   const suffixStr =
-    error instanceof ScraperHttpError
+    error instanceof AnimeScanHttpError
       ? `Status: ${error.status}`
       : `When doing: ${scanStepLabel}`;
 
   let fallbackTitle = error.name || "Error";
-  if (error instanceof ScraperHttpError) {
+  if (error instanceof AnimeScanHttpError) {
     fallbackTitle = "HTTP Error";
-  } else if (error instanceof ScraperParseError) {
+  } else if (error instanceof AnimeScanParseError) {
     fallbackTitle = "Parser Error";
   }
 

@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/react";
 import { AnimeList } from "./AnimeList";
 import { Tab } from "../Tabs";
-import { type AnimeItem } from "../../services/scraper";
+import { type AnimeItem } from "../../services/animeScanner";
 
 const meta: Meta<typeof AnimeList> = {
   title: "Components/AnimeList",
