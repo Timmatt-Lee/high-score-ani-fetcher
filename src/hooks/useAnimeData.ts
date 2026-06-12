@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { z } from "zod";
-import { type AnimeItem, AnimeItemSchema } from "../types/anime";
+import { type AnimeItem, AnimeItemSchema } from "../services/animeScanner";
 
 export function useAnimeData() {
   const [searchList, setSearchList] = useState<AnimeItem[]>([]);
@@ -113,7 +113,9 @@ export function useAnimeData() {
     searchList,
     setSearchList,
     favoriteList,
+    setFavoriteList,
     trashList,
+    setTrashList,
     moveToFavorites,
     moveToTrash,
     restoreFromTrash,

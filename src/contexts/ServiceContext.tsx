@@ -1,26 +1,29 @@
 import { createContext, useContext, type ReactNode } from "react";
-import { scraperService, ScraperService } from "../services/scraper";
+import {
+  animeScraper,
+  AnimeScraper,
+} from "../services/animeScanner/animeScraper";
 
 interface ServiceContextType {
-  scraperService: ScraperService;
+  animeScraper: AnimeScraper;
 }
 
 const ServiceContext = createContext<ServiceContextType | undefined>(undefined);
 
 interface ServiceProviderProps {
   children: ReactNode;
-  scraperService?: ScraperService;
+  animeScraper?: AnimeScraper;
 }
 
 export function ServiceProvider({
   children,
-  scraperService: customScraperService,
+  animeScraper: customAnimeScraper,
 }: ServiceProviderProps) {
   // We provide the singleton instance here by default.
   // This allows for easier testing by providing a mock service via a custom Provider or prop.
   return (
     <ServiceContext.Provider
-      value={{ scraperService: customScraperService || scraperService }}
+      value={{ animeScraper: customAnimeScraper || animeScraper }}
     >
       {children}
     </ServiceContext.Provider>

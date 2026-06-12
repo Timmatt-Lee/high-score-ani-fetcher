@@ -1,12 +1,11 @@
 import type { Meta, StoryObj } from "@storybook/react";
 import { AnimeList } from "./AnimeList";
 import { Tab } from "../Tabs";
-import { type AnimeItem } from "../../types/anime";
+import { type AnimeItem } from "../../services/animeScanner";
 
 const meta: Meta<typeof AnimeList> = {
   title: "Components/AnimeList",
   component: AnimeList,
-  tags: ["autodocs"],
   argTypes: {
     activeTab: {
       control: "select",

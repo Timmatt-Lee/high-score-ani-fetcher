@@ -8,9 +8,29 @@ import {
 } from "@testing-library/react";
 import { ServiceProvider } from "./contexts/ServiceContext";
 import App from "./App";
-import { scraperService } from "./services/scraper";
-import { type AnimeItem, type ScraperResult } from "./types/anime";
-import { ScraperHttpError } from "./errors";
+import { animeScraper } from "./services/animeScanner/animeScraper";
+import {
+  AnimeScanHttpError,
+  AnimeScanParseError,
+  AnimeScanStep,
+  AnimeScanner,
+} from "./services/animeScanner";
+import {
+  type AnimeScanEvent,
+  type AnimeItem,
+} from "./services/animeScanner/types";
+import { Observable, Subject } from "rxjs";
+
+function createMockObservable(
+  events: AnimeScanEvent[] = [],
+): Observable<AnimeScanEvent> {
+  return new Observable<AnimeScanEvent>((subscriber) => {
+    for (const event of events) {
+      subscriber.next(event);
+    }
+    subscriber.complete();
+  });
+}
 
 // --- Chrome storage mock (default) ---
 const storageMock: Record<string, unknown> = {};
@@ -48,6 +68,7 @@ const makeAnime = (overrides: Partial<AnimeItem> = {}): AnimeItem => ({
 });
 
 beforeEach(() => {
+  vi.restoreAllMocks();
   vi.clearAllMocks();
   Object.keys(storageMock).forEach((k) => delete storageMock[k]);
   // Restore chrome mock (some tests override it)
@@ -57,6 +78,7 @@ beforeEach(() => {
 
 afterEach(() => {
   localStorage.clear();
+  vi.useRealTimers();
 });
 
 // --- Rendering ---
@@ -362,13 +384,9 @@ describe("Card actions", () => {
 // --- Scan ---
 describe("Scan functionality", () => {
   it("shows Scanning... and progress bar while running", async () => {
-    let resolveScrape!: (res: ScraperResult) => void;
-    vi.spyOn(scraperService, "getTotalPages").mockResolvedValue(1);
-    vi.spyOn(scraperService, "scanAllWithPipeline").mockReturnValue(
-      new Promise<ScraperResult>((resolve) => {
-        resolveScrape = resolve;
-      }),
-    );
+    const subject = new Subject<AnimeScanEvent>();
+    vi.spyOn(animeScraper, "getTotalPages").mockResolvedValue(1);
+    vi.spyOn(AnimeScanner.prototype, "scan").mockReturnValue(subject);
 
     await act(async () => {
       render(
@@ -383,7 +401,7 @@ describe("Scan functionality", () => {
 
     await waitFor(() => expect(screen.getByText("Scanning...")).toBeDefined());
     await act(async () => {
-      resolveScrape({ items: [], httpErrors: [], parseErrors: [] });
+      subject.complete();
     });
   });
 
@@ -400,24 +418,20 @@ describe("Scan functionality", () => {
       link: "http://other",
     });
 
-    vi.spyOn(scraperService, "getTotalPages").mockResolvedValue(1);
-    vi.spyOn(scraperService, "scanAllWithPipeline").mockImplementation(
-      async (_pages, _pc, _dc, filterItem, onProgress) => {
-        const filtered = [highScore, lowScore].filter(filterItem);
-        onProgress(1, 1, 1, filtered.length, "Progress title");
-        return {
-          items: [
-            {
-              ...highScore,
-              score: 5.0,
-              ratingCount: 100,
-              description: "Good",
-            },
-            { ...lowScore, score: 4.0, ratingCount: 10, description: "Meh" },
-          ].filter((item) => filtered.some((f) => f.link === item.link)),
-          httpErrors: [],
-          parseErrors: [],
-        };
+    vi.spyOn(animeScraper, "getTotalPages").mockResolvedValue(1);
+    vi.spyOn(AnimeScanner.prototype, "scan").mockImplementation(
+      function (this: { filterItem: (item: AnimeItem) => boolean }) {
+        const filtered = [highScore, lowScore].filter(this.filterItem);
+        const details = [
+          {
+            ...highScore,
+            score: 5.0,
+            ratingCount: 100,
+            description: "Good",
+          },
+          { ...lowScore, score: 4.0, ratingCount: 10, description: "Meh" },
+        ].filter((item) => filtered.some((f) => f.link === item.link));
+        return createMockObservable(details);
       },
     );
 
@@ -442,20 +456,18 @@ describe("Scan functionality", () => {
       episodeCount: 5,
       score: 9.0,
     });
-    vi.spyOn(scraperService, "getTotalPages").mockResolvedValue(1);
-    vi.spyOn(scraperService, "scanAllWithPipeline").mockImplementation(
-      async (_pages, _pc, _dc, filterItem) => {
-        const filtered = [shortShow].filter(filterItem);
-        return {
-          items: filtered.map((item) => ({
+    vi.spyOn(animeScraper, "getTotalPages").mockResolvedValue(1);
+    vi.spyOn(AnimeScanner.prototype, "scan").mockImplementation(
+      function (this: { filterItem: (item: AnimeItem) => boolean }) {
+        const filtered = [shortShow].filter(this.filterItem);
+        return createMockObservable(
+          filtered.map((item) => ({
             ...item,
             score: 9.0,
             ratingCount: 100,
             description: "x",
           })),
-          httpErrors: [],
-          parseErrors: [],
-        };
+        );
       },
     );
 
@@ -479,20 +491,18 @@ describe("Scan functionality", () => {
       episodeCount: 12,
       score: 9.0,
     });
-    vi.spyOn(scraperService, "getTotalPages").mockResolvedValue(1);
-    vi.spyOn(scraperService, "scanAllWithPipeline").mockImplementation(
-      async (_pages, _pc, _dc, filterItem) => {
-        const filtered = [ova].filter(filterItem);
-        return {
-          items: filtered.map((item) => ({
+    vi.spyOn(animeScraper, "getTotalPages").mockResolvedValue(1);
+    vi.spyOn(AnimeScanner.prototype, "scan").mockImplementation(
+      function (this: { filterItem: (item: AnimeItem) => boolean }) {
+        const filtered = [ova].filter(this.filterItem);
+        return createMockObservable(
+          filtered.map((item) => ({
             ...item,
             score: 9.0,
             ratingCount: 100,
             description: "x",
           })),
-          httpErrors: [],
-          parseErrors: [],
-        };
+        );
       },
     );
 
@@ -517,20 +527,18 @@ describe("Scan functionality", () => {
       score: 9.0,
     });
     storageMock["trashList"] = [trashItem];
-    vi.spyOn(scraperService, "getTotalPages").mockResolvedValue(1);
-    vi.spyOn(scraperService, "scanAllWithPipeline").mockImplementation(
-      async (_pages, _pc, _dc, filterItem) => {
-        const filtered = [trashItem].filter(filterItem);
-        return {
-          items: filtered.map((item) => ({
+    vi.spyOn(animeScraper, "getTotalPages").mockResolvedValue(1);
+    vi.spyOn(AnimeScanner.prototype, "scan").mockImplementation(
+      function (this: { filterItem: (item: AnimeItem) => boolean }) {
+        const filtered = [trashItem].filter(this.filterItem);
+        return createMockObservable(
+          filtered.map((item) => ({
             ...item,
             score: 9.0,
             ratingCount: 100,
             description: "x",
           })),
-          httpErrors: [],
-          parseErrors: [],
-        };
+        );
       },
     );
 
@@ -555,20 +563,18 @@ describe("Scan functionality", () => {
       score: 9.0,
     });
     storageMock["favoriteList"] = [favItem];
-    vi.spyOn(scraperService, "getTotalPages").mockResolvedValue(1);
-    vi.spyOn(scraperService, "scanAllWithPipeline").mockImplementation(
-      async (_pages, _pc, _dc, filterItem) => {
-        const filtered = [favItem].filter(filterItem);
-        return {
-          items: filtered.map((item) => ({
+    vi.spyOn(animeScraper, "getTotalPages").mockResolvedValue(1);
+    vi.spyOn(AnimeScanner.prototype, "scan").mockImplementation(
+      function (this: { filterItem: (item: AnimeItem) => boolean }) {
+        const filtered = [favItem].filter(this.filterItem);
+        return createMockObservable(
+          filtered.map((item) => ({
             ...item,
             score: 9.0,
             ratingCount: 100,
             description: "x",
           })),
-          httpErrors: [],
-          parseErrors: [],
-        };
+        );
       },
     );
 
@@ -592,20 +598,18 @@ describe("Scan functionality", () => {
       episodeCount: NaN,
       score: 9.0,
     });
-    vi.spyOn(scraperService, "getTotalPages").mockResolvedValue(1);
-    vi.spyOn(scraperService, "scanAllWithPipeline").mockImplementation(
-      async (_pages, _pc, _dc, filterItem) => {
-        const filtered = [naEp].filter(filterItem);
-        return {
-          items: filtered.map((item) => ({
+    vi.spyOn(animeScraper, "getTotalPages").mockResolvedValue(1);
+    vi.spyOn(AnimeScanner.prototype, "scan").mockImplementation(
+      function (this: { filterItem: (item: AnimeItem) => boolean }) {
+        const filtered = [naEp].filter(this.filterItem);
+        return createMockObservable(
+          filtered.map((item) => ({
             ...item,
             score: 9.0,
             ratingCount: 100,
             description: "x",
           })),
-          httpErrors: [],
-          parseErrors: [],
-        };
+        );
       },
     );
 
@@ -625,13 +629,21 @@ describe("Scan functionality", () => {
 
   it("renders warning alert when scan encounters errors and supports details toggle", async () => {
     const anime = makeAnime({ title: "Partial Success", score: 9.0 });
-    const mockError = new ScraperHttpError("", "HTTP 502", 502);
+    const mockError = new AnimeScanHttpError(
+      1,
+      AnimeScanStep.GET_TOTAL_PAGES,
+      "https://ani.gamer.com.tw/animeList.php?page=1",
+      "HTTP 502",
+      502,
+      undefined,
+    );
 
-    vi.spyOn(scraperService, "getTotalPages").mockResolvedValue(2);
-    vi.spyOn(scraperService, "scanAllWithPipeline").mockResolvedValue({
-      items: [{ ...anime, score: 9.0, ratingCount: 100, description: "x" }],
-      httpErrors: [mockError],
-      parseErrors: [],
+    vi.spyOn(animeScraper, "getTotalPages").mockResolvedValue(2);
+    vi.spyOn(AnimeScanner.prototype, "scan").mockImplementation(() => {
+      return createMockObservable([
+        { ...anime, score: 9.0, ratingCount: 100, description: "x" },
+        mockError,
+      ]);
     });
 
     await act(async () => {
@@ -648,37 +660,35 @@ describe("Scan functionality", () => {
 
     await waitFor(() => expect(screen.queryByText("Scanning...")).toBeNull());
 
-    // Expect warning alert to be rendered
-    expect(screen.getByText(/1 parsing\/network errors/)).toBeDefined();
-    expect(screen.queryByText(/status 502/)).toBeNull();
-
-    // Toggle to show details
-    fireEvent.click(screen.getByText("Show Details"));
-    expect(screen.getByText(/URL: unknown/)).toBeDefined();
-    expect(screen.getByText(/status 502/)).toBeDefined();
-
-    // Toggle to hide details
-    fireEvent.click(screen.getByText("Hide Details"));
-    expect(screen.queryByText(/status 502/)).toBeNull();
+    // Verify errors panel renders HTTP error details
+    expect(screen.getByTestId("errors-panel")).toBeDefined();
+    expect(screen.getByText(/HTTP Network Errors \(1\)/)).toBeDefined();
+    expect(
+      screen.getAllByText(/Status Code: 502/).length,
+    ).toBeGreaterThanOrEqual(1);
   });
 
-  it("renders more than 10 errors text when errors count > 10", async () => {
+  it("renders page numbers and failed details counts in Errors tab summary when there are many errors", async () => {
     const anime = makeAnime({ title: "Partial Success", score: 9.0 });
     const errorsList = Array.from(
       { length: 11 },
       (_, i) =>
-        new ScraperHttpError(
-          `https://ani.gamer.com.tw/animeList.php?page=${i}`,
+        new AnimeScanHttpError(
+          i + 1,
+          AnimeScanStep.GET_TOTAL_PAGES,
+          `https://ani.gamer.com.tw/animeList.php?page=${i + 1}`,
           `Error ${i}`,
           500,
+          undefined,
         ),
     );
 
-    vi.spyOn(scraperService, "getTotalPages").mockResolvedValue(1);
-    vi.spyOn(scraperService, "scanAllWithPipeline").mockResolvedValue({
-      items: [{ ...anime, score: 9.0, ratingCount: 100, description: "x" }],
-      httpErrors: errorsList,
-      parseErrors: [],
+    vi.spyOn(animeScraper, "getTotalPages").mockResolvedValue(1);
+    vi.spyOn(AnimeScanner.prototype, "scan").mockImplementation(() => {
+      return createMockObservable([
+        { ...anime, score: 9.0, ratingCount: 100, description: "x" },
+        ...errorsList,
+      ]);
     });
 
     await act(async () => {
@@ -695,11 +705,137 @@ describe("Scan functionality", () => {
 
     await waitFor(() => expect(screen.queryByText("Scanning...")).toBeNull());
 
-    // Expect warning alert to be rendered
-    expect(screen.getByText(/11 parsing\/network errors/)).toBeDefined();
+    // Expect summary text to be rendered
+    expect(screen.getByText("11 errors occurred")).toBeDefined();
+  });
 
-    // Toggle to show details
-    fireEvent.click(screen.getByText("Show Details"));
-    expect(screen.getByText(/And 1 more errors.../)).toBeDefined();
+  it("renders fatal error screen when scan fails", async () => {
+    const fatalErr = new AnimeScanHttpError(
+      1,
+      AnimeScanStep.GET_TOTAL_PAGES,
+      "https://ani.gamer.com.tw/error",
+      "Bad Request",
+      400,
+      undefined,
+    );
+    const spy = vi
+      .spyOn(animeScraper, "getTotalPages")
+      .mockResolvedValue(fatalErr);
+
+    await act(async () => {
+      render(
+        <ServiceProvider>
+          <App />
+        </ServiceProvider>,
+      );
+    });
+
+    await act(async () => {
+      fireEvent.click(screen.getByText("Scan 巴哈姆特動漫瘋"));
+    });
+
+    // Check if the spy was actually called
+    await waitFor(() => expect(spy).toHaveBeenCalled());
+
+    // Verify fatal error screen is rendered and progress bar / tabs are NOT rendered
+    await waitFor(() =>
+      expect(screen.getByTestId("fatal-error-container")).toBeDefined(),
+    );
+    expect(screen.queryByTestId("progress-container")).toBeNull();
+    expect(screen.queryByTestId("tabs-container")).toBeNull();
+  });
+
+  it("renders ErrorsPanel inside Results tab and hides it when retry clears the errors", async () => {
+    const anime = makeAnime({ title: "Partial Success", score: 9.0 });
+    const error = new AnimeScanHttpError(
+      1,
+      AnimeScanStep.GET_TOTAL_PAGES,
+      "https://ani.gamer.com.tw/animeList.php?page=1",
+      "fail",
+      500,
+      undefined,
+    );
+
+    vi.spyOn(animeScraper, "getTotalPages").mockResolvedValue(1);
+
+    const parseError = new AnimeScanParseError(
+      1,
+      AnimeScanStep.PARSE_ANIME_INFO,
+      "https://ani.gamer.com.tw/anime.php",
+      "fail parse",
+      "Parsing failed",
+    );
+
+    const parseErrorNoUrl = new AnimeScanParseError(
+      0,
+      AnimeScanStep.PARSE_ANIME_INFO,
+      undefined as unknown as string,
+      "fail parse no url",
+      "Parsing failed",
+    );
+
+    const parseErrorWithPage = new AnimeScanParseError(
+      3,
+      AnimeScanStep.PARSE_ANIME_INFO,
+      "https://ani.gamer.com.tw/animeList.php?page=3",
+      "fail parse page",
+      "Parsing failed",
+    );
+
+    const errorNoPage = new AnimeScanHttpError(
+      0,
+      AnimeScanStep.GET_TOTAL_PAGES,
+      "https://ani.gamer.com.tw/anime.php",
+      "fail no page",
+      500,
+      undefined,
+    );
+
+    // First scan yields error
+    const pipelineMock = vi.spyOn(AnimeScanner.prototype, "scan");
+    pipelineMock.mockImplementationOnce(() => {
+      return createMockObservable([
+        { ...anime },
+        error,
+        errorNoPage,
+        parseError,
+        parseErrorNoUrl,
+        parseErrorWithPage,
+      ]);
+    });
+
+    await act(async () => {
+      render(
+        <ServiceProvider>
+          <App />
+        </ServiceProvider>,
+      );
+    });
+
+    await act(async () => {
+      fireEvent.click(screen.getByText("Scan 巴哈姆特動漫瘋"));
+    });
+
+    await waitFor(() => expect(screen.queryByText("Scanning...")).toBeNull());
+
+    // ErrorsPanel should be rendered since we are on the Results tab and there are errors
+    expect(screen.getByTestId("errors-panel")).toBeDefined();
+
+    // Mock second scan (retry) to succeed with no errors
+    pipelineMock.mockImplementationOnce(() => {
+      return createMockObservable([{ ...anime }]);
+    });
+
+    // Click retry button in ErrorsPanel
+    const retryBtn = screen.getByTestId("retry-errors-btn");
+    await act(async () => {
+      fireEvent.click(retryBtn);
+    });
+
+    // Wait for the scan to finish and verify that ErrorsPanel is hidden
+    await waitFor(() => expect(screen.queryByText("Scanning...")).toBeNull());
+
+    // ErrorsPanel should be hidden now
+    expect(screen.queryByTestId("errors-panel")).toBeNull();
   });
 });

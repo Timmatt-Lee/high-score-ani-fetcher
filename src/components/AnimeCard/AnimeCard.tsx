@@ -1,4 +1,4 @@
-import { type AnimeItem } from "../../types/anime";
+import { type AnimeItem } from "../../services/animeScanner";
 import { Tab } from "../Tabs";
 import styles from "./AnimeCard.module.css";
 import { HeartIcon, TrashIcon, RestoreIcon } from "../Icons";

@@ -1,1 +1,1 @@
-vitest run --changed
+npm run verify:visual && vitest run --changed

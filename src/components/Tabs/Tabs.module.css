@@ -27,3 +27,11 @@
   color: var(--text-main);
   box-shadow: inset 0 -2px 0 var(--accent);
 }
+
+.tab.hasErrors {
+  color: #fca5a5;
+}
+
+.tab.hasErrors.active {
+  box-shadow: inset 0 -2px 0 var(--danger);
+}

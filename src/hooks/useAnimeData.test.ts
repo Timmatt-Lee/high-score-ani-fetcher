@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { renderHook, act } from "@testing-library/react";
 import { useAnimeData } from "./useAnimeData";
-import { type AnimeItem } from "../types/anime";
+import { type AnimeItem } from "../services/animeScanner";
 
 const storageMock: Record<string, unknown> = {};
 
@@ -255,5 +255,19 @@ describe("useAnimeData", () => {
 
     expect(result.current.trashList).toHaveLength(0);
     expect(result.current.searchList).toHaveLength(1);
+  });
+
+  it("handles malformed loaded data by failing validation and returning empty list", async () => {
+    const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    storageMock["searchList"] = [{ title: 12345 }];
+    const { result } = renderHook(() => useAnimeData());
+
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+
+    expect(result.current.searchList).toHaveLength(0);
+    expect(consoleSpy).toHaveBeenCalled();
+    consoleSpy.mockRestore();
   });
 });
