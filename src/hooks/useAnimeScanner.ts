@@ -139,7 +139,7 @@ export function useAnimeScanner(
             scanParseErrors.push(event);
             setParseErrors([...scanParseErrors]);
             updateProgress(event.animeName);
-          } else {
+          } else if (!(event instanceof Error)) {
             results.push(event);
             detailsCompletedCount++;
             updateProgress(event.title);

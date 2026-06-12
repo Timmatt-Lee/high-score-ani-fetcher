@@ -576,7 +576,7 @@ describe("ScraperService pipeline methods", () => {
             httpErrors.push(event);
           } else if (event instanceof ScraperParseError) {
             parseErrors.push(event);
-          } else {
+          } else if (!(event instanceof Error)) {
             animeItems.push(event);
           }
         },

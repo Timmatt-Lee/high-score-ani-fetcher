@@ -58,9 +58,7 @@ export class ScraperPipeline {
         await this.detailQueue.onIdle();
         this.eventSubject.complete();
       } catch (err) {
-        this.eventSubject.error(
-          err instanceof Error ? err : new Error(String(err)),
-        );
+        this.eventSubject.error(err);
       }
     };
     run();
@@ -78,7 +76,7 @@ export class ScraperPipeline {
       this.eventSubject.next(error);
     }
 
-    pageResult.animeItems.forEach((item) => {
+    pageResult.animeItems.forEach((item: AnimeItem) => {
       if (this.filterItem(item)) {
         this.detailsTotalCount++;
         this.detailQueue

@@ -5,7 +5,7 @@ import {
   ScraperParseError,
   ScraperError,
 } from "./scraperError";
-import { type AnimeItem, type AnimeDetails, type ScraperResult } from "./types";
+import { type AnimeItem, type AnimeDetails } from "./types";
 
 const BASE_URL = "https://ani.gamer.com.tw";
 
@@ -227,7 +227,11 @@ export class ScraperService {
   /**
    * Scrapes basic info for all items on a single page.
    */
-  async scrapeAnimesOnPage(page: number): Promise<ScraperResult> {
+  async scrapeAnimesOnPage(page: number): Promise<{
+    animeItems: AnimeItem[];
+    httpErrors: ScraperHttpError[];
+    parseErrors: ScraperParseError[];
+  }> {
     const url = `${BASE_URL}/animeList.php?page=${page}`;
     const text = await this.fetchUrl(
       url,
