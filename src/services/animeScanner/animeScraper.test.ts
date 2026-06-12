@@ -91,17 +91,21 @@ describe("animeScraper.getTotalPages", () => {
     }
   });
 
-  it("bubbles up fetch failure (network error)", async () => {
+  it("returns AnimeScanHttpError on fetch failure (network error)", async () => {
     const error = new Error("network");
     vi.stubGlobal("fetch", vi.fn().mockRejectedValue(error));
-    await expect(animeScraper.getTotalPages()).rejects.toThrow(error);
+    const result = await animeScraper.getTotalPages();
+    expect(isError(result)).toBe(true);
+    expect((result as AnimeScanHttpError).html).toContain("network");
+    expect((result as AnimeScanHttpError).status).toBe(0);
   });
 
-  it("bubbles up fetch failure with string", async () => {
+  it("returns AnimeScanHttpError on fetch failure with string error", async () => {
     vi.stubGlobal("fetch", vi.fn().mockRejectedValue("network string error"));
-    await expect(animeScraper.getTotalPages()).rejects.toThrow(
-      "network string error",
-    );
+    const result = await animeScraper.getTotalPages();
+    expect(isError(result)).toBe(true);
+    expect((result as AnimeScanHttpError).html).toBe("network string error");
+    expect((result as AnimeScanHttpError).status).toBe(0);
   });
 
   it("passes through AnimeScanHttpError from fetchUrl in getTotalPages", async () => {

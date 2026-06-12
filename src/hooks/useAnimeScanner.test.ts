@@ -391,29 +391,6 @@ describe("useAnimeScanner", () => {
     expect(result.current.parseErrors).toHaveLength(0);
   });
 
-  it("sets error to a new Error with string message when getTotalPages fails with a string error", async () => {
-    vi.spyOn(animeScraper, "getTotalPages").mockResolvedValue(
-      "string error" as unknown as AnimeScanHttpError,
-    );
-
-    const onComplete = vi.fn();
-    const { result } = renderHook(
-      () => useAnimeScanner([], [], [], onComplete),
-      {
-        wrapper: ServiceProvider,
-      },
-    );
-
-    await act(async () => {
-      await result.current.handleScan();
-    });
-
-    expect(result.current.error).toBeInstanceOf(Error);
-    expect(result.current.error?.message).toBe("string error");
-    expect(result.current.httpErrors).toHaveLength(0);
-    expect(result.current.parseErrors).toHaveLength(0);
-  });
-
   it("clears error when clearError is called", async () => {
     const error = new AnimeScanHttpError(
       1,

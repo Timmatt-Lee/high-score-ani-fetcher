@@ -48,27 +48,16 @@ export function useAnimeScanner(
 
     if (!isRetry) {
       setProgress({ percent: 0, message: "Getting total pages..." });
-      try {
-        const totalPagesResult = await animeScraper.getTotalPages();
-        if (isError(totalPagesResult) || typeof totalPagesResult !== "number") {
-          const error = isError(totalPagesResult)
-            ? totalPagesResult
-            : new Error(String(totalPagesResult));
-          console.error("Scan failed", error);
-          setError(error);
-          setIsScanning(false);
-          setProgress({ percent: 0, message: "" });
-          return;
-        }
-        totalPages = totalPagesResult;
-        setTotalPagesCount(totalPagesResult);
-      } catch (err) {
-        const error = err instanceof Error ? err : new Error(String(err));
-        setError(error);
+      const totalPagesResult = await animeScraper.getTotalPages();
+      if (isError(totalPagesResult)) {
+        console.error("Scan failed", totalPagesResult);
+        setError(totalPagesResult);
         setIsScanning(false);
         setProgress({ percent: 0, message: "" });
         return;
       }
+      totalPages = totalPagesResult;
+      setTotalPagesCount(totalPagesResult);
     } else {
       setProgress({ percent: 0, message: "Retrying failed items..." });
     }
@@ -86,7 +75,7 @@ export function useAnimeScanner(
     let detailsCompletedCount = 0;
     let detailsTotalCount = 0;
 
-    const wrappedFilterItem = (item: AnimeItem) => {
+    const filterAndCountItem = (item: AnimeItem) => {
       const isKept = filterItem(item);
       if (isKept) {
         detailsTotalCount++;
@@ -101,14 +90,13 @@ export function useAnimeScanner(
       const percent = Math.min(99, rawPercent);
 
       const actionPrefix = isRetry ? "Retrying failed items" : "Scanning";
-      let msg = `${actionPrefix}...`;
+      let msg = actionPrefix;
       if (detailsTotalCount > 0) {
         msg = `${actionPrefix} (${detailsCompletedCount}/${detailsTotalCount})`;
       }
+      msg += "...";
       if (currentTitle) {
-        msg += `... [${currentTitle}]`;
-      } else {
-        msg += "...";
+        msg += ` [${currentTitle}]`;
       }
 
       setProgress({ percent, message: msg });
@@ -123,7 +111,7 @@ export function useAnimeScanner(
         totalPages,
         5,
         10,
-        wrappedFilterItem,
+        filterAndCountItem,
         animeScraper,
         isRetry ? options : undefined,
       );
