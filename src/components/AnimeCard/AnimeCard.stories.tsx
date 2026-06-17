@@ -78,3 +78,11 @@ export const InvalidDate: Story = {
     activeTab: Tab.Search,
   },
 };
+
+export const Disabled: Story = {
+  args: {
+    item: baseAnime,
+    activeTab: Tab.Search,
+    disabled: true,
+  },
+};
