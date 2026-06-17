@@ -4,6 +4,7 @@ import {
   AnimeScanHttpError,
   AnimeScanParseError,
   AnimeScanner,
+  AnimeScanStep,
   type PipelineOptions,
   type AnimeItem,
 } from "../services/animeScanner";
@@ -19,7 +20,13 @@ export function useAnimeScanner(
   searchList: AnimeItem[],
   favoriteList: AnimeItem[],
   trashList: AnimeItem[],
+  animeCache: Record<
+    string,
+    import("../services/animeScanner/types").AnimeCacheItem
+  >,
+  settings: import("../types/settings").Settings,
   onScanComplete: (result: ScanCompleteResult) => void,
+  onItemScanned?: (item: AnimeItem) => void,
 ) {
   const { animeScraper } = useServices();
   const [isScanning, setIsScanning] = useState(false);
@@ -108,10 +115,12 @@ export function useAnimeScanner(
 
     const pipeline = new AnimeScanner(
       totalPages,
-      5,
-      10,
+      1, // Reduced from 5 to avoid 429
+      3, // Reduced from 10 to avoid 429
       filterAndCountItem,
       animeScraper,
+      animeCache,
+      settings,
       isRetry ? options : undefined,
     );
 
@@ -120,15 +129,24 @@ export function useAnimeScanner(
         if (event instanceof AnimeScanHttpError) {
           scanHttpErrors.push(event);
           setHttpErrors([...scanHttpErrors]);
+          if (event.scanStep === AnimeScanStep.PARSE_ANIME_DETAIL) {
+            detailsCompletedCount++;
+          }
           updateProgress(event.animeName);
         } else if (event instanceof AnimeScanParseError) {
           scanParseErrors.push(event);
           setParseErrors([...scanParseErrors]);
+          if (event.scanStep === AnimeScanStep.PARSE_ANIME_DETAIL) {
+            detailsCompletedCount++;
+          }
           updateProgress(event.animeName);
         } else if (!(event instanceof Error)) {
           results.push(event);
           detailsCompletedCount++;
           updateProgress(event.title);
+          if (onItemScanned) {
+            onItemScanned(event);
+          }
         }
       },
       complete: () => {

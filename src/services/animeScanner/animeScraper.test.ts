@@ -91,6 +91,35 @@ describe("animeScraper.getTotalPages", () => {
     }
   });
 
+  it("retries on 429 Too Many Requests and then succeeds", async () => {
+    vi.useFakeTimers();
+    let attempt = 0;
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockImplementation(async () => {
+        attempt++;
+        if (attempt === 1) {
+          return { ok: false, status: 429, text: async () => "Rate Limited" };
+        }
+        return {
+          ok: true,
+          status: 200,
+          text: async () => '<div class="page_number"><a>2</a></div>',
+        };
+      }),
+    );
+
+    const promise = animeScraper.getTotalPages();
+    await vi.runAllTimersAsync();
+    const result = await promise;
+
+    expect(isError(result)).toBe(false);
+    expect(result).toBe(2);
+    expect(attempt).toBe(2);
+
+    vi.useRealTimers();
+  });
+
   it("returns AnimeScanHttpError on fetch failure (network error)", async () => {
     const error = new Error("network");
     vi.stubGlobal("fetch", vi.fn().mockRejectedValue(error));
@@ -573,7 +602,15 @@ describe("AnimeScraper pipeline methods", () => {
     const parseErrors: AnimeScanParseError[] = [];
 
     await new Promise<void>((resolve, reject) => {
-      const pipeline = new AnimeScanner(1, 1, 1, () => true, animeScraper);
+      const pipeline = new AnimeScanner(
+        1,
+        1,
+        1,
+        () => true,
+        animeScraper,
+        {},
+        { targetScore: 4.8, rescanThresholdRatio: 0.95, cacheExpireDays: 14 },
+      );
       pipeline.scan().subscribe({
         next: (event: AnimeScanEvent) => {
           if (event instanceof AnimeScanHttpError) {

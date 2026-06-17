@@ -7,49 +7,77 @@ import {
 } from "./animeScanError";
 import { type AnimeItem, type AnimeDetails } from "./types";
 
+import PQueue from "p-queue";
+
 const BASE_URL = "https://ani.gamer.com.tw";
 
 export class AnimeScraper {
+  // Global queue to limit requests to max 2 per second to match token bucket refill rate
+  private globalQueue = new PQueue({ interval: 1000, intervalCap: 2 });
+
   private async fetchUrl(
     url: string,
     page: number,
     scanStep: AnimeScanStep,
     animeName?: string,
+    retries = 3,
   ): Promise<Result<string, AnimeScanHttpError>> {
-    let response: Response;
-    try {
-      response = await fetch(url);
-    } catch (err) {
-      const errorMsg = err instanceof Error ? err.message : String(err);
+    let response: Response | undefined;
+    let lastErrorMsg = "";
+
+    for (let attempt = 0; attempt <= retries; attempt++) {
+      try {
+        if (attempt > 0) {
+          // Exponential backoff to handle rate limiting (429)
+          await new Promise((resolve) =>
+            setTimeout(resolve, 1000 * Math.pow(2, attempt - 1)),
+          );
+        }
+        response = await this.globalQueue.add(() => fetch(url));
+      } catch (err) {
+        lastErrorMsg = err instanceof Error ? err.message : String(err);
+        break; // Do not retry on network errors, only on 429
+      }
+
+      if (response.ok) {
+        return await response.text();
+      }
+
+      if (response.status === 429 && attempt < retries) {
+        continue; // Retry on 429 Too Many Requests
+      }
+
+      // If it's another error or we run out of retries, stop
+      break;
+    }
+
+    if (!response) {
       return new AnimeScanHttpError(
         page,
         scanStep,
         url,
-        errorMsg,
+        lastErrorMsg,
         0, // Status code 0 indicates a network/fetch exception
         animeName,
       );
     }
 
-    if (!response.ok) {
-      let snippet = "";
-      try {
-        const t = await response.text();
-        snippet = t.slice(0, 200);
-      } catch {
-        // Swallowing the error is safe and intentional here because extracting the response body snippet
-        // is best-effort; failing to read the text should not prevent reporting the primary HTTP error.
-      }
-      return new AnimeScanHttpError(
-        page,
-        scanStep,
-        url,
-        snippet,
-        response.status,
-        animeName,
-      );
+    let snippet = "";
+    try {
+      const t = await response.text();
+      snippet = t.slice(0, 200);
+    } catch {
+      // Swallowing the error is safe and intentional here because extracting the response body snippet
+      // is best-effort; failing to read the text should not prevent reporting the primary HTTP error.
     }
-    return await response.text();
+    return new AnimeScanHttpError(
+      page,
+      scanStep,
+      url,
+      snippet,
+      response.status,
+      animeName,
+    );
   }
 
   /**
@@ -214,8 +242,10 @@ export class AnimeScraper {
       );
     }
 
-    const yearStr = timeEl.textContent.replace("年份：", "").trim();
-    const uploadDate = new Date(`${yearStr}-01-01T00:00:00Z`);
+    const datePart = timeEl.textContent.replace("年份：", "").trim();
+    const [year, month, day] = datePart.split("/");
+    const formattedDate = `${year}-${(month || "01").padStart(2, "0")}-${(day || "01").padStart(2, "0")}T00:00:00Z`;
+    const uploadDate = new Date(formattedDate);
     if (isNaN(uploadDate.getTime())) {
       return new AnimeScanParseError(
         page,

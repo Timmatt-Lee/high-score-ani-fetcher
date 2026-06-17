@@ -8,6 +8,7 @@ interface AnimeListProps {
   searchList: AnimeItem[];
   favoriteList: AnimeItem[];
   trashList: AnimeItem[];
+  isScanning?: boolean;
   onMoveToFavorites: (item: AnimeItem) => void;
   onMoveToTrash: (item: AnimeItem) => void;
   onRestoreFromTrash: (item: AnimeItem) => void;
@@ -18,6 +19,7 @@ export function AnimeList({
   searchList,
   favoriteList,
   trashList,
+  isScanning = false,
   onMoveToFavorites,
   onMoveToTrash,
   onRestoreFromTrash,
@@ -33,6 +35,8 @@ export function AnimeList({
     case Tab.Trash:
       list = trashList;
       break;
+    case Tab.Settings:
+      return null;
     default: {
       const _exhaustiveCheck: never = activeTab;
       throw new Error(`Unhandled activeTab state: ${_exhaustiveCheck}`);
@@ -54,6 +58,7 @@ export function AnimeList({
           key={item.link}
           item={item}
           activeTab={activeTab}
+          isDisabled={isScanning}
           onMoveToFavorites={onMoveToFavorites}
           onMoveToTrash={onMoveToTrash}
           onRestoreFromTrash={onRestoreFromTrash}

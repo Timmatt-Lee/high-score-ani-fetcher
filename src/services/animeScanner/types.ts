@@ -23,6 +23,11 @@ export const AnimeInfoSchema = z.object({
 
 export const AnimeItemSchema = AnimeInfoSchema.merge(AnimeDetailsSchema);
 
+export const AnimeCacheItemSchema = AnimeItemSchema.extend({
+  _cacheTimestamp: z.number(),
+});
+
 export type AnimeDetails = z.infer<typeof AnimeDetailsSchema>;
 export type AnimeInfo = z.infer<typeof AnimeInfoSchema>;
 export type AnimeItem = z.infer<typeof AnimeItemSchema>;
+export type AnimeCacheItem = z.infer<typeof AnimeCacheItemSchema>;

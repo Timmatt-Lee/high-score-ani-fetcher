@@ -6,6 +6,7 @@ import { HeartIcon, TrashIcon, RestoreIcon } from "../Icons";
 interface AnimeCardProps {
   item: AnimeItem;
   activeTab: Tab;
+  isDisabled?: boolean;
   onMoveToFavorites: (item: AnimeItem) => void;
   onMoveToTrash: (item: AnimeItem) => void;
   onRestoreFromTrash: (item: AnimeItem) => void;
@@ -14,6 +15,7 @@ interface AnimeCardProps {
 export function AnimeCard({
   item,
   activeTab,
+  isDisabled = false,
   onMoveToFavorites,
   onMoveToTrash,
   onRestoreFromTrash,
@@ -26,12 +28,14 @@ export function AnimeCard({
             <button
               className={`${styles.actionBtn} ${styles.fav}`}
               onClick={() => onMoveToFavorites(item)}
+              disabled={isDisabled}
             >
               <HeartIcon /> Favorite
             </button>
             <button
               className={`${styles.actionBtn} ${styles.trash}`}
               onClick={() => onMoveToTrash(item)}
+              disabled={isDisabled}
             >
               <TrashIcon /> Trash
             </button>
@@ -42,6 +46,7 @@ export function AnimeCard({
           <button
             className={`${styles.actionBtn} ${styles.trash}`}
             onClick={() => onMoveToTrash(item)}
+            disabled={isDisabled}
           >
             <TrashIcon /> Trash
           </button>
@@ -51,10 +56,13 @@ export function AnimeCard({
           <button
             className={styles.actionBtn}
             onClick={() => onRestoreFromTrash(item)}
+            disabled={isDisabled}
           >
             <RestoreIcon /> Restore
           </button>
         );
+      case Tab.Settings:
+        return null;
       default: {
         const _exhaustiveCheck: never = activeTab;
         throw new Error(`Unhandled activeTab state: ${_exhaustiveCheck}`);

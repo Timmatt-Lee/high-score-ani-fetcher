@@ -49,12 +49,39 @@ const getCardTitleAndSubtitle = (
   };
 };
 
+const formatErrorForClipboard = (error: Error): string => {
+  const lines = [`Name: ${error.name}`, `Message: ${error.message}`];
+
+  if (error instanceof AnimeScanError) {
+    lines.push(`URL: ${error.url}`);
+    lines.push(`Page: ${error.page}`);
+    lines.push(`Step: ${getScanStepLabel(error.scanStep)}`);
+    if (error.animeName) {
+      lines.push(`Anime: ${error.animeName}`);
+    }
+  }
+
+  if (error instanceof AnimeScanHttpError) {
+    lines.push(`Status: ${error.status}`);
+    lines.push(`Response Snippet:\n${error.html}`);
+  } else if (error instanceof AnimeScanParseError) {
+    lines.push(`HTML Snippet:\n${error.html}`);
+  }
+
+  if (error.stack) {
+    lines.push(`\nStack:\n${error.stack}`);
+  }
+
+  return lines.join("\n");
+};
+
 export function ErrorCard({ error }: ErrorCardProps) {
   const [isCopied, setIsCopied] = useState(false);
 
   const handleCopy = async () => {
     try {
-      await navigator.clipboard.writeText(error.toString());
+      const textToCopy = formatErrorForClipboard(error);
+      await navigator.clipboard.writeText(textToCopy);
       setIsCopied(true);
       setTimeout(() => setIsCopied(false), 2000);
     } catch (err) {

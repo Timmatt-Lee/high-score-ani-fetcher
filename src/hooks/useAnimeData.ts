@@ -1,11 +1,24 @@
 import { useState, useEffect } from "react";
 import { z } from "zod";
-import { type AnimeItem, AnimeItemSchema } from "../services/animeScanner";
+import {
+  type AnimeItem,
+  AnimeItemSchema,
+  type AnimeCacheItem,
+} from "../services/animeScanner";
+import {
+  type Settings,
+  SettingsSchema,
+  DEFAULT_SETTINGS,
+} from "../types/settings";
 
 export function useAnimeData() {
   const [searchList, setSearchList] = useState<AnimeItem[]>([]);
   const [favoriteList, setFavoriteList] = useState<AnimeItem[]>([]);
   const [trashList, setTrashList] = useState<AnimeItem[]>([]);
+  const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS);
+  const [animeCache, setAnimeCache] = useState<Record<string, AnimeCacheItem>>(
+    {},
+  );
 
   // Load data on mount
   useEffect(() => {
@@ -25,6 +38,8 @@ export function useAnimeData() {
             "searchList",
             "favoriteList",
             "trashList",
+            "settings",
+            "animeCache",
           ]);
           if (data.searchList) {
             setSearchList(parseList(data.searchList));
@@ -34,6 +49,15 @@ export function useAnimeData() {
           }
           if (data.trashList) {
             setTrashList(parseList(data.trashList));
+          }
+          if (data.settings) {
+            const result = SettingsSchema.safeParse(data.settings);
+            if (result.success) {
+              setSettings(result.data);
+            }
+          }
+          if (data.animeCache) {
+            setAnimeCache(data.animeCache as Record<string, AnimeCacheItem>);
           }
         } else {
           // Fallback for local web dev without extension context
@@ -49,6 +73,15 @@ export function useAnimeData() {
             if (parsed.trashList) {
               setTrashList(parseList(parsed.trashList));
             }
+            if (parsed.settings) {
+              const result = SettingsSchema.safeParse(parsed.settings);
+              if (result.success) {
+                setSettings(result.data);
+              }
+            }
+            if (parsed.animeCache) {
+              setAnimeCache(parsed.animeCache);
+            }
           }
         }
       } catch (err) {
@@ -59,7 +92,13 @@ export function useAnimeData() {
   }, []);
 
   // Save data when state changes
-  const saveData = async (s: AnimeItem[], f: AnimeItem[], t: AnimeItem[]) => {
+  const saveData = async (
+    s: AnimeItem[],
+    f: AnimeItem[],
+    t: AnimeItem[],
+    c: Record<string, AnimeCacheItem> = animeCache,
+    set: Settings = settings,
+  ) => {
     try {
       const serializeList = (list: AnimeItem[]) =>
         list.map((item) => ({
@@ -71,6 +110,8 @@ export function useAnimeData() {
         searchList: serializeList(s),
         favoriteList: serializeList(f),
         trashList: serializeList(t),
+        settings: set,
+        animeCache: c,
       };
 
       if (typeof chrome !== "undefined" && chrome.storage) {
@@ -109,6 +150,12 @@ export function useAnimeData() {
     saveData(newSearch, favoriteList, newTrash);
   };
 
+  // Helper function for UI to save settings and also trigger saveData
+  const updateSettings = (newSettings: Settings) => {
+    setSettings(newSettings);
+    saveData(searchList, favoriteList, trashList, animeCache, newSettings);
+  };
+
   return {
     searchList,
     setSearchList,
@@ -116,6 +163,10 @@ export function useAnimeData() {
     setFavoriteList,
     trashList,
     setTrashList,
+    settings,
+    setSettings: updateSettings,
+    animeCache,
+    setAnimeCache,
     moveToFavorites,
     moveToTrash,
     restoreFromTrash,

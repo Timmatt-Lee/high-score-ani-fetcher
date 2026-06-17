@@ -63,7 +63,15 @@ describe("useAnimeScanner", () => {
 
     const onComplete = vi.fn();
     const { result } = renderHook(
-      () => useAnimeScanner([], [], [], onComplete),
+      () =>
+        useAnimeScanner(
+          [],
+          [],
+          [],
+          {},
+          { targetScore: 4.8, rescanThresholdRatio: 0.95, cacheExpireDays: 14 },
+          onComplete,
+        ),
       {
         wrapper: ServiceProvider,
       },
@@ -91,7 +99,15 @@ describe("useAnimeScanner", () => {
 
     const onComplete = vi.fn();
     const { result } = renderHook(
-      () => useAnimeScanner([], [], [], onComplete),
+      () =>
+        useAnimeScanner(
+          [],
+          [],
+          [],
+          {},
+          { targetScore: 4.8, rescanThresholdRatio: 0.95, cacheExpireDays: 14 },
+          onComplete,
+        ),
       {
         wrapper: ServiceProvider,
       },
@@ -127,7 +143,15 @@ describe("useAnimeScanner", () => {
 
     const onComplete = vi.fn();
     const { result } = renderHook(
-      () => useAnimeScanner([], [], [], onComplete),
+      () =>
+        useAnimeScanner(
+          [],
+          [],
+          [],
+          {},
+          { targetScore: 4.8, rescanThresholdRatio: 0.95, cacheExpireDays: 14 },
+          onComplete,
+        ),
       {
         wrapper: ServiceProvider,
       },
@@ -160,7 +184,15 @@ describe("useAnimeScanner", () => {
 
     const onComplete = vi.fn();
     const { result } = renderHook(
-      () => useAnimeScanner([], [favItem], [trashItem], onComplete),
+      () =>
+        useAnimeScanner(
+          [],
+          [favItem],
+          [trashItem],
+          {},
+          { targetScore: 4.8, rescanThresholdRatio: 0.95, cacheExpireDays: 14 },
+          onComplete,
+        ),
       { wrapper: ServiceProvider },
     );
 
@@ -216,7 +248,15 @@ describe("useAnimeScanner", () => {
 
     const onComplete = vi.fn();
     const { result } = renderHook(
-      () => useAnimeScanner([], [], [], onComplete),
+      () =>
+        useAnimeScanner(
+          [],
+          [],
+          [],
+          {},
+          { targetScore: 4.8, rescanThresholdRatio: 0.95, cacheExpireDays: 14 },
+          onComplete,
+        ),
       {
         wrapper: ServiceProvider,
       },
@@ -244,7 +284,15 @@ describe("useAnimeScanner", () => {
 
     const onComplete = vi.fn();
     const { result } = renderHook(
-      () => useAnimeScanner([], [], [], onComplete),
+      () =>
+        useAnimeScanner(
+          [],
+          [],
+          [],
+          {},
+          { targetScore: 4.8, rescanThresholdRatio: 0.95, cacheExpireDays: 14 },
+          onComplete,
+        ),
       {
         wrapper: ServiceProvider,
       },
@@ -294,7 +342,15 @@ describe("useAnimeScanner", () => {
 
     const onComplete = vi.fn();
     const { result } = renderHook(
-      () => useAnimeScanner([], [], [], onComplete),
+      () =>
+        useAnimeScanner(
+          [],
+          [],
+          [],
+          {},
+          { targetScore: 4.8, rescanThresholdRatio: 0.95, cacheExpireDays: 14 },
+          onComplete,
+        ),
       {
         wrapper: ServiceProvider,
       },
@@ -330,7 +386,15 @@ describe("useAnimeScanner", () => {
 
     const onComplete = vi.fn();
     const { result } = renderHook(
-      () => useAnimeScanner([], [], [], onComplete),
+      () =>
+        useAnimeScanner(
+          [],
+          [],
+          [],
+          {},
+          { targetScore: 4.8, rescanThresholdRatio: 0.95, cacheExpireDays: 14 },
+          onComplete,
+        ),
       {
         wrapper: ServiceProvider,
       },
@@ -354,7 +418,15 @@ describe("useAnimeScanner", () => {
 
     const onComplete = vi.fn();
     const { result } = renderHook(
-      () => useAnimeScanner([], [], [], onComplete),
+      () =>
+        useAnimeScanner(
+          [],
+          [],
+          [],
+          {},
+          { targetScore: 4.8, rescanThresholdRatio: 0.95, cacheExpireDays: 14 },
+          onComplete,
+        ),
       {
         wrapper: ServiceProvider,
       },
@@ -375,7 +447,15 @@ describe("useAnimeScanner", () => {
 
     const onComplete = vi.fn();
     const { result } = renderHook(
-      () => useAnimeScanner([], [], [], onComplete),
+      () =>
+        useAnimeScanner(
+          [],
+          [],
+          [],
+          {},
+          { targetScore: 4.8, rescanThresholdRatio: 0.95, cacheExpireDays: 14 },
+          onComplete,
+        ),
       {
         wrapper: ServiceProvider,
       },
@@ -404,7 +484,15 @@ describe("useAnimeScanner", () => {
 
     const onComplete = vi.fn();
     const { result } = renderHook(
-      () => useAnimeScanner([], [], [], onComplete),
+      () =>
+        useAnimeScanner(
+          [],
+          [],
+          [],
+          {},
+          { targetScore: 4.8, rescanThresholdRatio: 0.95, cacheExpireDays: 14 },
+          onComplete,
+        ),
       {
         wrapper: ServiceProvider,
       },
@@ -441,7 +529,15 @@ describe("useAnimeScanner", () => {
 
     const onComplete = vi.fn();
     const { result } = renderHook(
-      () => useAnimeScanner([], [], [], onComplete),
+      () =>
+        useAnimeScanner(
+          [],
+          [],
+          [],
+          {},
+          { targetScore: 4.8, rescanThresholdRatio: 0.95, cacheExpireDays: 14 },
+          onComplete,
+        ),
       {
         wrapper: ServiceProvider,
       },
@@ -467,7 +563,15 @@ describe("useAnimeScanner", () => {
 
     const onComplete = vi.fn();
     const { result } = renderHook(
-      () => useAnimeScanner([], [], [], onComplete),
+      () =>
+        useAnimeScanner(
+          [],
+          [],
+          [],
+          {},
+          { targetScore: 4.8, rescanThresholdRatio: 0.95, cacheExpireDays: 14 },
+          onComplete,
+        ),
       {
         wrapper: ServiceProvider,
       },
@@ -499,7 +603,15 @@ describe("useAnimeScanner", () => {
 
     const onComplete = vi.fn();
     const { result } = renderHook(
-      () => useAnimeScanner([], [], [], onComplete),
+      () =>
+        useAnimeScanner(
+          [],
+          [],
+          [],
+          {},
+          { targetScore: 4.8, rescanThresholdRatio: 0.95, cacheExpireDays: 14 },
+          onComplete,
+        ),
       {
         wrapper: ServiceProvider,
       },
@@ -539,7 +651,15 @@ describe("useAnimeScanner", () => {
 
     const onComplete = vi.fn();
     const { result } = renderHook(
-      () => useAnimeScanner([], [favItem], [trashItem], onComplete),
+      () =>
+        useAnimeScanner(
+          [],
+          [favItem],
+          [trashItem],
+          {},
+          { targetScore: 4.8, rescanThresholdRatio: 0.95, cacheExpireDays: 14 },
+          onComplete,
+        ),
       { wrapper: ServiceProvider },
     );
 
@@ -579,7 +699,15 @@ describe("useAnimeScanner", () => {
 
     const onComplete = vi.fn();
     const { result } = renderHook(
-      () => useAnimeScanner([], [favItem], [trashItem], onComplete),
+      () =>
+        useAnimeScanner(
+          [],
+          [favItem],
+          [trashItem],
+          {},
+          { targetScore: 4.8, rescanThresholdRatio: 0.95, cacheExpireDays: 14 },
+          onComplete,
+        ),
       { wrapper: ServiceProvider },
     );
 
@@ -604,7 +732,15 @@ describe("useAnimeScanner", () => {
 
     const onComplete = vi.fn();
     const { result } = renderHook(
-      () => useAnimeScanner([], [], [], onComplete),
+      () =>
+        useAnimeScanner(
+          [],
+          [],
+          [],
+          {},
+          { targetScore: 4.8, rescanThresholdRatio: 0.95, cacheExpireDays: 14 },
+          onComplete,
+        ),
       {
         wrapper: ServiceProvider,
       },
@@ -636,7 +772,15 @@ describe("useAnimeScanner", () => {
 
     const onComplete = vi.fn();
     const { result } = renderHook(
-      () => useAnimeScanner([searchItem], [favItem], [trashItem], onComplete),
+      () =>
+        useAnimeScanner(
+          [searchItem],
+          [favItem],
+          [trashItem],
+          {},
+          { targetScore: 4.8, rescanThresholdRatio: 0.95, cacheExpireDays: 14 },
+          onComplete,
+        ),
       { wrapper: ServiceProvider },
     );
 
@@ -676,7 +820,15 @@ describe("useAnimeScanner", () => {
 
     const onComplete = vi.fn();
     const { result } = renderHook(
-      () => useAnimeScanner([], [], [], onComplete),
+      () =>
+        useAnimeScanner(
+          [],
+          [],
+          [],
+          {},
+          { targetScore: 4.8, rescanThresholdRatio: 0.95, cacheExpireDays: 14 },
+          onComplete,
+        ),
       {
         wrapper: ServiceProvider,
       },

@@ -50,6 +50,9 @@ const chromeStorageMock = {
       }),
     },
   },
+  runtime: {
+    getURL: vi.fn(() => "chrome-extension://mock/index.html"),
+  },
 };
 
 vi.stubGlobal("chrome", chromeStorageMock);
@@ -837,5 +840,68 @@ describe("Scan functionality", () => {
 
     // ErrorsPanel should be hidden now
     expect(screen.queryByTestId("errors-panel")).toBeNull();
+  });
+
+  it("shows newly discovered eligible animes incrementally during the scan, but skips favs and trash", async () => {
+    const liveItem = makeAnime({
+      link: "1",
+      title: "Live Update A",
+      score: 9.0,
+    });
+    const liveItem2 = makeAnime({
+      link: "1.5",
+      title: "Live Update B",
+      score: 9.0,
+    });
+    const liveItem3 = makeAnime({
+      link: "1.8",
+      title: "Live Update C",
+      score: 9.5,
+    });
+    const favItem = makeAnime({ link: "2", title: "Fav Item", score: 9.0 });
+    const trashItem = makeAnime({ link: "3", title: "Trash Item", score: 9.0 });
+
+    storageMock["favoriteList"] = [favItem];
+    storageMock["trashList"] = [trashItem];
+
+    vi.spyOn(animeScraper, "getTotalPages").mockResolvedValue(1);
+    vi.spyOn(AnimeScanner.prototype, "scan").mockImplementation(() => {
+      return new Observable<AnimeScanEvent>((subscriber) => {
+        setTimeout(() => {
+          subscriber.next(liveItem);
+          subscriber.next(liveItem2);
+          subscriber.next(liveItem3);
+          subscriber.next(favItem);
+          subscriber.next(trashItem);
+          setTimeout(() => subscriber.complete(), 50);
+        }, 10);
+      });
+    });
+
+    await act(async () => {
+      render(
+        <ServiceProvider>
+          <App />
+        </ServiceProvider>,
+      );
+    });
+
+    await act(async () => {
+      fireEvent.click(screen.getByText("Scan 巴哈姆特動漫瘋"));
+    });
+
+    // Wait for the live update item to appear BEFORE scanning completes
+    await waitFor(() =>
+      expect(screen.getByText("Live Update A")).toBeDefined(),
+    );
+    expect(screen.getByText("Live Update B")).toBeDefined();
+    expect(screen.getByText("Live Update C")).toBeDefined();
+
+    // FavItem and TrashItem should NOT be added to Search tab
+    expect(screen.queryByText("Fav Item")).toBeNull();
+    expect(screen.queryByText("Trash Item")).toBeNull();
+
+    // Wait for scanning to complete
+    await waitFor(() => expect(screen.queryByText("Scanning...")).toBeNull());
   });
 });

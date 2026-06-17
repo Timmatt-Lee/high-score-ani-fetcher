@@ -49,6 +49,10 @@ describe("ErrorCard", () => {
       fireEvent.click(copyBtn);
     });
     expect(copyBtn.textContent).toBe("Copied! ✓");
+    expect(writeTextMock).toHaveBeenCalled();
+    const copiedText = writeTextMock.mock.calls[0][0];
+    expect(copiedText).toContain("Status: 500");
+    expect(copiedText).toContain("Response Snippet:");
   });
 
   it("renders HTTP error without title correctly", () => {
@@ -69,7 +73,7 @@ describe("ErrorCard", () => {
     );
   });
 
-  it("renders Parser error with title correctly", () => {
+  it("renders Parser error with title correctly", async () => {
     const error = new AnimeScanParseError(
       5,
       AnimeScanStep.PARSE_ANIME_INFO,
@@ -85,6 +89,14 @@ describe("ErrorCard", () => {
     expect(screen.getByTestId("error-card-subtitle").textContent).toBe(
       "Page: 5, When doing: parsing anime info",
     );
+
+    const copyBtn = screen.getByTestId("error-card-copy-btn");
+    await act(async () => {
+      fireEvent.click(copyBtn);
+    });
+    expect(writeTextMock).toHaveBeenCalled();
+    const copiedText = writeTextMock.mock.calls[0][0];
+    expect(copiedText).toContain("HTML Snippet:");
   });
 
   it("renders Parser error without title or page correctly", () => {
@@ -175,7 +187,9 @@ describe("ErrorCard", () => {
 
     expect(writeTextMock).toHaveBeenCalled();
     const copiedText = writeTextMock.mock.calls[0][0];
-    expect(copiedText).toBe(error.toString());
+    expect(copiedText).toContain(`Name: ${error.name}`);
+    expect(copiedText).toContain(`Message: ${error.message}`);
+    expect(copiedText).toContain(`Stack:`);
 
     expect(copyBtn.textContent).toBe("Copied! ✓");
 

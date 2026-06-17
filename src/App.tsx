@@ -6,6 +6,7 @@ import { ProgressBar } from "./components/ProgressBar";
 import { Tabs, Tab } from "./components/Tabs";
 import { ErrorPanel } from "./components/ErrorPanel/ErrorPanel";
 import { ErrorCard } from "./components/ErrorCard/ErrorCard";
+import { SettingsTab } from "./components/SettingsTab";
 import styles from "./App.module.css";
 import "./index.css";
 
@@ -19,6 +20,10 @@ function App() {
     setFavoriteList,
     trashList,
     setTrashList,
+    animeCache,
+    setAnimeCache,
+    settings,
+    setSettings,
     moveToFavorites,
     moveToTrash,
     restoreFromTrash,
@@ -26,16 +31,58 @@ function App() {
   } = useAnimeData();
 
   const { isScanning, progress, httpErrors, parseErrors, error, handleScan } =
-    useAnimeScanner(searchList, favoriteList, trashList, (result) => {
-      setSearchList(result.newSearchItems);
-      setFavoriteList(result.updatedFavoriteList);
-      setTrashList(result.updatedTrashList);
-      saveData(
-        result.newSearchItems,
-        result.updatedFavoriteList,
-        result.updatedTrashList,
-      );
-    });
+    useAnimeScanner(
+      searchList,
+      favoriteList,
+      trashList,
+      animeCache,
+      settings,
+      (result) => {
+        setSearchList(result.newSearchItems);
+        setFavoriteList(result.updatedFavoriteList);
+        setTrashList(result.updatedTrashList);
+        saveData(
+          result.newSearchItems,
+          result.updatedFavoriteList,
+          result.updatedTrashList,
+          animeCache,
+          settings,
+        );
+      },
+      (newItem) => {
+        // Real-time cache update
+        const snMatch = newItem.link.match(/sn=(\d+)/);
+        const sn = snMatch ? snMatch[1] : newItem.link;
+        setAnimeCache((prev) => {
+          const newCache = {
+            ...prev,
+            [sn]: {
+              ...newItem,
+              _cacheTimestamp: Date.now(),
+            },
+          };
+          saveData(searchList, favoriteList, trashList, newCache, settings);
+          return newCache;
+        });
+
+        // If eligible and not in trash/fav, show it immediately!
+        if (newItem.score >= settings.targetScore) {
+          setSearchList((prev) => {
+            const isFav = favoriteList.some((f) => f.link === newItem.link);
+            const isTrash = trashList.some((t) => t.link === newItem.link);
+            if (!isFav && !isTrash) {
+              const map = new Map(prev.map((i) => [i.link, i]));
+              map.set(newItem.link, newItem);
+              return Array.from(map.values()).sort((a, b) => {
+                if (b.score !== a.score) return b.score - a.score;
+                return a.title.localeCompare(b.title);
+              });
+            }
+            return prev;
+          });
+        }
+      },
+    );
 
   const totalErrors = httpErrors.length + parseErrors.length;
 
@@ -75,15 +122,22 @@ function App() {
             trashCount={trashList.length}
           />
 
-          <AnimeList
-            activeTab={activeTab}
-            searchList={searchList}
-            favoriteList={favoriteList}
-            trashList={trashList}
-            onMoveToFavorites={moveToFavorites}
-            onMoveToTrash={moveToTrash}
-            onRestoreFromTrash={restoreFromTrash}
-          />
+          {activeTab === Tab.Settings ? (
+            <div className="flex-1 overflow-hidden">
+              <SettingsTab settings={settings} onSaveSettings={setSettings} />
+            </div>
+          ) : (
+            <AnimeList
+              activeTab={activeTab}
+              searchList={searchList}
+              favoriteList={favoriteList}
+              trashList={trashList}
+              isScanning={isScanning}
+              onMoveToFavorites={moveToFavorites}
+              onMoveToTrash={moveToTrash}
+              onRestoreFromTrash={restoreFromTrash}
+            />
+          )}
 
           {activeTab === Tab.Search && totalErrors > 0 && !isScanning && (
             <div className={styles.errorsPanel} data-testid="errors-panel">

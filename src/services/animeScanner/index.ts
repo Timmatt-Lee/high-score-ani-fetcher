@@ -9,5 +9,7 @@ export {
   type AnimeScanEvent,
   type PipelineOptions,
   type AnimeItem,
+  type AnimeCacheItem,
   AnimeItemSchema,
+  AnimeCacheItemSchema,
 } from "./types";
