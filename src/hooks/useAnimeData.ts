@@ -65,6 +65,7 @@ export function useAnimeData() {
         list.map((item) => ({
           ...item,
           uploadDate: item.uploadDate.toISOString(),
+          ...(item.scannedAt && { scannedAt: item.scannedAt.toISOString() }),
         }));
 
       const payload = {

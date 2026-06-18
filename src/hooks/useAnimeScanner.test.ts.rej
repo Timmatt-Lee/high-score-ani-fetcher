@@ -1,0 +1,12 @@
+@@ -21,6 +21,11 @@
+   trashList: AnimeItem[] = [],
+ ) => {
+   const onScanComplete = vi.fn();
++  const defaultSettings = {
++    targetScore: 4.8,
++    rescanThreshold: 95,
++    cacheExpireDays: 14,
++  };
+   const rendered = renderHook(() =>
+     useAnimeScanner(
+       searchList,

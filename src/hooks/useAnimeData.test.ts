@@ -221,6 +221,27 @@ describe("useAnimeData", () => {
     expect(result.current.favoriteList).toHaveLength(1);
   });
 
+  it("serializes scannedAt date correctly when saving", async () => {
+    const anime = makeAnime("Test");
+    anime.scannedAt = new Date("2024-06-18T00:00:00.000Z");
+    storageMock["searchList"] = [anime];
+    const { result } = renderHook(() => useAnimeData());
+
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+
+    await act(async () => {
+      await result.current.saveData([anime], [], []);
+    });
+
+    // Verify it was saved correctly in the mock
+    expect(storageMock["searchList"]).toBeDefined();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const savedList = storageMock["searchList"] as any[];
+    expect(savedList[0].scannedAt).toBe("2024-06-18T00:00:00.000Z");
+  });
+
   it("moves item to trash from both search and favorites", async () => {
     const anime = makeAnime("Test");
     storageMock["searchList"] = [anime];

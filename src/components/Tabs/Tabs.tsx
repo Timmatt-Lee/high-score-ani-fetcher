@@ -5,6 +5,7 @@ export enum Tab {
   Search,
   Favorites,
   Trash,
+  Settings,
 }
 
 interface TabsProps {
@@ -41,6 +42,12 @@ export function Tabs({
         onClick={() => setActiveTab(Tab.Trash)}
       >
         Trash ({trashCount})
+      </button>
+      <button
+        className={`${styles.tab} ${activeTab === Tab.Settings ? styles.active : ""}`}
+        onClick={() => setActiveTab(Tab.Settings)}
+      >
+        Settings
       </button>
     </div>
   );
