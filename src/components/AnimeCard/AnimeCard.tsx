@@ -58,6 +58,8 @@ export function AnimeCard({
             <RestoreIcon /> Restore
           </button>
         );
+      case Tab.Settings:
+        return null;
       default: {
         const _exhaustiveCheck: never = activeTab;
         throw new Error(`Unhandled activeTab state: ${_exhaustiveCheck}`);

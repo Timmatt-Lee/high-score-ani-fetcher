@@ -758,7 +758,9 @@ describe("useAnimeScanner", () => {
     vi.spyOn(animeScraper, "getTotalPages").mockResolvedValue(1);
     vi.spyOn(AnimeScanner.prototype, "scan").mockImplementation(() => {
       return new Observable<AnimeScanEvent>((subscriber) => {
-        subscriber.next(new Error("Generic emitted error"));
+        subscriber.next(
+          new Error("Generic emitted error") as unknown as AnimeScanEvent,
+        );
         subscriber.complete();
       });
     });
@@ -887,7 +889,14 @@ describe("useAnimeScanner", () => {
     vi.spyOn(animeScraper, "getTotalPages").mockResolvedValue(1);
     vi.spyOn(AnimeScanner.prototype, "scan").mockImplementation(() => {
       return new Observable((subscriber) => {
-        subscriber.next(new AnimeScanParseError(1, "step", "url", "err"));
+        subscriber.next(
+          new AnimeScanParseError(
+            1,
+            AnimeScanStep.GET_TOTAL_PAGES,
+            "url",
+            "err",
+          ),
+        );
         subscriber.complete();
       });
     });

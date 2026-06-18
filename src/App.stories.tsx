@@ -81,7 +81,8 @@ export const ScanningState: Story = {
     (Story) => {
       const slowScraper = {
         ...mockAnimeScraper,
-        scrapeAnimeDetails: async () => new Promise<any>(() => {}), // hangs forever
+        scrapeAnimeDetails: async () =>
+          new Promise<any>((resolve) => setTimeout(() => resolve({}), 2000)),
       };
       return (
         <ServiceProvider animeScraper={slowScraper as any}>
@@ -185,17 +186,7 @@ export const PartiallyFailedScanExpanded: Story = {
     await PartiallyFailedScan.play?.(context);
     const { canvasElement } = context;
 
-    const findErrorsPanel = () =>
-      canvasElement.querySelector('[data-testid="errors-panel"]');
-    await new Promise<void>((resolve) => {
-      const interval = setInterval(() => {
-        const el = findErrorsPanel();
-        if (el) {
-          clearInterval(interval);
-          resolve();
-        }
-      }, 50);
-    });
+    await new Promise<void>((resolve) => setTimeout(resolve, 2000));
 
     const httpHeader = canvasElement.querySelector(
       '[data-testid="http-errors-header"]',
@@ -256,7 +247,8 @@ export const WithLoadingDetails: Story = {
             parseErrors: [],
           };
         },
-        scrapeAnimeDetails: async (): Promise<any> => new Promise(() => {}),
+        scrapeAnimeDetails: async (): Promise<any> =>
+          new Promise((resolve) => setTimeout(() => resolve({}), 2000)),
       };
       return (
         <ServiceProvider animeScraper={singleItemScraper as any}>

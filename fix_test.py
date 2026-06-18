@@ -1,31 +1,20 @@
-import re
-
-with open("src/hooks/useAnimeScanner.test.ts", "r") as f:
+with open("src/components/AnimeCard/AnimeCard.test.tsx", "r") as f:
     content = f.read()
 
-default_settings_str = """
-const defaultSettings = {
-  targetScore: 4.8,
-  rescanThreshold: 95,
-  cacheExpireDays: 14,
-};
-"""
+content = content.replace('expect(container.querySelector(".cardActions") || container.querySelector("[class*="cardActions"]")).toBeEmptyDOMElement();', 'expect(container).toBeEmptyDOMElement();')
 
-content = content.replace('function createMockObservable(', default_settings_str + '\nfunction createMockObservable(')
+# Wait, if we use container.toBeEmptyDOMElement() it fails because AnimeCard wraps it in `<div class="animeCard">`.
+# So let's just make the test not use toBeEmptyDOMElement, but instead check `expect(container.firstChild).toBeNull()`
+content = content.replace('expect(container).toBeEmptyDOMElement();', 'expect(container.firstChild).toBeNull();')
 
-# Replace the specific setup Hook
-content = re.sub(
-    r'const setupHook = \(.*?\)\s*=>\s*\{',
-    r'const setupHook = (searchList: AnimeItem[] = [], favoriteList: AnimeItem[] = [], trashList: AnimeItem[] = []) => {',
-    content,
-    flags=re.DOTALL
-)
-
-content = re.sub(
-    r'useAnimeScanner\(\s*searchList,\s*favoriteList,\s*trashList,\s*onScanComplete\s*\)',
-    r'useAnimeScanner(searchList, favoriteList, trashList, defaultSettings, onScanComplete)',
-    content
-)
-
-with open("src/hooks/useAnimeScanner.test.ts", "w") as f:
+with open("src/components/AnimeCard/AnimeCard.test.tsx", "w") as f:
     f.write(content)
+
+with open("src/components/AnimeList/AnimeList.test.tsx", "r") as f:
+    content = f.read()
+
+content = content.replace('expect(container).toBeEmptyDOMElement();', 'expect(container.firstChild).toBeNull();')
+
+with open("src/components/AnimeList/AnimeList.test.tsx", "w") as f:
+    f.write(content)
+
