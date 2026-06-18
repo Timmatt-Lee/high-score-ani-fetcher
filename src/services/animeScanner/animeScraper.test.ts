@@ -604,3 +604,58 @@ describe("AnimeScraper pipeline methods", () => {
     expect(parseErrors).toHaveLength(0);
   });
 });
+
+describe("AnimeScraper retry logic", () => {
+  it("retries on 429 Too Many Requests", async () => {
+    vi.useFakeTimers();
+    vi.stubGlobal(
+      "fetch",
+      vi
+        .fn()
+        .mockResolvedValueOnce({
+          ok: false,
+          status: 429,
+          statusText: "Too Many Requests",
+          headers: new Headers({ "retry-after": "1" }),
+          text: async () => "Rate limited",
+        })
+        .mockResolvedValueOnce({
+          ok: true,
+          status: 200,
+          statusText: "OK",
+          headers: new Headers(),
+          text: async () => '<div class="page_number"><a>2</a></div>',
+        }),
+    );
+
+    const promise = animeScraper.getTotalPages();
+    await vi.runAllTimersAsync();
+    const result = await promise;
+
+    expect(result).toBe(2);
+    expect(globalThis.fetch).toHaveBeenCalledTimes(2);
+    vi.useRealTimers();
+  });
+
+  it("fails after max retries on 429", async () => {
+    vi.useFakeTimers();
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: false,
+        status: 429,
+        statusText: "Too Many Requests",
+        headers: new Headers(),
+        text: async () => "Rate limited",
+      }),
+    );
+
+    const promise = animeScraper.getTotalPages();
+    await vi.runAllTimersAsync();
+    const result = await promise;
+
+    expect(isError(result)).toBe(true);
+    expect(globalThis.fetch).toHaveBeenCalledTimes(4); // 1 initial + 3 retries
+    vi.useRealTimers();
+  });
+});

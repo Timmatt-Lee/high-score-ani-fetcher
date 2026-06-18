@@ -44,8 +44,16 @@ export class AnimeScanner {
     this.existingAnimesMap = existingAnimesMap;
     this.settings = settings;
     this.options = options;
-    this.pageQueue = new PQueue({ concurrency: pageConcurrency });
-    this.detailQueue = new PQueue({ concurrency: detailConcurrency });
+    this.pageQueue = new PQueue({
+      concurrency: pageConcurrency,
+      intervalCap: 2,
+      interval: 1000,
+    });
+    this.detailQueue = new PQueue({
+      concurrency: detailConcurrency,
+      intervalCap: 10,
+      interval: 1000,
+    });
   }
 
   scan(): Observable<AnimeScanEvent> {
