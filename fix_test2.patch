@@ -1,0 +1,15 @@
+--- src/hooks/useAnimeScanner.test.ts
++++ src/hooks/useAnimeScanner.test.ts
+@@ -27,6 +27,12 @@
+   description: "Desc",
+ });
+ 
++const defaultSettings = {
++  targetScore: 4.8,
++  rescanThreshold: 95,
++  cacheExpireDays: 14,
++};
++
+ function createMockObservable(
+   events: AnimeScanEvent[] = [],
+ ): Observable<AnimeScanEvent> {

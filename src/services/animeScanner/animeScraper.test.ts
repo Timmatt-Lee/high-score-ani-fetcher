@@ -573,7 +573,15 @@ describe("AnimeScraper pipeline methods", () => {
     const parseErrors: AnimeScanParseError[] = [];
 
     await new Promise<void>((resolve, reject) => {
-      const pipeline = new AnimeScanner(1, 1, 1, () => true, animeScraper);
+      const pipeline = new AnimeScanner(
+        1,
+        1,
+        1,
+        () => true,
+        animeScraper,
+        new Map(),
+        { targetScore: 4.8, rescanThreshold: 95, cacheExpireDays: 14 },
+      );
       pipeline.scan().subscribe({
         next: (event: AnimeScanEvent) => {
           if (event instanceof AnimeScanHttpError) {

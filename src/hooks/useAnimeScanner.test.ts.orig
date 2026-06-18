@@ -38,17 +38,11 @@ function createMockObservable(
 }
 
 describe("useAnimeScanner", () => {
-  const defaultSettings = {
-    targetScore: 4.8,
-    rescanThreshold: 95,
-    cacheExpireDays: 14,
-  };
-
   beforeEach(() => {
     vi.resetAllMocks();
   });
 
-  it("scans and calls onScanComplete with filtered results", async () => {
+  it("scans and calls defaultSettings, onScanComplete with filtered results", async () => {
     const mockAnime = makeAnime("Test");
     vi.spyOn(animeScraper, "getTotalPages").mockResolvedValue(1);
     vi.spyOn(AnimeScanner.prototype, "scan").mockImplementation(
@@ -69,7 +63,7 @@ describe("useAnimeScanner", () => {
 
     const onComplete = vi.fn();
     const { result } = renderHook(
-      () => useAnimeScanner([], [], [], defaultSettings, onComplete),
+      () => useAnimeScanner([], [], [], onComplete),
       {
         wrapper: ServiceProvider,
       },
@@ -97,7 +91,7 @@ describe("useAnimeScanner", () => {
 
     const onComplete = vi.fn();
     const { result } = renderHook(
-      () => useAnimeScanner([], [], [], defaultSettings, onComplete),
+      () => useAnimeScanner([], [], [], onComplete),
       {
         wrapper: ServiceProvider,
       },
@@ -119,6 +113,62 @@ describe("useAnimeScanner", () => {
     expect(result.current.progress.message).toBe("Done!");
   });
 
+  it("handles general Error in next callback", async () => {
+    vi.spyOn(animeScraper, "getTotalPages").mockResolvedValue(2);
+    // @ts-expect-error - testing general error type
+    vi.spyOn(AnimeScanner.prototype, "scan").mockReturnValue({
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      subscribe: ({ next, complete }: any) => {
+        next(new Error("General parsing error"));
+        complete();
+      },
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } as any);
+
+    const onComplete = vi.fn();
+    const { result } = renderHook(
+      () => useAnimeScanner([], [], [], onComplete),
+      {
+        wrapper: ServiceProvider,
+      },
+    );
+
+    await act(async () => {
+      await result.current.handleScan();
+    });
+
+    expect(result.current.progress.percent).toBe(100);
+    expect(result.current.progress.message).toBe("Done!");
+    // It should ignore the general error without crashing
+  });
+
+  it("handles unknown errors during scan pipeline", async () => {
+    vi.spyOn(animeScraper, "getTotalPages").mockResolvedValue(2);
+    // @ts-expect-error - testing invalid error type
+    vi.spyOn(AnimeScanner.prototype, "scan").mockReturnValue({
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      subscribe: ({ error }: any) => {
+        if (error) error("Some string error");
+      },
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } as any);
+
+    const onComplete = vi.fn();
+    const { result } = renderHook(
+      () => useAnimeScanner([], [], [], onComplete),
+      {
+        wrapper: ServiceProvider,
+      },
+    );
+
+    await act(async () => {
+      await result.current.handleScan();
+    });
+
+    expect(result.current.error).toBeInstanceOf(Error);
+    expect(result.current.error?.message).toBe("Some string error");
+  });
+
   it("handles scan failure gracefully", async () => {
     vi.spyOn(animeScraper, "getTotalPages").mockResolvedValue(
       new AnimeScanHttpError(
@@ -133,7 +183,7 @@ describe("useAnimeScanner", () => {
 
     const onComplete = vi.fn();
     const { result } = renderHook(
-      () => useAnimeScanner([], [], [], defaultSettings, onComplete),
+      () => useAnimeScanner([], [], [], onComplete),
       {
         wrapper: ServiceProvider,
       },
@@ -166,14 +216,7 @@ describe("useAnimeScanner", () => {
 
     const onComplete = vi.fn();
     const { result } = renderHook(
-      () =>
-        useAnimeScanner(
-          [],
-          [favItem],
-          [trashItem],
-          defaultSettings,
-          onComplete,
-        ),
+      () => useAnimeScanner([], [favItem], [trashItem], onComplete),
       { wrapper: ServiceProvider },
     );
 
@@ -229,7 +272,7 @@ describe("useAnimeScanner", () => {
 
     const onComplete = vi.fn();
     const { result } = renderHook(
-      () => useAnimeScanner([], [], [], defaultSettings, onComplete),
+      () => useAnimeScanner([], [], [], onComplete),
       {
         wrapper: ServiceProvider,
       },
@@ -257,7 +300,7 @@ describe("useAnimeScanner", () => {
 
     const onComplete = vi.fn();
     const { result } = renderHook(
-      () => useAnimeScanner([], [], [], defaultSettings, onComplete),
+      () => useAnimeScanner([], [], [], onComplete),
       {
         wrapper: ServiceProvider,
       },
@@ -307,7 +350,7 @@ describe("useAnimeScanner", () => {
 
     const onComplete = vi.fn();
     const { result } = renderHook(
-      () => useAnimeScanner([], [], [], defaultSettings, onComplete),
+      () => useAnimeScanner([], [], [], onComplete),
       {
         wrapper: ServiceProvider,
       },
@@ -343,7 +386,7 @@ describe("useAnimeScanner", () => {
 
     const onComplete = vi.fn();
     const { result } = renderHook(
-      () => useAnimeScanner([], [], [], defaultSettings, onComplete),
+      () => useAnimeScanner([], [], [], onComplete),
       {
         wrapper: ServiceProvider,
       },
@@ -367,7 +410,7 @@ describe("useAnimeScanner", () => {
 
     const onComplete = vi.fn();
     const { result } = renderHook(
-      () => useAnimeScanner([], [], [], defaultSettings, onComplete),
+      () => useAnimeScanner([], [], [], onComplete),
       {
         wrapper: ServiceProvider,
       },
@@ -388,7 +431,7 @@ describe("useAnimeScanner", () => {
 
     const onComplete = vi.fn();
     const { result } = renderHook(
-      () => useAnimeScanner([], [], [], defaultSettings, onComplete),
+      () => useAnimeScanner([], [], [], onComplete),
       {
         wrapper: ServiceProvider,
       },
@@ -417,7 +460,7 @@ describe("useAnimeScanner", () => {
 
     const onComplete = vi.fn();
     const { result } = renderHook(
-      () => useAnimeScanner([], [], [], defaultSettings, onComplete),
+      () => useAnimeScanner([], [], [], onComplete),
       {
         wrapper: ServiceProvider,
       },
@@ -454,7 +497,7 @@ describe("useAnimeScanner", () => {
 
     const onComplete = vi.fn();
     const { result } = renderHook(
-      () => useAnimeScanner([], [], [], defaultSettings, onComplete),
+      () => useAnimeScanner([], [], [], onComplete),
       {
         wrapper: ServiceProvider,
       },
@@ -480,7 +523,7 @@ describe("useAnimeScanner", () => {
 
     const onComplete = vi.fn();
     const { result } = renderHook(
-      () => useAnimeScanner([], [], [], defaultSettings, onComplete),
+      () => useAnimeScanner([], [], [], onComplete),
       {
         wrapper: ServiceProvider,
       },
@@ -512,7 +555,7 @@ describe("useAnimeScanner", () => {
 
     const onComplete = vi.fn();
     const { result } = renderHook(
-      () => useAnimeScanner([], [], [], defaultSettings, onComplete),
+      () => useAnimeScanner([], [], [], onComplete),
       {
         wrapper: ServiceProvider,
       },
@@ -552,14 +595,7 @@ describe("useAnimeScanner", () => {
 
     const onComplete = vi.fn();
     const { result } = renderHook(
-      () =>
-        useAnimeScanner(
-          [],
-          [favItem],
-          [trashItem],
-          defaultSettings,
-          onComplete,
-        ),
+      () => useAnimeScanner([], [favItem], [trashItem], onComplete),
       { wrapper: ServiceProvider },
     );
 
@@ -599,14 +635,7 @@ describe("useAnimeScanner", () => {
 
     const onComplete = vi.fn();
     const { result } = renderHook(
-      () =>
-        useAnimeScanner(
-          [],
-          [favItem],
-          [trashItem],
-          defaultSettings,
-          onComplete,
-        ),
+      () => useAnimeScanner([], [favItem], [trashItem], onComplete),
       { wrapper: ServiceProvider },
     );
 
@@ -631,7 +660,7 @@ describe("useAnimeScanner", () => {
 
     const onComplete = vi.fn();
     const { result } = renderHook(
-      () => useAnimeScanner([], [], [], defaultSettings, onComplete),
+      () => useAnimeScanner([], [], [], onComplete),
       {
         wrapper: ServiceProvider,
       },
@@ -663,14 +692,7 @@ describe("useAnimeScanner", () => {
 
     const onComplete = vi.fn();
     const { result } = renderHook(
-      () =>
-        useAnimeScanner(
-          [searchItem],
-          [favItem],
-          [trashItem],
-          defaultSettings,
-          onComplete,
-        ),
+      () => useAnimeScanner([searchItem], [favItem], [trashItem], onComplete),
       { wrapper: ServiceProvider },
     );
 
@@ -710,7 +732,7 @@ describe("useAnimeScanner", () => {
 
     const onComplete = vi.fn();
     const { result } = renderHook(
-      () => useAnimeScanner([], [], [], defaultSettings, onComplete),
+      () => useAnimeScanner([], [], [], onComplete),
       {
         wrapper: ServiceProvider,
       },

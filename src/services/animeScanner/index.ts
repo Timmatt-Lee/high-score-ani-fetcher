@@ -10,4 +10,6 @@ export {
   type PipelineOptions,
   type AnimeItem,
   AnimeItemSchema,
+  type Settings,
+  SettingsSchema,
 } from "./types";

@@ -32,4 +32,20 @@ describe("Tabs", () => {
     fireEvent.click(screen.getByText("Favorites (2)"));
     expect(setActiveTab).toHaveBeenCalledWith(Tab.Favorites);
   });
+
+  it("calls setActiveTab with Settings when Settings tab is clicked", () => {
+    const setActiveTab = vi.fn();
+    render(
+      <Tabs
+        activeTab={Tab.Search}
+        setActiveTab={setActiveTab}
+        searchCount={10}
+        favoritesCount={2}
+        trashCount={1}
+      />,
+    );
+
+    fireEvent.click(screen.getByText("Settings"));
+    expect(setActiveTab).toHaveBeenCalledWith(Tab.Settings);
+  });
 });
