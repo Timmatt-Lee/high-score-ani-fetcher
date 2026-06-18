@@ -1,3 +1,4 @@
+import { Observable } from "rxjs";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { renderHook, act } from "@testing-library/react";
 import { useAnimeScanner } from "./useAnimeScanner";
@@ -13,7 +14,6 @@ import {
   type AnimeScanEvent,
   type AnimeItem,
 } from "../services/animeScanner/types";
-const { Observable } = await import("rxjs");
 
 const makeAnime = (title: string): AnimeItem => ({
   link: `http://${title}`,
