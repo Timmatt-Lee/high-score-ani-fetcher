@@ -13,7 +13,7 @@ import {
   type AnimeScanEvent,
   type AnimeItem,
 } from "../services/animeScanner/types";
-import { Observable } from "rxjs";
+const { Observable } = await import("rxjs");
 
 const makeAnime = (title: string): AnimeItem => ({
   link: `http://${title}`,
@@ -723,5 +723,206 @@ describe("useAnimeScanner", () => {
     expect(capturedPipeline).not.toBeNull();
     expect(capturedPipeline.totalPages).toBe(2);
     expect(capturedPipeline.options).toBeUndefined();
+  });
+
+  it("progressively saves results every 3 seconds", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2024-01-01T00:00:00Z"));
+
+    const mockAnime1 = makeAnime("Test1");
+    const mockAnime2 = makeAnime("Test2");
+
+    vi.spyOn(animeScraper, "getTotalPages").mockResolvedValue(1);
+    vi.spyOn(AnimeScanner.prototype, "scan").mockImplementation(() => {
+      return new Observable<AnimeScanEvent>((subscriber) => {
+        subscriber.next(mockAnime1);
+        vi.setSystemTime(new Date("2024-01-01T00:00:04Z")); // +4 seconds
+        subscriber.next(mockAnime2); // trigger save
+        subscriber.complete();
+      });
+    });
+
+    const onComplete = vi.fn();
+    const { result } = renderHook(
+      () => useAnimeScanner([], [], [], defaultSettings, onComplete),
+      { wrapper: ServiceProvider },
+    );
+    await act(async () => {
+      await result.current.handleScan();
+    });
+
+    vi.useRealTimers();
+  });
+
+  it("handles generic Error events emitted during scan", async () => {
+    vi.spyOn(animeScraper, "getTotalPages").mockResolvedValue(1);
+    vi.spyOn(AnimeScanner.prototype, "scan").mockImplementation(() => {
+      return new Observable<AnimeScanEvent>((subscriber) => {
+        subscriber.next(new Error("Generic emitted error"));
+        subscriber.complete();
+      });
+    });
+
+    const onComplete = vi.fn();
+    const { result } = renderHook(
+      () => useAnimeScanner([], [], [], defaultSettings, onComplete),
+      { wrapper: ServiceProvider },
+    );
+
+    await act(async () => {
+      await result.current.handleScan();
+    });
+
+    // Error emitted via next shouldn't crash it, but is ignored from results
+    expect(onComplete).toHaveBeenCalledWith(
+      expect.objectContaining({
+        newSearchItems: [],
+      }),
+    );
+  });
+
+  it("handles generic string error events emitted by subscriber.error", async () => {
+    vi.spyOn(animeScraper, "getTotalPages").mockResolvedValue(1);
+    vi.spyOn(AnimeScanner.prototype, "scan").mockImplementation(() => {
+      return new Observable<AnimeScanEvent>((subscriber) => {
+        subscriber.error("A random string error");
+      });
+    });
+
+    const onComplete = vi.fn();
+    const { result } = renderHook(
+      () => useAnimeScanner([], [], [], defaultSettings, onComplete),
+      { wrapper: ServiceProvider },
+    );
+
+    await act(async () => {
+      await result.current.handleScan();
+    });
+
+    expect(result.current.error).toBeInstanceOf(Error);
+    expect(result.current.error?.message).toBe("A random string error");
+  });
+
+  it("updates existing trash and favorite items correctly when they appear in scan results", async () => {
+    vi.spyOn(animeScraper, "getTotalPages").mockResolvedValue(1);
+    const mockFav = makeAnime("Fav");
+    mockFav.score = 1.0;
+    const mockTrash = makeAnime("Trash");
+    mockTrash.score = 2.0;
+
+    const scannedFav = { ...mockFav, score: 9.9 };
+    const scannedTrash = { ...mockTrash, score: 8.8 };
+
+    vi.spyOn(AnimeScanner.prototype, "scan").mockImplementation(() => {
+      return new Observable<AnimeScanEvent>((subscriber) => {
+        subscriber.next(scannedFav);
+        subscriber.next(scannedTrash);
+        subscriber.complete();
+      });
+    });
+
+    const onComplete = vi.fn();
+    const { result } = renderHook(
+      () =>
+        useAnimeScanner(
+          [],
+          [mockFav],
+          [mockTrash],
+          defaultSettings,
+          onComplete,
+        ),
+      { wrapper: ServiceProvider },
+    );
+
+    await act(async () => {
+      await result.current.handleScan();
+    });
+
+    expect(onComplete).toHaveBeenCalledWith(
+      expect.objectContaining({
+        updatedFavoriteList: [scannedFav],
+        updatedTrashList: [scannedTrash],
+      }),
+    );
+  });
+
+  it("preserves unmodified fav/trash items during scan (branch coverage)", async () => {
+    const mockFav = makeAnime("Fav");
+    const mockTrash = makeAnime("Trash");
+    const scannedAnime = makeAnime("Scanned");
+
+    vi.spyOn(animeScraper, "getTotalPages").mockResolvedValue(1);
+    vi.spyOn(AnimeScanner.prototype, "scan").mockImplementation(() => {
+      return new Observable((subscriber) => {
+        subscriber.next(scannedAnime);
+        subscriber.complete();
+      });
+    });
+
+    const onComplete = vi.fn();
+    const { result } = renderHook(
+      () =>
+        useAnimeScanner(
+          [],
+          [mockFav],
+          [mockTrash],
+          defaultSettings,
+          onComplete,
+        ),
+      { wrapper: ServiceProvider },
+    );
+
+    await act(async () => {
+      await result.current.handleScan();
+    });
+
+    expect(onComplete).toHaveBeenCalledWith({
+      newSearchItems: [scannedAnime],
+      updatedFavoriteList: [mockFav],
+      updatedTrashList: [mockTrash],
+    });
+  });
+
+  it("handles AnimeScanParseError without animeName (branch coverage)", async () => {
+    vi.spyOn(animeScraper, "getTotalPages").mockResolvedValue(1);
+    vi.spyOn(AnimeScanner.prototype, "scan").mockImplementation(() => {
+      return new Observable((subscriber) => {
+        subscriber.next(new AnimeScanParseError(1, "step", "url", "err"));
+        subscriber.complete();
+      });
+    });
+
+    const onComplete = vi.fn();
+    const { result } = renderHook(
+      () => useAnimeScanner([], [], [], defaultSettings, onComplete),
+      { wrapper: ServiceProvider },
+    );
+
+    await act(async () => {
+      await result.current.handleScan();
+    });
+
+    expect(result.current.parseErrors.length).toBe(1);
+  });
+
+  it("handles non-Error objects thrown during scan (branch coverage)", async () => {
+    vi.spyOn(animeScraper, "getTotalPages").mockResolvedValue(1);
+    vi.spyOn(AnimeScanner.prototype, "scan").mockImplementation(() => {
+      return new Observable((subscriber) => {
+        subscriber.error({ notAnError: true });
+      });
+    });
+
+    const onComplete = vi.fn();
+    const { result } = renderHook(
+      () => useAnimeScanner([], [], [], defaultSettings, onComplete),
+      { wrapper: ServiceProvider },
+    );
+
+    await act(async () => {
+      await result.current.handleScan();
+    });
+
+    expect(result.current.error).toBeInstanceOf(Error);
   });
 });

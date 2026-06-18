@@ -635,4 +635,42 @@ describe("AnimeScanner", () => {
     expect(animeItems).toHaveLength(1);
     expect(scraper.scrapeAnimeDetails).toHaveBeenCalled();
   });
+
+  it("yields cached item directly if not expired", async () => {
+    const mockItem = {
+      link: "http://test",
+      title: "Test",
+      score: 4.8, // meets threshold
+      ratingCount: 10,
+      description: "Desc",
+      scannedAt: new Date(Date.now() - 1000), // not expired
+    } as AnimeItem;
+    const map = new Map<string, AnimeItem>();
+    map.set(mockItem.link, mockItem);
+
+    const listSpy = vi.fn().mockResolvedValue({
+      animeItems: [mockItem],
+      httpErrors: [],
+      parseErrors: [],
+    });
+    const detailSpy = vi.fn();
+
+    const scraper = {
+      getTotalPages: vi.fn(),
+      scrapeAnimesOnPage: listSpy,
+      scrapeAnimeDetails: detailSpy,
+    } as unknown as AnimeScraper;
+
+    const pipeline = new AnimeScanner(1, 1, 1, () => true, scraper, map, {
+      targetScore: 4.8,
+      rescanThreshold: 95,
+      cacheExpireDays: 14,
+    });
+
+    const { animeItems } = await runPipeline(pipeline);
+
+    expect(animeItems).toHaveLength(1);
+    expect(animeItems[0]).toEqual(mockItem);
+    expect(scraper.scrapeAnimeDetails).not.toHaveBeenCalled();
+  });
 });

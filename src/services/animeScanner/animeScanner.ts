@@ -40,12 +40,7 @@ export class AnimeScanner {
     this.totalPages = totalPages;
     this.filterItem = filterItem;
     this.scraper = scraper;
-    console.log(
-      "AnimeScanner arg 6 type:",
-      typeof existingAnimesMap,
-      "args length:",
-      arguments.length,
-    );
+
     this.existingAnimesMap = existingAnimesMap;
     this.settings = settings;
     this.options = options;
