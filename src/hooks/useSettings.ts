@@ -7,6 +7,9 @@ const defaultSettings: Settings = {
   cacheExpireDays: 14,
 };
 
+const getStorage = () =>
+  typeof chrome !== "undefined" && chrome.storage ? chrome.storage.local : null;
+
 export function useSettings() {
   const [settings, setSettings] = useState<Settings>(defaultSettings);
   const [isLoaded, setIsLoaded] = useState(false);
@@ -14,21 +17,15 @@ export function useSettings() {
   useEffect(() => {
     const loadSettings = async () => {
       try {
-        if (typeof chrome !== "undefined" && chrome.storage) {
-          const data = await chrome.storage.local.get(["settings"]);
-          if (data.settings) {
-            const parsed = SettingsSchema.safeParse(data.settings);
-            if (parsed.success) {
-              setSettings(parsed.data);
-            }
-          }
-        } else {
-          const localData = localStorage.getItem("settings");
-          if (localData) {
-            const parsed = SettingsSchema.safeParse(JSON.parse(localData));
-            if (parsed.success) {
-              setSettings(parsed.data);
-            }
+        const local = getStorage();
+        const raw = local
+          ? (await local.get(["settings"])).settings
+          : JSON.parse(localStorage.getItem("settings") || "null");
+
+        if (raw) {
+          const parsed = SettingsSchema.safeParse(raw);
+          if (parsed.success) {
+            setSettings(parsed.data);
           }
         }
       } catch (err) {
@@ -43,8 +40,9 @@ export function useSettings() {
   const saveSettings = async (newSettings: Settings) => {
     try {
       setSettings(newSettings);
-      if (typeof chrome !== "undefined" && chrome.storage) {
-        await chrome.storage.local.set({ settings: newSettings });
+      const local = getStorage();
+      if (local) {
+        await local.set({ settings: newSettings });
       } else {
         localStorage.setItem("settings", JSON.stringify(newSettings));
       }
