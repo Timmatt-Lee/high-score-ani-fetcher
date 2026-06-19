@@ -5,6 +5,7 @@ import { HeartIcon, TrashIcon, RestoreIcon } from "../Icons";
 
 interface AnimeCardProps {
   item: AnimeItem;
+  isDisabled?: boolean;
   activeTab: Tab;
   onMoveToFavorites: (item: AnimeItem) => void;
   onMoveToTrash: (item: AnimeItem) => void;
@@ -13,6 +14,7 @@ interface AnimeCardProps {
 
 export function AnimeCard({
   item,
+  isDisabled,
   activeTab,
   onMoveToFavorites,
   onMoveToTrash,
@@ -49,6 +51,7 @@ export function AnimeCard({
       case Tab.Trash:
         return (
           <button
+            disabled={isDisabled}
             className={styles.actionBtn}
             onClick={() => onRestoreFromTrash(item)}
           >
