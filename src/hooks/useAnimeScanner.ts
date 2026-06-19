@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { useServices } from "../contexts/ServiceContext";
-import { useSettings } from "./useSettings";
 import {
   AnimeScanHttpError,
   AnimeScanParseError,
@@ -23,7 +22,6 @@ export function useAnimeScanner(
   onScanComplete: (result: ScanCompleteResult) => void,
 ) {
   const { animeScraper } = useServices();
-  const { settings } = useSettings();
   const [isScanning, setIsScanning] = useState(false);
   const [progress, setProgress] = useState({ percent: 0, message: "" });
   const [httpErrors, setHttpErrors] = useState<AnimeScanHttpError[]>([]);
@@ -67,29 +65,10 @@ export function useAnimeScanner(
     const trashLinks = new Set(trashList.map((t) => t.link));
     const favLinks = new Set(favoriteList.map((f) => f.link));
 
-    const existingMap = new Map<string, AnimeItem>();
-    searchList.forEach((x) => existingMap.set(x.link, x));
-    favoriteList.forEach((x) => existingMap.set(x.link, x));
-    trashList.forEach((x) => existingMap.set(x.link, x));
-
     const filterItem = (item: AnimeItem) => {
-      const isFavOrTrash = trashLinks.has(item.link) || favLinks.has(item.link);
-
-      if (!isFavOrTrash) {
-        if (isNaN(item.episodeCount) || item.episodeCount < 10) return false;
-        if (item.title.includes("OVA")) return false;
-      }
-
-      // Skip scanning details if cached data is still valid and has a low score
-      const cached = existingMap.get(item.link);
-      if (cached) {
-        const threshold =
-          settings.targetScore * (settings.rescanThreshold / 100);
-        if (cached.score > 0 && cached.score < threshold) {
-          return false;
-        }
-      }
-
+      if (trashLinks.has(item.link) || favLinks.has(item.link)) return true;
+      if (isNaN(item.episodeCount) || item.episodeCount < 10) return false;
+      if (item.title.includes("OVA")) return false;
       return true;
     };
 
@@ -146,20 +125,19 @@ export function useAnimeScanner(
           scanParseErrors.push(event);
           setParseErrors([...scanParseErrors]);
           updateProgress(event.animeName);
-        } else {
-          const item = event as AnimeItem;
-          results.push(item);
+        } else if (!(event instanceof Error)) {
+          results.push(event);
           detailsCompletedCount++;
-          updateProgress(item.title);
+          updateProgress(event.title);
         }
       },
       complete: () => {
         const mergedItemsMap = new Map<string, AnimeItem>();
-        // Always pre-populate with existing items, so that any items skipped during scan
-        // (which won't be in the results array) are preserved.
-        searchList.forEach((item) => mergedItemsMap.set(item.link, item));
-        favoriteList.forEach((item) => mergedItemsMap.set(item.link, item));
-        trashList.forEach((item) => mergedItemsMap.set(item.link, item));
+        if (isRetry) {
+          searchList.forEach((item) => mergedItemsMap.set(item.link, item));
+          favoriteList.forEach((item) => mergedItemsMap.set(item.link, item));
+          trashList.forEach((item) => mergedItemsMap.set(item.link, item));
+        }
 
         for (const item of results) {
           mergedItemsMap.set(item.link, item);
