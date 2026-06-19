@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useAnimeData } from "./hooks/useAnimeData";
 import { useAnimeScanner } from "./hooks/useAnimeScanner";
 import { useSettings } from "./hooks/useSettings";
@@ -27,6 +27,7 @@ function App() {
     moveToTrash,
     restoreFromTrash,
     saveData,
+    isLoaded: isAnimeDataLoaded,
   } = useAnimeData();
 
   const { isScanning, progress, httpErrors, parseErrors, error, handleScan } =
@@ -41,9 +42,35 @@ function App() {
       );
     });
 
+  const isAutoScanTriggeredRef = useRef(false);
+
+  useEffect(() => {
+    if (
+      isSettingsLoaded &&
+      isAnimeDataLoaded &&
+      !isAutoScanTriggeredRef.current
+    ) {
+      if (
+        searchList.length === 0 &&
+        favoriteList.length === 0 &&
+        trashList.length === 0
+      ) {
+        isAutoScanTriggeredRef.current = true;
+        handleScan();
+      }
+    }
+  }, [
+    isSettingsLoaded,
+    isAnimeDataLoaded,
+    searchList,
+    favoriteList,
+    trashList,
+    handleScan,
+  ]);
+
   const totalErrors = httpErrors.length + parseErrors.length;
 
-  if (!isSettingsLoaded) {
+  if (!isSettingsLoaded || !isAnimeDataLoaded) {
     return null;
   }
 
