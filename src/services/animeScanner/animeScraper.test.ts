@@ -100,13 +100,28 @@ describe("animeScraper.getTotalPages", () => {
     expect((result as AnimeScanHttpError).html).toContain("network");
     expect((result as AnimeScanHttpError).status).toBe(0);
   });
-
   it("returns AnimeScanHttpError on fetch failure with string error", async () => {
     vi.stubGlobal("fetch", vi.fn().mockRejectedValue("network string error"));
     const result = await animeScraper.getTotalPages();
     expect(isError(result)).toBe(true);
     expect((result as AnimeScanHttpError).html).toBe("network string error");
     expect((result as AnimeScanHttpError).status).toBe(0);
+  });
+
+  it("returns AnimeScanHttpError with timeout message on AbortError", async () => {
+    const abortError = new Error("The operation was aborted.");
+    abortError.name = "AbortError";
+    vi.stubGlobal("fetch", vi.fn().mockRejectedValue(abortError));
+
+    const result = await animeScraper.getTotalPages();
+    expect(isError(result)).toBe(true);
+    if (isError(result)) {
+      expect(result).toBeInstanceOf(AnimeScanHttpError);
+      expect((result as AnimeScanHttpError).html).toContain(
+        "Request timed out",
+      );
+      expect((result as AnimeScanHttpError).status).toBe(0);
+    }
   });
 
   it("passes through AnimeScanHttpError from fetchUrl in getTotalPages", async () => {
