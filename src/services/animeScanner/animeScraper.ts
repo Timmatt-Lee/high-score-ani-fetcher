@@ -9,16 +9,29 @@ import { type AnimeItem, type AnimeDetails } from "./types";
 
 const BASE_URL = "https://ani.gamer.com.tw";
 
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
 export class AnimeScraper {
   private async fetchUrl(
     url: string,
     page: number,
     scanStep: AnimeScanStep,
     animeName?: string,
+    retries = 3,
   ): Promise<Result<string, AnimeScanHttpError>> {
     let response: Response;
     try {
       response = await fetch(url);
+
+      // Handle 429 Too Many Requests
+      if (response.status === 429 && retries > 0) {
+        const retryAfter = response.headers.get("retry-after");
+        const delay = retryAfter
+          ? parseInt(retryAfter, 10) * 1000
+          : (4 - retries) * 2000;
+        await sleep(delay);
+        return this.fetchUrl(url, page, scanStep, animeName, retries - 1);
+      }
     } catch (err) {
       const errorMsg = err instanceof Error ? err.message : String(err);
       return new AnimeScanHttpError(

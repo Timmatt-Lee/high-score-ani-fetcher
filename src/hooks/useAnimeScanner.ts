@@ -6,6 +6,7 @@ import {
   AnimeScanner,
   type PipelineOptions,
   type AnimeItem,
+  type Settings,
 } from "../services/animeScanner";
 import { isError } from "../types/result";
 
@@ -19,6 +20,7 @@ export function useAnimeScanner(
   searchList: AnimeItem[],
   favoriteList: AnimeItem[],
   trashList: AnimeItem[],
+  settings: Settings,
   onScanComplete: (result: ScanCompleteResult) => void,
 ) {
   const { animeScraper } = useServices();
@@ -106,14 +108,68 @@ export function useAnimeScanner(
     const scanHttpErrors: AnimeScanHttpError[] = [];
     const scanParseErrors: AnimeScanParseError[] = [];
 
+    const existingAnimesMap = new Map<string, AnimeItem>();
+    searchList.forEach((item) => existingAnimesMap.set(item.link, item));
+    favoriteList.forEach((item) => existingAnimesMap.set(item.link, item));
+    trashList.forEach((item) => existingAnimesMap.set(item.link, item));
+
     const pipeline = new AnimeScanner(
       totalPages,
       5,
       10,
       filterAndCountItem,
       animeScraper,
+      existingAnimesMap,
+      settings,
       isRetry ? options : undefined,
     );
+
+    const commitResults = (items: AnimeItem[], isComplete: boolean) => {
+      const mergedItemsMap = new Map<string, AnimeItem>();
+      existingAnimesMap.forEach((item) => mergedItemsMap.set(item.link, item));
+      items.forEach((item) => mergedItemsMap.set(item.link, item));
+
+      const updatedFavMap = new Map<string, AnimeItem>();
+      const updatedTrashMap = new Map<string, AnimeItem>();
+      const newItems: AnimeItem[] = [];
+
+      for (const item of mergedItemsMap.values()) {
+        if (favLinks.has(item.link)) {
+          updatedFavMap.set(item.link, item);
+        } else if (trashLinks.has(item.link)) {
+          updatedTrashMap.set(item.link, item);
+        } else {
+          newItems.push(item);
+        }
+      }
+
+      const filteredNewItems = newItems
+        .filter((item) => item.score >= settings.targetScore)
+        .sort((a, b) => {
+          if (b.score !== a.score) return b.score - a.score;
+          return a.title.localeCompare(b.title);
+        });
+
+      const updatedFavoriteList = favoriteList.map(
+        (fav) => updatedFavMap.get(fav.link) ?? fav,
+      );
+      const updatedTrashList = trashList.map(
+        (trash) => updatedTrashMap.get(trash.link) ?? trash,
+      );
+
+      onScanComplete({
+        newSearchItems: filteredNewItems,
+        updatedFavoriteList,
+        updatedTrashList,
+      });
+
+      if (isComplete) {
+        setIsScanning(false);
+        setProgress({ percent: 100, message: "Done!" });
+      }
+    };
+
+    let lastSaveTime = Date.now();
 
     pipeline.scan().subscribe({
       next: (event) => {
@@ -129,55 +185,17 @@ export function useAnimeScanner(
           results.push(event);
           detailsCompletedCount++;
           updateProgress(event.title);
+
+          const now = Date.now();
+          if (now - lastSaveTime > 3000) {
+            // Save every 3 seconds progressively
+            lastSaveTime = now;
+            commitResults(results, false);
+          }
         }
       },
       complete: () => {
-        const mergedItemsMap = new Map<string, AnimeItem>();
-        if (isRetry) {
-          searchList.forEach((item) => mergedItemsMap.set(item.link, item));
-          favoriteList.forEach((item) => mergedItemsMap.set(item.link, item));
-          trashList.forEach((item) => mergedItemsMap.set(item.link, item));
-        }
-
-        for (const item of results) {
-          mergedItemsMap.set(item.link, item);
-        }
-
-        const updatedFavMap = new Map<string, AnimeItem>();
-        const updatedTrashMap = new Map<string, AnimeItem>();
-        const newItems: AnimeItem[] = [];
-
-        for (const item of mergedItemsMap.values()) {
-          if (favLinks.has(item.link)) {
-            updatedFavMap.set(item.link, item);
-          } else if (trashLinks.has(item.link)) {
-            updatedTrashMap.set(item.link, item);
-          } else {
-            newItems.push(item);
-          }
-        }
-
-        const filteredNewItems = newItems
-          .filter((item) => item.score >= 4.8)
-          .sort((a, b) => {
-            if (b.score !== a.score) return b.score - a.score;
-            return a.title.localeCompare(b.title);
-          });
-
-        const updatedFavoriteList = favoriteList.map(
-          (fav) => updatedFavMap.get(fav.link) ?? fav,
-        );
-        const updatedTrashList = trashList.map(
-          (trash) => updatedTrashMap.get(trash.link) ?? trash,
-        );
-
-        onScanComplete({
-          newSearchItems: filteredNewItems,
-          updatedFavoriteList,
-          updatedTrashList,
-        });
-        setIsScanning(false);
-        setProgress({ percent: 100, message: "Done!" });
+        commitResults(results, true);
       },
       error: (err: unknown) => {
         const error = err instanceof Error ? err : new Error(String(err));

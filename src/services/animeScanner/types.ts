@@ -19,6 +19,7 @@ export const AnimeInfoSchema = z.object({
   watchCount: z.number(),
   episodeCount: z.number(),
   uploadDate: z.coerce.date(),
+  scannedAt: z.coerce.date().optional(),
 });
 
 export const AnimeItemSchema = AnimeInfoSchema.merge(AnimeDetailsSchema);
@@ -26,3 +27,11 @@ export const AnimeItemSchema = AnimeInfoSchema.merge(AnimeDetailsSchema);
 export type AnimeDetails = z.infer<typeof AnimeDetailsSchema>;
 export type AnimeInfo = z.infer<typeof AnimeInfoSchema>;
 export type AnimeItem = z.infer<typeof AnimeItemSchema>;
+
+export const SettingsSchema = z.object({
+  targetScore: z.number().default(4.8),
+  rescanThreshold: z.number().default(95),
+  cacheExpireDays: z.number().default(14),
+});
+
+export type Settings = z.infer<typeof SettingsSchema>;
