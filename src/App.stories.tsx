@@ -12,6 +12,23 @@ import {
 import { AnimeScraper } from "./services/animeScanner/animeScraper";
 import { Observable } from "rxjs";
 
+// Helper to wait for the App to load settings and render the scan button
+const waitForButton = async (
+  canvasElement: HTMLElement,
+): Promise<HTMLButtonElement> => {
+  return new Promise<HTMLButtonElement>((resolve) => {
+    const check = () => {
+      const btn = canvasElement.querySelector("button");
+      if (btn) {
+        resolve(btn as HTMLButtonElement);
+      } else {
+        setTimeout(check, 30);
+      }
+    };
+    check();
+  });
+};
+
 // Helper to create sample anime items
 const createMockAnime = (overrides: Partial<AnimeItem> = {}): AnimeItem => ({
   link: `https://ani.gamer.com.tw/anime.php?sn=${Math.floor(Math.random() * 10000)}`,
@@ -135,10 +152,8 @@ export const ScanningState: Story = {
     },
   ],
   play: async ({ canvasElement }) => {
-    const scanBtn = canvasElement.querySelector("button");
-    if (scanBtn) {
-      (scanBtn as HTMLButtonElement).click();
-    }
+    const scanBtn = await waitForButton(canvasElement);
+    scanBtn.click();
   },
 };
 
@@ -211,10 +226,8 @@ export const PartiallyFailedScan: Story = {
   ],
   play: async ({ canvasElement }) => {
     // Click scan
-    const scanBtn = canvasElement.querySelector("button");
-    if (scanBtn) {
-      (scanBtn as HTMLButtonElement).click();
-    }
+    const scanBtn = await waitForButton(canvasElement);
+    scanBtn.click();
   },
 };
 
@@ -287,10 +300,8 @@ export const WithError: Story = {
     );
   },
   play: async ({ canvasElement }) => {
-    const scanBtn = canvasElement.querySelector("button");
-    if (scanBtn) {
-      (scanBtn as HTMLButtonElement).click();
-    }
+    const scanBtn = await waitForButton(canvasElement);
+    scanBtn.click();
   },
 };
 
@@ -321,9 +332,7 @@ export const WithLoadingDetails: Story = {
     },
   ],
   play: async ({ canvasElement }) => {
-    const scanBtn = canvasElement.querySelector("button");
-    if (scanBtn) {
-      (scanBtn as HTMLButtonElement).click();
-    }
+    const scanBtn = await waitForButton(canvasElement);
+    scanBtn.click();
   },
 };
