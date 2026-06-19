@@ -619,6 +619,31 @@ describe("useAnimeScanner", () => {
     expect(result.current.isScanning).toBe(false);
   });
 
+  it("handles string pipeline errors during scanning by wrapping in Error", async () => {
+    vi.spyOn(animeScraper, "getTotalPages").mockResolvedValue(1);
+    vi.spyOn(AnimeScanner.prototype, "scan").mockImplementation(() => {
+      return new Observable((subscriber) => {
+        subscriber.error("pipeline string crash");
+      });
+    });
+
+    const onComplete = vi.fn();
+    const { result } = renderHook(
+      () => useAnimeScanner([], [], [], onComplete),
+      {
+        wrapper: ServiceProvider,
+      },
+    );
+
+    await act(async () => {
+      await result.current.handleScan();
+    });
+
+    expect(result.current.error).toBeInstanceOf(Error);
+    expect(result.current.error?.message).toBe("pipeline string crash");
+    expect(result.current.isScanning).toBe(false);
+  });
+
   it("handles retry scans by pre-populating merged items map and bypassing total page fetch", async () => {
     const searchItem = makeAnime("SearchItem");
     const favItem = makeAnime("FavItem");
@@ -689,5 +714,33 @@ describe("useAnimeScanner", () => {
     expect(capturedPipeline).not.toBeNull();
     expect(capturedPipeline.totalPages).toBe(2);
     expect(capturedPipeline.options).toBeUndefined();
+  });
+
+  it("skips scan for cached items with low score", async () => {
+    const lowScoreItem = makeAnime("LowScoreItem");
+    lowScoreItem.score = 4.0; // below threshold (4.8 * 95% = 4.56)
+
+    vi.spyOn(animeScraper, "getTotalPages").mockResolvedValue(1);
+    const scanSpy = vi
+      .spyOn(AnimeScanner.prototype, "scan")
+      .mockImplementation(function (this: {
+        filterItem: (item: AnimeItem) => boolean;
+      }) {
+        const isKept = this.filterItem(lowScoreItem);
+        expect(isKept).toBe(false);
+        return createMockObservable([]);
+      });
+
+    const onComplete = vi.fn();
+    const { result } = renderHook(
+      () => useAnimeScanner([lowScoreItem], [], [], onComplete),
+      { wrapper: ServiceProvider },
+    );
+
+    await act(async () => {
+      await result.current.handleScan();
+    });
+
+    expect(scanSpy).toHaveBeenCalled();
   });
 });

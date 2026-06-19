@@ -84,8 +84,7 @@ export function useAnimeScanner(
       const cached = existingMap.get(item.link);
       if (cached) {
         const threshold =
-          (settings?.targetScore ?? 4.8) *
-          ((settings?.rescanThreshold ?? 95) / 100);
+          settings.targetScore * (settings.rescanThreshold / 100);
         if (cached.score > 0 && cached.score < threshold) {
           return false;
         }
@@ -147,7 +146,7 @@ export function useAnimeScanner(
           scanParseErrors.push(event);
           setParseErrors([...scanParseErrors]);
           updateProgress(event.animeName);
-        } else if (!(event instanceof Error)) {
+        } else {
           results.push(event);
           detailsCompletedCount++;
           updateProgress(event.title);
