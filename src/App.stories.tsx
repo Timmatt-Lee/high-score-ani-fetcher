@@ -11,6 +11,7 @@ import {
 } from "./services/animeScanner";
 import { AnimeScraper } from "./services/animeScanner/animeScraper";
 import { Observable } from "rxjs";
+import { within } from "@storybook/test";
 
 // Helper to create sample anime items
 const createMockAnime = (overrides: Partial<AnimeItem> = {}): AnimeItem => ({
@@ -135,10 +136,9 @@ export const ScanningState: Story = {
     },
   ],
   play: async ({ canvasElement }) => {
-    const scanBtn = canvasElement.querySelector("button");
-    if (scanBtn) {
-      (scanBtn as HTMLButtonElement).click();
-    }
+    const canvas = within(canvasElement);
+    const scanBtn = await canvas.findByRole("button", { name: /Scan/i });
+    scanBtn.click();
   },
 };
 
@@ -211,10 +211,9 @@ export const PartiallyFailedScan: Story = {
   ],
   play: async ({ canvasElement }) => {
     // Click scan
-    const scanBtn = canvasElement.querySelector("button");
-    if (scanBtn) {
-      (scanBtn as HTMLButtonElement).click();
-    }
+    const canvas = within(canvasElement);
+    const scanBtn = await canvas.findByRole("button", { name: /Scan/i });
+    scanBtn.click();
   },
 };
 
@@ -224,35 +223,18 @@ export const PartiallyFailedScanExpanded: Story = {
     // Click scan first
     await PartiallyFailedScan.play?.(context);
     const { canvasElement } = context;
+    const canvas = within(canvasElement);
 
-    // Wait for the scanning to complete and show results / errors tab
-    const findErrorsPanel = () =>
-      canvasElement.querySelector('[data-testid="errors-panel"]');
-    await new Promise<void>((resolve) => {
-      const interval = setInterval(() => {
-        const el = findErrorsPanel();
-        if (el) {
-          clearInterval(interval);
-          resolve();
-        }
-      }, 50);
-    });
+    // Wait for the scanning to complete and show results / errors tab using findBy
+    await canvas.findByTestId("errors-panel");
 
     // Expand HTTP errors
-    const httpHeader = canvasElement.querySelector(
-      '[data-testid="http-errors-header"]',
-    );
-    if (httpHeader) {
-      (httpHeader as HTMLDivElement).click();
-    }
+    const httpHeader = await canvas.findByTestId("http-errors-header");
+    httpHeader.click();
 
     // Expand Parser errors
-    const parseHeader = canvasElement.querySelector(
-      '[data-testid="parse-errors-header"]',
-    );
-    if (parseHeader) {
-      (parseHeader as HTMLDivElement).click();
-    }
+    const parseHeader = await canvas.findByTestId("parse-errors-header");
+    parseHeader.click();
   },
 };
 
@@ -287,10 +269,9 @@ export const WithError: Story = {
     );
   },
   play: async ({ canvasElement }) => {
-    const scanBtn = canvasElement.querySelector("button");
-    if (scanBtn) {
-      (scanBtn as HTMLButtonElement).click();
-    }
+    const canvas = within(canvasElement);
+    const scanBtn = await canvas.findByRole("button", { name: /Scan/i });
+    scanBtn.click();
   },
 };
 
@@ -321,9 +302,8 @@ export const WithLoadingDetails: Story = {
     },
   ],
   play: async ({ canvasElement }) => {
-    const scanBtn = canvasElement.querySelector("button");
-    if (scanBtn) {
-      (scanBtn as HTMLButtonElement).click();
-    }
+    const canvas = within(canvasElement);
+    const scanBtn = await canvas.findByRole("button", { name: /Scan/i });
+    scanBtn.click();
   },
 };

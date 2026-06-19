@@ -64,4 +64,19 @@ describe("AnimeList", () => {
     ).toThrowError("Unhandled activeTab state: InvalidTab");
     consoleSpy.mockRestore();
   });
+
+  it("renders nothing when activeTab is Settings", () => {
+    const { container } = render(
+      <AnimeList
+        activeTab={Tab.Settings}
+        searchList={[makeAnime("test")]}
+        favoriteList={[]}
+        trashList={[]}
+        onMoveToFavorites={vi.fn()}
+        onMoveToTrash={vi.fn()}
+        onRestoreFromTrash={vi.fn()}
+      />,
+    );
+    expect(container.firstChild).toBeNull();
+  });
 });
