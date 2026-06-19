@@ -73,8 +73,6 @@ export function useAnimeScanner(
     trashList.forEach((x) => existingMap.set(x.link, x));
 
     const filterItem = (item: AnimeItem) => {
-      const isFavOrTrash = trashLinks.has(item.link) || favLinks.has(item.link);
-
       // Skip scanning details if cached data is still valid and has a low score
       const storedAnimeItem = existingMap.get(item.link);
       if (storedAnimeItem) {
@@ -85,10 +83,8 @@ export function useAnimeScanner(
         }
       }
 
-      if (!isFavOrTrash) {
-        if (isNaN(item.episodeCount) || item.episodeCount < 10) return false;
-        if (item.title.includes("OVA")) return false;
-      }
+      if (isNaN(item.episodeCount) || item.episodeCount < 10) return false;
+      if (item.title.includes("OVA")) return false;
 
       return true;
     };

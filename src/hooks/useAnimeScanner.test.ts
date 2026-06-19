@@ -516,58 +516,6 @@ describe("useAnimeScanner", () => {
     expect(completedResult.newSearchItems[2].title).toBe("Z_Anime");
   });
 
-  it("skips quality filters for existing fav/trash items", async () => {
-    const trashItem = makeAnime("ShortTrash");
-    trashItem.episodeCount = 3; // fails episodeCount filter
-    const favItem = makeAnime("OVAFav");
-    favItem.title = "Something OVA Else"; // fails OVA filter
-
-    vi.spyOn(animeScraper, "getTotalPages").mockResolvedValue(1);
-    vi.spyOn(AnimeScanner.prototype, "scan").mockImplementation(
-      function (this: { filterItem: (item: AnimeItem) => boolean }) {
-        const items = [trashItem, favItem].filter(this.filterItem);
-        return createMockObservable(
-          items.map((item) => ({
-            ...item,
-            score: 9.0,
-            ratingCount: 100,
-            description: "UpdatedDesc",
-          })),
-        );
-      },
-    );
-
-    const onComplete = vi.fn();
-    const { result } = renderHook(
-      () => useAnimeScanner([], [favItem], [trashItem], onComplete),
-      { wrapper: ServiceProvider },
-    );
-
-    await act(async () => {
-      await result.current.handleScan();
-    });
-
-    expect(onComplete).toHaveBeenCalledWith({
-      newSearchItems: [],
-      updatedFavoriteList: [
-        {
-          ...favItem,
-          score: 9.0,
-          ratingCount: 100,
-          description: "UpdatedDesc",
-        },
-      ],
-      updatedTrashList: [
-        {
-          ...trashItem,
-          score: 9.0,
-          ratingCount: 100,
-          description: "UpdatedDesc",
-        },
-      ],
-    });
-  });
-
   it("preserves fav/trash items not found in scan results", async () => {
     const trashItem = makeAnime("NotFoundTrash");
     const favItem = makeAnime("NotFoundFav");
