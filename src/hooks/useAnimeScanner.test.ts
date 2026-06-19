@@ -743,4 +743,35 @@ describe("useAnimeScanner", () => {
 
     expect(scanSpy).toHaveBeenCalled();
   });
+
+  it("does not skip scan for cached items with score 0 or above threshold", async () => {
+    const zeroScoreItem = makeAnime("ZeroScoreItem");
+    zeroScoreItem.score = 0;
+
+    const highScoreItem = makeAnime("HighScoreItem");
+    highScoreItem.score = 4.9;
+
+    vi.spyOn(animeScraper, "getTotalPages").mockResolvedValue(1);
+    const scanSpy = vi
+      .spyOn(AnimeScanner.prototype, "scan")
+      .mockImplementation(function (this: {
+        filterItem: (item: AnimeItem) => boolean;
+      }) {
+        expect(this.filterItem(zeroScoreItem)).toBe(true);
+        expect(this.filterItem(highScoreItem)).toBe(true);
+        return createMockObservable([]);
+      });
+
+    const onComplete = vi.fn();
+    const { result } = renderHook(
+      () => useAnimeScanner([zeroScoreItem, highScoreItem], [], [], onComplete),
+      { wrapper: ServiceProvider },
+    );
+
+    await act(async () => {
+      await result.current.handleScan();
+    });
+
+    expect(scanSpy).toHaveBeenCalled();
+  });
 });
