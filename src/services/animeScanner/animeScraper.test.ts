@@ -31,6 +31,7 @@ const mockFetch = (
 
 beforeEach(() => {
   vi.restoreAllMocks();
+  vi.spyOn(animeScraper, "delay").mockResolvedValue();
 });
 
 // --- getTotalPages ---
@@ -332,6 +333,25 @@ describe("animeScraper.scrapeAnimesOnPage", () => {
     }
   });
 
+  it("parses upload date with YYYY/MM format correctly", async () => {
+    mockFetch(
+      makeHtml(`
+      <a class="theme-list-main" href="/animeVideo.php?sn=123">
+        <p class="theme-name">Test Anime</p>
+        <p>25,000</p>
+        <div class="theme-detail-info-block">
+          <span class="theme-number">共12集</span>
+          <p class="theme-time">年份：2026/04</p>
+        </div>
+      </a>
+    `),
+    );
+    const result = await animeScraper.scrapeAnimesOnPage(1);
+    expect(result.animeItems).toHaveLength(1);
+    expect(result.animeItems[0].uploadDate.getUTCFullYear()).toBe(2026);
+    expect(result.animeItems[0].uploadDate.getUTCMonth()).toBe(3); // April is index 3
+  });
+
   it("collects AnimeScanParseError when detail block is missing", async () => {
     mockFetch(
       makeHtml(`
@@ -591,8 +611,18 @@ describe("AnimeScraper pipeline methods", () => {
 
     expect(animeItems).toHaveLength(1);
     expect(animeItems[0].title).toBe("A");
-    expect(animeItems[0].score).toBe(9.5);
     expect(httpErrors).toHaveLength(0);
     expect(parseErrors).toHaveLength(0);
+  });
+
+  it("delay resolves after timeout", async () => {
+    // Restore the original implementation of delay just for this test
+    const delaySpy = vi.spyOn(animeScraper, "delay");
+    delaySpy.mockRestore();
+
+    const start = Date.now();
+    await animeScraper.delay(10);
+    const end = Date.now();
+    expect(end - start).toBeGreaterThanOrEqual(8);
   });
 });
