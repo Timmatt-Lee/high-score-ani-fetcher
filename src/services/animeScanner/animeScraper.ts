@@ -20,29 +20,20 @@ export class AnimeScraper {
     scanStep: AnimeScanStep,
     animeName?: string,
   ): Promise<Result<string, AnimeScanHttpError>> {
-    // Space out requests randomly between 200ms and 400ms to respect rate limits
-    const delayMs = Math.floor(Math.random() * 200) + 200;
+    // Space out requests randomly between 800ms and 1500ms to respect rate limits
+    const delayMs = Math.floor(Math.random() * 700) + 800;
     await this.delay(delayMs);
-
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 8000);
 
     let response: Response;
     try {
       response = await fetch(url, {
-        signal: controller.signal,
         credentials: "include",
         headers: {
           Referer: "https://ani.gamer.com.tw/",
         },
       });
     } catch (err) {
-      const errorMsg =
-        err instanceof Error && err.name === "AbortError"
-          ? "Request timed out after 8000ms"
-          : err instanceof Error
-            ? err.message
-            : String(err);
+      const errorMsg = err instanceof Error ? err.message : String(err);
       return new AnimeScanHttpError(
         page,
         scanStep,
@@ -51,8 +42,6 @@ export class AnimeScraper {
         0, // Status code 0 indicates a network/fetch exception
         animeName,
       );
-    } finally {
-      clearTimeout(timeoutId);
     }
 
     if (!response.ok) {
@@ -239,8 +228,11 @@ export class AnimeScraper {
     }
 
     const yearStr = timeEl.textContent.replace("年份：", "").trim();
-    const uploadDate = new Date(`${yearStr}-01-01T00:00:00Z`);
-    if (isNaN(uploadDate.getTime())) {
+    const parts = yearStr.split("/");
+    const year = parseInt(parts[0], 10);
+    const month = parts[1] ? parseInt(parts[1], 10) - 1 : 0;
+    const uploadDate = new Date(Date.UTC(year, month, 1));
+    if (isNaN(year) || isNaN(uploadDate.getTime())) {
       return new AnimeScanParseError(
         page,
         AnimeScanStep.PARSE_ANIME_INFO,

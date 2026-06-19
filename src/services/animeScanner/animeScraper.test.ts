@@ -100,28 +100,13 @@ describe("animeScraper.getTotalPages", () => {
     expect((result as AnimeScanHttpError).html).toContain("network");
     expect((result as AnimeScanHttpError).status).toBe(0);
   });
+
   it("returns AnimeScanHttpError on fetch failure with string error", async () => {
     vi.stubGlobal("fetch", vi.fn().mockRejectedValue("network string error"));
     const result = await animeScraper.getTotalPages();
     expect(isError(result)).toBe(true);
     expect((result as AnimeScanHttpError).html).toBe("network string error");
     expect((result as AnimeScanHttpError).status).toBe(0);
-  });
-
-  it("returns AnimeScanHttpError with timeout message on AbortError", async () => {
-    const abortError = new Error("The operation was aborted.");
-    abortError.name = "AbortError";
-    vi.stubGlobal("fetch", vi.fn().mockRejectedValue(abortError));
-
-    const result = await animeScraper.getTotalPages();
-    expect(isError(result)).toBe(true);
-    if (isError(result)) {
-      expect(result).toBeInstanceOf(AnimeScanHttpError);
-      expect((result as AnimeScanHttpError).html).toContain(
-        "Request timed out",
-      );
-      expect((result as AnimeScanHttpError).status).toBe(0);
-    }
   });
 
   it("passes through AnimeScanHttpError from fetchUrl in getTotalPages", async () => {
@@ -346,6 +331,25 @@ describe("animeScraper.scrapeAnimesOnPage", () => {
       expect(err.scanStep).toBe(AnimeScanStep.PARSE_ANIME_INFO);
       expect(err.message).toContain("Failed to parse upload date");
     }
+  });
+
+  it("parses upload date with YYYY/MM format correctly", async () => {
+    mockFetch(
+      makeHtml(`
+      <a class="theme-list-main" href="/animeVideo.php?sn=123">
+        <p class="theme-name">Test Anime</p>
+        <p>25,000</p>
+        <div class="theme-detail-info-block">
+          <span class="theme-number">共12集</span>
+          <p class="theme-time">年份：2026/04</p>
+        </div>
+      </a>
+    `),
+    );
+    const result = await animeScraper.scrapeAnimesOnPage(1);
+    expect(result.animeItems).toHaveLength(1);
+    expect(result.animeItems[0].uploadDate.getUTCFullYear()).toBe(2026);
+    expect(result.animeItems[0].uploadDate.getUTCMonth()).toBe(3); // April is index 3
   });
 
   it("collects AnimeScanParseError when detail block is missing", async () => {
