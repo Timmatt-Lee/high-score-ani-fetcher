@@ -73,26 +73,21 @@ export function useAnimeScanner(
     trashList.forEach((x) => existingMap.set(x.link, x));
 
     const filterItem = (item: AnimeItem) => {
-      const isStored = trashLinks.has(item.link) || favLinks.has(item.link);
-      const storedAnimeItem = existingMap.get(item.link);
+      const isFavOrTrash = trashLinks.has(item.link) || favLinks.has(item.link);
 
-      if (isStored) {
+      // Skip scanning details if cached data is still valid and has a low score
+      const storedAnimeItem = existingMap.get(item.link);
+      if (storedAnimeItem) {
         const threshold =
           settings.targetScore * (settings.rescanThreshold / 100);
-        if (storedAnimeItem && storedAnimeItem.score < threshold) {
+        if (storedAnimeItem.score > 0 && storedAnimeItem.score < threshold) {
           return false;
         }
-      } else {
+      }
+
+      if (!isFavOrTrash) {
         if (isNaN(item.episodeCount) || item.episodeCount < 10) return false;
         if (item.title.includes("OVA")) return false;
-
-        if (storedAnimeItem) {
-          const threshold =
-            settings.targetScore * (settings.rescanThreshold / 100);
-          if (storedAnimeItem.score > 0 && storedAnimeItem.score < threshold) {
-            return false;
-          }
-        }
       }
 
       return true;
@@ -151,11 +146,10 @@ export function useAnimeScanner(
           scanParseErrors.push(event);
           setParseErrors([...scanParseErrors]);
           updateProgress(event.animeName);
-        } else {
-          const item = event as AnimeItem;
-          results.push(item);
+        } else if (!(event instanceof Error)) {
+          results.push(event);
           detailsCompletedCount++;
-          updateProgress(item.title);
+          updateProgress(event.title);
         }
       },
       complete: () => {
