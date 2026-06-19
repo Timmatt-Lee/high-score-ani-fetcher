@@ -44,7 +44,7 @@ function App() {
   const totalErrors = httpErrors.length + parseErrors.length;
 
   if (!isSettingsLoaded) {
-    return null; // Or a loading spinner
+    return null;
   }
 
   return (
