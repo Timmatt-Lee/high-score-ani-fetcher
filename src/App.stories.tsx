@@ -10,6 +10,7 @@ import {
   type AnimeItem,
 } from "./services/animeScanner";
 import { AnimeScraper } from "./services/animeScanner/animeScraper";
+import { Observable } from "rxjs";
 import { within } from "@storybook/test";
 
 // Helper to create sample anime items
@@ -53,17 +54,23 @@ const meta: Meta<typeof App> = {
     (Story) => {
       localStorage.clear();
       // Define a default mock implementation for AnimeScanner.prototype.scan
-      AnimeScanner.prototype.scan = async function (this: any) {
-        const items = [
-          createMockAnime({ title: "葬送的芙莉蓮", score: 4.9 }),
-          createMockAnime({ title: "鬼滅之刃 柱訓練篇", score: 4.8 }),
-          createMockAnime({ title: "無職轉生", score: 4.8 }),
-          createMockAnime({ title: "神作續篇", score: 4.9 }),
-        ];
-        for (const item of items) {
-          await new Promise((resolve) => setTimeout(resolve, 10));
-          this.onEvent(item);
-        }
+      AnimeScanner.prototype.scan = function (this: any) {
+        return new Observable((subscriber) => {
+          const items = [
+            createMockAnime({ title: "葬送的芙莉蓮", score: 4.9 }),
+            createMockAnime({ title: "鬼滅之刃 柱訓練篇", score: 4.8 }),
+            createMockAnime({ title: "無職轉生", score: 4.8 }),
+            createMockAnime({ title: "神作續篇", score: 4.9 }),
+          ];
+          const run = async () => {
+            for (const item of items) {
+              await new Promise((resolve) => setTimeout(resolve, 10));
+              subscriber.next(item);
+            }
+            subscriber.complete();
+          };
+          run();
+        });
       };
       return (
         <div
@@ -97,10 +104,16 @@ export const Default: Story = {
 export const ScanningState: Story = {
   decorators: [
     (Story) => {
-      AnimeScanner.prototype.scan = async function (this: any) {
-        await new Promise((resolve) => setTimeout(resolve, 10));
-        this.onEvent(createMockAnime({ title: "葬送的芙莉蓮", score: 4.9 }));
-        await new Promise(() => {}); // never resolves
+      AnimeScanner.prototype.scan = function (this: any) {
+        return new Observable((subscriber) => {
+          const run = async () => {
+            await new Promise((resolve) => setTimeout(resolve, 10));
+            subscriber.next(
+              createMockAnime({ title: "葬送的芙莉蓮", score: 4.9 }),
+            );
+          };
+          run();
+        });
       };
       return (
         <ServiceProvider animeScraper={mockAnimeScraper as any}>
@@ -119,51 +132,54 @@ export const ScanningState: Story = {
 export const PartiallyFailedScan: Story = {
   decorators: [
     (Story) => {
-      AnimeScanner.prototype.scan = async function (this: any) {
+      AnimeScanner.prototype.scan = function (this: any) {
         const options = this.options;
-        if (options) {
-          // Retry scan: emit progress events and NEVER complete so Chromatic captures the scanning state
-          await new Promise((resolve) => setTimeout(resolve, 10));
-          this.onEvent(
-            createMockAnime({ title: "Retry Progress Detail", score: 4.9 }),
-          );
-          await new Promise(() => {}); // never resolves
-          return;
-        }
+        return new Observable((subscriber) => {
+          const run = async () => {
+            if (options) {
+              await new Promise((resolve) => setTimeout(resolve, 10));
+              subscriber.next(
+                createMockAnime({ title: "Retry Progress Detail", score: 4.9 }),
+              );
+              return;
+            }
 
-        // First scan: completes after 20ms with errors
-        await new Promise((resolve) => setTimeout(resolve, 20));
-        this.onEvent(
-          createMockAnime({
-            title: "部分解析成功的動畫",
-            score: 4.9,
-          }),
-        );
-        this.onEvent(
-          Object.assign(
-            new AnimeScanHttpError(
-              2,
-              AnimeScanStep.GET_TOTAL_PAGES,
-              "https://ani.gamer.com.tw/animeList.php?page=2",
-              "",
-              502,
-              undefined,
-            ),
-            { animeName: "某個好看但部分章節損壞的番" },
-          ),
-        );
-        this.onEvent(
-          Object.assign(
-            new AnimeScanParseError(
-              3,
-              AnimeScanStep.PARSE_ANIME_INFO,
-              "https://ani.gamer.com.tw/animeList.php?page=3",
-              "",
-              "解析失敗",
-            ),
-            { animeName: "某個結構毀損無法取得標題的番" },
-          ),
-        );
+            await new Promise((resolve) => setTimeout(resolve, 20));
+            subscriber.next(
+              createMockAnime({
+                title: "部分解析成功的動畫",
+                score: 4.9,
+              }),
+            );
+            subscriber.next(
+              Object.assign(
+                new AnimeScanHttpError(
+                  2,
+                  AnimeScanStep.GET_TOTAL_PAGES,
+                  "https://ani.gamer.com.tw/animeList.php?page=2",
+                  "",
+                  502,
+                  undefined,
+                ),
+                { animeName: "某個好看但部分章節損壞的番" },
+              ),
+            );
+            subscriber.next(
+              Object.assign(
+                new AnimeScanParseError(
+                  3,
+                  AnimeScanStep.PARSE_ANIME_INFO,
+                  "https://ani.gamer.com.tw/animeList.php?page=3",
+                  "",
+                  "解析失敗",
+                ),
+                { animeName: "某個結構毀損無法取得標題的番" },
+              ),
+            );
+            subscriber.complete();
+          };
+          run();
+        });
       };
       return (
         <ServiceProvider animeScraper={mockAnimeScraper as any}>
@@ -241,9 +257,17 @@ export const WithError: Story = {
 export const WithLoadingDetails: Story = {
   decorators: [
     (Story) => {
-      AnimeScanner.prototype.scan = async function (this: any) {
-        await new Promise((resolve) => setTimeout(resolve, 10));
-        this.onEvent(createMockAnime({ title: "葬送的芙莉蓮", score: 4.9 }));
+      AnimeScanner.prototype.scan = function (this: any) {
+        return new Observable((subscriber) => {
+          const run = async () => {
+            await new Promise((resolve) => setTimeout(resolve, 10));
+            subscriber.next(
+              createMockAnime({ title: "葬送的芙莉蓮", score: 4.9 }),
+            );
+            subscriber.complete();
+          };
+          run();
+        });
       };
       return (
         <ServiceProvider animeScraper={mockAnimeScraper as any}>
