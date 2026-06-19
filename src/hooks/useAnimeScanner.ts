@@ -147,9 +147,10 @@ export function useAnimeScanner(
           setParseErrors([...scanParseErrors]);
           updateProgress(event.animeName);
         } else {
-          results.push(event);
+          const item = event as AnimeItem;
+          results.push(item);
           detailsCompletedCount++;
-          updateProgress(event.title);
+          updateProgress(item.title);
         }
       },
       complete: () => {
