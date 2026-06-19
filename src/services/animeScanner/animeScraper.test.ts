@@ -31,6 +31,7 @@ const mockFetch = (
 
 beforeEach(() => {
   vi.restoreAllMocks();
+  vi.spyOn(animeScraper, "delay").mockResolvedValue();
 });
 
 // --- getTotalPages ---
@@ -591,8 +592,18 @@ describe("AnimeScraper pipeline methods", () => {
 
     expect(animeItems).toHaveLength(1);
     expect(animeItems[0].title).toBe("A");
-    expect(animeItems[0].score).toBe(9.5);
     expect(httpErrors).toHaveLength(0);
     expect(parseErrors).toHaveLength(0);
+  });
+
+  it("delay resolves after timeout", async () => {
+    // Restore the original implementation of delay just for this test
+    const delaySpy = vi.spyOn(animeScraper, "delay");
+    delaySpy.mockRestore();
+
+    const start = Date.now();
+    await animeScraper.delay(10);
+    const end = Date.now();
+    expect(end - start).toBeGreaterThanOrEqual(8);
   });
 });

@@ -10,15 +10,28 @@ import { type AnimeItem, type AnimeDetails } from "./types";
 const BASE_URL = "https://ani.gamer.com.tw";
 
 export class AnimeScraper {
+  async delay(ms: number): Promise<void> {
+    await new Promise((resolve) => setTimeout(resolve, ms));
+  }
+
   private async fetchUrl(
     url: string,
     page: number,
     scanStep: AnimeScanStep,
     animeName?: string,
   ): Promise<Result<string, AnimeScanHttpError>> {
+    // Space out requests randomly between 800ms and 1500ms to respect rate limits
+    const delayMs = Math.floor(Math.random() * 700) + 800;
+    await this.delay(delayMs);
+
     let response: Response;
     try {
-      response = await fetch(url);
+      response = await fetch(url, {
+        credentials: "include",
+        headers: {
+          Referer: "https://ani.gamer.com.tw/",
+        },
+      });
     } catch (err) {
       const errorMsg = err instanceof Error ? err.message : String(err);
       return new AnimeScanHttpError(

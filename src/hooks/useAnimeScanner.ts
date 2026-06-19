@@ -108,8 +108,8 @@ export function useAnimeScanner(
 
     const pipeline = new AnimeScanner(
       totalPages,
-      5,
-      10,
+      1,
+      2,
       filterAndCountItem,
       animeScraper,
       isRetry ? options : undefined,
