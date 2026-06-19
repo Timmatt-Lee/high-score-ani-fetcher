@@ -111,4 +111,19 @@ describe("AnimeCard", () => {
     ).toThrowError("Unhandled activeTab state: InvalidTab");
     consoleSpy.mockRestore();
   });
+
+  it("renders nothing when activeTab is Settings", () => {
+    const { container } = render(
+      <AnimeCard
+        item={makeAnime()}
+        activeTab={Tab.Settings}
+        onMoveToFavorites={vi.fn()}
+        onMoveToTrash={vi.fn()}
+        onRestoreFromTrash={vi.fn()}
+      />,
+    );
+    expect(
+      container.querySelector('[class*="cardActions"]')?.childNodes.length,
+    ).toBe(0);
+  });
 });

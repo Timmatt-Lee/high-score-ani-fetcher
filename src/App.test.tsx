@@ -838,4 +838,22 @@ describe("Scan functionality", () => {
     // ErrorsPanel should be hidden now
     expect(screen.queryByTestId("errors-panel")).toBeNull();
   });
+
+  it("renders SettingsTab when Settings tab is active", async () => {
+    render(
+      <ServiceProvider>
+        <App />
+      </ServiceProvider>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText("Settings")).toBeInTheDocument();
+    });
+
+    await act(async () => {
+      fireEvent.click(screen.getByText("Settings"));
+    });
+
+    expect(screen.getByTestId("settings-tab")).toBeInTheDocument();
+  });
 });

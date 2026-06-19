@@ -1,16 +1,20 @@
 import { useState } from "react";
 import { useAnimeData } from "./hooks/useAnimeData";
 import { useAnimeScanner } from "./hooks/useAnimeScanner";
+import { useSettings } from "./hooks/useSettings";
 import { AnimeList } from "./components/AnimeList";
 import { ProgressBar } from "./components/ProgressBar";
 import { Tabs, Tab } from "./components/Tabs";
 import { ErrorPanel } from "./components/ErrorPanel/ErrorPanel";
 import { ErrorCard } from "./components/ErrorCard/ErrorCard";
+import { SettingsTab } from "./components/SettingsTab";
 import styles from "./App.module.css";
 import "./index.css";
 
 function App() {
   const [activeTab, setActiveTab] = useState<Tab>(Tab.Search);
+
+  const { settings, saveSettings, isLoaded: isSettingsLoaded } = useSettings();
 
   const {
     searchList,
@@ -38,6 +42,10 @@ function App() {
     });
 
   const totalErrors = httpErrors.length + parseErrors.length;
+
+  if (!isSettingsLoaded) {
+    return null;
+  }
 
   return (
     <div className={styles.appContainer} data-testid="app-container">
@@ -75,15 +83,19 @@ function App() {
             trashCount={trashList.length}
           />
 
-          <AnimeList
-            activeTab={activeTab}
-            searchList={searchList}
-            favoriteList={favoriteList}
-            trashList={trashList}
-            onMoveToFavorites={moveToFavorites}
-            onMoveToTrash={moveToTrash}
-            onRestoreFromTrash={restoreFromTrash}
-          />
+          {activeTab === Tab.Settings ? (
+            <SettingsTab settings={settings} onSave={saveSettings} />
+          ) : (
+            <AnimeList
+              activeTab={activeTab}
+              searchList={searchList}
+              favoriteList={favoriteList}
+              trashList={trashList}
+              onMoveToFavorites={moveToFavorites}
+              onMoveToTrash={moveToTrash}
+              onRestoreFromTrash={restoreFromTrash}
+            />
+          )}
 
           {activeTab === Tab.Search && totalErrors > 0 && !isScanning && (
             <div className={styles.errorsPanel} data-testid="errors-panel">
