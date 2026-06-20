@@ -151,8 +151,6 @@ export function useAnimeScanner(
         // Always pre-populate with existing items, so that any items skipped during scan
         // (which won't be in the results array) are preserved.
         searchList.forEach((item) => mergedItemsMap.set(item.link, item));
-        favoriteList.forEach((item) => mergedItemsMap.set(item.link, item));
-        trashList.forEach((item) => mergedItemsMap.set(item.link, item));
 
         for (const item of results) {
           mergedItemsMap.set(item.link, item);
@@ -180,10 +178,10 @@ export function useAnimeScanner(
           });
 
         const updatedFavoriteList = favoriteList.map(
-          (fav) => updatedFavMap.get(fav.link)!,
+          (fav) => updatedFavMap.get(fav.link) ?? fav,
         );
         const updatedTrashList = trashList.map(
-          (trash) => updatedTrashMap.get(trash.link)!,
+          (trash) => updatedTrashMap.get(trash.link) ?? trash,
         );
 
         onScanComplete({
