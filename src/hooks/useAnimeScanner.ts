@@ -10,7 +10,7 @@ import {
 } from "../services/animeScanner";
 import { isError } from "../types/result";
 
-export interface ScanCompleteResult {
+export interface ScanUpdateResult {
   newSearchItems: AnimeItem[];
   updatedFavoriteList: AnimeItem[];
   updatedTrashList: AnimeItem[];
@@ -20,7 +20,7 @@ export function useAnimeScanner(
   searchList: AnimeItem[],
   favoriteList: AnimeItem[],
   trashList: AnimeItem[],
-  onScanComplete: (result: ScanCompleteResult) => void,
+  onScanUpdate: (result: ScanUpdateResult) => void,
 ) {
   const { animeScraper } = useServices();
   const { settings } = useSettings();
@@ -63,9 +63,6 @@ export function useAnimeScanner(
     } else {
       setProgress({ percent: 0, message: "Retrying failed items..." });
     }
-
-    const trashLinks = new Set(trashList.map((t) => t.link));
-    const favLinks = new Set(favoriteList.map((f) => f.link));
 
     const existingMap = new Map<string, AnimeItem>();
     searchList.forEach((x) => existingMap.set(x.link, x));
@@ -119,7 +116,18 @@ export function useAnimeScanner(
       setProgress({ percent, message: msg });
     };
 
-    const results: AnimeItem[] = [];
+    const updatedSearch = [...searchList];
+    const updatedFav = [...favoriteList];
+    const updatedTrash = [...trashList];
+
+    const saveUpdatedState = () => {
+      onScanUpdate({
+        newSearchItems: updatedSearch,
+        updatedFavoriteList: updatedFav,
+        updatedTrashList: updatedTrash,
+      });
+    };
+
     const scanHttpErrors: AnimeScanHttpError[] = [];
     const scanParseErrors: AnimeScanParseError[] = [];
 
@@ -141,54 +149,28 @@ export function useAnimeScanner(
           setParseErrors([...scanParseErrors]);
           updateProgress(event.animeName);
         } else if (!(event instanceof Error)) {
-          results.push(event);
           detailsCompletedCount++;
           updateProgress(event.title);
+
+          let isUpdated = false;
+          for (const list of [updatedFav, updatedTrash, updatedSearch]) {
+            const idx = list.findIndex((x) => x.link === event.link);
+            if (idx !== -1) {
+              list[idx] = event;
+              isUpdated = true;
+              break;
+            }
+          }
+
+          if (!isUpdated && event.score >= 4.8) {
+            updatedSearch.push(event);
+          }
+
+          saveUpdatedState();
         }
       },
       complete: () => {
-        const mergedItemsMap = new Map<string, AnimeItem>();
-        // Always pre-populate with existing items, so that any items skipped during scan
-        // (which won't be in the results array) are preserved.
-        searchList.forEach((item) => mergedItemsMap.set(item.link, item));
-
-        for (const item of results) {
-          mergedItemsMap.set(item.link, item);
-        }
-
-        const updatedFavMap = new Map<string, AnimeItem>();
-        const updatedTrashMap = new Map<string, AnimeItem>();
-        const newItems: AnimeItem[] = [];
-
-        for (const item of mergedItemsMap.values()) {
-          if (favLinks.has(item.link)) {
-            updatedFavMap.set(item.link, item);
-          } else if (trashLinks.has(item.link)) {
-            updatedTrashMap.set(item.link, item);
-          } else {
-            newItems.push(item);
-          }
-        }
-
-        const filteredNewItems = newItems
-          .filter((item) => item.score >= 4.8)
-          .sort((a, b) => {
-            if (b.score !== a.score) return b.score - a.score;
-            return a.title.localeCompare(b.title);
-          });
-
-        const updatedFavoriteList = favoriteList.map(
-          (fav) => updatedFavMap.get(fav.link) ?? fav,
-        );
-        const updatedTrashList = trashList.map(
-          (trash) => updatedTrashMap.get(trash.link) ?? trash,
-        );
-
-        onScanComplete({
-          newSearchItems: filteredNewItems,
-          updatedFavoriteList,
-          updatedTrashList,
-        });
+        saveUpdatedState();
         setIsScanning(false);
         setProgress({ percent: 100, message: "Done!" });
       },

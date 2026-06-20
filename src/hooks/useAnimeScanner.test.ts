@@ -42,7 +42,7 @@ describe("useAnimeScanner", () => {
     vi.resetAllMocks();
   });
 
-  it("scans and calls onScanComplete with filtered results", async () => {
+  it("scans and calls onScanUpdate with filtered results", async () => {
     const mockAnime = makeAnime("Test");
     vi.spyOn(animeScraper, "getTotalPages").mockResolvedValue(1);
     vi.spyOn(AnimeScanner.prototype, "scan").mockImplementation(
@@ -500,7 +500,7 @@ describe("useAnimeScanner", () => {
     });
   });
 
-  it("sorts high-award items by score descending, then title ascending", async () => {
+  it("returns scanned items in insertion order", async () => {
     const itemA = { ...makeAnime("Z_Anime"), score: 9.0 };
     const itemB = { ...makeAnime("A_Anime"), score: 9.0 };
     const itemC = { ...makeAnime("M_Anime"), score: 9.5 };
@@ -524,9 +524,9 @@ describe("useAnimeScanner", () => {
 
     expect(onComplete).toHaveBeenCalled();
     const completedResult = onComplete.mock.calls[0][0];
-    expect(completedResult.newSearchItems[0].title).toBe("M_Anime");
+    expect(completedResult.newSearchItems[0].title).toBe("Z_Anime");
     expect(completedResult.newSearchItems[1].title).toBe("A_Anime");
-    expect(completedResult.newSearchItems[2].title).toBe("Z_Anime");
+    expect(completedResult.newSearchItems[2].title).toBe("M_Anime");
   });
 
   it("preserves fav/trash items not found in scan results", async () => {
@@ -606,6 +606,47 @@ describe("useAnimeScanner", () => {
 
     expect(result.current.error).toBeNull();
     expect(result.current.isScanning).toBe(false);
+  });
+
+  it("saves each scanned item immediately during scan", async () => {
+    const items: AnimeItem[] = Array.from({ length: 3 }, (_, i) => ({
+      ...makeAnime(`Anime${i}`),
+      score: 9.0,
+    }));
+
+    vi.spyOn(animeScraper, "getTotalPages").mockResolvedValue(1);
+
+    const { Subject } = await import("rxjs");
+    const subject = new Subject<AnimeScanEvent>();
+    vi.spyOn(AnimeScanner.prototype, "scan").mockReturnValue(subject);
+
+    const onComplete = vi.fn();
+    const { result } = renderHook(
+      () => useAnimeScanner([], [], [], onComplete),
+      { wrapper: ServiceProvider },
+    );
+
+    await act(async () => {
+      result.current.handleScan();
+    });
+
+    // Send first item
+    await act(async () => {
+      subject.next(items[0]);
+    });
+    expect(onComplete).toHaveBeenCalledTimes(1);
+
+    // Send second item
+    await act(async () => {
+      subject.next(items[1]);
+    });
+    expect(onComplete).toHaveBeenCalledTimes(2);
+
+    // Complete the subscription
+    await act(async () => {
+      subject.complete();
+    });
+    expect(onComplete).toHaveBeenCalledTimes(3);
   });
 
   it("handles string pipeline errors during scanning by wrapping in Error", async () => {
