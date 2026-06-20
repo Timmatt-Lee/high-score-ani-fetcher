@@ -55,7 +55,7 @@ export function AnimeRow({
         return (
           <button
             disabled={isDisabled}
-            className={styles.actionBtn}
+            className={`${styles.actionBtn} ${styles.fav}`}
             onClick={() => onRestoreFromTrash(item)}
           >
             <RestoreIcon /> Restore

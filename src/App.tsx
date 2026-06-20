@@ -95,22 +95,22 @@ function App() {
     <div className={styles.appContainer} data-testid="app-container">
       <div className={styles.header}>
         <h1>AniFetcher Pro</h1>
-        <button
-          className={styles.btn}
-          onClick={() => handleScan()}
-          disabled={isScanning}
-        >
-          {isScanning ? "Scanning..." : "Scan 巴哈姆特動漫瘋"}
-        </button>
+        {isScanning ? (
+          <ProgressBar
+            isScanning={isScanning}
+            percent={progress.percent}
+            message={progress.message}
+          />
+        ) : (
+          <button
+            className={styles.btn}
+            onClick={() => handleScan()}
+            disabled={isScanning}
+          >
+            Scan 巴哈姆特動漫瘋
+          </button>
+        )}
       </div>
-
-      {isScanning && (
-        <ProgressBar
-          isScanning={isScanning}
-          percent={progress.percent}
-          message={progress.message}
-        />
-      )}
 
       <div className={styles.mainLayout}>
         <div className={styles.sidebar}>
@@ -131,23 +131,6 @@ function App() {
             >
               <ErrorCard error={error} />
             </div>
-          )}
-
-          {activeTab === Tab.Settings ? (
-            <SettingsTab settings={settings} onSave={saveSettings} />
-          ) : (
-            <AnimeList
-              activeTab={activeTab}
-              searchList={getSortedList(searchList)}
-              favoriteList={getSortedList(favoriteList)}
-              trashList={getSortedList(trashList)}
-              onMoveToFavorites={moveToFavorites}
-              onMoveToTrash={moveToTrash}
-              onRestoreFromTrash={restoreFromTrash}
-              sortBy={sortBy}
-              sortOrder={sortOrder}
-              onSort={handleSort}
-            />
           )}
 
           {activeTab === Tab.Search && totalErrors > 0 && !isScanning && (
@@ -196,6 +179,23 @@ function App() {
                 />
               </div>
             </div>
+          )}
+
+          {activeTab === Tab.Settings ? (
+            <SettingsTab settings={settings} onSave={saveSettings} />
+          ) : (
+            <AnimeList
+              activeTab={activeTab}
+              searchList={getSortedList(searchList)}
+              favoriteList={getSortedList(favoriteList)}
+              trashList={getSortedList(trashList)}
+              onMoveToFavorites={moveToFavorites}
+              onMoveToTrash={moveToTrash}
+              onRestoreFromTrash={restoreFromTrash}
+              sortBy={sortBy}
+              sortOrder={sortOrder}
+              onSort={handleSort}
+            />
           )}
         </div>
       </div>

@@ -102,7 +102,7 @@
 
 .summaryBar {
   display: inline-flex;
-  align-self: flex-start;
+  align-self: center;
   justify-content: space-between;
   align-items: center;
   background: rgba(245, 158, 11, 0.04);

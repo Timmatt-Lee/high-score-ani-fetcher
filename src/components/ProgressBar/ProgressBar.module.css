@@ -1,14 +1,18 @@
 .progressContainer {
-  width: 100%;
+  background-color: var(--panel-bg);
+  border-radius: 8px;
+  padding: 8px 12px;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 6px;
+  border: 1px solid var(--border);
+  width: 360px;
 }
 
 .progressBar {
-  height: 4px;
-  background-color: rgba(255, 255, 255, 0.05);
-  border-radius: 2px;
+  height: 6px;
+  background-color: var(--border);
+  border-radius: 3px;
   overflow: hidden;
 }
 
@@ -19,7 +23,7 @@
 }
 
 .statusText {
-  font-size: 0.75rem;
+  font-size: 0.9rem;
   color: var(--text-muted);
-  text-align: right;
+  text-align: center;
 }

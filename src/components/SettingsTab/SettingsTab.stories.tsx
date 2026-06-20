@@ -12,8 +12,6 @@ const meta = {
       <div
         style={{
           background: "#0f172a",
-          padding: "24px",
-          minHeight: "100vh",
         }}
       >
         <Story />
