@@ -20,7 +20,6 @@
     "prepare": "husky"
   },
   "dependencies": {
-    "p-queue": "^9.3.0",
     "react": "^19.2.6",
     "react-dom": "^19.2.7",
     "rxjs": "^7.8.2",

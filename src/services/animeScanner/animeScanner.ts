@@ -1,5 +1,4 @@
 import { isError } from "../../types/result";
-import PQueue from "p-queue";
 import { Subject, type Observable } from "rxjs";
 import { AnimeScraper } from "./animeScraper";
 import {
@@ -9,14 +8,11 @@ import {
 } from "./types";
 
 /**
- * Encapsulates the state and logic for a two-stage concurrent scanning process.
- * Stage 1: Fetches list pages and enqueues items.
- * Stage 2: Fetches details for each enqueued item.
+ * Encapsulates the state and logic for a two-stage sequential scanning process.
+ * Stage 1: Fetches list pages sequentially.
+ * Stage 2: Fetches details for each filtered item sequentially.
  */
 export class AnimeScanner {
-  private pageQueue: PQueue;
-  private detailQueue: PQueue;
-
   private totalPages: number;
   private filterItem: (item: AnimeItem) => boolean;
   private scraper: AnimeScraper;
@@ -25,8 +21,6 @@ export class AnimeScanner {
 
   constructor(
     totalPages: number,
-    pageConcurrency: number,
-    detailConcurrency: number,
     filterItem: (item: AnimeItem) => boolean,
     scraper: AnimeScraper,
     options?: PipelineOptions,
@@ -35,27 +29,21 @@ export class AnimeScanner {
     this.filterItem = filterItem;
     this.scraper = scraper;
     this.options = options;
-    this.pageQueue = new PQueue({ concurrency: pageConcurrency });
-    this.detailQueue = new PQueue({ concurrency: detailConcurrency });
   }
 
   scan(): Observable<AnimeScanEvent> {
     const run = async () => {
-      const pagePromises = [];
       const pagesToScan =
         this.options?.onlyPages ??
         Array.from({ length: this.totalPages }, (_, i) => i + 1);
 
       for (const page of pagesToScan) {
-        pagePromises.push(this.pageQueue.add(() => this.fetchPage(page)));
-      }
-
-      try {
-        await Promise.all(pagePromises);
-        await this.detailQueue.onIdle();
-      } catch (err) {
-        this.eventSubject.error(err);
-        return;
+        try {
+          await this.fetchPage(page);
+        } catch (err) {
+          this.eventSubject.error(err);
+          return;
+        }
       }
 
       this.eventSubject.complete();
@@ -73,13 +61,11 @@ export class AnimeScanner {
       this.eventSubject.next(error);
     }
 
-    pageResult.animeItems.forEach((item: AnimeItem) => {
+    for (const item of pageResult.animeItems) {
       if (this.filterItem(item)) {
-        this.detailQueue
-          .add(() => this.fetchDetail(item, page))
-          .catch((err) => this.eventSubject.error(err));
+        await this.fetchDetail(item, page);
       }
-    });
+    }
   }
 
   private async fetchDetail(item: AnimeItem, page: number): Promise<void> {
