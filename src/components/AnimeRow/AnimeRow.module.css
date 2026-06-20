@@ -10,6 +10,7 @@
 .titleCell {
   padding: 16px 12px;
   vertical-align: top;
+  width: 99%;
 }
 
 .titleWrapper {
@@ -51,6 +52,8 @@
   vertical-align: middle;
   font-size: 0.875rem;
   color: var(--text-main);
+  white-space: nowrap;
+  width: 1%;
 }
 
 .scoreBadge {
@@ -63,6 +66,7 @@
   display: inline-flex;
   align-items: center;
   gap: 4px;
+  flex-shrink: 0;
 }
 
 .rowActions {

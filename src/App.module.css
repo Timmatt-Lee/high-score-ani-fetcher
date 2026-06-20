@@ -141,3 +141,12 @@
   flex-direction: column;
   gap: 10px;
 }
+
+@media (min-width: 900px) {
+  .accordion {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    align-items: start;
+  }
+}
