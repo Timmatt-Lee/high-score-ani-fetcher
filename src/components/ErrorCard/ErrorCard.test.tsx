@@ -253,4 +253,44 @@ describe("ErrorCard", () => {
     );
     consoleSpy.mockRestore();
   });
+
+  it("shows and hides the stack trace when details toggle is clicked", async () => {
+    const error = new AnimeScanHttpError(
+      1,
+      AnimeScanStep.GET_TOTAL_PAGES,
+      "https://ani.gamer.com.tw/animeList.php?page=1",
+      "HTTP 500",
+      500,
+      undefined,
+    );
+
+    render(<ErrorCard error={error} />);
+
+    const toggle = screen.getByTestId("error-card-details-toggle");
+    expect(toggle.textContent).toBe("Show Details ▼");
+    expect(screen.queryByTestId("error-card-stack-trace")).toBeNull();
+
+    await act(async () => {
+      fireEvent.click(toggle);
+    });
+
+    expect(toggle.textContent).toBe("Hide Details ▲");
+    expect(screen.getByTestId("error-card-stack-trace")).toBeDefined();
+
+    await act(async () => {
+      fireEvent.click(toggle);
+    });
+
+    expect(toggle.textContent).toBe("Show Details ▼");
+    expect(screen.queryByTestId("error-card-stack-trace")).toBeNull();
+  });
+
+  it("does not render details toggle when error has no stack trace", () => {
+    const error = new Error("No stack");
+    Object.defineProperty(error, "stack", { value: undefined });
+
+    render(<ErrorCard error={error} />);
+
+    expect(screen.queryByTestId("error-card-details-toggle")).toBeNull();
+  });
 });

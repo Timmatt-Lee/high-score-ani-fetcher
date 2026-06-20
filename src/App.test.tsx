@@ -400,7 +400,9 @@ describe("Scan functionality", () => {
       fireEvent.click(screen.getByText("Scan 巴哈姆特動漫瘋"));
     });
 
-    await waitFor(() => expect(screen.getByText("Scanning...")).toBeDefined());
+    await waitFor(() =>
+      expect(screen.getByTestId("progress-container")).toBeDefined(),
+    );
     await act(async () => {
       subject.complete();
     });

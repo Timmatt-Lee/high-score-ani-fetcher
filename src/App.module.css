@@ -70,7 +70,7 @@
   animation: fadeIn 0.3s ease-out;
   max-width: 800px;
   width: 100%;
-  align-self: flex-start;
+  margin: 8vh auto;
 }
 
 .dismissBtn {
@@ -111,9 +111,6 @@
   padding: 12px;
   border-radius: var(--radius);
   gap: 12px;
-  max-width: 800px;
-  width: 100%;
-  align-self: flex-start;
 }
 
 .summaryText {
@@ -154,5 +151,32 @@
     grid-template-columns: 1fr 1fr;
     gap: 16px;
     align-items: start;
+  }
+}
+
+.mainLayout {
+  display: flex;
+  gap: 32px;
+  align-items: flex-start;
+  width: 100%;
+}
+
+.sidebar {
+  flex-shrink: 0;
+}
+
+.contentArea {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  min-width: 0;
+}
+
+@media (max-width: 768px) {
+  .mainLayout {
+    flex-direction: column;
+    gap: 20px;
+    align-items: stretch;
   }
 }

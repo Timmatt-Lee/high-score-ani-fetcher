@@ -1,14 +1,12 @@
 .progressContainer {
   background-color: var(--panel-bg);
-  border-radius: var(--radius);
-  padding: 15px;
+  border-radius: 8px;
+  padding: 8px 12px;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 6px;
   border: 1px solid var(--border);
-  max-width: 600px;
-  width: 100%;
-  align-self: flex-start;
+  width: 240px;
 }
 
 .progressBar {

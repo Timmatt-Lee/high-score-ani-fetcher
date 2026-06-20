@@ -51,6 +51,7 @@ const getCardTitleAndSubtitle = (
 
 export function ErrorCard({ error }: ErrorCardProps) {
   const [isCopied, setIsCopied] = useState(false);
+  const [isDetailsOpen, setIsDetailsOpen] = useState(false);
 
   const handleCopy = async () => {
     try {
@@ -96,6 +97,26 @@ export function ErrorCard({ error }: ErrorCardProps) {
       <div className={styles.errorMessage} data-testid="error-card-message">
         {error.message}
       </div>
+
+      {error.stack && (
+        <div className={styles.detailsSection}>
+          <button
+            className={styles.detailsToggle}
+            onClick={() => setIsDetailsOpen(!isDetailsOpen)}
+            data-testid="error-card-details-toggle"
+          >
+            {isDetailsOpen ? "Hide Details ▲" : "Show Details ▼"}
+          </button>
+          {isDetailsOpen && (
+            <pre
+              className={styles.stackTrace}
+              data-testid="error-card-stack-trace"
+            >
+              {error.stack}
+            </pre>
+          )}
+        </div>
+      )}
     </div>
   );
 }

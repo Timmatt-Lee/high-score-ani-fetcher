@@ -1,13 +1,14 @@
 .tabs {
-  display: inline-flex;
-  gap: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
   background: rgba(30, 41, 59, 0.6);
   border: 1px solid var(--border);
-  padding: 4px;
-  border-radius: 100px;
+  padding: 6px;
+  border-radius: 16px;
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  align-self: flex-start;
+  width: 200px;
 }
 
 .tab {
@@ -17,10 +18,12 @@
   font-size: 0.85rem;
   font-weight: 600;
   cursor: pointer;
-  padding: 8px 16px;
-  border-radius: 100px;
+  padding: 10px 16px;
+  border-radius: 10px;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   white-space: nowrap;
+  text-align: left;
+  width: 100%;
 }
 
 .tab:hover {
@@ -42,4 +45,21 @@
   background: var(--danger);
   color: #ffffff;
   box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+}
+
+@media (max-width: 768px) {
+  .tabs {
+    flex-direction: row;
+    border-radius: 100px;
+    width: auto;
+    padding: 4px;
+    align-self: flex-start;
+  }
+
+  .tab {
+    border-radius: 100px;
+    text-align: center;
+    width: auto;
+    padding: 8px 16px;
+  }
 }
