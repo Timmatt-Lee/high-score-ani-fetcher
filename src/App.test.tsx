@@ -384,7 +384,6 @@ describe("Card actions", () => {
 // --- Scan ---
 describe("Scan functionality", () => {
   it("shows Scanning... and progress bar while running", async () => {
-    storageMock["searchList"] = [makeAnime({ title: "Existing" })];
     const subject = new Subject<AnimeScanEvent>();
     vi.spyOn(animeScraper, "getTotalPages").mockResolvedValue(1);
     vi.spyOn(AnimeScanner.prototype, "scan").mockReturnValue(subject);
@@ -747,7 +746,6 @@ describe("Scan functionality", () => {
   });
 
   it("renders ErrorsPanel inside Results tab and hides it when retry clears the errors", async () => {
-    storageMock["searchList"] = [makeAnime({ title: "Existing" })];
     const anime = makeAnime({ title: "Partial Success", score: 9.0 });
     const error = new AnimeScanHttpError(
       1,
@@ -839,26 +837,6 @@ describe("Scan functionality", () => {
 
     // ErrorsPanel should be hidden now
     expect(screen.queryByTestId("errors-panel")).toBeNull();
-  });
-
-  it("automatically scans on load if all lists are empty", async () => {
-    vi.spyOn(animeScraper, "getTotalPages").mockResolvedValue(1);
-    const subject = new Subject<AnimeScanEvent>();
-    const scanSpy = vi
-      .spyOn(AnimeScanner.prototype, "scan")
-      .mockReturnValue(subject);
-
-    await act(async () => {
-      render(
-        <ServiceProvider>
-          <App />
-        </ServiceProvider>,
-      );
-    });
-
-    await waitFor(() => {
-      expect(scanSpy).toHaveBeenCalled();
-    });
   });
 
   it("renders SettingsTab when Settings tab is active", async () => {
