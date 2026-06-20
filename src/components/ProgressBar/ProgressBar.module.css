@@ -6,7 +6,7 @@
   flex-direction: column;
   gap: 6px;
   border: 1px solid var(--border);
-  width: 240px;
+  width: 480px;
 }
 
 .progressBar {

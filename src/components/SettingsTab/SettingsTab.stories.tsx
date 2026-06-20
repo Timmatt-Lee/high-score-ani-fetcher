@@ -5,8 +5,21 @@ const meta = {
   title: "Components/SettingsTab",
   component: SettingsTab,
   parameters: {
-    layout: "centered",
+    layout: "fullscreen",
   },
+  decorators: [
+    (Story) => (
+      <div
+        style={{
+          background: "#0f172a",
+          padding: "24px",
+          minHeight: "100vh",
+        }}
+      >
+        <Story />
+      </div>
+    ),
+  ],
 } satisfies Meta<typeof SettingsTab>;
 
 export default meta;

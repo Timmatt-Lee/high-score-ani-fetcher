@@ -107,6 +107,36 @@ export const InitialEmptyState: Story = {
   ],
 };
 
+export const FavoritesTabEmptyState: Story = {
+  decorators: [
+    (Story) => (
+      <ServiceProvider animeScraper={mockAnimeScraper as any}>
+        <Story />
+      </ServiceProvider>
+    ),
+  ],
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const favTab = await canvas.findByRole("button", { name: /Favorites/i });
+    favTab.click();
+  },
+};
+
+export const TrashTabEmptyState: Story = {
+  decorators: [
+    (Story) => (
+      <ServiceProvider animeScraper={mockAnimeScraper as any}>
+        <Story />
+      </ServiceProvider>
+    ),
+  ],
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const trashTab = await canvas.findByRole("button", { name: /Trash/i });
+    trashTab.click();
+  },
+};
+
 export const ScanningFromEmpty: Story = {
   decorators: [
     (Story) => {

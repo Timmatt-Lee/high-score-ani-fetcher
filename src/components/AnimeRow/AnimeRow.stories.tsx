@@ -48,6 +48,7 @@ export const SearchTab: Story = {
   },
 };
 
+// Favorites tab shows a single Trash action button
 export const FavoritesTab: Story = {
   args: {
     item: baseAnime,
@@ -55,7 +56,8 @@ export const FavoritesTab: Story = {
   },
 };
 
-export const TrashTab: Story = {
+// Trash tab shows the Restore action button
+export const TrashTabWithRestore: Story = {
   args: {
     item: baseAnime,
     activeTab: Tab.Trash,

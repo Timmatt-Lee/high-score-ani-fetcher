@@ -68,43 +68,6 @@
   word-break: break-all;
 }
 
-.detailsSection {
-  margin-top: 8px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.detailsToggle {
-  background: transparent;
-  border: none;
-  color: var(--accent, #3b82f6);
-  font-size: 0.75rem;
-  font-weight: 600;
-  cursor: pointer;
-  padding: 0;
-  align-self: flex-start;
-  transition: opacity 0.2s ease;
-}
-
-.detailsToggle:hover {
-  opacity: 0.8;
-}
-
-.stackTrace {
-  font-family: monospace;
-  font-size: 0.75rem;
-  color: #fca5a5;
-  background: rgba(0, 0, 0, 0.2);
-  padding: 10px;
-  border-radius: 6px;
-  max-height: 150px;
-  overflow: auto;
-  border: 1px solid rgba(239, 68, 68, 0.1);
-  white-space: pre-wrap;
-  word-break: break-all;
-}
-
 @keyframes slideIn {
   from {
     opacity: 0;

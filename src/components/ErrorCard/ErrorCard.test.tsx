@@ -175,7 +175,11 @@ describe("ErrorCard", () => {
 
     expect(writeTextMock).toHaveBeenCalled();
     const copiedText = writeTextMock.mock.calls[0][0];
-    expect(copiedText).toBe(error.toString());
+    // Stack trace should be included in the copied text
+    expect(copiedText).toContain(error.toString());
+    if (error.stack) {
+      expect(copiedText).toContain(error.stack);
+    }
 
     expect(copyBtn.textContent).toBe("Copied! ✓");
 
@@ -206,6 +210,7 @@ describe("ErrorCard", () => {
     expect(screen.getByTestId("error-card-title").textContent).toBe("Error");
 
     // Trigger copy click on non-AnimeScanError to cover isCopied branch in early return
+    writeTextMock.mockResolvedValue(undefined);
     const copyBtn = screen.getByTestId("error-card-copy-btn");
     await act(async () => {
       fireEvent.click(copyBtn);
@@ -254,7 +259,7 @@ describe("ErrorCard", () => {
     consoleSpy.mockRestore();
   });
 
-  it("shows and hides the stack trace when details toggle is clicked", async () => {
+  it("copy button includes stack trace in clipboard text when stack is available", async () => {
     const error = new AnimeScanHttpError(
       1,
       AnimeScanStep.GET_TOTAL_PAGES,
@@ -263,34 +268,37 @@ describe("ErrorCard", () => {
       500,
       undefined,
     );
+    writeTextMock.mockResolvedValue(undefined);
+    // Manually set a stack for deterministic assertion
+    Object.defineProperty(error, "stack", {
+      value: "AnimeScanHttpError: HTTP 500\n  at test.ts:1:1",
+    });
 
     render(<ErrorCard error={error} />);
 
-    const toggle = screen.getByTestId("error-card-details-toggle");
-    expect(toggle.textContent).toBe("Show Details ▼");
-    expect(screen.queryByTestId("error-card-stack-trace")).toBeNull();
-
+    const copyBtn = screen.getByTestId("error-card-copy-btn");
     await act(async () => {
-      fireEvent.click(toggle);
+      fireEvent.click(copyBtn);
     });
 
-    expect(toggle.textContent).toBe("Hide Details ▲");
-    expect(screen.getByTestId("error-card-stack-trace")).toBeDefined();
-
-    await act(async () => {
-      fireEvent.click(toggle);
-    });
-
-    expect(toggle.textContent).toBe("Show Details ▼");
-    expect(screen.queryByTestId("error-card-stack-trace")).toBeNull();
+    expect(writeTextMock).toHaveBeenCalled();
+    const copiedText = writeTextMock.mock.calls[0][0];
+    expect(copiedText).toContain(error.toString());
+    expect(copiedText).toContain("at test.ts:1:1");
   });
 
-  it("does not render details toggle when error has no stack trace", () => {
-    const error = new Error("No stack");
+  it("copy button only sends error.toString() when no stack is available", async () => {
+    const error = new Error("No stack error");
     Object.defineProperty(error, "stack", { value: undefined });
+    writeTextMock.mockResolvedValue(undefined);
 
     render(<ErrorCard error={error} />);
 
-    expect(screen.queryByTestId("error-card-details-toggle")).toBeNull();
+    const copyBtn = screen.getByTestId("error-card-copy-btn");
+    await act(async () => {
+      fireEvent.click(copyBtn);
+    });
+
+    expect(writeTextMock).toHaveBeenCalledWith(error.toString());
   });
 });
