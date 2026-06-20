@@ -6,6 +6,7 @@ export function useAnimeData() {
   const [searchList, setSearchList] = useState<AnimeItem[]>([]);
   const [favoriteList, setFavoriteList] = useState<AnimeItem[]>([]);
   const [trashList, setTrashList] = useState<AnimeItem[]>([]);
+  const [isLoaded, setIsLoaded] = useState(false);
 
   // Load data on mount
   useEffect(() => {
@@ -53,6 +54,8 @@ export function useAnimeData() {
         }
       } catch (err) {
         console.error("Failed to load data", err);
+      } finally {
+        setIsLoaded(true);
       }
     };
     loadData();
@@ -120,5 +123,6 @@ export function useAnimeData() {
     moveToTrash,
     restoreFromTrash,
     saveData,
+    isLoaded,
   };
 }

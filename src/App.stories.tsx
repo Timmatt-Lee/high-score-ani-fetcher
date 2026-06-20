@@ -56,26 +56,20 @@ const meta: Meta<typeof App> = {
       // Define a default mock implementation for AnimeScanner.prototype.scan
       AnimeScanner.prototype.scan = function (this: any) {
         return new Observable((subscriber) => {
-          let isCancelled = false;
+          const items = [
+            createMockAnime({ title: "葬送的芙莉蓮", score: 4.9 }),
+            createMockAnime({ title: "鬼滅之刃 柱訓練篇", score: 4.8 }),
+            createMockAnime({ title: "無職轉生", score: 4.8 }),
+            createMockAnime({ title: "神作續篇", score: 4.9 }),
+          ];
           const run = async () => {
-            const items = [
-              createMockAnime({ title: "葬送的芙莉蓮", score: 4.9 }),
-              createMockAnime({ title: "鬼滅之刃 柱訓練篇", score: 4.8 }),
-              createMockAnime({ title: "無職轉生", score: 4.8 }),
-              createMockAnime({ title: "神作續篇", score: 4.9 }),
-            ];
             for (const item of items) {
-              if (isCancelled) return;
               await new Promise((resolve) => setTimeout(resolve, 10));
               subscriber.next(item);
             }
-            if (isCancelled) return;
             subscriber.complete();
           };
           run();
-          return () => {
-            isCancelled = true;
-          };
         });
       };
       return (
@@ -112,20 +106,13 @@ export const ScanningState: Story = {
     (Story) => {
       AnimeScanner.prototype.scan = function (this: any) {
         return new Observable((subscriber) => {
-          let isCancelled = false;
           const run = async () => {
             await new Promise((resolve) => setTimeout(resolve, 10));
-            if (isCancelled) return;
-            // We emit details completed and then do not call complete()
-            // to keep it in scanning state forever for screenshot capture.
             subscriber.next(
               createMockAnime({ title: "葬送的芙莉蓮", score: 4.9 }),
             );
           };
           run();
-          return () => {
-            isCancelled = true;
-          };
         });
       };
       return (
@@ -148,21 +135,16 @@ export const PartiallyFailedScan: Story = {
       AnimeScanner.prototype.scan = function (this: any) {
         const options = this.options;
         return new Observable((subscriber) => {
-          let isCancelled = false;
           const run = async () => {
             if (options) {
-              // Retry scan: emit progress events and NEVER complete so Chromatic captures the scanning state
               await new Promise((resolve) => setTimeout(resolve, 10));
-              if (isCancelled) return;
               subscriber.next(
                 createMockAnime({ title: "Retry Progress Detail", score: 4.9 }),
               );
               return;
             }
 
-            // First scan: completes after 20ms with errors
             await new Promise((resolve) => setTimeout(resolve, 20));
-            if (isCancelled) return;
             subscriber.next(
               createMockAnime({
                 title: "部分解析成功的動畫",
@@ -197,9 +179,6 @@ export const PartiallyFailedScan: Story = {
             subscriber.complete();
           };
           run();
-          return () => {
-            isCancelled = true;
-          };
         });
       };
       return (
@@ -280,18 +259,13 @@ export const WithLoadingDetails: Story = {
     (Story) => {
       AnimeScanner.prototype.scan = function (this: any) {
         return new Observable((subscriber) => {
-          let isCancelled = false;
           const run = async () => {
             await new Promise((resolve) => setTimeout(resolve, 10));
-            if (isCancelled) return;
             subscriber.next(
               createMockAnime({ title: "葬送的芙莉蓮", score: 4.9 }),
             );
           };
           run();
-          return () => {
-            isCancelled = true;
-          };
         });
       };
       return (

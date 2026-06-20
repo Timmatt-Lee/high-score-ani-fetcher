@@ -270,4 +270,15 @@ describe("useAnimeData", () => {
     expect(consoleSpy).toHaveBeenCalled();
     consoleSpy.mockRestore();
   });
+
+  it("sets isLoaded to true after data loading finishes", async () => {
+    const { result } = renderHook(() => useAnimeData());
+    expect(result.current.isLoaded).toBe(false);
+
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+
+    expect(result.current.isLoaded).toBe(true);
+  });
 });

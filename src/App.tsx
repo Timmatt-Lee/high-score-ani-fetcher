@@ -27,6 +27,7 @@ function App() {
     moveToTrash,
     restoreFromTrash,
     saveData,
+    isLoaded: isAnimeDataLoaded,
   } = useAnimeData();
 
   const { isScanning, progress, httpErrors, parseErrors, error, handleScan } =
@@ -43,7 +44,7 @@ function App() {
 
   const totalErrors = httpErrors.length + parseErrors.length;
 
-  if (!isSettingsLoaded) {
+  if (!isSettingsLoaded || !isAnimeDataLoaded) {
     return null;
   }
 
