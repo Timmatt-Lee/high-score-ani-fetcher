@@ -68,6 +68,9 @@
   flex-direction: column;
   gap: 16px;
   animation: fadeIn 0.3s ease-out;
+  max-width: 800px;
+  width: 100%;
+  align-self: flex-start;
 }
 
 .dismissBtn {
@@ -108,6 +111,9 @@
   padding: 12px;
   border-radius: var(--radius);
   gap: 12px;
+  max-width: 800px;
+  width: 100%;
+  align-self: flex-start;
 }
 
 .summaryText {

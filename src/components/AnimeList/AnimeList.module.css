@@ -41,9 +41,15 @@
 
 .sortIndicator {
   display: inline-block;
-  margin-left: 4px;
   color: var(--accent);
   font-size: 0.75rem;
+}
+
+.headerContainer {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
 }
 
 .actionsHeader {

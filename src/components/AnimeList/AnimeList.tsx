@@ -74,12 +74,14 @@ export function AnimeList({
         onClick={() => onSort(field)}
         data-testid={`sort-header-${field}`}
       >
-        <span className={styles.headerLabel}>{label}</span>
-        {isSorted && (
-          <span className={styles.sortIndicator}>
-            {sortOrder === "asc" ? " ▲" : " ▼"}
-          </span>
-        )}
+        <div className={styles.headerContainer}>
+          <span className={styles.headerLabel}>{label}</span>
+          {isSorted && (
+            <span className={styles.sortIndicator}>
+              {sortOrder === "asc" ? "▲" : "▼"}
+            </span>
+          )}
+        </div>
       </th>
     );
   };

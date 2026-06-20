@@ -446,3 +446,20 @@ export const ScanCompletedWithExistingData: Story = {
     scanBtn.click();
   },
 };
+
+export const SettingsTabShowcase: Story = {
+  decorators: [
+    (Story) => (
+      <ServiceProvider animeScraper={mockAnimeScraper as any}>
+        <Story />
+      </ServiceProvider>
+    ),
+  ],
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const settingsTabBtn = await canvas.findByRole("button", {
+      name: /Settings/i,
+    });
+    settingsTabBtn.click();
+  },
+};
