@@ -6,21 +6,21 @@ const preview: Preview = {
   decorators: [(Story) => <Story />],
   parameters: {
     layout: "fullscreen",
-    // Configure Chromatic to capture all snapshots at 450px width
+    // Configure Chromatic to capture all snapshots at 1200px width
     chromatic: {
-      viewports: [450],
+      viewports: [1200],
       // By default, capture content height. For App story or viewport-specific components, we can override cropToViewport: true.
       cropToViewport: false,
     },
-    // Configure Storybook UI viewport options for developers
+    // Configure Storybook UI viewport options for developers to match full-screen dashboard
     viewport: {
-      defaultViewport: "extensionPopup",
+      defaultViewport: "desktopDashboard",
       viewports: {
-        extensionPopup: {
-          name: "Extension Popup",
+        desktopDashboard: {
+          name: "Desktop Dashboard",
           styles: {
-            width: "450px",
-            height: "600px",
+            width: "1200px",
+            height: "800px",
           },
         },
       },
