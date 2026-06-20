@@ -1,12 +1,60 @@
-.listContainer {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
+.tableWrapper {
+  width: 100%;
+  overflow-x: auto;
+  background-color: var(--panel-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+}
+
+.animeTable {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.animeTable th {
+  padding: 14px 12px;
+  background-color: rgba(30, 41, 59, 0.85);
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-bottom: 1px solid var(--border);
+  user-select: none;
+}
+
+.sortableHeader {
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.sortableHeader:hover {
+  background-color: rgba(59, 130, 246, 0.1) !important;
+  color: var(--accent);
+}
+
+.sorted {
+  color: var(--text-main) !important;
+}
+
+.sortIndicator {
+  display: inline-block;
+  margin-left: 4px;
+  color: var(--accent);
+  font-size: 0.75rem;
+}
+
+.actionsHeader {
+  width: 180px;
 }
 
 .emptyState {
   text-align: center;
-  padding: 40px 20px;
   color: var(--text-muted);
-  font-size: 0.9rem;
+  padding: 48px;
+  background-color: var(--panel-bg);
+  border-radius: var(--radius);
+  border: 1px dashed var(--border);
 }

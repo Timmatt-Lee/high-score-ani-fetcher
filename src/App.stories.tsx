@@ -74,7 +74,13 @@ const meta: Meta<typeof App> = {
       };
       return (
         <div
-          style={{ width: "450px", minHeight: "600px", background: "#121212" }}
+          style={{
+            width: "100%",
+            maxWidth: "1200px",
+            minHeight: "600px",
+            background: "#121212",
+            padding: "20px",
+          }}
         >
           <Story />
         </div>

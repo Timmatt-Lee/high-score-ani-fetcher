@@ -143,6 +143,11 @@ describe("useAnimeScanner", () => {
   it("includes and updates items already in trash or favorites", async () => {
     const trashItem = makeAnime("InTrash");
     const favItem = makeAnime("InFav");
+    const trashItem2 = makeAnime("InTrash2");
+    trashItem2.link = "http://InTrash2";
+    const favItem2 = makeAnime("InFav2");
+    favItem2.link = "http://InFav2";
+
     vi.spyOn(animeScraper, "getTotalPages").mockResolvedValue(1);
     vi.spyOn(AnimeScanner.prototype, "scan").mockImplementation(
       function (this: { filterItem: (item: AnimeItem) => boolean }) {
@@ -160,7 +165,13 @@ describe("useAnimeScanner", () => {
 
     const onComplete = vi.fn();
     const { result } = renderHook(
-      () => useAnimeScanner([], [favItem], [trashItem], onComplete),
+      () =>
+        useAnimeScanner(
+          [],
+          [favItem, favItem2],
+          [trashItem, trashItem2],
+          onComplete,
+        ),
       { wrapper: ServiceProvider },
     );
 
@@ -177,6 +188,7 @@ describe("useAnimeScanner", () => {
           ratingCount: 100,
           description: "UpdatedDesc",
         },
+        favItem2,
       ],
       updatedTrashList: [
         {
@@ -185,6 +197,7 @@ describe("useAnimeScanner", () => {
           ratingCount: 100,
           description: "UpdatedDesc",
         },
+        trashItem2,
       ],
     });
   });

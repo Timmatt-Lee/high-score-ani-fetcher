@@ -1,11 +1,20 @@
 import type { Meta, StoryObj } from "@storybook/react";
-import { AnimeCard } from "./AnimeCard";
+import { AnimeRow } from "./AnimeRow";
 import { Tab } from "../Tabs";
 import { type AnimeItem } from "../../services/animeScanner";
 
-const meta: Meta<typeof AnimeCard> = {
-  title: "Components/AnimeCard",
-  component: AnimeCard,
+const meta: Meta<typeof AnimeRow> = {
+  title: "Components/AnimeRow",
+  component: AnimeRow,
+  decorators: [
+    (Story) => (
+      <table style={{ width: "100%", borderCollapse: "collapse" }}>
+        <tbody>
+          <Story />
+        </tbody>
+      </table>
+    ),
+  ],
   argTypes: {
     activeTab: {
       control: "select",
@@ -18,7 +27,7 @@ const meta: Meta<typeof AnimeCard> = {
 };
 
 export default meta;
-type Story = StoryObj<typeof AnimeCard>;
+type Story = StoryObj<typeof AnimeRow>;
 
 const baseAnime: AnimeItem = {
   link: "https://example.com/anime/1",
@@ -58,9 +67,9 @@ export const LongText: Story = {
     item: {
       ...baseAnime,
       title:
-        "This is an extremely long anime title designed to test the layout and text overflow wrapping capabilities of our premium AnimeCard component",
+        "This is an extremely long anime title designed to test the layout and text overflow wrapping capabilities of our premium AnimeRow component",
       description:
-        "This is an extremely long description designed to test if the card handles large amounts of paragraph text gracefully without overflowing the layout boundaries. It should wrap properly and maintain the visual spacing guidelines.",
+        "This is an extremely long description designed to test if the row handles large amounts of paragraph text gracefully without overflowing the layout boundaries. It should wrap properly and maintain the visual spacing guidelines.",
     },
     activeTab: Tab.Search,
   },

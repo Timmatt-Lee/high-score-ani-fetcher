@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useAnimeData } from "./hooks/useAnimeData";
 import { useAnimeScanner } from "./hooks/useAnimeScanner";
+import { type AnimeItem } from "./services/animeScanner";
 import { useSettings } from "./hooks/useSettings";
 import { AnimeList } from "./components/AnimeList";
 import { ProgressBar } from "./components/ProgressBar";
@@ -13,6 +14,10 @@ import "./index.css";
 
 function App() {
   const [activeTab, setActiveTab] = useState<Tab>(Tab.Search);
+  const [sortBy, setSortBy] = useState<
+    "title" | "score" | "watchCount" | "uploadDate" | "episodeCount" | null
+  >(null);
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
 
   const { settings, saveSettings, isLoaded: isSettingsLoaded } = useSettings();
 
@@ -43,6 +48,44 @@ function App() {
     });
 
   const totalErrors = httpErrors.length + parseErrors.length;
+
+  const handleSort = (
+    field: "title" | "score" | "watchCount" | "uploadDate" | "episodeCount",
+  ) => {
+    if (sortBy === field) {
+      setSortOrder(sortOrder === "asc" ? "desc" : "asc");
+    } else {
+      setSortBy(field);
+      setSortOrder("desc");
+    }
+  };
+
+  const getSortedList = (list: AnimeItem[]) => {
+    if (!sortBy) return list;
+    return [...list].sort((a, b) => {
+      const valA = a[sortBy];
+      const valB = b[sortBy];
+
+      if (sortBy === "uploadDate") {
+        const timeA = a.uploadDate.getTime();
+        const timeB = b.uploadDate.getTime();
+        const valA = isNaN(timeA) ? 0 : timeA;
+        const valB = isNaN(timeB) ? 0 : timeB;
+        return sortOrder === "asc" ? valA - valB : valB - valA;
+      }
+
+      if (typeof valA === "string" && typeof valB === "string") {
+        return sortOrder === "asc"
+          ? valA.localeCompare(valB, "zh-Hant")
+          : valB.localeCompare(valA, "zh-Hant");
+      }
+
+      // Remaining sortable properties (score, watchCount, episodeCount) are numbers
+      const numA = valA as number;
+      const numB = valB as number;
+      return sortOrder === "asc" ? numA - numB : numB - numA;
+    });
+  };
 
   if (!isSettingsLoaded || !isAnimeDataLoaded) {
     return null;
@@ -89,12 +132,15 @@ function App() {
           ) : (
             <AnimeList
               activeTab={activeTab}
-              searchList={searchList}
-              favoriteList={favoriteList}
-              trashList={trashList}
+              searchList={getSortedList(searchList)}
+              favoriteList={getSortedList(favoriteList)}
+              trashList={getSortedList(trashList)}
               onMoveToFavorites={moveToFavorites}
               onMoveToTrash={moveToTrash}
               onRestoreFromTrash={restoreFromTrash}
+              sortBy={sortBy}
+              sortOrder={sortOrder}
+              onSort={handleSort}
             />
           )}
 

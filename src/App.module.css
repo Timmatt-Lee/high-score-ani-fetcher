@@ -1,11 +1,12 @@
 .appContainer {
-  width: 450px;
-  height: 600px;
-  padding: 20px;
+  width: 100%;
+  max-width: 1200px;
+  min-height: 100vh;
+  margin: 0 auto;
+  padding: 24px;
   display: flex;
   flex-direction: column;
-  gap: 20px;
-  overflow-y: auto;
+  gap: 24px;
 }
 
 .header {

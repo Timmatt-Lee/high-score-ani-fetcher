@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
-import { AnimeCard } from "./AnimeCard";
+import { AnimeRow } from "./AnimeRow";
 import { Tab } from "../Tabs";
 import { type AnimeItem } from "../../services/animeScanner";
 
@@ -15,10 +15,18 @@ const makeAnime = (): AnimeItem => ({
   description: "Desc",
 });
 
-describe("AnimeCard", () => {
+const renderInTable = (ui: React.ReactElement) => {
+  return render(
+    <table>
+      <tbody>{ui}</tbody>
+    </table>,
+  );
+};
+
+describe("AnimeRow", () => {
   it("renders anime info", () => {
-    render(
-      <AnimeCard
+    renderInTable(
+      <AnimeRow
         item={makeAnime()}
         activeTab={Tab.Search}
         onMoveToFavorites={vi.fn()}
@@ -34,8 +42,8 @@ describe("AnimeCard", () => {
   it("renders N/A for invalid upload date", () => {
     const item = makeAnime();
     item.uploadDate = new Date(NaN);
-    render(
-      <AnimeCard
+    renderInTable(
+      <AnimeRow
         item={item}
         activeTab={Tab.Search}
         onMoveToFavorites={vi.fn()}
@@ -49,8 +57,8 @@ describe("AnimeCard", () => {
   it("shows favorite and trash buttons in search tab", () => {
     const favFn = vi.fn();
     const trashFn = vi.fn();
-    render(
-      <AnimeCard
+    renderInTable(
+      <AnimeRow
         item={makeAnime()}
         activeTab={Tab.Search}
         onMoveToFavorites={favFn}
@@ -66,8 +74,8 @@ describe("AnimeCard", () => {
   });
 
   it("shows only trash button in favorites tab", () => {
-    render(
-      <AnimeCard
+    renderInTable(
+      <AnimeRow
         item={makeAnime()}
         activeTab={Tab.Favorites}
         onMoveToFavorites={vi.fn()}
@@ -81,8 +89,8 @@ describe("AnimeCard", () => {
 
   it("shows only restore button in trash tab", () => {
     const restoreFn = vi.fn();
-    render(
-      <AnimeCard
+    renderInTable(
+      <AnimeRow
         item={makeAnime()}
         activeTab={Tab.Trash}
         onMoveToFavorites={vi.fn()}
@@ -99,8 +107,8 @@ describe("AnimeCard", () => {
   it("throws error for unhandled activeTab state", () => {
     const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
     expect(() =>
-      render(
-        <AnimeCard
+      renderInTable(
+        <AnimeRow
           item={makeAnime()}
           activeTab={"InvalidTab" as unknown as Tab}
           onMoveToFavorites={vi.fn()}
@@ -113,8 +121,8 @@ describe("AnimeCard", () => {
   });
 
   it("renders nothing when activeTab is Settings", () => {
-    const { container } = render(
-      <AnimeCard
+    const { container } = renderInTable(
+      <AnimeRow
         item={makeAnime()}
         activeTab={Tab.Settings}
         onMoveToFavorites={vi.fn()}
@@ -123,7 +131,7 @@ describe("AnimeCard", () => {
       />,
     );
     expect(
-      container.querySelector('[class*="cardActions"]')?.childNodes.length,
+      container.querySelector('[class*="rowActions"]')?.childNodes.length,
     ).toBe(0);
   });
 });

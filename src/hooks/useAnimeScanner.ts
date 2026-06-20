@@ -180,10 +180,10 @@ export function useAnimeScanner(
           });
 
         const updatedFavoriteList = favoriteList.map(
-          (fav) => updatedFavMap.get(fav.link) ?? fav,
+          (fav) => updatedFavMap.get(fav.link)!,
         );
         const updatedTrashList = trashList.map(
-          (trash) => updatedTrashMap.get(trash.link) ?? trash,
+          (trash) => updatedTrashMap.get(trash.link)!,
         );
 
         onScanComplete({
