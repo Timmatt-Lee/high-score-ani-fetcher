@@ -264,7 +264,6 @@ export const WithLoadingDetails: Story = {
             subscriber.next(
               createMockAnime({ title: "葬送的芙莉蓮", score: 4.9 }),
             );
-            subscriber.complete();
           };
           run();
         });
