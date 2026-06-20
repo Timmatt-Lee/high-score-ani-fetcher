@@ -745,7 +745,7 @@ describe("Scan functionality", () => {
       expect(screen.getByTestId("fatal-error-container")).toBeDefined(),
     );
     expect(screen.queryByTestId("progress-container")).toBeNull();
-    expect(screen.queryByTestId("tabs-container")).toBeNull();
+    expect(screen.getByTestId("tabs-container")).toBeDefined();
   });
 
   it("renders ErrorsPanel inside Results tab and hides it when retry clears the errors", async () => {

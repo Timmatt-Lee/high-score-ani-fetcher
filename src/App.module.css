@@ -68,9 +68,7 @@
   flex-direction: column;
   gap: 16px;
   animation: fadeIn 0.3s ease-out;
-  max-width: 800px;
   width: 100%;
-  margin: 8vh auto;
 }
 
 .dismissBtn {
@@ -103,14 +101,15 @@
 }
 
 .summaryBar {
-  display: flex;
+  display: inline-flex;
+  align-self: flex-start;
   justify-content: space-between;
   align-items: center;
   background: rgba(245, 158, 11, 0.04);
   border: 1px solid rgba(245, 158, 11, 0.15);
-  padding: 12px;
+  padding: 8px 16px;
   border-radius: var(--radius);
-  gap: 12px;
+  gap: 16px;
 }
 
 .summaryText {

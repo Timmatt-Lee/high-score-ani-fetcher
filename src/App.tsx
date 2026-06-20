@@ -95,110 +95,110 @@ function App() {
     <div className={styles.appContainer} data-testid="app-container">
       <div className={styles.header}>
         <h1>AniFetcher Pro</h1>
-        {isScanning ? (
-          <ProgressBar
-            isScanning={isScanning}
-            percent={progress.percent}
-            message={progress.message}
-          />
-        ) : (
-          <button
-            className={styles.btn}
-            onClick={() => handleScan()}
-            disabled={isScanning}
-          >
-            Scan 巴哈姆特動漫瘋
-          </button>
-        )}
+        <button
+          className={styles.btn}
+          onClick={() => handleScan()}
+          disabled={isScanning}
+        >
+          {isScanning ? "Scanning..." : "Scan 巴哈姆特動漫瘋"}
+        </button>
       </div>
 
-      {error ? (
-        <div
-          className={styles.fatalErrorContainer}
-          data-testid="fatal-error-container"
-        >
-          <ErrorCard error={error} />
-        </div>
-      ) : (
-        <div className={styles.mainLayout}>
-          <div className={styles.sidebar}>
-            <Tabs
-              activeTab={activeTab}
-              setActiveTab={setActiveTab}
-              searchCount={searchList.length}
-              favoritesCount={favoriteList.length}
-              trashCount={trashList.length}
-            />
-          </div>
-
-          <div className={styles.contentArea}>
-            {activeTab === Tab.Settings ? (
-              <SettingsTab settings={settings} onSave={saveSettings} />
-            ) : (
-              <AnimeList
-                activeTab={activeTab}
-                searchList={getSortedList(searchList)}
-                favoriteList={getSortedList(favoriteList)}
-                trashList={getSortedList(trashList)}
-                onMoveToFavorites={moveToFavorites}
-                onMoveToTrash={moveToTrash}
-                onRestoreFromTrash={restoreFromTrash}
-                sortBy={sortBy}
-                sortOrder={sortOrder}
-                onSort={handleSort}
-              />
-            )}
-
-            {activeTab === Tab.Search && totalErrors > 0 && !isScanning && (
-              <div className={styles.errorsPanel} data-testid="errors-panel">
-                <div className={styles.summaryBar}>
-                  <span
-                    className={styles.summaryText}
-                    data-testid="errors-summary-text"
-                  >
-                    {totalErrors}{" "}
-                    {totalErrors === 1 ? "error occurred" : "errors occurred"}
-                  </span>
-                  <button
-                    className={`${styles.btn} ${styles.btnRetry}`}
-                    onClick={() => {
-                      const failedPagesSet = new Set<number>();
-                      httpErrors.forEach((err) => {
-                        if (err.page) failedPagesSet.add(err.page);
-                      });
-                      parseErrors.forEach((err) => {
-                        if (err.page) failedPagesSet.add(err.page);
-                      });
-                      handleScan({
-                        onlyPages: Array.from(failedPagesSet),
-                      });
-                    }}
-                    disabled={isScanning || totalErrors === 0}
-                    data-testid="retry-errors-btn"
-                  >
-                    Retry Failed Animes
-                  </button>
-                </div>
-
-                <div className={styles.accordion}>
-                  <ErrorPanel
-                    title="HTTP Network Errors"
-                    testIdPrefix="http-errors"
-                    emptyMessage="No network errors."
-                    errors={httpErrors}
-                  />
-                  <ErrorPanel
-                    title="Document Parser Errors"
-                    testIdPrefix="parse-errors"
-                    emptyMessage="No parser errors."
-                    errors={parseErrors}
-                  />
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
+      {isScanning && (
+        <ProgressBar
+          isScanning={isScanning}
+          percent={progress.percent}
+          message={progress.message}
+        />
       )}
+
+      <div className={styles.mainLayout}>
+        <div className={styles.sidebar}>
+          <Tabs
+            activeTab={activeTab}
+            setActiveTab={setActiveTab}
+            searchCount={searchList.length}
+            favoritesCount={favoriteList.length}
+            trashCount={trashList.length}
+          />
+        </div>
+
+        <div className={styles.contentArea}>
+          {error && (
+            <div
+              className={styles.fatalErrorContainer}
+              data-testid="fatal-error-container"
+            >
+              <ErrorCard error={error} />
+            </div>
+          )}
+
+          {activeTab === Tab.Settings ? (
+            <SettingsTab settings={settings} onSave={saveSettings} />
+          ) : (
+            <AnimeList
+              activeTab={activeTab}
+              searchList={getSortedList(searchList)}
+              favoriteList={getSortedList(favoriteList)}
+              trashList={getSortedList(trashList)}
+              onMoveToFavorites={moveToFavorites}
+              onMoveToTrash={moveToTrash}
+              onRestoreFromTrash={restoreFromTrash}
+              sortBy={sortBy}
+              sortOrder={sortOrder}
+              onSort={handleSort}
+            />
+          )}
+
+          {activeTab === Tab.Search && totalErrors > 0 && !isScanning && (
+            <div className={styles.errorsPanel} data-testid="errors-panel">
+              <div className={styles.summaryBar}>
+                <span
+                  className={styles.summaryText}
+                  data-testid="errors-summary-text"
+                >
+                  {totalErrors}{" "}
+                  {totalErrors === 1 ? "error occurred" : "errors occurred"}
+                </span>
+                <button
+                  className={`${styles.btn} ${styles.btnRetry}`}
+                  onClick={() => {
+                    const failedPagesSet = new Set<number>();
+                    httpErrors.forEach((err) => {
+                      if (err.page) failedPagesSet.add(err.page);
+                    });
+                    parseErrors.forEach((err) => {
+                      if (err.page) failedPagesSet.add(err.page);
+                    });
+                    handleScan({
+                      onlyPages: Array.from(failedPagesSet),
+                    });
+                  }}
+                  disabled={isScanning || totalErrors === 0}
+                  data-testid="retry-errors-btn"
+                >
+                  Retry Failed Animes
+                </button>
+              </div>
+
+              <div className={styles.accordion}>
+                <ErrorPanel
+                  title="HTTP Network Errors"
+                  testIdPrefix="http-errors"
+                  emptyMessage="No network errors."
+                  errors={httpErrors}
+                />
+                <ErrorPanel
+                  title="Document Parser Errors"
+                  testIdPrefix="parse-errors"
+                  emptyMessage="No parser errors."
+                  errors={parseErrors}
+                />
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
 }
