@@ -4,7 +4,7 @@
   "version": "1.0.0",
   "description": "Fetch and filter high score anime from 巴哈姆特動漫瘋.",
   "action": {},
-  "permissions": ["storage"],
+  "permissions": ["storage", "tabs"],
   "host_permissions": ["*://ani.gamer.com.tw/*"],
   "background": {
     "service_worker": "src/background.ts"
