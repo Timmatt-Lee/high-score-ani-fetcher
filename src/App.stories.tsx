@@ -281,3 +281,121 @@ export const WithLoadingDetails: Story = {
     scanBtn.click();
   },
 };
+
+export const WithExistingData: Story = {
+  decorators: [
+    (Story) => {
+      const existingSearch = [
+        createMockAnime({
+          title: "原有已快取的動畫 (高分)",
+          score: 4.8,
+          link: "https://ani.gamer.com.tw/anime.php?sn=1111",
+        }),
+        createMockAnime({
+          title: "被過濾的動畫 (分數太低不重新掃描)",
+          score: 4.2,
+          link: "https://ani.gamer.com.tw/anime.php?sn=2222",
+        }),
+      ];
+      const existingFavorites = [
+        createMockAnime({
+          title: "原有的最愛動畫",
+          score: 4.9,
+          link: "https://ani.gamer.com.tw/anime.php?sn=3333",
+        }),
+      ];
+      const existingTrash = [
+        createMockAnime({
+          title: "原有的垃圾桶動畫",
+          score: 3.5,
+          link: "https://ani.gamer.com.tw/anime.php?sn=4444",
+        }),
+      ];
+
+      localStorage.setItem(
+        "animeData",
+        JSON.stringify({
+          searchList: existingSearch,
+          favoriteList: existingFavorites,
+          trashList: existingTrash,
+        }),
+      );
+
+      return (
+        <ServiceProvider animeScraper={mockAnimeScraper as any}>
+          <Story />
+        </ServiceProvider>
+      );
+    },
+  ],
+};
+
+export const WithExistingDataScan: Story = {
+  decorators: [
+    (Story) => {
+      const existingSearch = [
+        createMockAnime({
+          title: "原有已快取的動畫 (高分)",
+          score: 4.8,
+          link: "https://ani.gamer.com.tw/anime.php?sn=1111",
+        }),
+        createMockAnime({
+          title: "被過濾的動畫 (分數太低不重新掃描)",
+          score: 4.2,
+          link: "https://ani.gamer.com.tw/anime.php?sn=2222",
+        }),
+      ];
+      const existingFavorites = [
+        createMockAnime({
+          title: "原有的最愛動畫",
+          score: 4.9,
+          link: "https://ani.gamer.com.tw/anime.php?sn=3333",
+        }),
+      ];
+      const existingTrash = [
+        createMockAnime({
+          title: "原有的垃圾桶動畫",
+          score: 3.5,
+          link: "https://ani.gamer.com.tw/anime.php?sn=4444",
+        }),
+      ];
+
+      localStorage.setItem(
+        "animeData",
+        JSON.stringify({
+          searchList: existingSearch,
+          favoriteList: existingFavorites,
+          trashList: existingTrash,
+        }),
+      );
+
+      AnimeScanner.prototype.scan = function (this: any) {
+        return new Observable((subscriber) => {
+          const run = async () => {
+            await new Promise((resolve) => setTimeout(resolve, 10));
+            subscriber.next(
+              createMockAnime({
+                title: "掃描發現的新動畫",
+                score: 4.9,
+                link: "https://ani.gamer.com.tw/anime.php?sn=5555",
+              }),
+            );
+            subscriber.complete();
+          };
+          run();
+        });
+      };
+
+      return (
+        <ServiceProvider animeScraper={mockAnimeScraper as any}>
+          <Story />
+        </ServiceProvider>
+      );
+    },
+  ],
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const scanBtn = await canvas.findByRole("button", { name: /Scan/i });
+    scanBtn.click();
+  },
+};
