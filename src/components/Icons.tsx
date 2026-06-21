@@ -39,6 +39,7 @@ export function TrashIcon(props: SVGProps<SVGSVGElement>) {
     </svg>
   );
 }
+
 export function RestoreIcon(props: SVGProps<SVGSVGElement>) {
   return (
     <svg
