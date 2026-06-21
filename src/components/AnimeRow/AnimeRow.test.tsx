@@ -87,7 +87,7 @@ describe("AnimeRow", () => {
     expect(screen.getByRole("button", { name: "Trash" })).toBeDefined();
   });
 
-  it("shows only favorite button in trash tab", () => {
+  it("shows only favorite button in trash tab for restoring", () => {
     const restoreFn = vi.fn();
     renderInTable(
       <AnimeRow
