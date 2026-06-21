@@ -172,11 +172,12 @@ export const PartiallyFailedScan: Story = {
         const options = this.options;
         return new Observable((subscriber) => {
           const run = async () => {
-            if (options) {
+            if (options && options.onlyPages && options.onlyPages.length > 0) {
               await new Promise((resolve) => setTimeout(resolve, 10));
               subscriber.next(
                 createMockAnime({ title: "Retry Progress Detail", score: 4.9 }),
               );
+              subscriber.complete();
               return;
             }
 
