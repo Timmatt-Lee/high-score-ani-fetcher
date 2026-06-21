@@ -56,13 +56,9 @@ export function AnimeList({
   }
 
   if (list.length === 0) {
-    let emptyMessage = "No anime found in this list.";
-    if (activeTab === Tab.Trash) {
-      emptyMessage = "Trash is empty.";
-    }
     return (
       <div className={styles.emptyState} data-testid="list-container">
-        {emptyMessage}
+        No anime found in this list.
       </div>
     );
   }
