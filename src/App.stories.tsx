@@ -48,7 +48,7 @@ const mockAnimeScraper = {
 };
 
 const meta: Meta<typeof App> = {
-  title: "App/PopupLayout",
+  title: "App",
   component: App,
   decorators: [
     (Story) => {

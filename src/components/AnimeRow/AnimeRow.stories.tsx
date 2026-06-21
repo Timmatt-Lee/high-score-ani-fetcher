@@ -57,7 +57,7 @@ export const FavoritesTab: Story = {
 };
 
 // Trash tab shows the Restore action button
-export const TrashTabWithRestore: Story = {
+export const TrashTab: Story = {
   args: {
     item: baseAnime,
     activeTab: Tab.Trash,
