@@ -53,10 +53,14 @@ test.describe("Popup Scanning & Interaction", () => {
     await scanButton.click();
 
     // Verify results are rendered (from our mock)
-    await expect(page.getByText("測試動畫第一季")).toBeVisible({
+    await expect(
+      page.getByTestId("anime-card").filter({ hasText: "測試動畫第一季" }),
+    ).toBeVisible({
       timeout: 8000,
     });
-    await expect(page.getByText("垃圾桶動畫")).toBeVisible();
+    await expect(
+      page.getByTestId("anime-card").filter({ hasText: "垃圾桶動畫" }),
+    ).toBeVisible();
     await expect(page.getByText("★ 4.9")).toHaveCount(2);
   });
 

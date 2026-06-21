@@ -14,6 +14,7 @@ const meta: Meta<typeof AnimeList> = {
     onMoveToFavorites: { action: "moveToFavorites" },
     onMoveToTrash: { action: "moveToTrash" },
     onRestoreFromTrash: { action: "restoreFromTrash" },
+    onSort: { action: "sort" },
   },
 };
 
@@ -73,8 +74,15 @@ const sampleTrashList: AnimeItem[] = [
   },
 ];
 
+const defaultArgs = {
+  sortBy: "score" as const,
+  sortOrder: "desc" as const,
+  onSort: () => {},
+};
+
 export const SearchTabWithItems: Story = {
   args: {
+    ...defaultArgs,
     activeTab: Tab.Search,
     searchList: sampleSearchList,
     favoriteList: sampleFavoritesList,
@@ -84,6 +92,7 @@ export const SearchTabWithItems: Story = {
 
 export const FavoritesTabWithItems: Story = {
   args: {
+    ...defaultArgs,
     activeTab: Tab.Favorites,
     searchList: sampleSearchList,
     favoriteList: sampleFavoritesList,
@@ -93,6 +102,7 @@ export const FavoritesTabWithItems: Story = {
 
 export const TrashTabWithItems: Story = {
   args: {
+    ...defaultArgs,
     activeTab: Tab.Trash,
     searchList: sampleSearchList,
     favoriteList: sampleFavoritesList,
@@ -102,6 +112,7 @@ export const TrashTabWithItems: Story = {
 
 export const EmptySearchState: Story = {
   args: {
+    ...defaultArgs,
     activeTab: Tab.Search,
     searchList: [],
     favoriteList: sampleFavoritesList,
@@ -111,6 +122,7 @@ export const EmptySearchState: Story = {
 
 export const EmptyFavoritesState: Story = {
   args: {
+    ...defaultArgs,
     activeTab: Tab.Favorites,
     searchList: sampleSearchList,
     favoriteList: [],

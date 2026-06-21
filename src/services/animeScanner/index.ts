@@ -12,4 +12,5 @@ export {
   AnimeItemSchema,
   type Settings,
   SettingsSchema,
+  AnimeScanPageEvent,
 } from "./types";

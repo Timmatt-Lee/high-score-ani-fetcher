@@ -600,7 +600,7 @@ describe("AnimeScraper pipeline methods", () => {
             httpErrors.push(event);
           } else if (event instanceof AnimeScanParseError) {
             parseErrors.push(event);
-          } else if (!(event instanceof Error)) {
+          } else if (!(event instanceof Error) && "title" in event) {
             animeItems.push(event);
           }
         },

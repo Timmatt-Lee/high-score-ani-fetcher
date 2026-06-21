@@ -175,7 +175,11 @@ describe("ErrorCard", () => {
 
     expect(writeTextMock).toHaveBeenCalled();
     const copiedText = writeTextMock.mock.calls[0][0];
-    expect(copiedText).toBe(error.toString());
+    // Stack trace should be included in the copied text
+    expect(copiedText).toContain(error.toString());
+    if (error.stack) {
+      expect(copiedText).toContain(error.stack);
+    }
 
     expect(copyBtn.textContent).toBe("Copied! ✓");
 
@@ -206,6 +210,7 @@ describe("ErrorCard", () => {
     expect(screen.getByTestId("error-card-title").textContent).toBe("Error");
 
     // Trigger copy click on non-AnimeScanError to cover isCopied branch in early return
+    writeTextMock.mockResolvedValue(undefined);
     const copyBtn = screen.getByTestId("error-card-copy-btn");
     await act(async () => {
       fireEvent.click(copyBtn);
@@ -252,5 +257,48 @@ describe("ErrorCard", () => {
       expect.any(Error),
     );
     consoleSpy.mockRestore();
+  });
+
+  it("copy button includes stack trace in clipboard text when stack is available", async () => {
+    const error = new AnimeScanHttpError(
+      1,
+      AnimeScanStep.GET_TOTAL_PAGES,
+      "https://ani.gamer.com.tw/animeList.php?page=1",
+      "HTTP 500",
+      500,
+      undefined,
+    );
+    writeTextMock.mockResolvedValue(undefined);
+    // Manually set a stack for deterministic assertion
+    Object.defineProperty(error, "stack", {
+      value: "AnimeScanHttpError: HTTP 500\n  at test.ts:1:1",
+    });
+
+    render(<ErrorCard error={error} />);
+
+    const copyBtn = screen.getByTestId("error-card-copy-btn");
+    await act(async () => {
+      fireEvent.click(copyBtn);
+    });
+
+    expect(writeTextMock).toHaveBeenCalled();
+    const copiedText = writeTextMock.mock.calls[0][0];
+    expect(copiedText).toContain(error.toString());
+    expect(copiedText).toContain("at test.ts:1:1");
+  });
+
+  it("copy button only sends error.toString() when no stack is available", async () => {
+    const error = new Error("No stack error");
+    Object.defineProperty(error, "stack", { value: undefined });
+    writeTextMock.mockResolvedValue(undefined);
+
+    render(<ErrorCard error={error} />);
+
+    const copyBtn = screen.getByTestId("error-card-copy-btn");
+    await act(async () => {
+      fireEvent.click(copyBtn);
+    });
+
+    expect(writeTextMock).toHaveBeenCalledWith(error.toString());
   });
 });

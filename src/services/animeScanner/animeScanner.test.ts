@@ -10,6 +10,7 @@ import {
   type AnimeScanEvent,
   type AnimeItem,
   type AnimeDetails,
+  AnimeScanPageEvent,
 } from "./types";
 import { AnimeScraper } from "./animeScraper";
 
@@ -30,7 +31,9 @@ const runPipeline = (pipeline: AnimeScanner) => {
     pipeline.scan().subscribe({
       next: (event: AnimeScanEvent) => {
         events.push(event);
-        if (event instanceof AnimeScanHttpError) {
+        if (event instanceof AnimeScanPageEvent) {
+          // ignore
+        } else if (event instanceof AnimeScanHttpError) {
           httpErrors.push(event);
         } else if (event instanceof AnimeScanParseError) {
           parseErrors.push(event);

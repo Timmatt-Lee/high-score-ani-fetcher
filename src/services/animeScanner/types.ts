@@ -1,7 +1,14 @@
 import { z } from "zod";
 import { type AnimeScanError } from "./animeScanError";
 
-export type AnimeScanEvent = AnimeItem | AnimeScanError;
+export class AnimeScanPageEvent {
+  constructor(
+    public currentPage: number,
+    public totalPages: number,
+  ) {}
+}
+
+export type AnimeScanEvent = AnimeItem | AnimeScanError | AnimeScanPageEvent;
 
 export interface PipelineOptions {
   onlyPages?: number[];

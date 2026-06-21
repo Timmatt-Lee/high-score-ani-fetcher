@@ -5,6 +5,7 @@ import {
   type AnimeScanEvent,
   type PipelineOptions,
   type AnimeItem,
+  AnimeScanPageEvent,
 } from "./types";
 
 /**
@@ -37,35 +38,45 @@ export class AnimeScanner {
         this.options?.onlyPages ??
         Array.from({ length: this.totalPages }, (_, i) => i + 1);
 
-      for (const page of pagesToScan) {
+      const itemsToScan: { item: AnimeItem; page: number }[] = [];
+
+      for (let i = 0; i < pagesToScan.length; i++) {
+        const page = pagesToScan[i];
         try {
-          await this.fetchPage(page);
+          const pageResult = await this.scraper.scrapeAnimesOnPage(page);
+          for (const error of pageResult.httpErrors) {
+            this.eventSubject.next(error);
+          }
+          for (const error of pageResult.parseErrors) {
+            this.eventSubject.next(error);
+          }
+          for (const item of pageResult.animeItems) {
+            if (this.filterItem(item)) {
+              itemsToScan.push({ item, page });
+            }
+          }
+          this.eventSubject.next(
+            new AnimeScanPageEvent(i + 1, pagesToScan.length),
+          );
         } catch (err) {
           this.eventSubject.error(err);
           return;
         }
       }
 
+      try {
+        for (const { item, page } of itemsToScan) {
+          await this.fetchDetail(item, page);
+        }
+      } catch (err) {
+        this.eventSubject.error(err);
+        return;
+      }
+
       this.eventSubject.complete();
     };
     run();
     return this.eventSubject.asObservable();
-  }
-
-  private async fetchPage(page: number): Promise<void> {
-    const pageResult = await this.scraper.scrapeAnimesOnPage(page);
-    for (const error of pageResult.httpErrors) {
-      this.eventSubject.next(error);
-    }
-    for (const error of pageResult.parseErrors) {
-      this.eventSubject.next(error);
-    }
-
-    for (const item of pageResult.animeItems) {
-      if (this.filterItem(item)) {
-        await this.fetchDetail(item, page);
-      }
-    }
   }
 
   private async fetchDetail(item: AnimeItem, page: number): Promise<void> {

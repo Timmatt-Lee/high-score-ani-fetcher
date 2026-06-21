@@ -53,8 +53,11 @@ export function ErrorCard({ error }: ErrorCardProps) {
   const [isCopied, setIsCopied] = useState(false);
 
   const handleCopy = async () => {
+    const copyText = error.stack
+      ? `${error.toString()}\n\n${error.stack}`
+      : error.toString();
     try {
-      await navigator.clipboard.writeText(error.toString());
+      await navigator.clipboard.writeText(copyText);
       setIsCopied(true);
       setTimeout(() => setIsCopied(false), 2000);
     } catch (err) {
@@ -86,7 +89,7 @@ export function ErrorCard({ error }: ErrorCardProps) {
             className={styles.copyBtn}
             onClick={handleCopy}
             data-testid="error-card-copy-btn"
-            title="Copy full error details"
+            title="Copy full error details including stack trace"
           >
             {isCopied ? "Copied! ✓" : "Copy"}
           </button>
