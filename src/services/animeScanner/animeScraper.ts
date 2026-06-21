@@ -20,9 +20,11 @@ export class AnimeScraper {
     scanStep: AnimeScanStep,
     animeName?: string,
   ): Promise<Result<string, AnimeScanHttpError>> {
-    // Space out requests randomly between 800ms and 1500ms to respect rate limits
-    const delayMs = Math.floor(Math.random() * 700) + 800;
-    await this.delay(delayMs);
+    // Space out requests randomly between 200ms and 400ms for detail pages to respect rate limits
+    if (scanStep === AnimeScanStep.PARSE_ANIME_DETAIL) {
+      const delayMs = Math.floor(Math.random() * 200) + 200;
+      await this.delay(delayMs);
+    }
 
     let response: Response;
     try {

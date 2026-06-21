@@ -531,7 +531,8 @@ describe("useAnimeScanner", () => {
     });
 
     expect(onComplete).toHaveBeenCalled();
-    const completedResult = onComplete.mock.calls[0][0];
+    const completedResult =
+      onComplete.mock.calls[onComplete.mock.calls.length - 1][0];
     expect(completedResult.newSearchItems[0].title).toBe("Z_Anime");
     expect(completedResult.newSearchItems[1].title).toBe("A_Anime");
     expect(completedResult.newSearchItems[2].title).toBe("M_Anime");

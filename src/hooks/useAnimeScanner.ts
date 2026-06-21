@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useServices } from "../contexts/ServiceContext";
 import { useSettings } from "./useSettings";
 import {
@@ -31,6 +31,16 @@ export function useAnimeScanner(
   const [parseErrors, setParseErrors] = useState<AnimeScanParseError[]>([]);
   const [error, setError] = useState<Error | null>(null);
   const [totalPagesCount, setTotalPagesCount] = useState(0);
+
+  const searchListRef = useRef(searchList);
+  const favoriteListRef = useRef(favoriteList);
+  const trashListRef = useRef(trashList);
+
+  useEffect(() => {
+    searchListRef.current = searchList;
+    favoriteListRef.current = favoriteList;
+    trashListRef.current = trashList;
+  }, [searchList, favoriteList, trashList]);
 
   const clearError = () => {
     setError(null);
@@ -126,18 +136,6 @@ export function useAnimeScanner(
       setProgress({ percent, message: msg });
     };
 
-    const updatedSearch = [...searchList];
-    const updatedFav = [...favoriteList];
-    const updatedTrash = [...trashList];
-
-    const saveUpdatedState = () => {
-      onScanUpdate({
-        newSearchItems: updatedSearch,
-        updatedFavoriteList: updatedFav,
-        updatedTrashList: updatedTrash,
-      });
-    };
-
     const scanHttpErrors: AnimeScanHttpError[] = [];
     const scanParseErrors: AnimeScanParseError[] = [];
 
@@ -170,8 +168,12 @@ export function useAnimeScanner(
           detailsCompletedCount++;
           updateProgress(event.title);
 
+          const currentFav = [...favoriteListRef.current];
+          const currentTrash = [...trashListRef.current];
+          const currentSearch = [...searchListRef.current];
+
           let isUpdated = false;
-          for (const list of [updatedFav, updatedTrash, updatedSearch]) {
+          for (const list of [currentFav, currentTrash, currentSearch]) {
             const idx = list.findIndex((x) => x.link === event.link);
             if (idx !== -1) {
               list[idx] = event;
@@ -181,14 +183,26 @@ export function useAnimeScanner(
           }
 
           if (!isUpdated && event.score >= 4.8) {
-            updatedSearch.push(event);
+            currentSearch.push(event);
           }
 
-          saveUpdatedState();
+          onScanUpdate({
+            newSearchItems: currentSearch,
+            updatedFavoriteList: currentFav,
+            updatedTrashList: currentTrash,
+          });
+
+          searchListRef.current = currentSearch;
+          favoriteListRef.current = currentFav;
+          trashListRef.current = currentTrash;
         }
       },
       complete: () => {
-        saveUpdatedState();
+        onScanUpdate({
+          newSearchItems: [...searchListRef.current],
+          updatedFavoriteList: [...favoriteListRef.current],
+          updatedTrashList: [...trashListRef.current],
+        });
         setIsScanning(false);
         setProgress({ percent: 100, message: "Done!" });
       },
