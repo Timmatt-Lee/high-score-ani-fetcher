@@ -129,3 +129,13 @@ export const EmptyFavoritesState: Story = {
     trashList: sampleTrashList,
   },
 };
+
+export const EmptyTrashState: Story = {
+  args: {
+    ...defaultArgs,
+    activeTab: Tab.Trash,
+    searchList: sampleSearchList,
+    favoriteList: sampleFavoritesList,
+    trashList: [],
+  },
+};
