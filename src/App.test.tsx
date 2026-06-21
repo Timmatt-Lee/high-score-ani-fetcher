@@ -266,7 +266,7 @@ describe("Tab switching", () => {
       );
     });
     fireEvent.click(screen.getByText(/Trash/));
-    expect(screen.getByText("No anime found in this list.")).toBeDefined();
+    expect(screen.getByText("Trash is empty.")).toBeDefined();
   });
 });
 
