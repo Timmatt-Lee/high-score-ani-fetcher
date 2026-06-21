@@ -15,9 +15,9 @@ import "./index.css";
 function App() {
   const [activeTab, setActiveTab] = useState<Tab>(Tab.Search);
   const [sortBy, setSortBy] = useState<
-    "title" | "score" | "watchCount" | "uploadDate" | "episodeCount" | null
-  >(null);
-  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
+    "title" | "score" | "watchCount" | "uploadDate" | "episodeCount"
+  >("watchCount");
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
 
   const { settings, saveSettings, isLoaded: isSettingsLoaded } = useSettings();
 
@@ -61,7 +61,6 @@ function App() {
   };
 
   const getSortedList = (list: AnimeItem[]) => {
-    if (!sortBy) return list;
     return [...list].sort((a, b) => {
       const valA = a[sortBy];
       const valB = b[sortBy];

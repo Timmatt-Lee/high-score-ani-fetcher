@@ -16,7 +16,12 @@ export function useAnimeData() {
         console.error("Zod parse error:", result.error, "Data was:", data);
         return [];
       }
-      return result.data;
+      return result.data.map((item) => {
+        if (item.score > 0 && !item.scannedAt) {
+          return { ...item, scannedAt: new Date() };
+        }
+        return item;
+      });
     };
 
     const loadData = async () => {

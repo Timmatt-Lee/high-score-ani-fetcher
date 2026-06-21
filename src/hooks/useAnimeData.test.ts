@@ -271,6 +271,32 @@ describe("useAnimeData", () => {
     consoleSpy.mockRestore();
   });
 
+  it("migrates scannedAt property for items with score > 0 on load", async () => {
+    const itemWithoutScannedAt = makeAnime("NoScannedAt");
+    itemWithoutScannedAt.score = 9.0;
+    delete itemWithoutScannedAt.scannedAt;
+
+    const itemWithScannedAt = makeAnime("WithScannedAt");
+    itemWithScannedAt.score = 9.0;
+    const existingDate = new Date("2026-06-20");
+    itemWithScannedAt.scannedAt = existingDate;
+
+    storageMock["searchList"] = [itemWithoutScannedAt, itemWithScannedAt];
+    const { result } = renderHook(() => useAnimeData());
+
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+
+    expect(result.current.searchList).toHaveLength(2);
+    // The one without scannedAt gets migrated
+    expect(result.current.searchList[0].scannedAt).toBeInstanceOf(Date);
+    // The one with scannedAt remains unchanged
+    expect(result.current.searchList[1].scannedAt?.getTime()).toBe(
+      existingDate.getTime(),
+    );
+  });
+
   it("sets isLoaded to true after data loading finishes", async () => {
     const { result } = renderHook(() => useAnimeData());
     expect(result.current.isLoaded).toBe(false);

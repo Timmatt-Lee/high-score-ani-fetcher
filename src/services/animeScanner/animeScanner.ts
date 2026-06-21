@@ -65,9 +65,15 @@ export class AnimeScanner {
       }
 
       try {
-        for (const { item, page } of itemsToScan) {
-          await this.fetchDetail(item, page);
-        }
+        const concurrency = 5;
+        const tasks = [...itemsToScan];
+        const workers = Array.from({ length: concurrency }, async () => {
+          while (tasks.length > 0) {
+            const task = tasks.shift()!;
+            await this.fetchDetail(task.item, task.page);
+          }
+        });
+        await Promise.all(workers);
       } catch (err) {
         this.eventSubject.error(err);
         return;
@@ -89,7 +95,7 @@ export class AnimeScanner {
       res.animeName = item.title;
       this.eventSubject.next(res);
     } else {
-      const fullItem = { ...item, ...res };
+      const fullItem = { ...item, ...res, scannedAt: new Date() };
       this.eventSubject.next(fullItem);
     }
   }

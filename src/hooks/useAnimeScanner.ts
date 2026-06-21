@@ -76,9 +76,9 @@ export function useAnimeScanner(
     }
 
     const existingMap = new Map<string, AnimeItem>();
-    searchList.forEach((x) => existingMap.set(x.link, x));
-    favoriteList.forEach((x) => existingMap.set(x.link, x));
-    trashList.forEach((x) => existingMap.set(x.link, x));
+    searchListRef.current.forEach((x) => existingMap.set(x.link, x));
+    favoriteListRef.current.forEach((x) => existingMap.set(x.link, x));
+    trashListRef.current.forEach((x) => existingMap.set(x.link, x));
 
     const filterItem = (item: AnimeItem) => {
       // Skip scanning details if cached data is still valid and within cache duration
