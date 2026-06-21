@@ -58,7 +58,7 @@ export function AnimeRow({
             className={`${styles.actionBtn} ${styles.fav}`}
             onClick={() => onRestoreFromTrash(item)}
           >
-            <RestoreIcon /> Restore
+            <RestoreIcon /> Favorite
           </button>
         );
       case Tab.Settings:
