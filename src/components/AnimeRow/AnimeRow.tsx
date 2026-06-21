@@ -1,7 +1,7 @@
 import { type AnimeItem } from "../../services/animeScanner";
 import { Tab } from "../Tabs";
 import styles from "./AnimeRow.module.css";
-import { HeartIcon, TrashIcon, RestoreIcon } from "../Icons";
+import { HeartIcon, TrashIcon } from "../Icons";
 
 interface AnimeRowProps {
   item: AnimeItem;
@@ -58,7 +58,7 @@ export function AnimeRow({
             className={`${styles.actionBtn} ${styles.fav}`}
             onClick={() => onRestoreFromTrash(item)}
           >
-            <RestoreIcon /> Favorite
+            <HeartIcon /> Favorite
           </button>
         );
       case Tab.Settings:
