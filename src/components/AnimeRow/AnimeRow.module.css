@@ -1,0 +1,113 @@
+.animeRow {
+  border-bottom: 1px solid var(--border);
+  transition: background-color 0.2s ease;
+}
+
+.animeRow:hover {
+  background-color: rgba(255, 255, 255, 0.02);
+}
+
+.titleCell {
+  padding: 16px 12px;
+  vertical-align: top;
+  width: 99%;
+}
+
+.titleWrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.titleLink {
+  color: var(--text-main);
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 0.95rem;
+  transition: color 0.2s ease;
+  line-height: 1.4;
+}
+
+.titleLink:hover {
+  color: var(--accent);
+}
+
+.descriptionText {
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  line-height: 1.5;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.scoreCell,
+.viewsCell,
+.yearCell,
+.episodesCell,
+.actionsCell {
+  padding: 16px 12px;
+  vertical-align: middle;
+  font-size: 0.875rem;
+  color: var(--text-main);
+  white-space: nowrap;
+  width: 1%;
+}
+
+.scoreBadge {
+  background-color: rgba(245, 158, 11, 0.1);
+  color: #f59e0b;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-weight: 700;
+  font-size: 0.8rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.rowActions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-start;
+}
+
+.actionBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  background-color: var(--panel-bg);
+  border: 1px solid var(--border);
+  color: var(--text-main);
+  transition: all 0.2s ease;
+}
+
+.actionBtn:hover:not(:disabled) {
+  background-color: var(--border);
+}
+
+.actionBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.fav:hover:not(:disabled) {
+  background-color: rgba(16, 185, 129, 0.1);
+  border-color: var(--success);
+  color: var(--success);
+}
+
+.trash:hover:not(:disabled) {
+  background-color: rgba(239, 68, 68, 0.1);
+  border-color: var(--danger);
+  color: var(--danger);
+}

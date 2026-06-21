@@ -8,6 +8,7 @@ import {
 } from "@testing-library/react";
 import { ServiceProvider } from "./contexts/ServiceContext";
 import App from "./App";
+import * as useAnimeDataModule from "./hooks/useAnimeData";
 import { animeScraper } from "./services/animeScanner/animeScraper";
 import {
   AnimeScanHttpError,
@@ -399,7 +400,9 @@ describe("Scan functionality", () => {
       fireEvent.click(screen.getByText("Scan 巴哈姆特動漫瘋"));
     });
 
-    await waitFor(() => expect(screen.getByText("Scanning...")).toBeDefined());
+    await waitFor(() =>
+      expect(screen.getByTestId("progress-container")).toBeDefined(),
+    );
     await act(async () => {
       subject.complete();
     });
@@ -742,7 +745,7 @@ describe("Scan functionality", () => {
       expect(screen.getByTestId("fatal-error-container")).toBeDefined(),
     );
     expect(screen.queryByTestId("progress-container")).toBeNull();
-    expect(screen.queryByTestId("tabs-container")).toBeNull();
+    expect(screen.getByTestId("tabs-container")).toBeDefined();
   });
 
   it("renders ErrorsPanel inside Results tab and hides it when retry clears the errors", async () => {
@@ -855,5 +858,132 @@ describe("Scan functionality", () => {
     });
 
     expect(screen.getByTestId("settings-tab")).toBeInTheDocument();
+  });
+
+  it("supports sorting items by different columns in search results", async () => {
+    const itemA = makeAnime({
+      link: "https://ani.gamer.com.tw/anime.php?sn=1",
+      title: "Apple Anime",
+      score: 9.5,
+      watchCount: 10000,
+      episodeCount: 12,
+      uploadDate: new Date("2024-01-01"),
+    });
+    const itemB = makeAnime({
+      link: "https://ani.gamer.com.tw/anime.php?sn=2",
+      title: "Banana Anime",
+      score: 8.0,
+      watchCount: 50000,
+      episodeCount: 24,
+      uploadDate: new Date("2023-01-01"),
+    });
+    const itemC = makeAnime({
+      link: "https://ani.gamer.com.tw/anime.php?sn=3",
+      title: "Cherry Anime",
+      score: 9.0,
+      watchCount: 5000,
+      episodeCount: 6,
+      uploadDate: new Date("2025-01-01"),
+    });
+    const itemD = makeAnime({
+      link: "https://ani.gamer.com.tw/anime.php?sn=4",
+      title: "Date N/A Anime",
+      uploadDate: new Date(NaN),
+    });
+
+    const useAnimeDataSpy = vi
+      .spyOn(useAnimeDataModule, "useAnimeData")
+      .mockReturnValue({
+        searchList: [itemA, itemB, itemC, itemD],
+        favoriteList: [],
+        trashList: [],
+        moveToFavorites: vi.fn(),
+        moveToTrash: vi.fn(),
+        restoreFromTrash: vi.fn(),
+        saveData: vi.fn(),
+        isLoaded: true,
+        setSearchList: vi.fn(),
+        setFavoriteList: vi.fn(),
+        setTrashList: vi.fn(),
+      });
+
+    await act(async () => {
+      render(
+        <ServiceProvider>
+          <App />
+        </ServiceProvider>,
+      );
+    });
+
+    // Verify initial rendering order
+    let titles = screen.getAllByRole("link").map((el) => el.textContent);
+    expect(titles).toContain("Apple Anime");
+    expect(titles).toContain("Banana Anime");
+    expect(titles).toContain("Cherry Anime");
+    expect(titles).toContain("Date N/A Anime");
+
+    // Click score header (defaults to sorting desc)
+    await act(async () => {
+      fireEvent.click(screen.getByTestId("sort-header-score"));
+    });
+    titles = screen.getAllByRole("link").map((el) => el.textContent);
+    expect(titles[0]).toBe("Apple Anime"); // 9.5
+    expect(titles[1]).toBe("Cherry Anime"); // 9.0
+    expect(titles[2]).toBe("Date N/A Anime"); // 8.5
+
+    // Click score header again to toggle asc
+    await act(async () => {
+      fireEvent.click(screen.getByTestId("sort-header-score"));
+    });
+    titles = screen.getAllByRole("link").map((el) => el.textContent);
+    expect(titles[0]).toBe("Banana Anime"); // 8.0
+    expect(titles[1]).toBe("Date N/A Anime"); // 8.5
+    expect(titles[2]).toBe("Cherry Anime"); // 9.0
+
+    // Click score header a third time to toggle back to desc (covers lines 55)
+    await act(async () => {
+      fireEvent.click(screen.getByTestId("sort-header-score"));
+    });
+    titles = screen.getAllByRole("link").map((el) => el.textContent);
+    expect(titles[0]).toBe("Apple Anime"); // 9.5
+
+    // Click uploadDate header (Year) - descending
+    await act(async () => {
+      fireEvent.click(screen.getByTestId("sort-header-uploadDate"));
+    });
+    titles = screen.getAllByRole("link").map((el) => el.textContent);
+    expect(titles[0]).toBe("Cherry Anime"); // 2025
+    expect(titles[1]).toBe("Apple Anime"); // 2024
+    expect(titles[2]).toBe("Banana Anime"); // 2023
+
+    // Click uploadDate header again (toggle asc)
+    await act(async () => {
+      fireEvent.click(screen.getByTestId("sort-header-uploadDate"));
+    });
+    titles = screen.getAllByRole("link").map((el) => el.textContent);
+    // Ascending: Date N/A (0), 2023 (Banana), 2024 (Apple), 2025 (Cherry)
+    expect(titles[0]).toBe("Date N/A Anime");
+    expect(titles[1]).toBe("Banana Anime");
+    expect(titles[2]).toBe("Apple Anime");
+
+    // Click title header (desc)
+    await act(async () => {
+      fireEvent.click(screen.getByTestId("sort-header-title"));
+    });
+    titles = screen.getAllByRole("link").map((el) => el.textContent);
+    expect(titles[0]).toBe("Date N/A Anime");
+    expect(titles[1]).toBe("Cherry Anime");
+    expect(titles[2]).toBe("Banana Anime");
+
+    // Click title header again (asc)
+    await act(async () => {
+      fireEvent.click(screen.getByTestId("sort-header-title"));
+    });
+    titles = screen.getAllByRole("link").map((el) => el.textContent);
+    expect(titles[0]).toBe("Apple Anime");
+    expect(titles[1]).toBe("Banana Anime");
+    expect(titles[2]).toBe("Cherry Anime");
+
+    useAnimeDataSpy.mockRestore();
   });
 });

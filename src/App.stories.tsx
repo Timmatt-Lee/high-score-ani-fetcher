@@ -74,7 +74,13 @@ const meta: Meta<typeof App> = {
       };
       return (
         <div
-          style={{ width: "450px", minHeight: "600px", background: "#121212" }}
+          style={{
+            width: "100%",
+            maxWidth: "1200px",
+            minHeight: "600px",
+            background: "#121212",
+            padding: "20px",
+          }}
         >
           <Story />
         </div>
@@ -99,6 +105,36 @@ export const InitialEmptyState: Story = {
       </ServiceProvider>
     ),
   ],
+};
+
+export const FavoritesTabEmptyState: Story = {
+  decorators: [
+    (Story) => (
+      <ServiceProvider animeScraper={mockAnimeScraper as any}>
+        <Story />
+      </ServiceProvider>
+    ),
+  ],
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const favTab = await canvas.findByRole("button", { name: /Favorites/i });
+    favTab.click();
+  },
+};
+
+export const TrashTabEmptyState: Story = {
+  decorators: [
+    (Story) => (
+      <ServiceProvider animeScraper={mockAnimeScraper as any}>
+        <Story />
+      </ServiceProvider>
+    ),
+  ],
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const trashTab = await canvas.findByRole("button", { name: /Trash/i });
+    trashTab.click();
+  },
 };
 
 export const ScanningFromEmpty: Story = {
@@ -438,5 +474,22 @@ export const ScanCompletedWithExistingData: Story = {
     const canvas = within(canvasElement);
     const scanBtn = await canvas.findByRole("button", { name: /Scan/i });
     scanBtn.click();
+  },
+};
+
+export const SettingsTabShowcase: Story = {
+  decorators: [
+    (Story) => (
+      <ServiceProvider animeScraper={mockAnimeScraper as any}>
+        <Story />
+      </ServiceProvider>
+    ),
+  ],
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const settingsTabBtn = await canvas.findByRole("button", {
+      name: /Settings/i,
+    });
+    settingsTabBtn.click();
   },
 };

@@ -1,9 +1,9 @@
 import { type AnimeItem } from "../../services/animeScanner";
 import { Tab } from "../Tabs";
-import styles from "./AnimeCard.module.css";
+import styles from "./AnimeRow.module.css";
 import { HeartIcon, TrashIcon, RestoreIcon } from "../Icons";
 
-interface AnimeCardProps {
+interface AnimeRowProps {
   item: AnimeItem;
   isDisabled?: boolean;
   activeTab: Tab;
@@ -12,14 +12,14 @@ interface AnimeCardProps {
   onRestoreFromTrash: (item: AnimeItem) => void;
 }
 
-export function AnimeCard({
+export function AnimeRow({
   item,
   isDisabled,
   activeTab,
   onMoveToFavorites,
   onMoveToTrash,
   onRestoreFromTrash,
-}: AnimeCardProps) {
+}: AnimeRowProps) {
   const renderActions = () => {
     switch (activeTab) {
       case Tab.Search:
@@ -28,12 +28,14 @@ export function AnimeCard({
             <button
               className={`${styles.actionBtn} ${styles.fav}`}
               onClick={() => onMoveToFavorites(item)}
+              disabled={isDisabled}
             >
               <HeartIcon /> Favorite
             </button>
             <button
               className={`${styles.actionBtn} ${styles.trash}`}
               onClick={() => onMoveToTrash(item)}
+              disabled={isDisabled}
             >
               <TrashIcon /> Trash
             </button>
@@ -44,6 +46,7 @@ export function AnimeCard({
           <button
             className={`${styles.actionBtn} ${styles.trash}`}
             onClick={() => onMoveToTrash(item)}
+            disabled={isDisabled}
           >
             <TrashIcon /> Trash
           </button>
@@ -52,7 +55,7 @@ export function AnimeCard({
         return (
           <button
             disabled={isDisabled}
-            className={styles.actionBtn}
+            className={`${styles.actionBtn} ${styles.fav}`}
             onClick={() => onRestoreFromTrash(item)}
           >
             <RestoreIcon /> Restore
@@ -67,26 +70,35 @@ export function AnimeCard({
     }
   };
 
-  return (
-    <div className={styles.animeCard} data-testid="anime-card">
-      <div className={styles.animeTitle}>
-        <a href={item.link} target="_blank" rel="noreferrer">
-          {item.title}
-        </a>
-        <span className={styles.scoreBadge}>★ {item.score.toFixed(1)}</span>
-      </div>
-      <div className={styles.animeMeta}>
-        <span>{item.episodeCount} Episodes</span>
-        <span>{item.watchCount.toLocaleString()} Views</span>
-        <span>
-          {isNaN(item.uploadDate.getTime())
-            ? "N/A"
-            : item.uploadDate.getFullYear()}
-        </span>
-      </div>
-      <div className={styles.animeDesc}>{item.description}</div>
+  const uploadYear =
+    item.uploadDate instanceof Date && !isNaN(item.uploadDate.getTime())
+      ? item.uploadDate.getFullYear().toString()
+      : "N/A";
 
-      <div className={styles.cardActions}>{renderActions()}</div>
-    </div>
+  return (
+    <tr className={styles.animeRow} data-testid="anime-card">
+      <td className={styles.titleCell}>
+        <div className={styles.titleWrapper}>
+          <a
+            href={item.link}
+            target="_blank"
+            rel="noreferrer"
+            className={styles.titleLink}
+          >
+            {item.title}
+          </a>
+          <span className={styles.descriptionText}>{item.description}</span>
+        </div>
+      </td>
+      <td className={styles.scoreCell}>
+        <span className={styles.scoreBadge}>★ {item.score.toFixed(1)}</span>
+      </td>
+      <td className={styles.viewsCell}>{item.watchCount.toLocaleString()}</td>
+      <td className={styles.yearCell}>{uploadYear}</td>
+      <td className={styles.episodesCell}>{item.episodeCount} Episodes</td>
+      <td className={styles.actionsCell}>
+        <div className={styles.rowActions}>{renderActions()}</div>
+      </td>
+    </tr>
   );
 }

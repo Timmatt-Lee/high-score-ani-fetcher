@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useAnimeData } from "./hooks/useAnimeData";
 import { useAnimeScanner } from "./hooks/useAnimeScanner";
+import { type AnimeItem } from "./services/animeScanner";
 import { useSettings } from "./hooks/useSettings";
 import { AnimeList } from "./components/AnimeList";
 import { ProgressBar } from "./components/ProgressBar";
@@ -13,6 +14,10 @@ import "./index.css";
 
 function App() {
   const [activeTab, setActiveTab] = useState<Tab>(Tab.Search);
+  const [sortBy, setSortBy] = useState<
+    "title" | "score" | "watchCount" | "uploadDate" | "episodeCount" | null
+  >(null);
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
 
   const { settings, saveSettings, isLoaded: isSettingsLoaded } = useSettings();
 
@@ -44,6 +49,44 @@ function App() {
 
   const totalErrors = httpErrors.length + parseErrors.length;
 
+  const handleSort = (
+    field: "title" | "score" | "watchCount" | "uploadDate" | "episodeCount",
+  ) => {
+    if (sortBy === field) {
+      setSortOrder(sortOrder === "asc" ? "desc" : "asc");
+    } else {
+      setSortBy(field);
+      setSortOrder("desc");
+    }
+  };
+
+  const getSortedList = (list: AnimeItem[]) => {
+    if (!sortBy) return list;
+    return [...list].sort((a, b) => {
+      const valA = a[sortBy];
+      const valB = b[sortBy];
+
+      if (sortBy === "uploadDate") {
+        const timeA = a.uploadDate.getTime();
+        const timeB = b.uploadDate.getTime();
+        const valA = isNaN(timeA) ? 0 : timeA;
+        const valB = isNaN(timeB) ? 0 : timeB;
+        return sortOrder === "asc" ? valA - valB : valB - valA;
+      }
+
+      if (typeof valA === "string" && typeof valB === "string") {
+        return sortOrder === "asc"
+          ? valA.localeCompare(valB, "zh-Hant")
+          : valB.localeCompare(valA, "zh-Hant");
+      }
+
+      // Remaining sortable properties (score, watchCount, episodeCount) are numbers
+      const numA = valA as number;
+      const numB = valB as number;
+      return sortOrder === "asc" ? numA - numB : numB - numA;
+    });
+  };
+
   if (!isSettingsLoaded || !isAnimeDataLoaded) {
     return null;
   }
@@ -52,30 +95,25 @@ function App() {
     <div className={styles.appContainer} data-testid="app-container">
       <div className={styles.header}>
         <h1>AniFetcher Pro</h1>
-        <button
-          className={styles.btn}
-          onClick={() => handleScan()}
-          disabled={isScanning}
-        >
-          {isScanning ? "Scanning..." : "Scan 巴哈姆特動漫瘋"}
-        </button>
-      </div>
-
-      {error ? (
-        <div
-          className={styles.fatalErrorContainer}
-          data-testid="fatal-error-container"
-        >
-          <ErrorCard error={error} />
-        </div>
-      ) : (
-        <>
+        {isScanning ? (
           <ProgressBar
             isScanning={isScanning}
             percent={progress.percent}
             message={progress.message}
           />
+        ) : (
+          <button
+            className={styles.btn}
+            onClick={() => handleScan()}
+            disabled={isScanning}
+          >
+            Scan 巴哈姆特動漫瘋
+          </button>
+        )}
+      </div>
 
+      <div className={styles.mainLayout}>
+        <div className={styles.sidebar}>
           <Tabs
             activeTab={activeTab}
             setActiveTab={setActiveTab}
@@ -83,19 +121,16 @@ function App() {
             favoritesCount={favoriteList.length}
             trashCount={trashList.length}
           />
+        </div>
 
-          {activeTab === Tab.Settings ? (
-            <SettingsTab settings={settings} onSave={saveSettings} />
-          ) : (
-            <AnimeList
-              activeTab={activeTab}
-              searchList={searchList}
-              favoriteList={favoriteList}
-              trashList={trashList}
-              onMoveToFavorites={moveToFavorites}
-              onMoveToTrash={moveToTrash}
-              onRestoreFromTrash={restoreFromTrash}
-            />
+        <div className={styles.contentArea}>
+          {error && (
+            <div
+              className={styles.fatalErrorContainer}
+              data-testid="fatal-error-container"
+            >
+              <ErrorCard error={error} />
+            </div>
           )}
 
           {activeTab === Tab.Search && totalErrors > 0 && !isScanning && (
@@ -145,8 +180,25 @@ function App() {
               </div>
             </div>
           )}
-        </>
-      )}
+
+          {activeTab === Tab.Settings ? (
+            <SettingsTab settings={settings} onSave={saveSettings} />
+          ) : (
+            <AnimeList
+              activeTab={activeTab}
+              searchList={getSortedList(searchList)}
+              favoriteList={getSortedList(favoriteList)}
+              trashList={getSortedList(trashList)}
+              onMoveToFavorites={moveToFavorites}
+              onMoveToTrash={moveToTrash}
+              onRestoreFromTrash={restoreFromTrash}
+              sortBy={sortBy}
+              sortOrder={sortOrder}
+              onSort={handleSort}
+            />
+          )}
+        </div>
+      </div>
     </div>
   );
 }
