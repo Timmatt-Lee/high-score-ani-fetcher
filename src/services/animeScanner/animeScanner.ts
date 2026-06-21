@@ -65,15 +65,9 @@ export class AnimeScanner {
       }
 
       try {
-        const concurrency = 3;
-        const tasks = [...itemsToScan];
-        const workers = Array.from({ length: concurrency }, async () => {
-          while (tasks.length > 0) {
-            const task = tasks.shift()!;
-            await this.fetchDetail(task.item, task.page);
-          }
-        });
-        await Promise.all(workers);
+        for (const { item, page } of itemsToScan) {
+          await this.fetchDetail(item, page);
+        }
       } catch (err) {
         this.eventSubject.error(err);
         return;
