@@ -65,7 +65,7 @@ export class AnimeScanner {
       }
 
       try {
-        const concurrency = 5;
+        const concurrency = 3;
         const tasks = [...itemsToScan];
         const workers = Array.from({ length: concurrency }, async () => {
           while (tasks.length > 0) {

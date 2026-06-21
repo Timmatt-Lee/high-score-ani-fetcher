@@ -20,6 +20,14 @@ export class AnimeScraper {
     scanStep: AnimeScanStep,
     animeName?: string,
   ): Promise<Result<string, AnimeScanHttpError>> {
+    // Space out requests to avoid triggering 429 Too Many Requests rate limits
+    if (scanStep === AnimeScanStep.SCRAPE_LIST_PAGE) {
+      await this.delay(100);
+    } else if (scanStep === AnimeScanStep.PARSE_ANIME_DETAIL) {
+      const delayMs = Math.floor(Math.random() * 150) + 150;
+      await this.delay(delayMs);
+    }
+
     let response: Response;
     try {
       response = await fetch(url, {
