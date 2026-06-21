@@ -254,7 +254,7 @@ describe("useAnimeScanner", () => {
     });
   });
 
-  it("filters out new items with score below 4.8", async () => {
+  it("saves new items even with score below 4.8 to ensure caching works", async () => {
     const lowScore = makeAnime("LowScore");
     vi.spyOn(animeScraper, "getTotalPages").mockResolvedValue(1);
     vi.spyOn(AnimeScanner.prototype, "scan").mockImplementation(() => {
@@ -276,7 +276,9 @@ describe("useAnimeScanner", () => {
     });
 
     expect(onComplete).toHaveBeenCalledWith({
-      newSearchItems: [],
+      newSearchItems: [
+        { ...lowScore, score: 4.0, ratingCount: 10, description: "Meh" },
+      ],
       updatedFavoriteList: [],
       updatedTrashList: [],
     });

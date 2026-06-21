@@ -90,6 +90,10 @@ function App() {
     return null;
   }
 
+  const displayedSearchList = searchList.filter(
+    (item) => item.score >= settings.targetScore,
+  );
+
   return (
     <div className={styles.appContainer} data-testid="app-container">
       <div className={styles.header}>
@@ -116,7 +120,7 @@ function App() {
           <Tabs
             activeTab={activeTab}
             setActiveTab={setActiveTab}
-            searchCount={searchList.length}
+            searchCount={displayedSearchList.length}
             favoritesCount={favoriteList.length}
             trashCount={trashList.length}
           />
@@ -185,7 +189,7 @@ function App() {
           ) : (
             <AnimeList
               activeTab={activeTab}
-              searchList={getSortedList(searchList)}
+              searchList={getSortedList(displayedSearchList)}
               favoriteList={getSortedList(favoriteList)}
               trashList={getSortedList(trashList)}
               onMoveToFavorites={moveToFavorites}

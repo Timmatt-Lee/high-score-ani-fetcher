@@ -182,7 +182,7 @@ export function useAnimeScanner(
             }
           }
 
-          if (!isUpdated && event.score >= 4.8) {
+          if (!isUpdated) {
             currentSearch.push(event);
           }
 
