@@ -48,7 +48,7 @@ describe("ErrorCard", () => {
     await act(async () => {
       fireEvent.click(copyBtn);
     });
-    expect(copyBtn.textContent).toBe("Copied! ✓");
+    expect(copyBtn.textContent).toBe("✓");
   });
 
   it("renders HTTP error without title correctly", () => {
@@ -181,7 +181,7 @@ describe("ErrorCard", () => {
       expect(copiedText).toContain(error.stack);
     }
 
-    expect(copyBtn.textContent).toBe("Copied! ✓");
+    expect(copyBtn.textContent).toBe("✓");
 
     // Advance timers by 2 seconds to cover setTimeout callback
     await act(async () => {
@@ -215,7 +215,7 @@ describe("ErrorCard", () => {
     await act(async () => {
       fireEvent.click(copyBtn);
     });
-    expect(copyBtn.textContent).toBe("Copied! ✓");
+    expect(copyBtn.textContent).toBe("✓");
     unmount2();
 
     class CustomErrorNoName extends AnimeScanError {
