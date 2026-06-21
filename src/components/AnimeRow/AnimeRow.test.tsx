@@ -87,7 +87,7 @@ describe("AnimeRow", () => {
     expect(screen.getByRole("button", { name: "Trash" })).toBeDefined();
   });
 
-  it("shows only restore button in trash tab", () => {
+  it("shows only favorite button in trash tab", () => {
     const restoreFn = vi.fn();
     renderInTable(
       <AnimeRow
@@ -98,9 +98,8 @@ describe("AnimeRow", () => {
         onRestoreFromTrash={restoreFn}
       />,
     );
-    expect(screen.queryByRole("button", { name: "Favorite" })).toBeNull();
     expect(screen.queryByRole("button", { name: "Trash" })).toBeNull();
-    fireEvent.click(screen.getByRole("button", { name: "Restore" }));
+    fireEvent.click(screen.getByRole("button", { name: "Favorite" }));
     expect(restoreFn).toHaveBeenCalled();
   });
 

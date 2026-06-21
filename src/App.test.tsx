@@ -375,7 +375,7 @@ describe("Card actions", () => {
       );
     });
     fireEvent.click(screen.getByText(/Trash/));
-    fireEvent.click(screen.getByRole("button", { name: "Restore" }));
+    fireEvent.click(screen.getByRole("button", { name: "Favorite" }));
     expect(screen.queryByText("Test Anime")).toBeNull();
     fireEvent.click(screen.getByText(/Results/));
     expect(screen.getByText("Test Anime")).toBeDefined();

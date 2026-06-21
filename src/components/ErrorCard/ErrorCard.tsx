@@ -91,7 +91,7 @@ export function ErrorCard({ error }: ErrorCardProps) {
             data-testid="error-card-copy-btn"
             title="Copy full error details including stack trace"
           >
-            {isCopied ? "Copied! ✓" : "Copy"}
+            {isCopied ? "✓" : "Copy"}
           </button>
         </div>
       </div>
