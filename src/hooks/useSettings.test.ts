@@ -7,12 +7,14 @@ describe("useSettings", () => {
     targetScore: 4.8,
     rescanThreshold: 95,
     cacheExpireDays: 14,
+    requestDelayMs: 800,
   };
 
   const mockSettings = {
     targetScore: 4.9,
     rescanThreshold: 90,
     cacheExpireDays: 7,
+    requestDelayMs: 800,
   };
 
   beforeEach(() => {

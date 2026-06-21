@@ -10,7 +10,7 @@ const makeAnime = (): AnimeItem => ({
   watchCount: 100,
   episodeCount: 12,
   uploadDate: new Date("2024-01-01"),
-  score: 8.5,
+  score: 4.5,
   ratingCount: 50,
   description: "Desc",
 });
@@ -35,7 +35,7 @@ describe("AnimeRow", () => {
       />,
     );
     expect(screen.getByText("Test Anime")).toBeDefined();
-    expect(screen.getByText("12 Episodes")).toBeDefined();
+    expect(screen.getByText("12")).toBeDefined();
     expect(screen.getByText("2024")).toBeDefined();
   });
 
@@ -54,6 +54,106 @@ describe("AnimeRow", () => {
     expect(screen.getByText("N/A")).toBeDefined();
   });
 
+  it("formats views correctly for different ranges", () => {
+    const item = makeAnime();
+    item.watchCount = 1200000;
+    renderInTable(
+      <AnimeRow
+        item={item}
+        activeTab={Tab.Search}
+        onMoveToFavorites={vi.fn()}
+        onMoveToTrash={vi.fn()}
+        onRestoreFromTrash={vi.fn()}
+      />,
+    );
+    expect(screen.getByText("1.2M")).toBeDefined();
+
+    const item2 = makeAnime();
+    item2.watchCount = 2400;
+    renderInTable(
+      <AnimeRow
+        item={item2}
+        activeTab={Tab.Search}
+        onMoveToFavorites={vi.fn()}
+        onMoveToTrash={vi.fn()}
+        onRestoreFromTrash={vi.fn()}
+      />,
+    );
+    expect(screen.getByText("2.4K")).toBeDefined();
+
+    const item3 = makeAnime();
+    item3.watchCount = 500;
+    renderInTable(
+      <AnimeRow
+        item={item3}
+        activeTab={Tab.Search}
+        onMoveToFavorites={vi.fn()}
+        onMoveToTrash={vi.fn()}
+        onRestoreFromTrash={vi.fn()}
+      />,
+    );
+    expect(screen.getByText("500")).toBeDefined();
+  });
+
+  it("applies correct score dynamic CSS class based on score value", () => {
+    // 5-point scale: Excellent (>= 4.93 for targetScore 4.8)
+    const item1 = makeAnime();
+    item1.score = 4.95;
+    const { container: c1 } = renderInTable(
+      <AnimeRow
+        item={item1}
+        activeTab={Tab.Search}
+        onMoveToFavorites={vi.fn()}
+        onMoveToTrash={vi.fn()}
+        onRestoreFromTrash={vi.fn()}
+      />,
+    );
+    expect(c1.querySelector('[class*="scoreExcellent"]')).toBeDefined();
+
+    // 5-point scale: Good (>= 4.87 for targetScore 4.8)
+    const item2 = makeAnime();
+    item2.score = 4.9;
+    const { container: c2 } = renderInTable(
+      <AnimeRow
+        item={item2}
+        activeTab={Tab.Search}
+        onMoveToFavorites={vi.fn()}
+        onMoveToTrash={vi.fn()}
+        onRestoreFromTrash={vi.fn()}
+      />,
+    );
+    expect(c2.querySelector('[class*="scoreGood"]')).toBeDefined();
+
+    // 5-point scale: Average (< 4.87 for targetScore 4.8)
+    const item3 = makeAnime();
+    item3.score = 4.82;
+    const { container: c3 } = renderInTable(
+      <AnimeRow
+        item={item3}
+        activeTab={Tab.Search}
+        onMoveToFavorites={vi.fn()}
+        onMoveToTrash={vi.fn()}
+        onRestoreFromTrash={vi.fn()}
+      />,
+    );
+    expect(c3.querySelector('[class*="scoreAverage"]')).toBeDefined();
+
+    // 5-point scale: targetScore >= maxScore (range <= 0)
+    const item4 = makeAnime();
+    item4.score = 5.0;
+    const { container: c4 } = renderInTable(
+      <AnimeRow
+        item={item4}
+        activeTab={Tab.Search}
+        onMoveToFavorites={vi.fn()}
+        onMoveToTrash={vi.fn()}
+        onRestoreFromTrash={vi.fn()}
+        targetScore={5.0}
+      />,
+    );
+    expect(c4.querySelector('[class*="scoreExcellent"]')).toBeDefined();
+  });
+
   it("shows favorite and trash buttons in search tab", () => {
     const favFn = vi.fn();
     const trashFn = vi.fn();
@@ -66,11 +166,13 @@ describe("AnimeRow", () => {
         onRestoreFromTrash={vi.fn()}
       />,
     );
-    fireEvent.click(screen.getByRole("button", { name: "Favorite" }));
+    fireEvent.click(screen.getByRole("button", { name: "Add to Favorites" }));
     expect(favFn).toHaveBeenCalled();
-    fireEvent.click(screen.getByRole("button", { name: "Trash" }));
+    fireEvent.click(screen.getByRole("button", { name: "Move to Trash" }));
     expect(trashFn).toHaveBeenCalled();
-    expect(screen.queryByRole("button", { name: "Restore" })).toBeNull();
+    expect(
+      screen.queryByRole("button", { name: "Restore to Favorites" }),
+    ).toBeNull();
   });
 
   it("shows only trash button in favorites tab", () => {
@@ -83,8 +185,10 @@ describe("AnimeRow", () => {
         onRestoreFromTrash={vi.fn()}
       />,
     );
-    expect(screen.queryByRole("button", { name: "Favorite" })).toBeNull();
-    expect(screen.getByRole("button", { name: "Trash" })).toBeDefined();
+    expect(
+      screen.queryByRole("button", { name: "Add to Favorites" }),
+    ).toBeNull();
+    expect(screen.getByRole("button", { name: "Move to Trash" })).toBeDefined();
   });
 
   it("shows only favorite button in trash tab for restoring", () => {
@@ -98,8 +202,10 @@ describe("AnimeRow", () => {
         onRestoreFromTrash={restoreFn}
       />,
     );
-    expect(screen.queryByRole("button", { name: "Trash" })).toBeNull();
-    fireEvent.click(screen.getByRole("button", { name: "Favorite" }));
+    expect(screen.queryByRole("button", { name: "Move to Trash" })).toBeNull();
+    fireEvent.click(
+      screen.getByRole("button", { name: "Restore to Favorites" }),
+    );
     expect(restoreFn).toHaveBeenCalled();
   });
 

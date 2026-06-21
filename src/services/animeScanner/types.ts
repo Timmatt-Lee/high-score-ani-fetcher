@@ -12,6 +12,7 @@ export type AnimeScanEvent = AnimeItem | AnimeScanError | AnimeScanPageEvent;
 
 export interface PipelineOptions {
   onlyPages?: number[];
+  requestDelayMs: number; // delay between requests to avoid rate limiting
 }
 
 export const AnimeDetailsSchema = z.object({
@@ -39,6 +40,7 @@ export const SettingsSchema = z.object({
   targetScore: z.number().default(4.8),
   rescanThreshold: z.number().default(95),
   cacheExpireDays: z.number().default(14),
+  requestDelayMs: z.number().default(800),
 });
 
 export type Settings = z.infer<typeof SettingsSchema>;

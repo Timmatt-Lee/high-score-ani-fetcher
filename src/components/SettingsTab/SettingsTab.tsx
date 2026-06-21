@@ -8,7 +8,15 @@ interface SettingsTabProps {
 
 export function SettingsTab({ settings, onSave }: SettingsTabProps) {
   const handleChange = (key: keyof Settings, value: string) => {
-    onSave({ ...settings, [key]: Number(value) });
+    if (value.trim() === "") return;
+    let num = Number(value);
+    if (isNaN(num)) return;
+    if (key === "targetScore") {
+      num = Math.max(0.0, Math.min(5.0, num));
+    } else if (key === "rescanThreshold") {
+      num = Math.max(0, Math.min(100, num));
+    }
+    onSave({ ...settings, [key]: num });
   };
 
   return (
@@ -24,6 +32,8 @@ export function SettingsTab({ settings, onSave }: SettingsTabProps) {
         <input
           type="number"
           step="0.1"
+          min="0.0"
+          max="5.0"
           className={styles.input}
           value={settings.targetScore}
           onChange={(e) => handleChange("targetScore", e.target.value)}
@@ -32,21 +42,24 @@ export function SettingsTab({ settings, onSave }: SettingsTabProps) {
 
       <div className={styles.settingGroup}>
         <div className={styles.textGroup}>
-          <label className={styles.label}>Rescan Threshold (%)</label>
+          <label className={styles.label}>Rescan Threshold</label>
           <span className={styles.description}>
             If an anime's previous score is below (Target Score * Threshold), it
             won't be re-fetched. (e.g. 95)
           </span>
         </div>
-        <input
-          type="number"
-          step="1"
-          min="0"
-          max="100"
-          className={styles.input}
-          value={settings.rescanThreshold}
-          onChange={(e) => handleChange("rescanThreshold", e.target.value)}
-        />
+        <div className={styles.inputWrapper}>
+          <input
+            type="number"
+            step="1"
+            min="0"
+            max="100"
+            className={styles.input}
+            value={settings.rescanThreshold}
+            onChange={(e) => handleChange("rescanThreshold", e.target.value)}
+          />
+          <span className={styles.suffix}>%</span>
+        </div>
       </div>
 
       <div className={styles.settingGroup}>
@@ -64,6 +77,23 @@ export function SettingsTab({ settings, onSave }: SettingsTabProps) {
           className={styles.input}
           value={settings.cacheExpireDays}
           onChange={(e) => handleChange("cacheExpireDays", e.target.value)}
+        />
+      </div>
+      <div className={styles.settingGroup}>
+        <div className={styles.textGroup}>
+          <label className={styles.label}>Request Delay (ms)</label>
+          <span className={styles.description}>
+            Minimum delay between each HTTP request to avoid rate limiting.
+            Default 800 ms.
+          </span>
+        </div>
+        <input
+          type="number"
+          step="50"
+          min="0"
+          className={styles.input}
+          value={settings.requestDelayMs}
+          onChange={(e) => handleChange("requestDelayMs", e.target.value)}
         />
       </div>
     </div>

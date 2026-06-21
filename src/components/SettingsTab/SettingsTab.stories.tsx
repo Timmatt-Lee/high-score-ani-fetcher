@@ -29,6 +29,7 @@ export const Default: Story = {
       targetScore: 4.8,
       rescanThreshold: 95,
       cacheExpireDays: 14,
+      requestDelayMs: 800,
     },
     onSave: (settings) => console.log("Save settings:", settings),
   },

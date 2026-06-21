@@ -19,43 +19,48 @@ export class AnimeScraper {
     page: number,
     scanStep: AnimeScanStep,
     animeName?: string,
+    retries = 3,
   ): Promise<Result<string, AnimeScanHttpError>> {
-    // Space out requests to avoid triggering 429 Too Many Requests rate limits
-    if (scanStep === AnimeScanStep.SCRAPE_LIST_PAGE) {
-      await this.delay(50);
-    } else if (scanStep === AnimeScanStep.PARSE_ANIME_DETAIL) {
-      const delayMs = Math.floor(Math.random() * 50) + 100;
-      await this.delay(delayMs);
-    }
+    for (let i = 0; i < retries; i++) {
+      let response: Response;
+      try {
+        response = await fetch(url, {
+          credentials: "include",
+          headers: {
+            Referer: "https://ani.gamer.com.tw/",
+          },
+        });
+      } catch (err) {
+        const errorMsg = err instanceof Error ? err.message : String(err);
+        return new AnimeScanHttpError(
+          page,
+          scanStep,
+          url,
+          errorMsg,
+          0,
+          animeName,
+        );
+      }
 
-    let response: Response;
-    try {
-      response = await fetch(url, {
-        credentials: "include",
-        headers: {
-          Referer: "https://ani.gamer.com.tw/",
-        },
-      });
-    } catch (err) {
-      const errorMsg = err instanceof Error ? err.message : String(err);
-      return new AnimeScanHttpError(
-        page,
-        scanStep,
-        url,
-        errorMsg,
-        0, // Status code 0 indicates a network/fetch exception
-        animeName,
-      );
-    }
+      if (response.ok) {
+        return await response.text();
+      }
 
-    if (!response.ok) {
+      if (response.status === 429) {
+        const retryAfterHeader = response.headers.get("Retry-After");
+        const baseDelaySec = parseInt(retryAfterHeader || "5", 10);
+        // Exponential backoff based on attempt count (i starts at 0)
+        const delaySec = baseDelaySec * Math.pow(2, i);
+        await this.delay(delaySec * 1000);
+        continue;
+      }
+
       let snippet = "";
       try {
         const t = await response.text();
         snippet = t.slice(0, 200);
       } catch {
-        // Swallowing the error is safe and intentional here because extracting the response body snippet
-        // is best-effort; failing to read the text should not prevent reporting the primary HTTP error.
+        // Swallowing the error is safe and intentional because snippet is just a helper for debugging and defaults to empty.
       }
       return new AnimeScanHttpError(
         page,
@@ -66,7 +71,15 @@ export class AnimeScraper {
         animeName,
       );
     }
-    return await response.text();
+
+    return new AnimeScanHttpError(
+      page,
+      scanStep,
+      url,
+      "Too many retries",
+      429,
+      animeName,
+    );
   }
 
   /**
@@ -312,67 +325,34 @@ export class AnimeScraper {
     if (isError(text)) return text;
 
     const doc = new DOMParser().parseFromString(text, "text/html");
-    const scoreNumDiv = doc.querySelector(".score-overall-number");
-    if (!scoreNumDiv || !scoreNumDiv.textContent) {
-      return new AnimeScanParseError(
-        page,
-        AnimeScanStep.PARSE_ANIME_DETAIL,
-        link,
-        doc.body.innerHTML.substring(0, 200),
-        "Score element missing",
-        animeName,
-      );
-    }
-    const score = parseFloat(scoreNumDiv.textContent);
-    if (isNaN(score)) {
-      return new AnimeScanParseError(
-        page,
-        AnimeScanStep.PARSE_ANIME_DETAIL,
-        link,
-        scoreNumDiv.outerHTML,
-        "Failed to parse score",
-        animeName,
-      );
+
+    // --- Parse score ---
+    const scoreEl = doc.querySelector(".score-overall-number");
+    let score = 0;
+    if (scoreEl && scoreEl.textContent?.trim()) {
+      const parsedScore = parseFloat(scoreEl.textContent.trim());
+      if (!isNaN(parsedScore)) {
+        score = parsedScore;
+      }
     }
 
-    const scorePeopleDiv = doc.querySelector(".score-overall-people");
-    if (!scorePeopleDiv || !scorePeopleDiv.textContent) {
-      return new AnimeScanParseError(
-        page,
-        AnimeScanStep.PARSE_ANIME_DETAIL,
-        link,
-        doc.body.innerHTML.substring(0, 200),
-        "Rating count element missing",
-        animeName,
+    // --- Parse rating count ---
+    const ratingEl = doc.querySelector(".score-overall-people");
+    let ratingCount = 0;
+    if (ratingEl && ratingEl.textContent?.trim()) {
+      const parsedRating = parseInt(
+        ratingEl.textContent.replace(/[^0-9]/g, ""),
+        10,
       );
-    }
-    const ratingCount = parseInt(
-      scorePeopleDiv.textContent.replace("人評價", "").replace(/,/g, ""),
-      10,
-    );
-    if (isNaN(ratingCount)) {
-      return new AnimeScanParseError(
-        page,
-        AnimeScanStep.PARSE_ANIME_DETAIL,
-        link,
-        scorePeopleDiv.outerHTML,
-        "Failed to parse rating count",
-        animeName,
-      );
+      if (!isNaN(parsedRating)) {
+        ratingCount = parsedRating;
+      }
     }
 
+    // --- Parse description ---
     const descDiv = doc.querySelector(".data-intro p");
-    if (!descDiv || !descDiv.textContent?.trim()) {
-      return new AnimeScanParseError(
-        page,
-        AnimeScanStep.PARSE_ANIME_DETAIL,
-        link,
-        doc.body.innerHTML.substring(0, 200),
-        "Description missing",
-        animeName,
-      );
-    }
-    const description = descDiv.textContent.trim();
+    const description =
+      descDiv && descDiv.textContent?.trim() ? descDiv.textContent.trim() : "";
 
     return { score, ratingCount, description };
   }

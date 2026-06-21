@@ -6,7 +6,7 @@ test.describe("Popup Layout", () => {
   });
 
   test("should display initial UI elements", async ({ page }) => {
-    await expect(page.getByText("AniFetcher Pro")).toBeVisible();
+    await expect(page.getByText("巴哈姆特動漫瘋 Scanner")).toBeVisible();
     await expect(
       page.getByRole("button", { name: "Scan 巴哈姆特動漫瘋" }),
     ).toBeVisible();

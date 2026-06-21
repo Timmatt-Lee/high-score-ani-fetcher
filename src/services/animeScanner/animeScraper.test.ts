@@ -7,7 +7,7 @@ import {
   AnimeScanner,
 } from "./index";
 import { type AnimeItem, type AnimeScanEvent } from "./types";
-import { isError } from "../../types/result";
+import { isError, type Result } from "../../types/result";
 
 // --- Helpers ---
 const makeHtml = (content: string) => `<html><body>${content}</body></html>`;
@@ -455,33 +455,31 @@ describe("animeScraper.scrapeAnimeDetails", () => {
     }
   });
 
-  it("returns AnimeScanParseError when score is missing", async () => {
+  it("returns default score 0 when score is missing", async () => {
     mockFetch(makeHtml("<div>No score</div>"));
     const result = await animeScraper.scrapeAnimeDetails(
       "http://example.com",
       1,
     );
-    expect(isError(result)).toBe(true);
-    if (isError(result)) {
-      expect((result as AnimeScanParseError).scanStep).toBe(
-        AnimeScanStep.PARSE_ANIME_DETAIL,
-      );
+    expect(isError(result)).toBe(false);
+    if (!isError(result)) {
+      expect(result.score).toBe(0);
     }
   });
 
-  it("returns AnimeScanParseError when score is NaN", async () => {
+  it("returns default score 0 when score is NaN", async () => {
     mockFetch(makeHtml('<div class="score-overall-number">ABC</div>'));
     const result = await animeScraper.scrapeAnimeDetails(
       "http://example.com",
       1,
     );
-    expect(isError(result)).toBe(true);
-    const err = result as AnimeScanParseError;
-    expect(err.scanStep).toBe(AnimeScanStep.PARSE_ANIME_DETAIL);
-    expect(err.message).toContain("Failed to parse score");
+    expect(isError(result)).toBe(false);
+    if (!isError(result)) {
+      expect(result.score).toBe(0);
+    }
   });
 
-  it("returns AnimeScanParseError when rating count is NaN", async () => {
+  it("returns default ratingCount 0 when rating count is NaN", async () => {
     mockFetch(
       makeHtml(
         '<div class="score-overall-number">8.5</div><div class="score-overall-people">NaN人評價</div>',
@@ -491,13 +489,13 @@ describe("animeScraper.scrapeAnimeDetails", () => {
       "http://example.com",
       1,
     );
-    expect(isError(result)).toBe(true);
-    const err = result as AnimeScanParseError;
-    expect(err.scanStep).toBe(AnimeScanStep.PARSE_ANIME_DETAIL);
-    expect(err.message).toContain("Failed to parse rating count");
+    expect(isError(result)).toBe(false);
+    if (!isError(result)) {
+      expect(result.ratingCount).toBe(0);
+    }
   });
 
-  it("returns AnimeScanParseError when rating count element is missing", async () => {
+  it("returns default ratingCount 0 when rating count element is missing", async () => {
     mockFetch(
       makeHtml(
         '<div class="score-overall-number">8.5</div><div class="data-intro"><p>Great show</p></div>',
@@ -507,13 +505,13 @@ describe("animeScraper.scrapeAnimeDetails", () => {
       "http://example.com",
       1,
     );
-    expect(isError(result)).toBe(true);
-    const err = result as AnimeScanParseError;
-    expect(err.scanStep).toBe(AnimeScanStep.PARSE_ANIME_DETAIL);
-    expect(err.message).toContain("Rating count element missing");
+    expect(isError(result)).toBe(false);
+    if (!isError(result)) {
+      expect(result.ratingCount).toBe(0);
+    }
   });
 
-  it("returns AnimeScanParseError when description is missing", async () => {
+  it("returns empty description when description is missing", async () => {
     mockFetch(
       makeHtml(
         '<div class="score-overall-number">8.5</div><div class="score-overall-people">1,234人評價</div>',
@@ -523,10 +521,10 @@ describe("animeScraper.scrapeAnimeDetails", () => {
       "http://example.com",
       1,
     );
-    expect(isError(result)).toBe(true);
-    const err = result as AnimeScanParseError;
-    expect(err.scanStep).toBe(AnimeScanStep.PARSE_ANIME_DETAIL);
-    expect(err.message).toContain("Description missing");
+    expect(isError(result)).toBe(false);
+    if (!isError(result)) {
+      expect(result.description).toBe("");
+    }
   });
 
   it("passes through AnimeScanHttpError from fetchUrl in scrapeAnimeDetails", async () => {
@@ -593,7 +591,9 @@ describe("AnimeScraper pipeline methods", () => {
     const parseErrors: AnimeScanParseError[] = [];
 
     await new Promise<void>((resolve, reject) => {
-      const pipeline = new AnimeScanner(1, () => true, animeScraper);
+      const pipeline = new AnimeScanner(1, () => true, animeScraper, {
+        requestDelayMs: 0,
+      });
       pipeline.scan().subscribe({
         next: (event: AnimeScanEvent) => {
           if (event instanceof AnimeScanHttpError) {
@@ -613,6 +613,81 @@ describe("AnimeScraper pipeline methods", () => {
     expect(animeItems[0].title).toBe("A");
     expect(httpErrors).toHaveLength(0);
     expect(parseErrors).toHaveLength(0);
+  });
+
+  it("handles 429 response status and retries with backoff", async () => {
+    const delaySpy = vi.spyOn(animeScraper, "delay").mockResolvedValue();
+    let attempt = 0;
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockImplementation(async () => {
+        attempt++;
+        if (attempt === 1) {
+          return {
+            ok: false,
+            status: 429,
+            statusText: "Too Many Requests",
+            headers: {
+              get: (name: string) => (name === "Retry-After" ? "2" : null),
+            },
+          };
+        }
+        return {
+          ok: true,
+          status: 200,
+          statusText: "OK",
+          text: async () => "Success after retry",
+        };
+      }),
+    );
+
+    const result = await (
+      animeScraper as unknown as {
+        fetchUrl: (
+          url: string,
+          page: number,
+          scanStep: AnimeScanStep,
+        ) => Promise<Result<string, AnimeScanHttpError>>;
+      }
+    ).fetchUrl("http://example.com/retry", 1, AnimeScanStep.PARSE_ANIME_DETAIL);
+    expect(isError(result)).toBe(false);
+    expect(result).toBe("Success after retry");
+    expect(delaySpy).toHaveBeenCalledWith(2000); // 2 seconds * 1000ms
+  });
+
+  it("returns AnimeScanHttpError after maximum retries on 429", async () => {
+    vi.spyOn(animeScraper, "delay").mockResolvedValue();
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: false,
+        status: 429,
+        statusText: "Too Many Requests",
+        headers: {
+          get: () => null,
+        },
+      }),
+    );
+
+    const result = await (
+      animeScraper as unknown as {
+        fetchUrl: (
+          url: string,
+          page: number,
+          scanStep: AnimeScanStep,
+        ) => Promise<Result<string, AnimeScanHttpError>>;
+      }
+    ).fetchUrl(
+      "http://example.com/retry-fail",
+      1,
+      AnimeScanStep.PARSE_ANIME_DETAIL,
+    );
+    expect(isError(result)).toBe(true);
+    if (isError(result)) {
+      expect(result).toBeInstanceOf(AnimeScanHttpError);
+      expect((result as AnimeScanHttpError).status).toBe(429);
+      expect((result as AnimeScanHttpError).html).toContain("Too many retries");
+    }
   });
 
   it("delay resolves after timeout", async () => {

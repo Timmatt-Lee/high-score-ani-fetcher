@@ -14,7 +14,7 @@ import {
   type AnimeItem,
   AnimeScanPageEvent,
 } from "../services/animeScanner/types";
-import { Observable } from "rxjs";
+import { Observable, Subject } from "rxjs";
 
 const makeAnime = (title: string): AnimeItem => ({
   link: `http://${title}`,
@@ -738,6 +738,7 @@ describe("useAnimeScanner", () => {
     await act(async () => {
       await result.current.handleScan({
         onlyPages: [3],
+        requestDelayMs: 800,
       });
     });
 
@@ -750,6 +751,7 @@ describe("useAnimeScanner", () => {
     expect(capturedPipeline.totalPages).toBe(0);
     expect(capturedPipeline.options).toEqual({
       onlyPages: [3],
+      requestDelayMs: 800,
     });
 
     expect(onComplete).toHaveBeenCalled();
@@ -777,12 +779,12 @@ describe("useAnimeScanner", () => {
     );
 
     await act(async () => {
-      await result.current.handleScan({}); // empty options
+      await result.current.handleScan({ requestDelayMs: 800 }); // empty options
     });
 
     expect(capturedPipeline).not.toBeNull();
     expect(capturedPipeline.totalPages).toBe(2);
-    expect(capturedPipeline.options).toBeUndefined();
+    expect(capturedPipeline.options).toEqual({ requestDelayMs: 800 });
   });
 
   it("skips scan for cached items with low score", async () => {
@@ -899,5 +901,29 @@ describe("useAnimeScanner", () => {
     });
 
     expect(scanSpy).toHaveBeenCalled();
+  });
+
+  it("cancels scanning when cancelScan is called", async () => {
+    const subject = new Subject<AnimeScanEvent>();
+    vi.spyOn(animeScraper, "getTotalPages").mockResolvedValue(1);
+    vi.spyOn(AnimeScanner.prototype, "scan").mockReturnValue(subject);
+
+    const onComplete = vi.fn();
+    const { result } = renderHook(
+      () => useAnimeScanner([], [], [], onComplete),
+      { wrapper: ServiceProvider },
+    );
+
+    await act(async () => {
+      result.current.handleScan();
+    });
+
+    expect(result.current.isScanning).toBe(true);
+
+    act(() => {
+      result.current.cancelScan();
+    });
+
+    expect(result.current.isScanning).toBe(false);
   });
 });

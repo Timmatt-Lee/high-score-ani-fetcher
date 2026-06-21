@@ -22,7 +22,7 @@ export function ErrorPanel({
 
   return (
     <div
-      className={`${styles.accordionItem} ${isOpen ? styles.open : ""}`}
+      className={`${styles.accordionItem} ${isOpen ? styles.open : ""} ${errors.length > 0 ? styles.hasErrors : ""}`}
       data-testid={`${testIdPrefix}-group`}
     >
       <div

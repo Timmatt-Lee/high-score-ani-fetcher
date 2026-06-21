@@ -11,13 +11,27 @@ export function useAnimeData() {
   // Load data on mount
   useEffect(() => {
     const parseList = (data: unknown): AnimeItem[] => {
-      const result = z.array(AnimeItemSchema).safeParse(data);
+      let cleanedData = data;
+      if (Array.isArray(data)) {
+        cleanedData = data.map((item) => {
+          if (item && typeof item === "object") {
+            const copy = { ...item };
+            if (copy.scannedAt && !(copy.scannedAt instanceof Date)) {
+              delete copy.scannedAt;
+            }
+            return copy;
+          }
+          return item;
+        });
+      }
+
+      const result = z.array(AnimeItemSchema).safeParse(cleanedData);
       if (!result.success) {
         console.error("Zod parse error:", result.error, "Data was:", data);
         return [];
       }
       return result.data.map((item) => {
-        if (item.score > 0 && !item.scannedAt) {
+        if (item.score > 0 && !(item.scannedAt instanceof Date)) {
           return { ...item, scannedAt: new Date() };
         }
         return item;
@@ -115,10 +129,10 @@ export function useAnimeData() {
 
   const restoreFromTrash = (item: AnimeItem) => {
     const newTrash = trashList.filter((i) => i.link !== item.link);
-    const newSearch = [...searchList, item];
+    const newFav = [...favoriteList, item];
     setTrashList(newTrash);
-    setSearchList(newSearch);
-    saveData(newSearch, favoriteList, newTrash);
+    setFavoriteList(newFav);
+    saveData(searchList, newFav, newTrash);
   };
 
   return {

@@ -35,17 +35,26 @@ function App() {
     isLoaded: isAnimeDataLoaded,
   } = useAnimeData();
 
-  const { isScanning, progress, httpErrors, parseErrors, error, handleScan } =
-    useAnimeScanner(searchList, favoriteList, trashList, (result) => {
-      setSearchList(result.newSearchItems);
-      setFavoriteList(result.updatedFavoriteList);
-      setTrashList(result.updatedTrashList);
-      saveData(
-        result.newSearchItems,
-        result.updatedFavoriteList,
-        result.updatedTrashList,
-      );
-    });
+  const {
+    isScanning,
+    progress,
+    httpErrors,
+    parseErrors,
+    error,
+    handleScan,
+    cancelScan,
+    scanStats,
+    setScanStats,
+  } = useAnimeScanner(searchList, favoriteList, trashList, (result) => {
+    setSearchList(result.newSearchItems);
+    setFavoriteList(result.updatedFavoriteList);
+    setTrashList(result.updatedTrashList);
+    saveData(
+      result.newSearchItems,
+      result.updatedFavoriteList,
+      result.updatedTrashList,
+    );
+  });
 
   const totalErrors = httpErrors.length + parseErrors.length;
 
@@ -97,22 +106,84 @@ function App() {
   return (
     <div className={styles.appContainer} data-testid="app-container">
       <div className={styles.header}>
-        <h1>AniFetcher Pro</h1>
-        {isScanning ? (
-          <ProgressBar
-            isScanning={isScanning}
-            percent={progress.percent}
-            message={progress.message}
-          />
-        ) : (
-          <button
-            className={styles.btn}
-            onClick={() => handleScan()}
-            disabled={isScanning}
-          >
-            Scan 巴哈姆特動漫瘋
-          </button>
-        )}
+        <h1>巴哈姆特動漫瘋 Scanner</h1>
+
+        <div className={styles.headerCenter}>
+          {isScanning ? (
+            <ProgressBar
+              isScanning={isScanning}
+              percent={progress.percent}
+              message={progress.message}
+            />
+          ) : (
+            scanStats && (
+              <div
+                className={styles.inlineStats}
+                data-testid="scan-stats-container"
+              >
+                <span
+                  className={`${styles.inlineStatBadge} ${styles.statSuccess}`}
+                  title="Fetched"
+                >
+                  ✓ {scanStats.successCount}
+                </span>
+                <span
+                  className={`${styles.inlineStatBadge} ${styles.statNew}`}
+                  title="New"
+                >
+                  + {scanStats.addedCount}
+                </span>
+                <span
+                  className={`${styles.inlineStatBadge} ${styles.statUpdated}`}
+                  title="Updated"
+                >
+                  ↻ {scanStats.refetchedCount}
+                </span>
+                <span
+                  className={`${styles.inlineStatBadge} ${styles.statCached}`}
+                  title="Cached"
+                >
+                  ⧗ {scanStats.skippedCachedCount}
+                </span>
+                <span
+                  className={`${styles.inlineStatBadge} ${styles.statFailed}`}
+                  title="Failed"
+                >
+                  ⚠ {scanStats.failedCount}
+                </span>
+                <button
+                  className={styles.inlineStatsCloseBtn}
+                  onClick={() => setScanStats(null)}
+                  aria-label="Dismiss Results"
+                >
+                  ✕
+                </button>
+              </div>
+            )
+          )}
+        </div>
+
+        <div className={styles.headerRight}>
+          {isScanning ? (
+            <button
+              className={styles.btn}
+              onClick={cancelScan}
+              disabled={!isScanning}
+            >
+              Stop Scan
+            </button>
+          ) : (
+            <button
+              className={styles.btn}
+              onClick={() =>
+                handleScan({ requestDelayMs: settings.requestDelayMs })
+              }
+              disabled={isScanning}
+            >
+              Scan 巴哈姆特動漫瘋
+            </button>
+          )}
+        </div>
       </div>
 
       <div className={styles.mainLayout}>
@@ -139,34 +210,29 @@ function App() {
           {activeTab === Tab.Search && totalErrors > 0 && !isScanning && (
             <div className={styles.errorsPanel} data-testid="errors-panel">
               <div className={styles.summaryBar}>
-                <span
-                  className={styles.summaryText}
-                  data-testid="errors-summary-text"
-                >
-                  {totalErrors}{" "}
-                  {totalErrors === 1 ? "error occurred" : "errors occurred"}
+                <span className={styles.summaryText}>
+                  {totalErrors} errors occurred
                 </span>
                 <button
                   className={`${styles.btn} ${styles.btnRetry}`}
+                  data-testid="retry-errors-btn"
+                  disabled={isScanning}
                   onClick={() => {
-                    const failedPagesSet = new Set<number>();
-                    httpErrors.forEach((err) => {
-                      if (err.page) failedPagesSet.add(err.page);
-                    });
-                    parseErrors.forEach((err) => {
-                      if (err.page) failedPagesSet.add(err.page);
-                    });
+                    const failedPages = [
+                      ...new Set([
+                        ...httpErrors.map((e) => e.page),
+                        ...parseErrors.map((e) => e.page),
+                      ]),
+                    ];
                     handleScan({
-                      onlyPages: Array.from(failedPagesSet),
+                      onlyPages: failedPages,
+                      requestDelayMs: settings.requestDelayMs,
                     });
                   }}
-                  disabled={isScanning || totalErrors === 0}
-                  data-testid="retry-errors-btn"
                 >
-                  Retry Failed Animes
+                  Retry Failed
                 </button>
               </div>
-
               <div className={styles.accordion}>
                 <ErrorPanel
                   title="HTTP Network Errors"
@@ -198,6 +264,7 @@ function App() {
               sortBy={sortBy}
               sortOrder={sortOrder}
               onSort={handleSort}
+              targetScore={settings.targetScore}
             />
           )}
         </div>

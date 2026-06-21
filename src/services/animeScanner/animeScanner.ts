@@ -17,14 +17,14 @@ export class AnimeScanner {
   private totalPages: number;
   private filterItem: (item: AnimeItem) => boolean;
   private scraper: AnimeScraper;
-  private options?: PipelineOptions;
+  private options: PipelineOptions;
   private eventSubject = new Subject<AnimeScanEvent>();
 
   constructor(
     totalPages: number,
     filterItem: (item: AnimeItem) => boolean,
     scraper: AnimeScraper,
-    options?: PipelineOptions,
+    options: PipelineOptions,
   ) {
     this.totalPages = totalPages;
     this.filterItem = filterItem;
@@ -35,7 +35,7 @@ export class AnimeScanner {
   scan(): Observable<AnimeScanEvent> {
     const run = async () => {
       const pagesToScan =
-        this.options?.onlyPages ??
+        this.options.onlyPages ??
         Array.from({ length: this.totalPages }, (_, i) => i + 1);
 
       const itemsToScan: { item: AnimeItem; page: number }[] = [];
@@ -58,6 +58,8 @@ export class AnimeScanner {
           this.eventSubject.next(
             new AnimeScanPageEvent(i + 1, pagesToScan.length),
           );
+          // Apply delay between page requests to respect rate limits
+          await this.scraper.delay(this.options.requestDelayMs);
         } catch (err) {
           this.eventSubject.error(err);
           return;
@@ -67,6 +69,8 @@ export class AnimeScanner {
       try {
         for (const { item, page } of itemsToScan) {
           await this.fetchDetail(item, page);
+          // Delay between detail requests to avoid hitting rate limits
+          await this.scraper.delay(this.options.requestDelayMs);
         }
       } catch (err) {
         this.eventSubject.error(err);

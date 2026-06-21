@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import { Subscription } from "rxjs";
 import { useServices } from "../contexts/ServiceContext";
 import { useSettings } from "./useSettings";
 import {
@@ -31,6 +32,15 @@ export function useAnimeScanner(
   const [parseErrors, setParseErrors] = useState<AnimeScanParseError[]>([]);
   const [error, setError] = useState<Error | null>(null);
   const [totalPagesCount, setTotalPagesCount] = useState(0);
+  const [scanStats, setScanStats] = useState<{
+    successCount: number;
+    skippedCachedCount: number;
+    refetchedCount: number;
+    addedCount: number;
+    failedCount: number;
+  } | null>(null);
+  // Ref to hold the subscription for cancellation
+  const scanSubscriptionRef = useRef<Subscription | null>(null);
 
   const searchListRef = useRef(searchList);
   const favoriteListRef = useRef(favoriteList);
@@ -47,10 +57,25 @@ export function useAnimeScanner(
   };
 
   const handleScan = async (options?: PipelineOptions) => {
+    // Reset state before starting a new scan
     setHttpErrors([]);
     setParseErrors([]);
     setError(null);
     setIsScanning(true);
+
+    let skippedCachedCount = 0;
+    let refetchedCount = 0;
+    let addedCount = 0;
+    let successCount = 0;
+    let failedCount = 0;
+
+    setScanStats({
+      successCount: 0,
+      skippedCachedCount: 0,
+      refetchedCount: 0,
+      addedCount: 0,
+      failedCount: 0,
+    });
 
     const isRetry = !!(
       options &&
@@ -110,9 +135,37 @@ export function useAnimeScanner(
     let detailsTotalCount = 0;
 
     const filterAndCountItem = (item: AnimeItem) => {
+      const storedAnimeItem = existingMap.get(item.link);
+      let isSkippedCached = false;
+      if (storedAnimeItem) {
+        if (storedAnimeItem.scannedAt) {
+          const ageMs =
+            Date.now() - new Date(storedAnimeItem.scannedAt).getTime();
+          const ageDays = ageMs / (1000 * 60 * 60 * 24);
+          if (ageDays < settings.cacheExpireDays) {
+            isSkippedCached = true;
+          }
+        }
+
+        const threshold =
+          settings.targetScore * (settings.rescanThreshold / 100);
+        if (storedAnimeItem.score > 0 && storedAnimeItem.score < threshold) {
+          isSkippedCached = true;
+        }
+      }
+
       const isKept = filterItem(item);
       if (isKept) {
         detailsTotalCount++;
+      } else if (isSkippedCached) {
+        skippedCachedCount++;
+        setScanStats({
+          successCount,
+          skippedCachedCount,
+          refetchedCount,
+          addedCount,
+          failedCount,
+        });
       }
       return isKept;
     };
@@ -123,30 +176,31 @@ export function useAnimeScanner(
       const rawPercent = Math.floor(detailsPercent * 99);
       const percent = Math.min(99, rawPercent);
 
-      const actionPrefix = isRetry ? "Retrying failed items" : "Scanning";
-      let msg = actionPrefix;
-      if (detailsTotalCount > 0) {
-        msg = `${actionPrefix} (${detailsCompletedCount}/${detailsTotalCount})`;
-      }
-      msg += "...";
-      if (currentTitle) {
-        msg += ` [${currentTitle}]`;
-      }
-
-      setProgress({ percent, message: msg });
+      const msg = `Scanning (${detailsCompletedCount}/${detailsTotalCount})...`;
+      const truncated = (currentTitle ?? "").slice(0, 30);
+      const finalMsg = `${msg} [${truncated}]`;
+      setProgress({ percent, message: finalMsg });
     };
 
     const scanHttpErrors: AnimeScanHttpError[] = [];
     const scanParseErrors: AnimeScanParseError[] = [];
 
+    const pipelineOptions: PipelineOptions = {
+      requestDelayMs: settings.requestDelayMs,
+      ...(isRetry && options?.onlyPages
+        ? { onlyPages: options.onlyPages }
+        : {}),
+    };
+
     const pipeline = new AnimeScanner(
       totalPages,
       filterAndCountItem,
       animeScraper,
-      isRetry ? options : undefined,
+      pipelineOptions,
     );
 
-    pipeline.scan().subscribe({
+    // Subscribe to the scan observable and keep reference for cancellation
+    const subscription = pipeline.scan().subscribe({
       next: (event) => {
         if (event instanceof AnimeScanPageEvent) {
           const actionPrefix = isRetry
@@ -160,13 +214,46 @@ export function useAnimeScanner(
           scanHttpErrors.push(event);
           setHttpErrors([...scanHttpErrors]);
           updateProgress(event.animeName);
+
+          failedCount++;
+          setScanStats({
+            successCount,
+            skippedCachedCount,
+            refetchedCount,
+            addedCount,
+            failedCount,
+          });
         } else if (event instanceof AnimeScanParseError) {
           scanParseErrors.push(event);
           setParseErrors([...scanParseErrors]);
           updateProgress(event.animeName);
+
+          failedCount++;
+          setScanStats({
+            successCount,
+            skippedCachedCount,
+            refetchedCount,
+            addedCount,
+            failedCount,
+          });
         } else if (!(event instanceof Error)) {
           detailsCompletedCount++;
           updateProgress(event.title);
+
+          successCount++;
+          const storedAnimeItem = existingMap.get(event.link);
+          if (storedAnimeItem) {
+            refetchedCount++;
+          } else {
+            addedCount++;
+          }
+          setScanStats({
+            successCount,
+            skippedCachedCount,
+            refetchedCount,
+            addedCount,
+            failedCount,
+          });
 
           const currentFav = [...favoriteListRef.current];
           const currentTrash = [...trashListRef.current];
@@ -213,8 +300,17 @@ export function useAnimeScanner(
         setProgress({ percent: 0, message: "" });
       },
     });
+    // Store subscription reference for later cancellation
+    scanSubscriptionRef.current = subscription;
   };
-
+  const cancelScan = () => {
+    if (scanSubscriptionRef.current) {
+      scanSubscriptionRef.current.unsubscribe();
+      scanSubscriptionRef.current = null;
+    }
+    setIsScanning(false);
+    setProgress({ percent: 0, message: "" });
+  };
   return {
     isScanning,
     progress,
@@ -223,5 +319,8 @@ export function useAnimeScanner(
     error,
     clearError,
     handleScan,
+    cancelScan,
+    scanStats,
+    setScanStats,
   };
 }

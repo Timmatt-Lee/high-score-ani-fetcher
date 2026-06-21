@@ -1,6 +1,6 @@
 .tableWrapper {
   width: 100%;
-  overflow-x: auto;
+  /* NO overflow-x: auto here — it creates a new scroll container which kills sticky on <th> */
   background-color: var(--panel-bg);
   border: 1px solid var(--border);
   border-radius: var(--radius);
@@ -9,13 +9,13 @@
 
 .animeTable {
   width: 100%;
-  border-collapse: collapse;
+  border-collapse: separate;
+  border-spacing: 0;
   text-align: left;
 }
 
 .animeTable th {
   padding: 14px 12px;
-  background-color: rgba(30, 41, 59, 0.85);
   font-size: 0.8rem;
   font-weight: 700;
   color: var(--text-muted);
@@ -23,6 +23,11 @@
   letter-spacing: 0.05em;
   border-bottom: 1px solid var(--border);
   user-select: none;
+  /* Sticky to the viewport top, positioned below the header (~57px + border) */
+  position: sticky;
+  top: 71px;
+  z-index: 40;
+  background: var(--panel-bg);
 }
 
 .sortableHeader {
@@ -68,4 +73,5 @@
   background-color: var(--panel-bg);
   border-radius: var(--radius);
   border: 1px dashed var(--border);
+  font-size: 0.95rem;
 }

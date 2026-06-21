@@ -21,8 +21,8 @@ export function ProgressBar({
           style={{ width: `${percent}%` }}
           data-testid="progress-fill"
         ></div>
+        <div className={styles.statusText}>{message}</div>
       </div>
-      <div className={styles.statusText}>{message}</div>
     </div>
   );
 }

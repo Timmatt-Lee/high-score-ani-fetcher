@@ -3,18 +3,37 @@
   max-width: 1200px;
   min-height: 100vh;
   margin: 0 auto;
-  padding: 24px;
+  padding: 0 24px 24px;
   display: flex;
   flex-direction: column;
-  gap: 24px;
 }
 
 .header {
-  display: flex;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
   align-items: center;
+  padding: 16px 0;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: var(--bg-color);
   border-bottom: 1px solid var(--border);
-  padding-bottom: 15px;
+  gap: 16px;
+}
+
+.headerCenter {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-width: 0;
+  flex: 1;
+  margin: 0 24px;
+}
+
+.headerRight {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
 }
 
 .header h1 {
@@ -23,6 +42,8 @@
   background: linear-gradient(135deg, #60a5fa, #a78bfa);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .btn {
@@ -39,6 +60,8 @@
   align-items: center;
   justify-content: center;
   gap: 8px;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .btn:hover:not(:disabled) {
@@ -153,15 +176,23 @@
   }
 }
 
+/* --- Main Layout: sidebar + content --- */
 .mainLayout {
   display: flex;
-  gap: 32px;
+  gap: 24px;
   align-items: flex-start;
   width: 100%;
+  margin-top: 24px;
+  /* This is the flex container — no overflow set here so children can stick */
 }
 
 .sidebar {
   flex-shrink: 0;
+  position: sticky;
+  /* Header height (~71px) + layout margin (24px) = 95px */
+  top: 95px;
+  z-index: 50;
+  align-self: flex-start;
 }
 
 .contentArea {
@@ -178,4 +209,72 @@
     gap: 20px;
     align-items: stretch;
   }
+
+  .sidebar {
+    position: sticky;
+    top: 95px;
+  }
+}
+
+.inlineStats {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--panel-bg);
+  border: 1px solid var(--border);
+  padding: 4px 8px;
+  border-radius: 20px;
+  animation: fadeIn 0.3s ease-out;
+  flex-shrink: 0;
+}
+
+.inlineStatBadge {
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.statSuccess {
+  background-color: rgba(16, 185, 129, 0.1);
+  color: var(--success);
+}
+
+.statNew {
+  background-color: rgba(59, 130, 246, 0.1);
+  color: var(--accent);
+}
+
+.statUpdated {
+  background-color: rgba(139, 92, 246, 0.1);
+  color: #a78bfa;
+}
+
+.statCached {
+  background-color: rgba(148, 163, 184, 0.1);
+  color: var(--text-muted);
+}
+
+.statFailed {
+  background-color: rgba(239, 68, 68, 0.1);
+  color: var(--danger);
+}
+
+.inlineStatsCloseBtn {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 0 4px;
+  font-size: 0.75rem;
+  line-height: 1;
+  font-weight: 700;
+  transition: color 0.2s;
+}
+
+.inlineStatsCloseBtn:hover {
+  color: var(--text-main);
 }

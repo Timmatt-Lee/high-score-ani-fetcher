@@ -22,6 +22,7 @@ interface AnimeListProps {
   onSort: (
     field: "title" | "score" | "watchCount" | "uploadDate" | "episodeCount",
   ) => void;
+  targetScore?: number;
 }
 
 export function AnimeList({
@@ -35,6 +36,7 @@ export function AnimeList({
   sortBy,
   sortOrder,
   onSort,
+  targetScore,
 }: AnimeListProps) {
   let list: AnimeItem[];
   switch (activeTab) {
@@ -95,7 +97,7 @@ export function AnimeList({
             {renderHeader("Score", "score")}
             {renderHeader("Views", "watchCount")}
             {renderHeader("Year", "uploadDate")}
-            {renderHeader("Episodes", "episodeCount")}
+            {renderHeader("EP", "episodeCount")}
             <th className={styles.actionsHeader}>Actions</th>
           </tr>
         </thead>
@@ -108,6 +110,7 @@ export function AnimeList({
               onMoveToFavorites={onMoveToFavorites}
               onMoveToTrash={onMoveToTrash}
               onRestoreFromTrash={onRestoreFromTrash}
+              targetScore={targetScore}
             />
           ))}
         </tbody>

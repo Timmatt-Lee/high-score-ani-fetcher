@@ -5,6 +5,7 @@ const defaultSettings: Settings = {
   targetScore: 4.8,
   rescanThreshold: 95,
   cacheExpireDays: 14,
+  requestDelayMs: 800,
 };
 
 const getStorage = () =>

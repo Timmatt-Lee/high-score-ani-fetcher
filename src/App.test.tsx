@@ -92,7 +92,7 @@ describe("App rendering", () => {
         </ServiceProvider>,
       );
     });
-    expect(screen.getByText("AniFetcher Pro")).toBeDefined();
+    expect(screen.getByText("巴哈姆特動漫瘋 Scanner")).toBeDefined();
   });
 
   it("renders all three tabs", async () => {
@@ -281,7 +281,7 @@ describe("Card actions", () => {
         </ServiceProvider>,
       );
     });
-    fireEvent.click(screen.getByRole("button", { name: "Favorite" }));
+    fireEvent.click(screen.getByRole("button", { name: "Add to Favorites" }));
     expect(screen.queryByText("Test Anime")).toBeNull();
     fireEvent.click(screen.getByText(/Favorites/));
     expect(screen.getByText("Test Anime")).toBeDefined();
@@ -304,7 +304,7 @@ describe("Card actions", () => {
         </ServiceProvider>,
       );
     });
-    fireEvent.click(screen.getByRole("button", { name: "Favorite" }));
+    fireEvent.click(screen.getByRole("button", { name: "Add to Favorites" }));
     const saved = JSON.parse(localStorage.getItem("animeData") || "{}");
     expect(saved.favoriteList).toHaveLength(1);
   });
@@ -326,9 +326,9 @@ describe("Card actions", () => {
       );
     });
     // Should not throw - just log the error
-    fireEvent.click(screen.getByRole("button", { name: "Favorite" }));
+    fireEvent.click(screen.getByRole("button", { name: "Add to Favorites" }));
     await act(async () => {});
-    expect(screen.getByText("AniFetcher Pro")).toBeDefined();
+    expect(screen.getByText("巴哈姆特動漫瘋 Scanner")).toBeDefined();
   });
 
   it("moves item to Trash from Results", async () => {
@@ -340,7 +340,7 @@ describe("Card actions", () => {
         </ServiceProvider>,
       );
     });
-    fireEvent.click(screen.getByRole("button", { name: "Trash" }));
+    fireEvent.click(screen.getByRole("button", { name: "Move to Trash" }));
     expect(screen.queryByText("Test Anime")).toBeNull();
     fireEvent.click(screen.getByText(/Trash/));
     expect(screen.getByText("Test Anime")).toBeDefined();
@@ -360,7 +360,7 @@ describe("Card actions", () => {
       );
     });
     fireEvent.click(screen.getByText(/Favorites/));
-    fireEvent.click(screen.getByRole("button", { name: "Trash" }));
+    fireEvent.click(screen.getByRole("button", { name: "Move to Trash" }));
     fireEvent.click(screen.getByText(/Trash/));
     expect(screen.getByText("Fav Anime")).toBeDefined();
   });
@@ -375,9 +375,11 @@ describe("Card actions", () => {
       );
     });
     fireEvent.click(screen.getByText(/Trash/));
-    fireEvent.click(screen.getByRole("button", { name: "Favorite" }));
+    fireEvent.click(
+      screen.getByRole("button", { name: "Restore to Favorites" }),
+    );
     expect(screen.queryByText("Test Anime")).toBeNull();
-    fireEvent.click(screen.getByText(/Results/));
+    fireEvent.click(screen.getByText(/Favorites/));
     expect(screen.getByText("Test Anime")).toBeDefined();
   });
 });
@@ -985,5 +987,99 @@ describe("Scan functionality", () => {
     expect(titles[2]).toBe("Cherry Anime");
 
     useAnimeDataSpy.mockRestore();
+  });
+
+  it("handles sorting when multiple items have invalid uploadDate (NaN)", async () => {
+    const itemX = makeAnime({
+      link: "https://ani.gamer.com.tw/anime.php?sn=10",
+      title: "X Anime",
+      uploadDate: new Date(NaN),
+    });
+    const itemY = makeAnime({
+      link: "https://ani.gamer.com.tw/anime.php?sn=11",
+      title: "Y Anime",
+      uploadDate: new Date(NaN),
+    });
+
+    const useAnimeDataSpy = vi
+      .spyOn(useAnimeDataModule, "useAnimeData")
+      .mockReturnValue({
+        searchList: [itemX, itemY],
+        favoriteList: [],
+        trashList: [],
+        moveToFavorites: vi.fn(),
+        moveToTrash: vi.fn(),
+        restoreFromTrash: vi.fn(),
+        saveData: vi.fn(),
+        isLoaded: true,
+        setSearchList: vi.fn(),
+        setFavoriteList: vi.fn(),
+        setTrashList: vi.fn(),
+      });
+
+    await act(async () => {
+      render(
+        <ServiceProvider>
+          <App />
+        </ServiceProvider>,
+      );
+    });
+
+    // Sort by uploadDate descending then ascending to trigger all comparisons
+    await act(async () => {
+      fireEvent.click(screen.getByTestId("sort-header-uploadDate"));
+    });
+    await act(async () => {
+      fireEvent.click(screen.getByTestId("sort-header-uploadDate"));
+    });
+
+    const titles = screen.getAllByRole("link").map((el) => el.textContent);
+    expect(titles).toContain("X Anime");
+    expect(titles).toContain("Y Anime");
+
+    useAnimeDataSpy.mockRestore();
+  });
+
+  it("renders scan stats panel when scan finishes and allows dismissing it", async () => {
+    const anime = makeAnime({
+      title: "Scan Stats Anime",
+      score: 4.9,
+      link: "http://stats-anime",
+    });
+    vi.spyOn(animeScraper, "getTotalPages").mockResolvedValue(1);
+    vi.spyOn(AnimeScanner.prototype, "scan").mockReturnValue(
+      createMockObservable([
+        { ...anime, ratingCount: 100, description: "Stats item" },
+      ]),
+    );
+
+    await act(async () => {
+      render(
+        <ServiceProvider>
+          <App />
+        </ServiceProvider>,
+      );
+    });
+
+    // Stats container should not be visible before scan
+    expect(screen.queryByTestId("scan-stats-container")).toBeNull();
+
+    await act(async () => {
+      fireEvent.click(screen.getByText("Scan 巴哈姆特動漫瘋"));
+    });
+
+    // Stats container should be rendered after scan completes
+    await waitFor(() =>
+      expect(screen.getByTestId("scan-stats-container")).toBeDefined(),
+    );
+    expect(screen.getByText(/✓ 1/)).toBeDefined();
+    expect(screen.getByText(/\+ 1/)).toBeDefined();
+
+    // Click dismiss button to clear stats
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: "Dismiss Results" }));
+    });
+
+    expect(screen.queryByTestId("scan-stats-container")).toBeNull();
   });
 });

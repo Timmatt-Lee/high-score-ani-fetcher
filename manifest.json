@@ -1,9 +1,20 @@
 {
   "manifest_version": 3,
-  "name": "High Score Ani Fetcher",
+  "name": "巴哈姆特動漫瘋 Scanner",
   "version": "1.0.0",
   "description": "Fetch and filter high score anime from 巴哈姆特動漫瘋.",
-  "action": {},
+  "icons": {
+    "16": "icon.png",
+    "48": "icon.png",
+    "128": "icon.png"
+  },
+  "action": {
+    "default_icon": {
+      "16": "icon.png",
+      "48": "icon.png",
+      "128": "icon.png"
+    }
+  },
   "permissions": ["storage", "tabs"],
   "host_permissions": ["*://ani.gamer.com.tw/*"],
   "background": {

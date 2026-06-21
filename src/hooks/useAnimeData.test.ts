@@ -133,6 +133,22 @@ describe("useAnimeData", () => {
     expect(result.current.trashList).toHaveLength(0);
   });
 
+  it("filters out invalid non-object items and returns empty array on schema validation failure", async () => {
+    vi.stubGlobal("chrome", undefined);
+    localStorage.setItem(
+      "animeData",
+      JSON.stringify({ searchList: [null, 123, makeAnime("Valid")] }),
+    );
+
+    const { result } = renderHook(() => useAnimeData());
+
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+
+    expect(result.current.searchList).toHaveLength(0);
+  });
+
   // --- Load error path (lines 32-34) ---
   it("handles chrome.storage.get error gracefully", async () => {
     vi.stubGlobal("chrome", {
@@ -240,7 +256,7 @@ describe("useAnimeData", () => {
     expect(result.current.trashList).toHaveLength(1);
   });
 
-  it("restores item from trash back to search", async () => {
+  it("restores item from trash back to favorites", async () => {
     const anime = makeAnime("Test");
     storageMock["trashList"] = [anime];
     const { result } = renderHook(() => useAnimeData());
@@ -254,12 +270,26 @@ describe("useAnimeData", () => {
     });
 
     expect(result.current.trashList).toHaveLength(0);
-    expect(result.current.searchList).toHaveLength(1);
+    expect(result.current.favoriteList).toHaveLength(1);
   });
 
   it("handles malformed loaded data by failing validation and returning empty list", async () => {
     const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
     storageMock["searchList"] = [{ title: 12345 }];
+    const { result } = renderHook(() => useAnimeData());
+
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+
+    expect(result.current.searchList).toHaveLength(0);
+    expect(consoleSpy).toHaveBeenCalled();
+    consoleSpy.mockRestore();
+  });
+
+  it("handles non-array loaded data gracefully", async () => {
+    const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    storageMock["searchList"] = "not-an-array";
     const { result } = renderHook(() => useAnimeData());
 
     await act(async () => {
@@ -295,6 +325,33 @@ describe("useAnimeData", () => {
     expect(result.current.searchList[1].scannedAt?.getTime()).toBe(
       existingDate.getTime(),
     );
+  });
+
+  it("cleans up corrupted scannedAt values (like empty objects or Invalid Date strings) on load", async () => {
+    const itemWithCorruptedObject = makeAnime("CorruptedObject");
+    itemWithCorruptedObject.score = 9.0;
+    (itemWithCorruptedObject as unknown as { scannedAt: unknown }).scannedAt =
+      {};
+
+    const itemWithCorruptedString = makeAnime("CorruptedString");
+    itemWithCorruptedString.score = 9.0;
+    (itemWithCorruptedString as unknown as { scannedAt: unknown }).scannedAt =
+      "Invalid Date";
+
+    storageMock["searchList"] = [
+      itemWithCorruptedObject,
+      itemWithCorruptedString,
+    ];
+    const { result } = renderHook(() => useAnimeData());
+
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+
+    expect(result.current.searchList).toHaveLength(2);
+    // Both items are successfully validated and assigned a fresh Date as fallback migration
+    expect(result.current.searchList[0].scannedAt).toBeInstanceOf(Date);
+    expect(result.current.searchList[1].scannedAt).toBeInstanceOf(Date);
   });
 
   it("sets isLoaded to true after data loading finishes", async () => {

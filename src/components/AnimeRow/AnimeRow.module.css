@@ -57,8 +57,6 @@
 }
 
 .scoreBadge {
-  background-color: rgba(245, 158, 11, 0.1);
-  color: #f59e0b;
   padding: 4px 8px;
   border-radius: 6px;
   font-weight: 700;
@@ -67,6 +65,21 @@
   align-items: center;
   gap: 4px;
   flex-shrink: 0;
+}
+
+.scoreExcellent {
+  background-color: rgba(16, 185, 129, 0.1);
+  color: var(--success);
+}
+
+.scoreGood {
+  background-color: rgba(234, 179, 8, 0.1);
+  color: #eab308;
+}
+
+.scoreAverage {
+  background-color: rgba(239, 68, 68, 0.1);
+  color: var(--danger);
 }
 
 .rowActions {
@@ -79,35 +92,42 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
-  padding: 6px 12px;
-  border-radius: 6px;
-  font-size: 0.8rem;
-  font-weight: 600;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
   cursor: pointer;
-  background-color: var(--panel-bg);
-  border: 1px solid var(--border);
-  color: var(--text-main);
-  transition: all 0.2s ease;
-}
-
-.actionBtn:hover:not(:disabled) {
-  background-color: var(--border);
+  border: 1px solid transparent;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .actionBtn:disabled {
-  opacity: 0.5;
+  opacity: 0.3;
   cursor: not-allowed;
+  transform: none !important;
+}
+
+.fav {
+  color: var(--success);
+  background-color: rgba(16, 185, 129, 0.08);
+  border-color: rgba(16, 185, 129, 0.25);
 }
 
 .fav:hover:not(:disabled) {
-  background-color: rgba(16, 185, 129, 0.1);
+  background-color: rgba(16, 185, 129, 0.2);
   border-color: var(--success);
-  color: var(--success);
+  transform: scale(1.08);
+  box-shadow: 0 0 8px rgba(16, 185, 129, 0.3);
+}
+
+.trash {
+  color: var(--danger);
+  background-color: rgba(239, 68, 68, 0.08);
+  border-color: rgba(239, 68, 68, 0.25);
 }
 
 .trash:hover:not(:disabled) {
-  background-color: rgba(239, 68, 68, 0.1);
+  background-color: rgba(239, 68, 68, 0.2);
   border-color: var(--danger);
-  color: var(--danger);
+  transform: scale(1.08);
+  box-shadow: 0 0 8px rgba(239, 68, 68, 0.3);
 }

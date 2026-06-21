@@ -53,3 +53,8 @@
   flex-direction: column;
   gap: 8px;
 }
+
+.hasErrors {
+  border: 2px solid var(--danger);
+  background: rgba(239, 68, 68, 0.05);
+}
