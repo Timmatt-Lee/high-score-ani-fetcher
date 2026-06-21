@@ -22,9 +22,9 @@ export class AnimeScraper {
   ): Promise<Result<string, AnimeScanHttpError>> {
     // Space out requests to avoid triggering 429 Too Many Requests rate limits
     if (scanStep === AnimeScanStep.SCRAPE_LIST_PAGE) {
-      await this.delay(10);
+      await this.delay(50);
     } else if (scanStep === AnimeScanStep.PARSE_ANIME_DETAIL) {
-      const delayMs = Math.floor(Math.random() * 30) + 20;
+      const delayMs = Math.floor(Math.random() * 50) + 100;
       await this.delay(delayMs);
     }
 
