@@ -6,7 +6,7 @@ import {
   AnimeScanParseError,
   AnimeScanner,
 } from "./index";
-import { type AnimeItem, type AnimeScanEvent } from "./types";
+import { type AnimeItem } from "./types";
 import { isError } from "../../types/result";
 
 // --- Helpers ---
