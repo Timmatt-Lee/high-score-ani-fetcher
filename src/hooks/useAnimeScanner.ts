@@ -71,9 +71,18 @@ export function useAnimeScanner(
     trashList.forEach((x) => existingMap.set(x.link, x));
 
     const filterItem = (item: AnimeItem) => {
-      // Skip scanning details if cached data is still valid and has a low score
+      // Skip scanning details if cached data is still valid and within cache duration
       const storedAnimeItem = existingMap.get(item.link);
       if (storedAnimeItem) {
+        if (storedAnimeItem.scannedAt) {
+          const ageMs =
+            Date.now() - new Date(storedAnimeItem.scannedAt).getTime();
+          const ageDays = ageMs / (1000 * 60 * 60 * 24);
+          if (ageDays < settings.cacheExpireDays) {
+            return false;
+          }
+        }
+
         const threshold =
           settings.targetScore * (settings.rescanThreshold / 100);
         if (storedAnimeItem.score > 0 && storedAnimeItem.score < threshold) {

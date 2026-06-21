@@ -840,4 +840,61 @@ describe("useAnimeScanner", () => {
 
     expect(scanSpy).toHaveBeenCalled();
   });
+
+  it("skips scan for cached items with fresh scannedAt date", async () => {
+    const freshItem = makeAnime("FreshItem");
+    freshItem.score = 4.9; // Above threshold
+    freshItem.scannedAt = new Date(); // Scanned just now, very fresh
+
+    vi.spyOn(animeScraper, "getTotalPages").mockResolvedValue(1);
+    const scanSpy = vi
+      .spyOn(AnimeScanner.prototype, "scan")
+      .mockImplementation(function (this: {
+        filterItem: (item: AnimeItem) => boolean;
+      }) {
+        expect(this.filterItem(freshItem)).toBe(false);
+        return createMockObservable([]);
+      });
+
+    const onComplete = vi.fn();
+    const { result } = renderHook(
+      () => useAnimeScanner([freshItem], [], [], onComplete),
+      { wrapper: ServiceProvider },
+    );
+
+    await act(async () => {
+      await result.current.handleScan();
+    });
+
+    expect(scanSpy).toHaveBeenCalled();
+  });
+
+  it("does not skip scan for cached items with expired scannedAt date", async () => {
+    const expiredItem = makeAnime("ExpiredItem");
+    expiredItem.score = 4.9; // Above threshold
+    // 15 days ago (default cache duration is 14 days)
+    expiredItem.scannedAt = new Date(Date.now() - 15 * 24 * 60 * 60 * 1000);
+
+    vi.spyOn(animeScraper, "getTotalPages").mockResolvedValue(1);
+    const scanSpy = vi
+      .spyOn(AnimeScanner.prototype, "scan")
+      .mockImplementation(function (this: {
+        filterItem: (item: AnimeItem) => boolean;
+      }) {
+        expect(this.filterItem(expiredItem)).toBe(true);
+        return createMockObservable([]);
+      });
+
+    const onComplete = vi.fn();
+    const { result } = renderHook(
+      () => useAnimeScanner([expiredItem], [], [], onComplete),
+      { wrapper: ServiceProvider },
+    );
+
+    await act(async () => {
+      await result.current.handleScan();
+    });
+
+    expect(scanSpy).toHaveBeenCalled();
+  });
 });

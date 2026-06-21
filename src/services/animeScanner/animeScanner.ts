@@ -40,8 +40,8 @@ export class AnimeScanner {
 
       const itemsToScan: { item: AnimeItem; page: number }[] = [];
 
-      for (let i = 0; i < pagesToScan.length; i++) {
-        const page = pagesToScan[i];
+      let completedPages = 0;
+      const scrapePromises = pagesToScan.map(async (page) => {
         try {
           const pageResult = await this.scraper.scrapeAnimesOnPage(page);
           for (const error of pageResult.httpErrors) {
@@ -55,13 +55,20 @@ export class AnimeScanner {
               itemsToScan.push({ item, page });
             }
           }
+          completedPages++;
           this.eventSubject.next(
-            new AnimeScanPageEvent(i + 1, pagesToScan.length),
+            new AnimeScanPageEvent(completedPages, pagesToScan.length),
           );
         } catch (err) {
           this.eventSubject.error(err);
-          return;
+          throw err;
         }
+      });
+
+      try {
+        await Promise.all(scrapePromises);
+      } catch {
+        return;
       }
 
       try {
