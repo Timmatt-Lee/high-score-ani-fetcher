@@ -73,7 +73,7 @@ const meta: Meta<typeof App> = {
             width: "100%",
             maxWidth: "1200px",
             minHeight: "600px",
-            background: "#121212",
+            background: "var(--bg-color)",
             padding: "20px",
           }}
         >

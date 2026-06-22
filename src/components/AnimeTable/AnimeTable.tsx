@@ -65,7 +65,7 @@ export function AnimeTable({
           {renderHeader("Score", "score")}
           {renderHeader("Views", "watchCount")}
           {renderHeader("Year", "uploadDate")}
-          {renderHeader("Episodes", "episodeCount")}
+          {renderHeader("EPs", "episodeCount")}
           <div className={styles.actionsHeader}>Actions</div>
         </div>
         <div className={styles.tableBody}>
