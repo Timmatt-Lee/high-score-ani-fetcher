@@ -7,7 +7,6 @@
   padding: 6px;
   border-radius: 16px;
   backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
   width: 200px;
 }
 
@@ -24,6 +23,9 @@
   white-space: nowrap;
   text-align: left;
   width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .tab:hover {
@@ -58,7 +60,7 @@
 
   .tab {
     border-radius: 100px;
-    text-align: center;
+    justify-content: center;
     width: auto;
     padding: 8px 16px;
   }
@@ -76,7 +78,7 @@
 
   .tab {
     border-radius: 8px;
-    text-align: center;
+    justify-content: center;
     width: auto;
     padding: 8px 12px;
     font-size: 0.8rem;

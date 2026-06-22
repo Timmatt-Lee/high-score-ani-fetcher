@@ -8,8 +8,13 @@
   border: 1px solid var(--border);
   border-radius: var(--radius);
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
-  overflow-x: auto;
-  overflow-y: visible;
+  overflow: visible;
+}
+
+@media (max-width: 768px) {
+  .tableWrapper {
+    overflow-x: auto;
+  }
 }
 
 .animeTable {
