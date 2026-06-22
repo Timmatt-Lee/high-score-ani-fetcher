@@ -193,3 +193,9 @@
     align-items: center !important;
   }
 }
+
+@media (min-width: 769px) {
+  .animeRow > div {
+    padding: 12px 16px !important;
+  }
+}
