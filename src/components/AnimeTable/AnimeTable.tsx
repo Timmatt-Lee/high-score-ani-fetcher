@@ -46,6 +46,7 @@ export function AnimeTable({
         data-testid={`sort-header-${field}`}
         title={`Sort by ${label}`}
         data-tooltip={`Sort by ${label}`}
+        data-tooltip-dir="bottom"
       >
         <span className={styles.headerLabel}>{label}</span>
         {isSorted && (

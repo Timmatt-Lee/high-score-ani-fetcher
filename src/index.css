@@ -81,3 +81,8 @@ body {
   visibility: visible;
   transform: translateX(-50%) scale(1);
 }
+
+[data-tooltip][data-tooltip-dir="bottom"]::after {
+  bottom: auto;
+  top: 125%;
+}
