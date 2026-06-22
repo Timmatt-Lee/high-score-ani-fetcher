@@ -69,7 +69,7 @@ export function ResultBanner({
             data-testid="chip-updated"
             title="Existing anime updated with fresh details"
           >
-            <span className={styles.icon}>↻</span>
+            <span className={styles.icon}>✎</span>
             <span className={styles.label}>
               {isExpanded("updated")
                 ? `update ${refetchedCount}`

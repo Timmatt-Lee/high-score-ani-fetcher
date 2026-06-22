@@ -16,6 +16,11 @@ const meta: Meta<typeof AnimeList> = {
     onRestoreFromTrash: { action: "restoreFromTrash" },
     onSort: { action: "sort" },
   },
+  parameters: {
+    chromatic: {
+      viewports: [320, 768, 1200],
+    },
+  },
 };
 
 export default meta;

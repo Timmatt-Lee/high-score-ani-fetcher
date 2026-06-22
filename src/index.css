@@ -75,7 +75,8 @@ body {
   letter-spacing: normal;
 }
 
-[data-tooltip]:hover::after {
+[data-tooltip]:hover::after,
+[data-tooltip].forceTooltip::after {
   opacity: 1;
   visibility: visible;
   transform: translateX(-50%) scale(1);

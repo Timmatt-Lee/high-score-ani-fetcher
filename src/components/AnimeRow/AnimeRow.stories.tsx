@@ -42,6 +42,11 @@ const meta: Meta<typeof AnimeRow> = {
     onMoveToTrash: { action: "moveToTrash" },
     onRestoreFromTrash: { action: "restoreFromTrash" },
   },
+  parameters: {
+    chromatic: {
+      viewports: [320, 768, 1200],
+    },
+  },
 };
 
 export default meta;

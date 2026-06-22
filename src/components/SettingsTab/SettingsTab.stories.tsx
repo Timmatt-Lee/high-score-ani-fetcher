@@ -6,6 +6,9 @@ const meta = {
   component: SettingsTab,
   parameters: {
     layout: "fullscreen",
+    chromatic: {
+      viewports: [320, 768, 1200],
+    },
   },
   decorators: [
     (Story) => (

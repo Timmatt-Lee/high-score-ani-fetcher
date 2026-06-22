@@ -17,6 +17,11 @@ const meta: Meta<typeof AnimeTable> = {
     onRestoreFromTrash: { action: "restoreFromTrash" },
     onSort: { action: "sort" },
   },
+  parameters: {
+    chromatic: {
+      viewports: [320, 768, 1200],
+    },
+  },
 };
 
 export default meta;
@@ -58,7 +63,7 @@ const largeList: AnimeItem[] = Array.from({ length: 40 }, (_, idx) => ({
   description: `This is a long description text for anime card ${idx + 1} to test the multi-line clamp styling. It should truncate after two lines in mobile and desktop viewports correctly.`,
 }));
 
-export const DesktopView: Story = {
+export const Default: Story = {
   args: {
     activeTab: Tab.Search,
     list: sampleList,
@@ -72,49 +77,10 @@ export const DesktopView: Story = {
   },
 };
 
-export const MobileView: Story = {
+export const LargeListScrolled: Story = {
   args: {
-    ...DesktopView.args,
-  },
-  parameters: {
-    viewport: {
-      defaultViewport: "mobile1",
-    },
-    chromatic: {
-      viewports: [320, 375],
-    },
-  },
-};
-
-export const DesktopLargeListScrolled: Story = {
-  args: {
-    ...DesktopView.args,
+    ...Default.args,
     list: largeList,
-  },
-  play: async () => {
-    await new Promise((resolve) => setTimeout(resolve, 500));
-    if (document.documentElement) {
-      document.documentElement.scrollTop = 800;
-    }
-    if (document.body) {
-      document.body.scrollTop = 800;
-    }
-    window.scrollTo(0, 800);
-  },
-};
-
-export const MobileLargeListScrolled: Story = {
-  args: {
-    ...DesktopView.args,
-    list: largeList,
-  },
-  parameters: {
-    viewport: {
-      defaultViewport: "mobile1",
-    },
-    chromatic: {
-      viewports: [320, 375],
-    },
   },
   play: async () => {
     await new Promise((resolve) => setTimeout(resolve, 500));
@@ -130,12 +96,11 @@ export const MobileLargeListScrolled: Story = {
 
 export const HoverHeaderTooltip: Story = {
   args: {
-    ...DesktopView.args,
+    ...Default.args,
   },
   play: async ({ canvasElement }) => {
-    const { userEvent } = await import("@storybook/test");
     const canvas = within(canvasElement);
     const scoreHeader = await canvas.findByTestId("sort-header-score");
-    await userEvent.hover(scoreHeader);
+    scoreHeader.classList.add("forceTooltip");
   },
 };

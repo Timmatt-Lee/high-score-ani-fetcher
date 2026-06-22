@@ -9,6 +9,11 @@ import {
 const meta: Meta<typeof ErrorCard> = {
   title: "Components/ErrorCard",
   component: ErrorCard,
+  parameters: {
+    chromatic: {
+      viewports: [320, 768, 1200],
+    },
+  },
 };
 
 export default meta;

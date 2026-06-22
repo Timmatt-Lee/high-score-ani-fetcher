@@ -108,7 +108,6 @@ function App() {
         <div className={styles.headerCenter}>
           {isScanning ? (
             <ProgressBar
-              isScanning={isScanning}
               percent={progress.percent}
               message={progress.message}
             />

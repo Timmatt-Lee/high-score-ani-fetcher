@@ -1,18 +1,11 @@
 import styles from "./ProgressBar.module.css";
 
 interface ProgressBarProps {
-  isScanning: boolean;
   percent: number;
   message: string;
 }
 
-export function ProgressBar({
-  isScanning,
-  percent,
-  message,
-}: ProgressBarProps) {
-  if (!isScanning) return null;
-
+export function ProgressBar({ percent, message }: ProgressBarProps) {
   return (
     <div className={styles.progressContainer} data-testid="progress-container">
       <div className={styles.progressBar}>

@@ -14,6 +14,11 @@ const meta: Meta<typeof Tabs> = {
     trashCount: { control: { type: "number", min: 0 } },
     setActiveTab: { action: "setActiveTab" },
   },
+  parameters: {
+    chromatic: {
+      viewports: [320, 768, 1200],
+    },
+  },
 };
 
 export default meta;
