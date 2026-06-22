@@ -12,17 +12,21 @@ const meta: Meta<typeof AnimeRow> = {
       <div
         style={{
           width: "100%",
-          background: "#1e293b",
-          border: "1px solid #334155",
-          borderRadius: "12px",
-          overflow: "visible",
-          fontFamily: "Inter, sans-serif",
-          color: "#f8fafc",
+          overflowX: "auto",
+          background: "var(--bg-color)",
           padding: "10px",
+          boxSizing: "border-box",
         }}
       >
         <div
           style={{
+            minWidth: "800px",
+            background: "#1e293b",
+            border: "1px solid #334155",
+            borderRadius: "12px",
+            overflow: "visible",
+            fontFamily: "Inter, sans-serif",
+            color: "#f8fafc",
             display: "flex",
             flexDirection: "column",
             width: "100%",
