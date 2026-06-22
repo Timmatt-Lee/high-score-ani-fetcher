@@ -10,18 +10,6 @@ const meta = {
       viewports: [320, 768, 1200],
     },
   },
-  decorators: [
-    (Story) => (
-      <div
-        style={{
-          background: "#0f172a",
-          padding: "20px",
-        }}
-      >
-        <Story />
-      </div>
-    ),
-  ],
 } satisfies Meta<typeof SettingsTab>;
 
 export default meta;
