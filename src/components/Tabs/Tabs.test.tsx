@@ -31,6 +31,12 @@ describe("Tabs", () => {
     );
     fireEvent.click(screen.getByText("Favorites (2)"));
     expect(setActiveTab).toHaveBeenCalledWith(Tab.Favorites);
+
+    fireEvent.click(screen.getByText("Results (5)"));
+    expect(setActiveTab).toHaveBeenCalledWith(Tab.Search);
+
+    fireEvent.click(screen.getByText("Trash (1)"));
+    expect(setActiveTab).toHaveBeenCalledWith(Tab.Trash);
   });
 
   it("calls setActiveTab with Settings when Settings tab is clicked", () => {

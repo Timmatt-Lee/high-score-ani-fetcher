@@ -12,7 +12,6 @@ import * as useAnimeDataModule from "./hooks/useAnimeData";
 import { animeScraper } from "./services/animeScanner/animeScraper";
 import {
   AnimeScanHttpError,
-  AnimeScanParseError,
   AnimeScanStep,
   AnimeScanner,
 } from "./services/animeScanner";
@@ -24,12 +23,17 @@ import { Observable, Subject } from "rxjs";
 
 function createMockObservable(
   events: AnimeScanEvent[] = [],
+  errorToThrow?: Error,
 ): Observable<AnimeScanEvent> {
   return new Observable<AnimeScanEvent>((subscriber) => {
     for (const event of events) {
       subscriber.next(event);
     }
-    subscriber.complete();
+    if (errorToThrow) {
+      subscriber.error(errorToThrow);
+    } else {
+      subscriber.complete();
+    }
   });
 }
 
@@ -632,11 +636,11 @@ describe("Scan functionality", () => {
     expect(screen.queryByText("NA Ep")).toBeNull();
   });
 
-  it("renders warning alert when scan encounters errors and supports details toggle", async () => {
+  it("renders error card in fatal error container when scan fails or encounters error", async () => {
     const anime = makeAnime({ title: "Partial Success", score: 9.0 });
     const mockError = new AnimeScanHttpError(
       1,
-      AnimeScanStep.GET_TOTAL_PAGES,
+      AnimeScanStep.SCRAPE_LIST_PAGE,
       "https://ani.gamer.com.tw/animeList.php?page=1",
       "HTTP 502",
       502,
@@ -645,10 +649,10 @@ describe("Scan functionality", () => {
 
     vi.spyOn(animeScraper, "getTotalPages").mockResolvedValue(2);
     vi.spyOn(AnimeScanner.prototype, "scan").mockImplementation(() => {
-      return createMockObservable([
-        { ...anime, score: 9.0, ratingCount: 100, description: "x" },
+      return createMockObservable(
+        [{ ...anime, score: 9.0, ratingCount: 100, description: "x" }],
         mockError,
-      ]);
+      );
     });
 
     await act(async () => {
@@ -665,183 +669,11 @@ describe("Scan functionality", () => {
 
     await waitFor(() => expect(screen.queryByText("Scanning...")).toBeNull());
 
-    // Verify errors panel renders HTTP error details
-    expect(screen.getByTestId("errors-panel")).toBeDefined();
-    expect(screen.getByText(/HTTP Network Errors \(1\)/)).toBeDefined();
+    // Verify error is rendered via ErrorCard
+    expect(screen.getByTestId("fatal-error-container")).toBeDefined();
     expect(
-      screen.getAllByText(/Status Code: 502/).length,
-    ).toBeGreaterThanOrEqual(1);
-  });
-
-  it("renders page numbers and failed details counts in Errors tab summary when there are many errors", async () => {
-    const anime = makeAnime({ title: "Partial Success", score: 9.0 });
-    const errorsList = Array.from(
-      { length: 11 },
-      (_, i) =>
-        new AnimeScanHttpError(
-          i + 1,
-          AnimeScanStep.GET_TOTAL_PAGES,
-          `https://ani.gamer.com.tw/animeList.php?page=${i + 1}`,
-          `Error ${i}`,
-          500,
-          undefined,
-        ),
-    );
-
-    vi.spyOn(animeScraper, "getTotalPages").mockResolvedValue(1);
-    vi.spyOn(AnimeScanner.prototype, "scan").mockImplementation(() => {
-      return createMockObservable([
-        { ...anime, score: 9.0, ratingCount: 100, description: "x" },
-        ...errorsList,
-      ]);
-    });
-
-    await act(async () => {
-      render(
-        <ServiceProvider>
-          <App />
-        </ServiceProvider>,
-      );
-    });
-
-    await act(async () => {
-      fireEvent.click(screen.getByText("Scan 巴哈姆特動漫瘋"));
-    });
-
-    await waitFor(() => expect(screen.queryByText("Scanning...")).toBeNull());
-
-    // Expect summary text to be rendered
-    expect(screen.getByText("11 errors occurred")).toBeDefined();
-  });
-
-  it("renders fatal error screen when scan fails", async () => {
-    const fatalErr = new AnimeScanHttpError(
-      1,
-      AnimeScanStep.GET_TOTAL_PAGES,
-      "https://ani.gamer.com.tw/error",
-      "Bad Request",
-      400,
-      undefined,
-    );
-    const spy = vi
-      .spyOn(animeScraper, "getTotalPages")
-      .mockResolvedValue(fatalErr);
-
-    await act(async () => {
-      render(
-        <ServiceProvider>
-          <App />
-        </ServiceProvider>,
-      );
-    });
-
-    await act(async () => {
-      fireEvent.click(screen.getByText("Scan 巴哈姆特動漫瘋"));
-    });
-
-    // Check if the spy was actually called
-    await waitFor(() => expect(spy).toHaveBeenCalled());
-
-    // Verify fatal error screen is rendered and progress bar / tabs are NOT rendered
-    await waitFor(() =>
-      expect(screen.getByTestId("fatal-error-container")).toBeDefined(),
-    );
-    expect(screen.queryByTestId("progress-container")).toBeNull();
-    expect(screen.getByTestId("tabs-container")).toBeDefined();
-  });
-
-  it("renders ErrorsPanel inside Results tab and hides it when retry clears the errors", async () => {
-    const anime = makeAnime({ title: "Partial Success", score: 9.0 });
-    const error = new AnimeScanHttpError(
-      1,
-      AnimeScanStep.GET_TOTAL_PAGES,
-      "https://ani.gamer.com.tw/animeList.php?page=1",
-      "fail",
-      500,
-      undefined,
-    );
-
-    vi.spyOn(animeScraper, "getTotalPages").mockResolvedValue(1);
-
-    const parseError = new AnimeScanParseError(
-      1,
-      AnimeScanStep.PARSE_ANIME_INFO,
-      "https://ani.gamer.com.tw/anime.php",
-      "fail parse",
-      "Parsing failed",
-    );
-
-    const parseErrorNoUrl = new AnimeScanParseError(
-      0,
-      AnimeScanStep.PARSE_ANIME_INFO,
-      undefined as unknown as string,
-      "fail parse no url",
-      "Parsing failed",
-    );
-
-    const parseErrorWithPage = new AnimeScanParseError(
-      3,
-      AnimeScanStep.PARSE_ANIME_INFO,
-      "https://ani.gamer.com.tw/animeList.php?page=3",
-      "fail parse page",
-      "Parsing failed",
-    );
-
-    const errorNoPage = new AnimeScanHttpError(
-      0,
-      AnimeScanStep.GET_TOTAL_PAGES,
-      "https://ani.gamer.com.tw/anime.php",
-      "fail no page",
-      500,
-      undefined,
-    );
-
-    // First scan yields error
-    const pipelineMock = vi.spyOn(AnimeScanner.prototype, "scan");
-    pipelineMock.mockImplementationOnce(() => {
-      return createMockObservable([
-        { ...anime },
-        error,
-        errorNoPage,
-        parseError,
-        parseErrorNoUrl,
-        parseErrorWithPage,
-      ]);
-    });
-
-    await act(async () => {
-      render(
-        <ServiceProvider>
-          <App />
-        </ServiceProvider>,
-      );
-    });
-
-    await act(async () => {
-      fireEvent.click(screen.getByText("Scan 巴哈姆特動漫瘋"));
-    });
-
-    await waitFor(() => expect(screen.queryByText("Scanning...")).toBeNull());
-
-    // ErrorsPanel should be rendered since we are on the Results tab and there are errors
-    expect(screen.getByTestId("errors-panel")).toBeDefined();
-
-    // Mock second scan (retry) to succeed with no errors
-    pipelineMock.mockImplementationOnce(() => {
-      return createMockObservable([{ ...anime }]);
-    });
-
-    // Click retry button in ErrorsPanel
-    const retryBtn = screen.getByTestId("retry-errors-btn");
-    await act(async () => {
-      fireEvent.click(retryBtn);
-    });
-
-    // Wait for the scan to finish and verify that ErrorsPanel is hidden
-    await waitFor(() => expect(screen.queryByText("Scanning...")).toBeNull());
-
-    // ErrorsPanel should be hidden now
-    expect(screen.queryByTestId("errors-panel")).toBeNull();
+      screen.getByText(/HTTP request failed with status 502/),
+    ).toBeDefined();
   });
 
   it("renders SettingsTab when Settings tab is active", async () => {
@@ -1072,12 +904,12 @@ describe("Scan functionality", () => {
     await waitFor(() =>
       expect(screen.getByTestId("scan-stats-container")).toBeDefined(),
     );
-    expect(screen.getByText(/✓ 1/)).toBeDefined();
-    expect(screen.getByText(/\+ 1/)).toBeDefined();
+    expect(screen.getByTestId("chip-success")).toBeDefined();
+    expect(screen.getByTestId("chip-added")).toBeDefined();
 
     // Click dismiss button to clear stats
     await act(async () => {
-      fireEvent.click(screen.getByRole("button", { name: "Dismiss Results" }));
+      fireEvent.click(screen.getByLabelText("Dismiss scan results"));
     });
 
     expect(screen.queryByTestId("scan-stats-container")).toBeNull();

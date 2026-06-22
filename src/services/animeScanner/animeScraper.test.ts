@@ -1,139 +1,84 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { animeScraper } from "./animeScraper";
 import {
-  AnimeScanStep,
   AnimeScanHttpError,
   AnimeScanParseError,
-  AnimeScanner,
+  AnimeScanStep,
 } from "./index";
-import { type AnimeItem, type AnimeScanEvent } from "./types";
-import { isError, type Result } from "../../types/result";
 
-// --- Helpers ---
-const makeHtml = (content: string) => `<html><body>${content}</body></html>`;
+const makeHtml = (innerHtml: string) =>
+  `<html><body>${innerHtml}</body></html>`;
 
-const mockFetch = (
-  html: string,
-  ok = true,
-  status = 200,
-  statusText = "OK",
-) => {
+const mockFetch = (html: string, ok = true, status = 200) => {
   vi.stubGlobal(
     "fetch",
     vi.fn().mockResolvedValue({
       ok,
       status,
-      statusText,
       text: async () => html,
+      headers: {
+        get: () => null,
+      },
     }),
   );
 };
 
 beforeEach(() => {
   vi.restoreAllMocks();
-  vi.spyOn(animeScraper, "delay").mockResolvedValue();
+  vi.clearAllMocks();
 });
 
 // --- getTotalPages ---
 describe("animeScraper.getTotalPages", () => {
-  it("returns AnimeScanParseError when no page links found", async () => {
-    mockFetch(makeHtml('<div class="page_number"></div>'));
-    const result = await animeScraper.getTotalPages();
-    expect(isError(result)).toBe(true);
-    if (isError(result)) {
-      expect(result).toBeInstanceOf(AnimeScanParseError);
-      expect((result as AnimeScanParseError).scanStep).toBe(
-        AnimeScanStep.GET_TOTAL_PAGES,
-      );
-    }
-  });
-
-  it("parses the last page number from links", async () => {
+  it("parses pagination correctly", async () => {
     mockFetch(
       makeHtml(`
       <div class="page_number">
-        <a href="?page=1">1</a>
-        <a href="?page=2">2</a>
-        <a href="?page=5">5</a>
+        <a>1</a>
+        <a>2</a>
+        <a>3</a>
+        <a>4</a>
       </div>
     `),
     );
-    const result = await animeScraper.getTotalPages();
-    expect(isError(result)).toBe(false);
-    expect(result).toBe(5);
+    const pages = await animeScraper.getTotalPages();
+    expect(pages).toBe(4);
   });
 
-  it("returns AnimeScanParseError when last page link has no text content", async () => {
-    mockFetch(makeHtml(`<div class="page_number"><a></a></div>`));
-    const result = await animeScraper.getTotalPages();
-    expect(isError(result)).toBe(true);
-    if (isError(result)) {
-      expect(result.message).toContain("No pagination text");
-    }
-  });
-
-  it("returns AnimeScanParseError when last page text is not a number", async () => {
-    mockFetch(makeHtml(`<div class="page_number"><a>NaN</a></div>`));
-    const result = await animeScraper.getTotalPages();
-    expect(isError(result)).toBe(true);
-    if (isError(result)) {
-      expect(result.message).toContain("Invalid page number");
-    }
-  });
-
-  it("returns AnimeScanHttpError when response is not ok", async () => {
-    mockFetch("Error Page", false, 404, "Not Found");
-    const result = await animeScraper.getTotalPages();
-    expect(isError(result)).toBe(true);
-    if (isError(result)) {
-      expect(result).toBeInstanceOf(AnimeScanHttpError);
-      expect((result as AnimeScanHttpError).status).toBe(404);
-      expect((result as AnimeScanHttpError).html).toBe("Error Page");
-    }
-  });
-
-  it("returns AnimeScanHttpError on fetch failure (network error)", async () => {
-    const error = new Error("network");
-    vi.stubGlobal("fetch", vi.fn().mockRejectedValue(error));
-    const result = await animeScraper.getTotalPages();
-    expect(isError(result)).toBe(true);
-    expect((result as AnimeScanHttpError).html).toContain("network");
-    expect((result as AnimeScanHttpError).status).toBe(0);
-  });
-
-  it("returns AnimeScanHttpError on fetch failure with string error", async () => {
-    vi.stubGlobal("fetch", vi.fn().mockRejectedValue("network string error"));
-    const result = await animeScraper.getTotalPages();
-    expect(isError(result)).toBe(true);
-    expect((result as AnimeScanHttpError).html).toBe("network string error");
-    expect((result as AnimeScanHttpError).status).toBe(0);
-  });
-
-  it("passes through AnimeScanHttpError from fetchUrl in getTotalPages", async () => {
-    const error = new AnimeScanHttpError(
-      1,
-      AnimeScanStep.GET_TOTAL_PAGES,
-      "http://x",
-      "fail",
-      502,
-      undefined,
+  it("throws AnimeScanParseError when pagination is missing", async () => {
+    mockFetch(makeHtml("<div>No page links</div>"));
+    await expect(animeScraper.getTotalPages()).rejects.toThrow(
+      AnimeScanParseError,
     );
-    vi.spyOn(
-      animeScraper as unknown as {
-        fetchUrl: (
-          url: string,
-          page: number,
-          scanStep: AnimeScanStep,
-        ) => Promise<unknown>;
-      },
-      "fetchUrl",
-    ).mockResolvedValue(error);
-
-    const result = await animeScraper.getTotalPages();
-    expect(result).toBe(error);
   });
 
-  it("bubbles up unexpected errors in getTotalPages", async () => {
+  it("throws AnimeScanParseError when page text is empty", async () => {
+    mockFetch(
+      makeHtml(`
+      <div class="page_number">
+        <a></a>
+      </div>
+    `),
+    );
+    await expect(animeScraper.getTotalPages()).rejects.toThrow(
+      AnimeScanParseError,
+    );
+  });
+
+  it("throws AnimeScanParseError when page text is NaN", async () => {
+    mockFetch(
+      makeHtml(`
+      <div class="page_number">
+        <a>ABC</a>
+      </div>
+    `),
+    );
+    await expect(animeScraper.getTotalPages()).rejects.toThrow(
+      AnimeScanParseError,
+    );
+  });
+
+  it("bubbles up unexpected error inside getTotalPages", async () => {
     mockFetch("Some HTML");
     vi.spyOn(DOMParser.prototype, "parseFromString").mockImplementation(() => {
       throw new Error("unexpected crash");
@@ -143,7 +88,7 @@ describe("animeScraper.getTotalPages", () => {
     );
   });
 
-  it("bubbles up unexpected string errors in getTotalPages", async () => {
+  it("bubbles up unexpected string error inside getTotalPages", async () => {
     mockFetch("Some HTML");
     vi.spyOn(DOMParser.prototype, "parseFromString").mockImplementation(() => {
       throw "unexpected string crash";
@@ -170,49 +115,39 @@ describe("animeScraper.scrapeAnimesOnPage", () => {
     `),
     );
     const result = await animeScraper.scrapeAnimesOnPage(1);
-    expect(result.animeItems).toHaveLength(1);
-    expect(result.animeItems[0].title).toBe("Test Anime");
-    expect(result.animeItems[0].episodeCount).toBe(12);
-    expect(result.animeItems[0].watchCount).toBe(25000);
-    expect(result.animeItems[0].uploadDate.getFullYear()).toBe(2024);
+    expect(result).toHaveLength(1);
+    expect(result[0].title).toBe("Test Anime");
+    expect(result[0].episodeCount).toBe(12);
+    expect(result[0].watchCount).toBe(25000);
+    expect(result[0].uploadDate.getUTCFullYear()).toBe(2024);
   });
 
-  it("collects AnimeScanParseError when title is missing", async () => {
+  it("throws AnimeScanParseError when title is missing", async () => {
     mockFetch(makeHtml('<a class="theme-list-main" href="/x"></a>'));
-    const result = await animeScraper.scrapeAnimesOnPage(1);
-    expect(result.animeItems).toHaveLength(0);
-    expect(result.parseErrors).toHaveLength(1);
-    const err = result.parseErrors[0];
-    if (err instanceof AnimeScanParseError) {
-      expect(err.scanStep).toBe(AnimeScanStep.PARSE_ANIME_INFO);
-    }
+    await expect(animeScraper.scrapeAnimesOnPage(1)).rejects.toThrow(
+      AnimeScanParseError,
+    );
   });
 
-  it("collects AnimeScanParseError when title textContent is exactly empty", async () => {
+  it("throws AnimeScanParseError when title textContent is exactly empty", async () => {
     mockFetch(
       makeHtml(
         '<a class="theme-list-main" href="/x"><p class="theme-name"></p></a>',
       ),
     );
-    const result = await animeScraper.scrapeAnimesOnPage(1);
-    expect(result.parseErrors).toHaveLength(1);
-    const err = result.parseErrors[0];
-    if (err instanceof AnimeScanParseError) {
-      expect(err.scanStep).toBe(AnimeScanStep.PARSE_ANIME_INFO);
-    }
+    await expect(animeScraper.scrapeAnimesOnPage(1)).rejects.toThrow(
+      AnimeScanParseError,
+    );
   });
 
-  it("collects AnimeScanParseError when card has no href", async () => {
+  it("throws AnimeScanParseError when card has no href", async () => {
     mockFetch(makeHtml('<a class="theme-list-main"></a>'));
-    const result = await animeScraper.scrapeAnimesOnPage(1);
-    expect(result.parseErrors).toHaveLength(1);
-    const err = result.parseErrors[0];
-    if (err instanceof AnimeScanParseError) {
-      expect(err.message).toContain("Missing href");
-    }
+    await expect(animeScraper.scrapeAnimesOnPage(1)).rejects.toThrow(
+      AnimeScanParseError,
+    );
   });
 
-  it("collects AnimeScanParseError when watch count is missing", async () => {
+  it("throws AnimeScanParseError when watch count is missing", async () => {
     mockFetch(
       makeHtml(`
       <a class="theme-list-main" href="/animeVideo.php?sn=123">
@@ -220,16 +155,12 @@ describe("animeScraper.scrapeAnimesOnPage", () => {
       </a>
     `),
     );
-    const result = await animeScraper.scrapeAnimesOnPage(1);
-    expect(result.parseErrors).toHaveLength(1);
-    const err = result.parseErrors[0];
-    if (err instanceof AnimeScanParseError) {
-      expect(err.scanStep).toBe(AnimeScanStep.PARSE_ANIME_INFO);
-      expect(err.message).toContain("Watch count element missing");
-    }
+    await expect(animeScraper.scrapeAnimesOnPage(1)).rejects.toThrow(
+      AnimeScanParseError,
+    );
   });
 
-  it("collects AnimeScanParseError when watch count is NaN", async () => {
+  it("throws AnimeScanParseError when watch count is NaN", async () => {
     mockFetch(
       makeHtml(`
       <a class="theme-list-main" href="/animeVideo.php?sn=123">
@@ -238,13 +169,9 @@ describe("animeScraper.scrapeAnimesOnPage", () => {
       </a>
     `),
     );
-    const result = await animeScraper.scrapeAnimesOnPage(1);
-    expect(result.parseErrors).toHaveLength(1);
-    const err = result.parseErrors[0];
-    if (err instanceof AnimeScanParseError) {
-      expect(err.scanStep).toBe(AnimeScanStep.PARSE_ANIME_INFO);
-      expect(err.message).toContain("Failed to parse watch count");
-    }
+    await expect(animeScraper.scrapeAnimesOnPage(1)).rejects.toThrow(
+      AnimeScanParseError,
+    );
   });
 
   it("handles watch count with 萬 suffix", async () => {
@@ -261,10 +188,10 @@ describe("animeScraper.scrapeAnimesOnPage", () => {
     `),
     );
     const result = await animeScraper.scrapeAnimesOnPage(1);
-    expect(result.animeItems[0].watchCount).toBe(25000);
+    expect(result[0].watchCount).toBe(25000);
   });
 
-  it("returns error when fetchUrl fails in scrapeAnimesOnPage", async () => {
+  it("throws error when fetchUrl fails in scrapeAnimesOnPage", async () => {
     const error = new AnimeScanHttpError(
       1,
       AnimeScanStep.SCRAPE_LIST_PAGE,
@@ -279,17 +206,14 @@ describe("animeScraper.scrapeAnimesOnPage", () => {
           url: string,
           page: number,
           scanStep: AnimeScanStep,
-        ) => Promise<unknown>;
+        ) => Promise<string>;
       },
       "fetchUrl",
-    ).mockResolvedValue(error);
-    const result = await animeScraper.scrapeAnimesOnPage(1);
-    expect(result.animeItems).toHaveLength(0);
-    expect(result.httpErrors).toHaveLength(1);
-    expect(result.httpErrors[0]).toBe(error);
+    ).mockRejectedValue(error);
+    await expect(animeScraper.scrapeAnimesOnPage(1)).rejects.toThrow(error);
   });
 
-  it("collects AnimeScanParseError when episode count parsing fails", async () => {
+  it("throws AnimeScanParseError when episode count parsing fails", async () => {
     mockFetch(
       makeHtml(`
       <a class="theme-list-main" href="/x">
@@ -302,16 +226,12 @@ describe("animeScraper.scrapeAnimesOnPage", () => {
       </a>
     `),
     );
-    const result = await animeScraper.scrapeAnimesOnPage(1);
-    expect(result.parseErrors).toHaveLength(1);
-    const err = result.parseErrors[0];
-    if (err instanceof AnimeScanParseError) {
-      expect(err.scanStep).toBe(AnimeScanStep.PARSE_ANIME_INFO);
-      expect(err.message).toContain("Failed to parse episode count");
-    }
+    await expect(animeScraper.scrapeAnimesOnPage(1)).rejects.toThrow(
+      AnimeScanParseError,
+    );
   });
 
-  it("collects AnimeScanParseError when upload date parsing fails", async () => {
+  it("throws AnimeScanParseError when upload date parsing fails", async () => {
     mockFetch(
       makeHtml(`
       <a class="theme-list-main" href="/x">
@@ -324,13 +244,9 @@ describe("animeScraper.scrapeAnimesOnPage", () => {
       </a>
     `),
     );
-    const result = await animeScraper.scrapeAnimesOnPage(1);
-    expect(result.parseErrors).toHaveLength(1);
-    const err = result.parseErrors[0];
-    if (err instanceof AnimeScanParseError) {
-      expect(err.scanStep).toBe(AnimeScanStep.PARSE_ANIME_INFO);
-      expect(err.message).toContain("Failed to parse upload date");
-    }
+    await expect(animeScraper.scrapeAnimesOnPage(1)).rejects.toThrow(
+      AnimeScanParseError,
+    );
   });
 
   it("parses upload date with YYYY/MM format correctly", async () => {
@@ -347,12 +263,12 @@ describe("animeScraper.scrapeAnimesOnPage", () => {
     `),
     );
     const result = await animeScraper.scrapeAnimesOnPage(1);
-    expect(result.animeItems).toHaveLength(1);
-    expect(result.animeItems[0].uploadDate.getUTCFullYear()).toBe(2026);
-    expect(result.animeItems[0].uploadDate.getUTCMonth()).toBe(3); // April is index 3
+    expect(result).toHaveLength(1);
+    expect(result[0].uploadDate.getUTCFullYear()).toBe(2026);
+    expect(result[0].uploadDate.getUTCMonth()).toBe(3); // April is index 3
   });
 
-  it("collects AnimeScanParseError when detail block is missing", async () => {
+  it("throws AnimeScanParseError when detail block is missing", async () => {
     mockFetch(
       makeHtml(`
       <a class="theme-list-main" href="/x">
@@ -361,16 +277,12 @@ describe("animeScraper.scrapeAnimesOnPage", () => {
       </a>
     `),
     );
-    const result = await animeScraper.scrapeAnimesOnPage(1);
-    expect(result.parseErrors).toHaveLength(1);
-    const err = result.parseErrors[0];
-    if (err instanceof AnimeScanParseError) {
-      expect(err.scanStep).toBe(AnimeScanStep.PARSE_ANIME_INFO);
-      expect(err.message).toContain("Detail block missing");
-    }
+    await expect(animeScraper.scrapeAnimesOnPage(1)).rejects.toThrow(
+      AnimeScanParseError,
+    );
   });
 
-  it("collects AnimeScanParseError when episode count element is missing", async () => {
+  it("throws AnimeScanParseError when episode count element is missing", async () => {
     mockFetch(
       makeHtml(`
       <a class="theme-list-main" href="/x">
@@ -382,16 +294,12 @@ describe("animeScraper.scrapeAnimesOnPage", () => {
       </a>
     `),
     );
-    const result = await animeScraper.scrapeAnimesOnPage(1);
-    expect(result.parseErrors).toHaveLength(1);
-    const err = result.parseErrors[0];
-    if (err instanceof AnimeScanParseError) {
-      expect(err.scanStep).toBe(AnimeScanStep.PARSE_ANIME_INFO);
-      expect(err.message).toContain("Episode count missing");
-    }
+    await expect(animeScraper.scrapeAnimesOnPage(1)).rejects.toThrow(
+      AnimeScanParseError,
+    );
   });
 
-  it("collects AnimeScanParseError when upload date element is missing", async () => {
+  it("throws AnimeScanParseError when upload date element is missing", async () => {
     mockFetch(
       makeHtml(`
       <a class="theme-list-main" href="/x">
@@ -403,13 +311,9 @@ describe("animeScraper.scrapeAnimesOnPage", () => {
       </a>
     `),
     );
-    const result = await animeScraper.scrapeAnimesOnPage(1);
-    expect(result.parseErrors).toHaveLength(1);
-    const err = result.parseErrors[0];
-    if (err instanceof AnimeScanParseError) {
-      expect(err.scanStep).toBe(AnimeScanStep.PARSE_ANIME_INFO);
-      expect(err.message).toContain("Upload date missing");
-    }
+    await expect(animeScraper.scrapeAnimesOnPage(1)).rejects.toThrow(
+      AnimeScanParseError,
+    );
   });
 
   it("bubbles up unexpected errors in scrapeAnimesOnPage", async () => {
@@ -447,12 +351,9 @@ describe("animeScraper.scrapeAnimeDetails", () => {
       "http://example.com",
       1,
     );
-    expect(isError(result)).toBe(false);
-    if (!isError(result)) {
-      expect(result.score).toBe(8.5);
-      expect(result.ratingCount).toBe(1234);
-      expect(result.description).toBe("Great show");
-    }
+    expect(result.score).toBe(8.5);
+    expect(result.ratingCount).toBe(1234);
+    expect(result.description).toBe("Great show");
   });
 
   it("returns default score 0 when score is missing", async () => {
@@ -461,10 +362,7 @@ describe("animeScraper.scrapeAnimeDetails", () => {
       "http://example.com",
       1,
     );
-    expect(isError(result)).toBe(false);
-    if (!isError(result)) {
-      expect(result.score).toBe(0);
-    }
+    expect(result.score).toBe(0);
   });
 
   it("returns default score 0 when score is NaN", async () => {
@@ -473,10 +371,7 @@ describe("animeScraper.scrapeAnimeDetails", () => {
       "http://example.com",
       1,
     );
-    expect(isError(result)).toBe(false);
-    if (!isError(result)) {
-      expect(result.score).toBe(0);
-    }
+    expect(result.score).toBe(0);
   });
 
   it("returns default ratingCount 0 when rating count is NaN", async () => {
@@ -489,10 +384,7 @@ describe("animeScraper.scrapeAnimeDetails", () => {
       "http://example.com",
       1,
     );
-    expect(isError(result)).toBe(false);
-    if (!isError(result)) {
-      expect(result.ratingCount).toBe(0);
-    }
+    expect(result.ratingCount).toBe(0);
   });
 
   it("returns default ratingCount 0 when rating count element is missing", async () => {
@@ -505,10 +397,7 @@ describe("animeScraper.scrapeAnimeDetails", () => {
       "http://example.com",
       1,
     );
-    expect(isError(result)).toBe(false);
-    if (!isError(result)) {
-      expect(result.ratingCount).toBe(0);
-    }
+    expect(result.ratingCount).toBe(0);
   });
 
   it("returns empty description when description is missing", async () => {
@@ -521,13 +410,10 @@ describe("animeScraper.scrapeAnimeDetails", () => {
       "http://example.com",
       1,
     );
-    expect(isError(result)).toBe(false);
-    if (!isError(result)) {
-      expect(result.description).toBe("");
-    }
+    expect(result.description).toBe("");
   });
 
-  it("passes through AnimeScanHttpError from fetchUrl in scrapeAnimeDetails", async () => {
+  it("throws AnimeScanHttpError from fetchUrl in scrapeAnimeDetails", async () => {
     const error = new AnimeScanHttpError(
       1,
       AnimeScanStep.PARSE_ANIME_DETAIL,
@@ -542,12 +428,13 @@ describe("animeScraper.scrapeAnimeDetails", () => {
           url: string,
           page: number,
           scanStep: AnimeScanStep,
-        ) => Promise<unknown>;
+        ) => Promise<string>;
       },
       "fetchUrl",
-    ).mockResolvedValue(error);
-    const result = await animeScraper.scrapeAnimeDetails("http://x", 1);
-    expect(result).toBe(error);
+    ).mockRejectedValue(error);
+    await expect(
+      animeScraper.scrapeAnimeDetails("http://x", 1),
+    ).rejects.toThrow(error);
   });
 
   it("bubbles up unexpected crash in scrapeAnimeDetails", async () => {
@@ -573,48 +460,6 @@ describe("animeScraper.scrapeAnimeDetails", () => {
 
 // --- Pipeline ---
 describe("AnimeScraper pipeline methods", () => {
-  it("scanAllWithPipeline delegates execution to AnimeScanner", async () => {
-    const item = { link: "http://a", title: "A" } as AnimeItem;
-    vi.spyOn(animeScraper, "scrapeAnimesOnPage").mockResolvedValue({
-      animeItems: [item],
-      httpErrors: [],
-      parseErrors: [],
-    });
-    vi.spyOn(animeScraper, "scrapeAnimeDetails").mockResolvedValue({
-      score: 9.5,
-      ratingCount: 500,
-      description: "Awesome",
-    });
-
-    const animeItems: AnimeItem[] = [];
-    const httpErrors: AnimeScanHttpError[] = [];
-    const parseErrors: AnimeScanParseError[] = [];
-
-    await new Promise<void>((resolve, reject) => {
-      const pipeline = new AnimeScanner(1, () => true, animeScraper, {
-        requestDelayMs: 0,
-      });
-      pipeline.scan().subscribe({
-        next: (event: AnimeScanEvent) => {
-          if (event instanceof AnimeScanHttpError) {
-            httpErrors.push(event);
-          } else if (event instanceof AnimeScanParseError) {
-            parseErrors.push(event);
-          } else if (!(event instanceof Error) && "title" in event) {
-            animeItems.push(event);
-          }
-        },
-        error: reject,
-        complete: resolve,
-      });
-    });
-
-    expect(animeItems).toHaveLength(1);
-    expect(animeItems[0].title).toBe("A");
-    expect(httpErrors).toHaveLength(0);
-    expect(parseErrors).toHaveLength(0);
-  });
-
   it("handles 429 response status and retries with backoff", async () => {
     const delaySpy = vi.spyOn(animeScraper, "delay").mockResolvedValue();
     let attempt = 0;
@@ -647,15 +492,14 @@ describe("AnimeScraper pipeline methods", () => {
           url: string,
           page: number,
           scanStep: AnimeScanStep,
-        ) => Promise<Result<string, AnimeScanHttpError>>;
+        ) => Promise<string>;
       }
     ).fetchUrl("http://example.com/retry", 1, AnimeScanStep.PARSE_ANIME_DETAIL);
-    expect(isError(result)).toBe(false);
     expect(result).toBe("Success after retry");
     expect(delaySpy).toHaveBeenCalledWith(2000); // 2 seconds * 1000ms
   });
 
-  it("returns AnimeScanHttpError after maximum retries on 429", async () => {
+  it("throws AnimeScanHttpError after maximum retries on 429", async () => {
     vi.spyOn(animeScraper, "delay").mockResolvedValue();
     vi.stubGlobal(
       "fetch",
@@ -669,29 +513,24 @@ describe("AnimeScraper pipeline methods", () => {
       }),
     );
 
-    const result = await (
-      animeScraper as unknown as {
-        fetchUrl: (
-          url: string,
-          page: number,
-          scanStep: AnimeScanStep,
-        ) => Promise<Result<string, AnimeScanHttpError>>;
-      }
-    ).fetchUrl(
-      "http://example.com/retry-fail",
-      1,
-      AnimeScanStep.PARSE_ANIME_DETAIL,
-    );
-    expect(isError(result)).toBe(true);
-    if (isError(result)) {
-      expect(result).toBeInstanceOf(AnimeScanHttpError);
-      expect((result as AnimeScanHttpError).status).toBe(429);
-      expect((result as AnimeScanHttpError).html).toContain("Too many retries");
-    }
+    await expect(
+      (
+        animeScraper as unknown as {
+          fetchUrl: (
+            url: string,
+            page: number,
+            scanStep: AnimeScanStep,
+          ) => Promise<string>;
+        }
+      ).fetchUrl(
+        "http://example.com/retry-fail",
+        1,
+        AnimeScanStep.PARSE_ANIME_DETAIL,
+      ),
+    ).rejects.toThrow(AnimeScanHttpError);
   });
 
   it("delay resolves after timeout", async () => {
-    // Restore the original implementation of delay just for this test
     const delaySpy = vi.spyOn(animeScraper, "delay");
     delaySpy.mockRestore();
 
@@ -699,5 +538,104 @@ describe("AnimeScraper pipeline methods", () => {
     await animeScraper.delay(10);
     const end = Date.now();
     expect(end - start).toBeGreaterThanOrEqual(8);
+  });
+
+  it("throws AnimeScanHttpError when fetch throws unexpected error", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockRejectedValue(new Error("Fetch failed")),
+    );
+    const scraper = animeScraper as unknown as {
+      fetchUrl: (
+        url: string,
+        page: number,
+        scanStep: AnimeScanStep,
+      ) => Promise<string>;
+    };
+    await expect(
+      scraper.fetchUrl("http://example.com", 1, AnimeScanStep.GET_TOTAL_PAGES),
+    ).rejects.toThrow("HTTP request failed with status 0");
+  });
+
+  it("throws AnimeScanHttpError when fetch throws unexpected string error", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockRejectedValue("Fetch string error"));
+    const scraper = animeScraper as unknown as {
+      fetchUrl: (
+        url: string,
+        page: number,
+        scanStep: AnimeScanStep,
+      ) => Promise<string>;
+    };
+    try {
+      await scraper.fetchUrl(
+        "http://example.com",
+        1,
+        AnimeScanStep.GET_TOTAL_PAGES,
+      );
+      expect.fail("Should have thrown");
+    } catch (err: unknown) {
+      expect(err).toBeInstanceOf(AnimeScanHttpError);
+      expect((err as AnimeScanHttpError).html).toBe("Fetch string error");
+    }
+  });
+
+  it("handles snippet extraction failure in fetchUrl", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: false,
+        status: 500,
+        text: async () => {
+          throw new Error("text read failed");
+        },
+        headers: {
+          get: () => null,
+        },
+      }),
+    );
+    const scraper = animeScraper as unknown as {
+      fetchUrl: (
+        url: string,
+        page: number,
+        scanStep: AnimeScanStep,
+      ) => Promise<string>;
+    };
+    await expect(
+      scraper.fetchUrl("http://example.com", 1, AnimeScanStep.GET_TOTAL_PAGES),
+    ).rejects.toThrow("HTTP request failed with status 500");
+  });
+
+  it("extracts snippet from error response body on non-ok status", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: false,
+        status: 500,
+        text: async () => "Error response body contents",
+        headers: {
+          get: () => null,
+        },
+      }),
+    );
+    const scraper = animeScraper as unknown as {
+      fetchUrl: (
+        url: string,
+        page: number,
+        scanStep: AnimeScanStep,
+      ) => Promise<string>;
+    };
+    try {
+      await scraper.fetchUrl(
+        "http://example.com",
+        1,
+        AnimeScanStep.GET_TOTAL_PAGES,
+      );
+      expect.fail("Should have thrown");
+    } catch (err: unknown) {
+      expect(err).toBeInstanceOf(AnimeScanHttpError);
+      expect((err as AnimeScanHttpError).html).toBe(
+        "Error response body contents",
+      );
+    }
   });
 });

@@ -122,7 +122,7 @@ describe("useAnimeScanner", () => {
   });
 
   it("handles scan failure gracefully", async () => {
-    vi.spyOn(animeScraper, "getTotalPages").mockResolvedValue(
+    vi.spyOn(animeScraper, "getTotalPages").mockRejectedValue(
       new AnimeScanHttpError(
         1,
         AnimeScanStep.GET_TOTAL_PAGES,
@@ -284,17 +284,11 @@ describe("useAnimeScanner", () => {
     });
   });
 
-  it("aggregates errors from scanAllWithPipeline", async () => {
+  it("stops and sets error when pipeline emits error", async () => {
     const mockAnime1 = makeAnime("SuccessAnime");
-    const pageError = new AnimeScanParseError(
-      1,
-      AnimeScanStep.PARSE_ANIME_INFO,
-      "http://err-page",
-      "Page error",
-    );
     const detailError = new AnimeScanHttpError(
       1,
-      AnimeScanStep.GET_TOTAL_PAGES,
+      AnimeScanStep.PARSE_ANIME_DETAIL,
       "http://err-detail",
       "Detail error",
       404,
@@ -303,16 +297,15 @@ describe("useAnimeScanner", () => {
 
     vi.spyOn(animeScraper, "getTotalPages").mockResolvedValue(1);
     vi.spyOn(AnimeScanner.prototype, "scan").mockImplementation(() => {
-      return createMockObservable([
-        {
+      return new Observable((subscriber) => {
+        subscriber.next({
           ...mockAnime1,
           score: 9.0,
           ratingCount: 100,
           description: "Success",
-        },
-        detailError,
-        pageError,
-      ]);
+        });
+        subscriber.error(detailError);
+      });
     });
 
     const onComplete = vi.fn();
@@ -327,17 +320,7 @@ describe("useAnimeScanner", () => {
       await result.current.handleScan();
     });
 
-    expect(onComplete).toHaveBeenCalledWith({
-      newSearchItems: [
-        { ...mockAnime1, score: 9.0, ratingCount: 100, description: "Success" },
-      ],
-      updatedFavoriteList: [],
-      updatedTrashList: [],
-    });
-    expect(result.current.httpErrors).toHaveLength(1);
-    expect(result.current.httpErrors[0]).toBe(detailError);
-    expect(result.current.parseErrors).toHaveLength(1);
-    expect(result.current.parseErrors[0]).toBe(pageError);
+    expect(result.current.error).toBe(detailError);
   });
 
   it("handles AnimeScanHttpError scan failure in catch block", async () => {
@@ -349,7 +332,7 @@ describe("useAnimeScanner", () => {
       500,
       undefined,
     );
-    vi.spyOn(animeScraper, "getTotalPages").mockResolvedValue(error);
+    vi.spyOn(animeScraper, "getTotalPages").mockRejectedValue(error);
 
     const onComplete = vi.fn();
     const { result } = renderHook(
@@ -373,7 +356,7 @@ describe("useAnimeScanner", () => {
       "http://err",
       "Failed page",
     );
-    vi.spyOn(animeScraper, "getTotalPages").mockResolvedValue(error);
+    vi.spyOn(animeScraper, "getTotalPages").mockRejectedValue(error);
 
     const onComplete = vi.fn();
     const { result } = renderHook(
@@ -392,7 +375,7 @@ describe("useAnimeScanner", () => {
 
   it("sets error to the generic Error when getTotalPages fails with unknown error", async () => {
     const error = new Error("generic error");
-    vi.spyOn(animeScraper, "getTotalPages").mockResolvedValue(
+    vi.spyOn(animeScraper, "getTotalPages").mockRejectedValue(
       error as unknown as AnimeScanHttpError,
     );
 
@@ -410,8 +393,6 @@ describe("useAnimeScanner", () => {
 
     expect(result.current.error).toBe(error);
     expect(result.current.error?.message).toBe("generic error");
-    expect(result.current.httpErrors).toHaveLength(0);
-    expect(result.current.parseErrors).toHaveLength(0);
   });
 
   it("clears error when clearError is called", async () => {
@@ -423,7 +404,7 @@ describe("useAnimeScanner", () => {
       500,
       undefined,
     );
-    vi.spyOn(animeScraper, "getTotalPages").mockResolvedValue(error);
+    vi.spyOn(animeScraper, "getTotalPages").mockRejectedValue(error);
 
     const onComplete = vi.fn();
     const { result } = renderHook(
@@ -456,7 +437,7 @@ describe("useAnimeScanner", () => {
       undefined,
     );
     vi.spyOn(animeScraper, "getTotalPages")
-      .mockResolvedValueOnce(error)
+      .mockRejectedValueOnce(error)
       .mockResolvedValueOnce(1);
     vi.spyOn(AnimeScanner.prototype, "scan").mockImplementation(() => {
       return createMockObservable([]);
@@ -725,7 +706,10 @@ describe("useAnimeScanner", () => {
       .mockImplementation(function (this: any) {
         // eslint-disable-next-line @typescript-eslint/no-this-alias
         capturedPipeline = this;
-        return createMockObservable([{ ...searchItem, score: 9.0 }]);
+        return createMockObservable([
+          new AnimeScanPageEvent(1, 1),
+          { ...searchItem, score: 9.0 },
+        ]);
       });
 
     const onComplete = vi.fn();
@@ -924,6 +908,49 @@ describe("useAnimeScanner", () => {
       result.current.cancelScan();
     });
 
+    expect(result.current.isScanning).toBe(false);
+  });
+
+  it("handles empty onlyPages array in options as non-retry", async () => {
+    vi.spyOn(animeScraper, "getTotalPages").mockResolvedValue(1);
+    const scanSpy = vi
+      .spyOn(AnimeScanner.prototype, "scan")
+      .mockReturnValue(createMockObservable([]));
+    const onComplete = vi.fn();
+    const { result } = renderHook(
+      () => useAnimeScanner([], [], [], onComplete),
+      { wrapper: ServiceProvider },
+    );
+
+    await act(async () => {
+      await result.current.handleScan({ onlyPages: [], requestDelayMs: 0 });
+    });
+
+    expect(scanSpy).toHaveBeenCalled();
+  });
+
+  it("handles non-Error objects thrown by getTotalPages", async () => {
+    vi.spyOn(animeScraper, "getTotalPages").mockRejectedValue("string error");
+    const onComplete = vi.fn();
+    const { result } = renderHook(
+      () => useAnimeScanner([], [], [], onComplete),
+      { wrapper: ServiceProvider },
+    );
+    await act(async () => {
+      await result.current.handleScan();
+    });
+    expect(result.current.error?.message).toBe("string error");
+  });
+
+  it("handles cancelScan when not scanning", () => {
+    const onComplete = vi.fn();
+    const { result } = renderHook(
+      () => useAnimeScanner([], [], [], onComplete),
+      { wrapper: ServiceProvider },
+    );
+    act(() => {
+      result.current.cancelScan();
+    });
     expect(result.current.isScanning).toBe(false);
   });
 });

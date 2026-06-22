@@ -28,24 +28,28 @@ export function Tabs({
       <button
         className={`${styles.tab} ${activeTab === Tab.Search ? styles.active : ""}`}
         onClick={() => setActiveTab(Tab.Search)}
+        title="View scanned anime results"
       >
         Results ({searchCount})
       </button>
       <button
         className={`${styles.tab} ${activeTab === Tab.Favorites ? styles.active : ""}`}
         onClick={() => setActiveTab(Tab.Favorites)}
+        title="View your favorite anime list"
       >
         Favorites ({favoritesCount})
       </button>
       <button
         className={`${styles.tab} ${activeTab === Tab.Trash ? styles.active : ""}`}
         onClick={() => setActiveTab(Tab.Trash)}
+        title="View trashed anime list"
       >
         Trash ({trashCount})
       </button>
       <button
         className={`${styles.tab} ${activeTab === Tab.Settings ? styles.active : ""}`}
         onClick={() => setActiveTab(Tab.Settings)}
+        title="Open scanner configurations"
       >
         Settings
       </button>

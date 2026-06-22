@@ -70,18 +70,22 @@ describe("SettingsTab", () => {
     });
   });
 
-  it("does not call onSave when input is invalid or NaN", () => {
+  it("does not call onSave when input is invalid, empty or NaN", () => {
     const handleSave = vi.fn();
     render(<SettingsTab settings={defaultSettings} onSave={handleSave} />);
 
     const input = screen.getByDisplayValue("4.8");
+
+    // Test empty value
+    fireEvent.change(input, { target: { value: "" } });
+    expect(handleSave).not.toHaveBeenCalled();
+
+    // Test NaN value using defineProperty to bypass HTML5 number input coercion in JSdom
     Object.defineProperty(input, "value", {
-      value: "abc",
-      writable: true,
+      get: () => "NaN",
       configurable: true,
     });
     fireEvent.change(input);
-
     expect(handleSave).not.toHaveBeenCalled();
   });
 

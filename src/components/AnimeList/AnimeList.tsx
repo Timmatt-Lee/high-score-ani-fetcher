@@ -75,6 +75,7 @@ export function AnimeList({
         className={`${styles.sortableHeader} ${isSorted ? styles.sorted : ""}`}
         onClick={() => onSort(field)}
         data-testid={`sort-header-${field}`}
+        title={`Sort by ${label}`}
       >
         <div className={styles.headerContainer}>
           <span className={styles.headerLabel}>{label}</span>

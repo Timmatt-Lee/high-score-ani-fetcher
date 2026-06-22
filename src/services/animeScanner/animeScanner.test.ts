@@ -17,33 +17,25 @@ import { AnimeScraper } from "./animeScraper";
 interface TestRunResult {
   events: AnimeScanEvent[];
   animeItems: AnimeItem[];
-  httpErrors: AnimeScanHttpError[];
-  parseErrors: AnimeScanParseError[];
 }
 
 const runPipeline = (pipeline: AnimeScanner) => {
   return new Promise<TestRunResult>((resolve, reject) => {
     const events: AnimeScanEvent[] = [];
     const animeItems: AnimeItem[] = [];
-    const httpErrors: AnimeScanHttpError[] = [];
-    const parseErrors: AnimeScanParseError[] = [];
 
     pipeline.scan().subscribe({
       next: (event: AnimeScanEvent) => {
         events.push(event);
         if (event instanceof AnimeScanPageEvent) {
           // ignore
-        } else if (event instanceof AnimeScanHttpError) {
-          httpErrors.push(event);
-        } else if (event instanceof AnimeScanParseError) {
-          parseErrors.push(event);
         } else if (!(event instanceof Error)) {
           animeItems.push(event);
         }
       },
       error: reject,
       complete: () => {
-        resolve({ events, animeItems, httpErrors, parseErrors });
+        resolve({ events, animeItems });
       },
     });
   });
@@ -54,28 +46,20 @@ describe("AnimeScanner", () => {
     vi.restoreAllMocks();
   });
 
-  it("scrapes page items, filters them, fetches details concurrently and returns results", async () => {
+  it("scrapes page items, filters them, fetches details sequentially and returns results", async () => {
     const listSpy = vi.fn();
     const detailSpy = vi.fn();
 
     // Mock stage 1: List pages
-    listSpy.mockResolvedValueOnce({
-      animeItems: [
-        { link: "http://a", title: "A" } as AnimeItem,
-        { link: "http://b", title: "B" } as AnimeItem,
-      ],
-      httpErrors: [],
-      parseErrors: [],
-    });
+    listSpy.mockResolvedValueOnce([
+      { link: "http://a", title: "A" } as AnimeItem,
+      { link: "http://b", title: "B" } as AnimeItem,
+    ]);
 
-    listSpy.mockResolvedValueOnce({
-      animeItems: [
-        { link: "http://c", title: "C" } as AnimeItem,
-        { link: "http://d", title: "D" } as AnimeItem,
-      ],
-      httpErrors: [],
-      parseErrors: [],
-    });
+    listSpy.mockResolvedValueOnce([
+      { link: "http://c", title: "C" } as AnimeItem,
+      { link: "http://d", title: "D" } as AnimeItem,
+    ]);
 
     // Mock stage 2: Details
     detailSpy.mockImplementation(async (link: string) => {
@@ -101,12 +85,10 @@ describe("AnimeScanner", () => {
       { requestDelayMs: 0 },
     );
 
-    const { animeItems, httpErrors, parseErrors } = await runPipeline(pipeline);
+    const { animeItems } = await runPipeline(pipeline);
 
     expect(listSpy).toHaveBeenCalledTimes(2);
     expect(detailSpy).toHaveBeenCalledTimes(3);
-    expect(httpErrors).toHaveLength(0);
-    expect(parseErrors).toHaveLength(0);
     expect(animeItems).toHaveLength(3);
 
     const sortedItems = [...animeItems].sort((a, b) =>
@@ -115,117 +97,76 @@ describe("AnimeScanner", () => {
     expect(sortedItems[0].description).toBe("Desc A");
   });
 
-  it("aggregates page-level and detail-level errors", async () => {
+  it("stops and propagates page-level HTTP errors", async () => {
     const listSpy = vi.fn();
-    const detailSpy = vi.fn();
-
     const pageError = new AnimeScanHttpError(
       1,
-      AnimeScanStep.GET_TOTAL_PAGES,
+      AnimeScanStep.SCRAPE_LIST_PAGE,
       "http://page1",
       "fail",
       404,
       undefined,
     );
+
+    listSpy.mockRejectedValueOnce(pageError);
+
+    const pipeline = new AnimeScanner(
+      1,
+      () => true,
+      {
+        getTotalPages: vi.fn(),
+        scrapeAnimesOnPage: listSpy,
+        scrapeAnimeDetails: vi.fn(),
+        delay: vi.fn().mockResolvedValue(undefined),
+      } as unknown as AnimeScraper,
+      { requestDelayMs: 0 },
+    );
+
+    await expect(runPipeline(pipeline)).rejects.toThrow(pageError);
+  });
+
+  it("stops and propagates page-level Parse errors", async () => {
+    const listSpy = vi.fn();
     const pageParseError = new AnimeScanParseError(
       1,
       AnimeScanStep.PARSE_ANIME_INFO,
       "http://page1",
       "fail",
     );
+
+    listSpy.mockRejectedValueOnce(pageParseError);
+
+    const pipeline = new AnimeScanner(
+      1,
+      () => true,
+      {
+        getTotalPages: vi.fn(),
+        scrapeAnimesOnPage: listSpy,
+        scrapeAnimeDetails: vi.fn(),
+        delay: vi.fn().mockResolvedValue(undefined),
+      } as unknown as AnimeScraper,
+      { requestDelayMs: 0 },
+    );
+
+    await expect(runPipeline(pipeline)).rejects.toThrow(pageParseError);
+  });
+
+  it("stops and propagates details-level HTTP errors", async () => {
+    const listSpy = vi.fn();
+    const detailSpy = vi.fn();
     const detailError = new AnimeScanHttpError(
-      1,
-      AnimeScanStep.GET_TOTAL_PAGES,
-      "http://a",
-      "fail",
-      500,
-      undefined,
-    );
-
-    listSpy.mockResolvedValueOnce({
-      animeItems: [{ link: "http://a", title: "A" } as AnimeItem],
-      httpErrors: [pageError],
-      parseErrors: [pageParseError],
-    });
-
-    detailSpy.mockResolvedValueOnce(detailError);
-
-    const pipeline = new AnimeScanner(
-      1,
-      () => true,
-      {
-        getTotalPages: vi.fn(),
-        scrapeAnimesOnPage: listSpy,
-        scrapeAnimeDetails: detailSpy,
-        delay: vi.fn().mockResolvedValue(undefined),
-      } as unknown as AnimeScraper,
-      { requestDelayMs: 0 },
-    );
-
-    const { animeItems, httpErrors, parseErrors } = await runPipeline(pipeline);
-    expect(animeItems).toHaveLength(0);
-    expect(httpErrors).toContain(pageError);
-    expect(httpErrors).toContain(detailError);
-    expect(parseErrors).toContain(pageParseError);
-  });
-
-  it("aggregates returned details-level errors without throwing", async () => {
-    const listSpy = vi.fn();
-    const detailSpy = vi.fn();
-
-    const error = new AnimeScanHttpError(
-      1,
-      AnimeScanStep.GET_TOTAL_PAGES,
-      "http://a",
-      "fail",
-      500,
-      undefined,
-    );
-
-    listSpy.mockResolvedValueOnce({
-      animeItems: [{ link: "http://a", title: "A" } as AnimeItem],
-      httpErrors: [],
-      parseErrors: [],
-    });
-
-    detailSpy.mockResolvedValueOnce(error);
-
-    const pipeline = new AnimeScanner(
-      1,
-      () => true,
-      {
-        getTotalPages: vi.fn(),
-        scrapeAnimesOnPage: listSpy,
-        scrapeAnimeDetails: detailSpy,
-        delay: vi.fn().mockResolvedValue(undefined),
-      } as unknown as AnimeScraper,
-      { requestDelayMs: 0 },
-    );
-
-    const { animeItems, httpErrors, parseErrors } = await runPipeline(pipeline);
-    expect(animeItems).toHaveLength(0);
-    expect(httpErrors).toContain(error);
-    expect(parseErrors).toHaveLength(0);
-  });
-
-  it("aggregates returned details-level parse errors", async () => {
-    const listSpy = vi.fn();
-    const detailSpy = vi.fn();
-
-    const parseError = new AnimeScanParseError(
       1,
       AnimeScanStep.PARSE_ANIME_DETAIL,
       "http://a",
-      "html",
+      "fail",
+      500,
+      undefined,
     );
 
-    listSpy.mockResolvedValueOnce({
-      animeItems: [{ link: "http://a", title: "A" } as AnimeItem],
-      httpErrors: [],
-      parseErrors: [],
-    });
-
-    detailSpy.mockResolvedValueOnce(parseError);
+    listSpy.mockResolvedValueOnce([
+      { link: "http://a", title: "A" } as AnimeItem,
+    ]);
+    detailSpy.mockRejectedValueOnce(detailError);
 
     const pipeline = new AnimeScanner(
       1,
@@ -239,11 +180,7 @@ describe("AnimeScanner", () => {
       { requestDelayMs: 0 },
     );
 
-    const { animeItems, httpErrors, parseErrors } = await runPipeline(pipeline);
-    expect(animeItems).toHaveLength(0);
-    expect(parseErrors).toHaveLength(1);
-    expect(parseErrors[0]).toBe(parseError);
-    expect(httpErrors).toHaveLength(0);
+    await expect(runPipeline(pipeline)).rejects.toThrow(detailError);
   });
 
   it("emits error event when the pipeline catches an error", async () => {
@@ -314,13 +251,9 @@ describe("AnimeScanner", () => {
     const listSpy = vi.fn();
     const detailSpy = vi.fn();
 
-    listSpy.mockResolvedValueOnce({
-      animeItems: [
-        { link: "http://newPageItem", title: "New Page Item" } as AnimeItem,
-      ],
-      httpErrors: [],
-      parseErrors: [],
-    });
+    listSpy.mockResolvedValueOnce([
+      { link: "http://newPageItem", title: "New Page Item" } as AnimeItem,
+    ]);
 
     detailSpy.mockImplementation(async (link: string) => {
       return {
@@ -388,11 +321,9 @@ describe("AnimeScanner", () => {
   });
 
   it("emits error when fetchDetail throws unexpected error", async () => {
-    const listSpy = vi.fn().mockResolvedValue({
-      animeItems: [{ link: "http://a", title: "A" } as AnimeItem],
-      httpErrors: [],
-      parseErrors: [],
-    });
+    const listSpy = vi
+      .fn()
+      .mockResolvedValue([{ link: "http://a", title: "A" } as AnimeItem]);
     const detailSpy = vi
       .fn()
       .mockRejectedValue(new Error("fetch detail crashed"));
@@ -425,11 +356,9 @@ describe("AnimeScanner", () => {
   });
 
   it("emits string error when fetchDetail throws unexpected string error", async () => {
-    const listSpy = vi.fn().mockResolvedValue({
-      animeItems: [{ link: "http://a", title: "A" } as AnimeItem],
-      httpErrors: [],
-      parseErrors: [],
-    });
+    const listSpy = vi
+      .fn()
+      .mockResolvedValue([{ link: "http://a", title: "A" } as AnimeItem]);
     const detailSpy = vi.fn().mockRejectedValue("detail string crash");
     const pipeline = new AnimeScanner(
       1,
@@ -455,6 +384,7 @@ describe("AnimeScanner", () => {
           }
         },
         complete: () => {
+          expect(true).toBe(false); // Should not reach complete callback
           reject(new Error("Should not complete"));
         },
       });

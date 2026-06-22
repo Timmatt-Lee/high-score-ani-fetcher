@@ -108,7 +108,7 @@ export function AnimeRow({
 
   const uploadYear =
     item.uploadDate instanceof Date && !isNaN(item.uploadDate.getTime())
-      ? item.uploadDate.getFullYear().toString()
+      ? item.uploadDate.getUTCFullYear().toString()
       : "N/A";
 
   return (

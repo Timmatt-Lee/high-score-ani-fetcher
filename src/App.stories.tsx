@@ -4,7 +4,6 @@ import App from "./App";
 import { ServiceProvider } from "./contexts/ServiceContext";
 import {
   AnimeScanHttpError,
-  AnimeScanParseError,
   AnimeScanStep,
   AnimeScanner,
   type AnimeItem,
@@ -19,7 +18,7 @@ const createMockAnime = (overrides: Partial<AnimeItem> = {}): AnimeItem => ({
   title: "葬送的芙莉蓮",
   watchCount: 120000,
   episodeCount: 28,
-  uploadDate: new Date("2023-09-29"),
+  uploadDate: new Date("2023-09-29T00:00:00.000Z"),
   score: 4.9,
   ratingCount: 15432,
   description: "芙莉蓮與勇者一行人打倒魔王後，展開的新旅程與歲月流逝的故事。",
@@ -29,14 +28,10 @@ const createMockAnime = (overrides: Partial<AnimeItem> = {}): AnimeItem => ({
 const mockAnimeScraper = {
   getTotalPages: async () => 4,
   scrapeAnimesOnPage: async (page: number): Promise<any> => {
-    return {
-      animeItems: [
-        createMockAnime({ title: `動漫 ${page}-1`, score: 4.9 }),
-        createMockAnime({ title: `動漫 ${page}-2`, score: 4.8 }),
-      ],
-      httpErrors: [],
-      parseErrors: [],
-    };
+    return [
+      createMockAnime({ title: `動漫 ${page}-1`, score: 4.9 }),
+      createMockAnime({ title: `動漫 ${page}-2`, score: 4.8 }),
+    ];
   },
   scrapeAnimeDetails: async (link: string, page: number): Promise<any> => {
     return {
@@ -90,6 +85,7 @@ const meta: Meta<typeof App> = {
   parameters: {
     chromatic: {
       cropToViewport: true,
+      viewports: [320, 768, 1200], // mobile, tablet, desktop viewports
     },
   },
 };
@@ -165,7 +161,7 @@ export const ScanningFromEmpty: Story = {
   },
 };
 
-export const PartiallyFailedScan: Story = {
+export const FailedScanDuringScraping: Story = {
   decorators: [
     (Story) => {
       AnimeScanner.prototype.scan = function (this: any) {
@@ -188,32 +184,16 @@ export const PartiallyFailedScan: Story = {
                 score: 4.9,
               }),
             );
-            subscriber.next(
-              Object.assign(
-                new AnimeScanHttpError(
-                  2,
-                  AnimeScanStep.GET_TOTAL_PAGES,
-                  "https://ani.gamer.com.tw/animeList.php?page=2",
-                  "",
-                  502,
-                  undefined,
-                ),
-                { animeName: "某個好看但部分章節損壞的番" },
+            subscriber.error(
+              new AnimeScanHttpError(
+                2,
+                AnimeScanStep.SCRAPE_LIST_PAGE,
+                "https://ani.gamer.com.tw/animeList.php?page=2",
+                "Internal Server Error",
+                500,
+                "某個損壞的動畫番",
               ),
             );
-            subscriber.next(
-              Object.assign(
-                new AnimeScanParseError(
-                  3,
-                  AnimeScanStep.PARSE_ANIME_INFO,
-                  "https://ani.gamer.com.tw/animeList.php?page=3",
-                  "",
-                  "解析失敗",
-                ),
-                { animeName: "某個結構毀損無法取得標題的番" },
-              ),
-            );
-            subscriber.complete();
           };
           run();
         });
@@ -226,31 +206,9 @@ export const PartiallyFailedScan: Story = {
     },
   ],
   play: async ({ canvasElement }) => {
-    // Click scan
     const canvas = within(canvasElement);
     const scanBtn = await canvas.findByRole("button", { name: /Scan/i });
     scanBtn.click();
-  },
-};
-
-export const PartiallyFailedScanExpanded: Story = {
-  ...PartiallyFailedScan,
-  play: async (context) => {
-    // Click scan first
-    await PartiallyFailedScan.play?.(context);
-    const { canvasElement } = context;
-    const canvas = within(canvasElement);
-
-    // Wait for the scanning to complete and show results / errors tab using findBy
-    await canvas.findByTestId("errors-panel");
-
-    // Expand HTTP errors
-    const httpHeader = await canvas.findByTestId("http-errors-header");
-    httpHeader.click();
-
-    // Expand Parser errors
-    const parseHeader = await canvas.findByTestId("parse-errors-header");
-    parseHeader.click();
   },
 };
 
@@ -265,7 +223,7 @@ export const WithError: Story = {
     const mockAnimeScraperWithFatalError = {
       ...mockAnimeScraper,
       getTotalPages: async () => {
-        return new AnimeScanHttpError(
+        throw new AnimeScanHttpError(
           1,
           AnimeScanStep.GET_TOTAL_PAGES,
           "https://ani.gamer.com.tw/animeList.php",
@@ -492,5 +450,37 @@ export const SettingsTabShowcase: Story = {
       name: /Settings/i,
     });
     settingsTabBtn.click();
+  },
+};
+
+export const LargeListScrolled: Story = {
+  decorators: [
+    (Story) => {
+      const items = Array.from({ length: 35 }, (_, idx) =>
+        createMockAnime({
+          title: `動畫項目 ${idx + 1}`,
+          score: 4.5 + (idx % 6) * 0.1,
+          watchCount: 50000 + idx * 10000,
+          link: `https://ani.gamer.com.tw/anime.php?sn=${1000 + idx}`,
+        }),
+      );
+      localStorage.setItem(
+        "animeData",
+        JSON.stringify({
+          searchList: items,
+          favoriteList: [],
+          trashList: [],
+        }),
+      );
+      return (
+        <ServiceProvider animeScraper={mockAnimeScraper as any}>
+          <Story />
+        </ServiceProvider>
+      );
+    },
+  ],
+  play: async () => {
+    await new Promise((resolve) => setTimeout(resolve, 300));
+    window.scrollTo(0, 800);
   },
 };

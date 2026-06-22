@@ -1,10 +1,5 @@
-import { type Result, isError } from "../../types/result";
 import { AnimeScanStep } from "./animeScanStep";
-import {
-  AnimeScanHttpError,
-  AnimeScanParseError,
-  AnimeScanError,
-} from "./animeScanError";
+import { AnimeScanHttpError, AnimeScanParseError } from "./animeScanError";
 import { type AnimeItem, type AnimeDetails } from "./types";
 
 const BASE_URL = "https://ani.gamer.com.tw";
@@ -20,7 +15,7 @@ export class AnimeScraper {
     scanStep: AnimeScanStep,
     animeName?: string,
     retries = 3,
-  ): Promise<Result<string, AnimeScanHttpError>> {
+  ): Promise<string> {
     for (let i = 0; i < retries; i++) {
       let response: Response;
       try {
@@ -32,7 +27,7 @@ export class AnimeScraper {
         });
       } catch (err) {
         const errorMsg = err instanceof Error ? err.message : String(err);
-        return new AnimeScanHttpError(
+        throw new AnimeScanHttpError(
           page,
           scanStep,
           url,
@@ -49,7 +44,6 @@ export class AnimeScraper {
       if (response.status === 429) {
         const retryAfterHeader = response.headers.get("Retry-After");
         const baseDelaySec = parseInt(retryAfterHeader || "5", 10);
-        // Exponential backoff based on attempt count (i starts at 0)
         const delaySec = baseDelaySec * Math.pow(2, i);
         await this.delay(delaySec * 1000);
         continue;
@@ -62,7 +56,7 @@ export class AnimeScraper {
       } catch {
         // Swallowing the error is safe and intentional because snippet is just a helper for debugging and defaults to empty.
       }
-      return new AnimeScanHttpError(
+      throw new AnimeScanHttpError(
         page,
         scanStep,
         url,
@@ -72,7 +66,7 @@ export class AnimeScraper {
       );
     }
 
-    return new AnimeScanHttpError(
+    throw new AnimeScanHttpError(
       page,
       scanStep,
       url,
@@ -85,16 +79,14 @@ export class AnimeScraper {
   /**
    * Fetches the total number of pages from the anime list.
    */
-  async getTotalPages(): Promise<Result<number, AnimeScanError>> {
+  async getTotalPages(): Promise<number> {
     const url = `${BASE_URL}/animeList.php?page=1`;
-
     const text = await this.fetchUrl(url, 1, AnimeScanStep.GET_TOTAL_PAGES);
-    if (isError(text)) return text;
 
     const doc = new DOMParser().parseFromString(text, "text/html");
     const pageLinks = doc.querySelectorAll(".page_number a");
     if (pageLinks.length === 0) {
-      return new AnimeScanParseError(
+      throw new AnimeScanParseError(
         1,
         AnimeScanStep.GET_TOTAL_PAGES,
         url,
@@ -105,7 +97,7 @@ export class AnimeScraper {
 
     const lastPageText = pageLinks[pageLinks.length - 1].textContent;
     if (!lastPageText) {
-      return new AnimeScanParseError(
+      throw new AnimeScanParseError(
         1,
         AnimeScanStep.GET_TOTAL_PAGES,
         url,
@@ -116,7 +108,7 @@ export class AnimeScraper {
 
     const totalPages = parseInt(lastPageText, 10);
     if (isNaN(totalPages)) {
-      return new AnimeScanParseError(
+      throw new AnimeScanParseError(
         1,
         AnimeScanStep.GET_TOTAL_PAGES,
         url,
@@ -131,14 +123,10 @@ export class AnimeScraper {
   /**
    * Parses a single anime card element into an AnimeItem.
    */
-  private parseAnimeCard(
-    card: Element,
-    url: string,
-    page: number,
-  ): Result<AnimeItem, AnimeScanParseError> {
+  private parseAnimeCard(card: Element, url: string, page: number): AnimeItem {
     const href = card.getAttribute("href");
     if (!href) {
-      return new AnimeScanParseError(
+      throw new AnimeScanParseError(
         page,
         AnimeScanStep.PARSE_ANIME_INFO,
         url,
@@ -158,7 +146,7 @@ export class AnimeScraper {
     }
 
     if (!title) {
-      return new AnimeScanParseError(
+      throw new AnimeScanParseError(
         page,
         AnimeScanStep.PARSE_ANIME_INFO,
         url,
@@ -171,7 +159,7 @@ export class AnimeScraper {
       "p:not(.theme-name):not(.theme-time)",
     );
     if (!watchCountEl || !watchCountEl.textContent) {
-      return new AnimeScanParseError(
+      throw new AnimeScanParseError(
         page,
         AnimeScanStep.PARSE_ANIME_INFO,
         url,
@@ -186,7 +174,7 @@ export class AnimeScraper {
       : parseInt(str.replace(/,/g, ""), 10);
 
     if (isNaN(watchCount)) {
-      return new AnimeScanParseError(
+      throw new AnimeScanParseError(
         page,
         AnimeScanStep.PARSE_ANIME_INFO,
         url,
@@ -197,7 +185,7 @@ export class AnimeScraper {
 
     const detailBlock = card.querySelector(".theme-detail-info-block");
     if (!detailBlock) {
-      return new AnimeScanParseError(
+      throw new AnimeScanParseError(
         page,
         AnimeScanStep.PARSE_ANIME_INFO,
         url,
@@ -207,9 +195,8 @@ export class AnimeScraper {
     }
 
     const epEl = detailBlock.querySelector(".theme-number");
-
     if (!epEl || !epEl.textContent) {
-      return new AnimeScanParseError(
+      throw new AnimeScanParseError(
         page,
         AnimeScanStep.PARSE_ANIME_INFO,
         url,
@@ -220,7 +207,7 @@ export class AnimeScraper {
 
     const timeEl = detailBlock.querySelector(".theme-time");
     if (!timeEl || !timeEl.textContent) {
-      return new AnimeScanParseError(
+      throw new AnimeScanParseError(
         page,
         AnimeScanStep.PARSE_ANIME_INFO,
         url,
@@ -235,7 +222,7 @@ export class AnimeScraper {
     );
 
     if (isNaN(episodeCount)) {
-      return new AnimeScanParseError(
+      throw new AnimeScanParseError(
         page,
         AnimeScanStep.PARSE_ANIME_INFO,
         url,
@@ -248,9 +235,10 @@ export class AnimeScraper {
     const parts = yearStr.split("/");
     const year = parseInt(parts[0], 10);
     const month = parts[1] ? parseInt(parts[1], 10) - 1 : 0;
+
     const uploadDate = new Date(Date.UTC(year, month, 1));
     if (isNaN(year) || isNaN(uploadDate.getTime())) {
-      return new AnimeScanParseError(
+      throw new AnimeScanParseError(
         page,
         AnimeScanStep.PARSE_ANIME_INFO,
         url,
@@ -274,38 +262,20 @@ export class AnimeScraper {
   /**
    * Scrapes basic info for all items on a single page.
    */
-  async scrapeAnimesOnPage(page: number): Promise<{
-    animeItems: AnimeItem[];
-    httpErrors: AnimeScanHttpError[];
-    parseErrors: AnimeScanParseError[];
-  }> {
+  async scrapeAnimesOnPage(page: number): Promise<AnimeItem[]> {
     const url = `${BASE_URL}/animeList.php?page=${page}`;
     const text = await this.fetchUrl(url, page, AnimeScanStep.SCRAPE_LIST_PAGE);
-    if (isError(text)) {
-      return {
-        animeItems: [],
-        httpErrors: [text],
-        parseErrors: [],
-      };
-    }
 
     const doc = new DOMParser().parseFromString(text, "text/html");
     const cards = doc.querySelectorAll("a.theme-list-main");
 
     const animeItems: AnimeItem[] = [];
-    const httpErrors: AnimeScanHttpError[] = [];
-    const parseErrors: AnimeScanParseError[] = [];
-
     for (const card of Array.from(cards)) {
       const res = this.parseAnimeCard(card, url, page);
-      if (isError(res)) {
-        parseErrors.push(res);
-      } else {
-        animeItems.push(res);
-      }
+      animeItems.push(res);
     }
 
-    return { animeItems, httpErrors, parseErrors };
+    return animeItems;
   }
 
   /**
@@ -315,14 +285,13 @@ export class AnimeScraper {
     link: string,
     page: number,
     animeName?: string,
-  ): Promise<Result<AnimeDetails, AnimeScanError>> {
+  ): Promise<AnimeDetails> {
     const text = await this.fetchUrl(
       link,
       page,
       AnimeScanStep.PARSE_ANIME_DETAIL,
       animeName,
     );
-    if (isError(text)) return text;
 
     const doc = new DOMParser().parseFromString(text, "text/html");
 

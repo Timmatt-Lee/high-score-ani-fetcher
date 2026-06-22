@@ -1,7 +1,7 @@
 .errorCard {
-  background: rgba(239, 68, 68, 0.03);
-  border: 1px solid rgba(239, 68, 68, 0.15);
-  border-left: 3px solid var(--danger, #ef4444);
+  background: rgba(244, 63, 94, 0.06);
+  border: 1px solid rgba(244, 63, 94, 0.2);
+  border-left: 4px solid #f43f5e;
   border-radius: 8px;
   padding: 14px;
   display: flex;

@@ -3,14 +3,11 @@ import { Subscription } from "rxjs";
 import { useServices } from "../contexts/ServiceContext";
 import { useSettings } from "./useSettings";
 import {
-  AnimeScanHttpError,
-  AnimeScanParseError,
   AnimeScanner,
   type PipelineOptions,
   type AnimeItem,
   AnimeScanPageEvent,
 } from "../services/animeScanner";
-import { isError } from "../types/result";
 
 export interface ScanUpdateResult {
   newSearchItems: AnimeItem[];
@@ -28,8 +25,6 @@ export function useAnimeScanner(
   const { settings } = useSettings();
   const [isScanning, setIsScanning] = useState(false);
   const [progress, setProgress] = useState({ percent: 0, message: "" });
-  const [httpErrors, setHttpErrors] = useState<AnimeScanHttpError[]>([]);
-  const [parseErrors, setParseErrors] = useState<AnimeScanParseError[]>([]);
   const [error, setError] = useState<Error | null>(null);
   const [totalPagesCount, setTotalPagesCount] = useState(0);
   const [scanStats, setScanStats] = useState<{
@@ -39,6 +34,7 @@ export function useAnimeScanner(
     addedCount: number;
     failedCount: number;
   } | null>(null);
+
   // Ref to hold the subscription for cancellation
   const scanSubscriptionRef = useRef<Subscription | null>(null);
 
@@ -58,8 +54,6 @@ export function useAnimeScanner(
 
   const handleScan = async (options?: PipelineOptions) => {
     // Reset state before starting a new scan
-    setHttpErrors([]);
-    setParseErrors([]);
     setError(null);
     setIsScanning(true);
 
@@ -67,7 +61,6 @@ export function useAnimeScanner(
     let refetchedCount = 0;
     let addedCount = 0;
     let successCount = 0;
-    let failedCount = 0;
 
     setScanStats({
       successCount: 0,
@@ -86,16 +79,25 @@ export function useAnimeScanner(
 
     if (!isRetry) {
       setProgress({ percent: 0, message: "Getting total pages..." });
-      const totalPagesResult = await animeScraper.getTotalPages();
-      if (isError(totalPagesResult)) {
-        console.error("Scan failed", totalPagesResult);
-        setError(totalPagesResult);
+      try {
+        const totalPagesResult = await animeScraper.getTotalPages();
+        totalPages = totalPagesResult;
+        setTotalPagesCount(totalPagesResult);
+      } catch (err) {
+        const error = err instanceof Error ? err : new Error(String(err));
+        console.error("Scan failed", error);
+        setError(error);
         setIsScanning(false);
         setProgress({ percent: 0, message: "" });
+        setScanStats({
+          successCount: 0,
+          skippedCachedCount: 0,
+          refetchedCount: 0,
+          addedCount: 0,
+          failedCount: 1,
+        });
         return;
       }
-      totalPages = totalPagesResult;
-      setTotalPagesCount(totalPagesResult);
     } else {
       setProgress({ percent: 0, message: "Retrying failed items..." });
     }
@@ -164,26 +166,23 @@ export function useAnimeScanner(
           skippedCachedCount,
           refetchedCount,
           addedCount,
-          failedCount,
+          failedCount: 0,
         });
       }
       return isKept;
     };
 
-    const updateProgress = (currentTitle?: string) => {
+    const updateProgress = (currentTitle: string) => {
       const detailsPercent =
         detailsTotalCount > 0 ? detailsCompletedCount / detailsTotalCount : 0;
       const rawPercent = Math.floor(detailsPercent * 99);
       const percent = Math.min(99, rawPercent);
 
       const msg = `Scanning (${detailsCompletedCount}/${detailsTotalCount})...`;
-      const truncated = (currentTitle ?? "").slice(0, 30);
+      const truncated = currentTitle.slice(0, 30);
       const finalMsg = `${msg} [${truncated}]`;
       setProgress({ percent, message: finalMsg });
     };
-
-    const scanHttpErrors: AnimeScanHttpError[] = [];
-    const scanParseErrors: AnimeScanParseError[] = [];
 
     const pipelineOptions: PipelineOptions = {
       requestDelayMs: settings.requestDelayMs,
@@ -210,32 +209,6 @@ export function useAnimeScanner(
             percent: 0,
             message: `${actionPrefix} (${event.currentPage}/${event.totalPages})...`,
           });
-        } else if (event instanceof AnimeScanHttpError) {
-          scanHttpErrors.push(event);
-          setHttpErrors([...scanHttpErrors]);
-          updateProgress(event.animeName);
-
-          failedCount++;
-          setScanStats({
-            successCount,
-            skippedCachedCount,
-            refetchedCount,
-            addedCount,
-            failedCount,
-          });
-        } else if (event instanceof AnimeScanParseError) {
-          scanParseErrors.push(event);
-          setParseErrors([...scanParseErrors]);
-          updateProgress(event.animeName);
-
-          failedCount++;
-          setScanStats({
-            successCount,
-            skippedCachedCount,
-            refetchedCount,
-            addedCount,
-            failedCount,
-          });
         } else if (!(event instanceof Error)) {
           detailsCompletedCount++;
           updateProgress(event.title);
@@ -252,7 +225,7 @@ export function useAnimeScanner(
             skippedCachedCount,
             refetchedCount,
             addedCount,
-            failedCount,
+            failedCount: 0,
           });
 
           const currentFav = [...favoriteListRef.current];
@@ -298,11 +271,19 @@ export function useAnimeScanner(
         setError(error);
         setIsScanning(false);
         setProgress({ percent: 0, message: "" });
+        setScanStats({
+          successCount,
+          skippedCachedCount,
+          refetchedCount,
+          addedCount,
+          failedCount: 1,
+        });
       },
     });
     // Store subscription reference for later cancellation
     scanSubscriptionRef.current = subscription;
   };
+
   const cancelScan = () => {
     if (scanSubscriptionRef.current) {
       scanSubscriptionRef.current.unsubscribe();
@@ -311,11 +292,10 @@ export function useAnimeScanner(
     setIsScanning(false);
     setProgress({ percent: 0, message: "" });
   };
+
   return {
     isScanning,
     progress,
-    httpErrors,
-    parseErrors,
     error,
     clearError,
     handleScan,

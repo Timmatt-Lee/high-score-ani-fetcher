@@ -1,4 +1,3 @@
-import { isError } from "../../types/result";
 import { Subject, type Observable } from "rxjs";
 import { AnimeScraper } from "./animeScraper";
 import {
@@ -43,14 +42,8 @@ export class AnimeScanner {
       for (let i = 0; i < pagesToScan.length; i++) {
         const page = pagesToScan[i];
         try {
-          const pageResult = await this.scraper.scrapeAnimesOnPage(page);
-          for (const error of pageResult.httpErrors) {
-            this.eventSubject.next(error);
-          }
-          for (const error of pageResult.parseErrors) {
-            this.eventSubject.next(error);
-          }
-          for (const item of pageResult.animeItems) {
+          const animeItems = await this.scraper.scrapeAnimesOnPage(page);
+          for (const item of animeItems) {
             if (this.filterItem(item)) {
               itemsToScan.push({ item, page });
             }
@@ -89,12 +82,7 @@ export class AnimeScanner {
       page,
       item.title,
     );
-    if (isError(res)) {
-      res.animeName = item.title;
-      this.eventSubject.next(res);
-    } else {
-      const fullItem = { ...item, ...res, scannedAt: new Date() };
-      this.eventSubject.next(fullItem);
-    }
+    const fullItem = { ...item, ...res, scannedAt: new Date() };
+    this.eventSubject.next(fullItem);
   }
 }
