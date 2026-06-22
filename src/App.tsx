@@ -40,6 +40,7 @@ function App() {
     isScanning,
     progress,
     error,
+    clearError,
     handleScan,
     cancelScan,
     scanStats,
@@ -169,7 +170,7 @@ function App() {
               className={styles.fatalErrorContainer}
               data-testid="fatal-error-container"
             >
-              <ErrorCard error={error} />
+              <ErrorCard error={error} onDismiss={clearError} />
             </div>
           )}
 

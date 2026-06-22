@@ -23,8 +23,8 @@
   display: grid;
   grid-template-columns: var(--grid-cols, 1fr 100px 100px 100px 100px 120px);
   border-bottom: 1px solid var(--border);
-  position: sticky;
-  top: 71px;
+  position: relative;
+  top: 0;
   z-index: 40;
   background: var(--panel-bg);
   padding: 0;

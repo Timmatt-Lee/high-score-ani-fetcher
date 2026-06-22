@@ -179,4 +179,69 @@ describe("ErrorCard", () => {
     );
     unmount3();
   });
+
+  it("calls onDismiss when dismiss button is clicked", () => {
+    const error = new Error("Test error");
+    const onDismiss = vi.fn();
+    render(<ErrorCard error={error} onDismiss={onDismiss} />);
+
+    const dismissBtn = screen.getByTestId("error-card-dismiss-btn");
+    expect(dismissBtn).toBeDefined();
+
+    dismissBtn.click();
+    expect(onDismiss).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not render dismiss button when onDismiss is omitted", () => {
+    const error = new Error("Test error");
+    render(<ErrorCard error={error} />);
+    expect(screen.queryByTestId("error-card-dismiss-btn")).toBeNull();
+  });
+
+  it("copies details without trace when copy button is clicked", () => {
+    const error = new AnimeScanHttpError(
+      1,
+      AnimeScanStep.GET_TOTAL_PAGES,
+      "https://example.com",
+      "Forbidden",
+      403,
+      "My Anime",
+    );
+
+    const writeTextMock = vi.fn();
+    Object.defineProperty(navigator, "clipboard", {
+      value: {
+        writeText: writeTextMock,
+      },
+      writable: true,
+      configurable: true,
+    });
+
+    render(<ErrorCard error={error} />);
+    const copyBtn = screen.getByTestId("error-card-copy-btn");
+    copyBtn.click();
+
+    expect(writeTextMock).toHaveBeenCalledWith(
+      "My Anime\nPage: 1, Status Code: 403, When doing: fetching total pages\nHTTP request failed with status 403 (URL: https://example.com)",
+    );
+  });
+
+  it("copies details without subtitle when copy button is clicked", () => {
+    const error = new Error("System is down");
+
+    const writeTextMock = vi.fn();
+    Object.defineProperty(navigator, "clipboard", {
+      value: {
+        writeText: writeTextMock,
+      },
+      writable: true,
+      configurable: true,
+    });
+
+    render(<ErrorCard error={error} />);
+    const copyBtn = screen.getByTestId("error-card-copy-btn");
+    copyBtn.click();
+
+    expect(writeTextMock).toHaveBeenCalledWith("Error\nSystem is down");
+  });
 });

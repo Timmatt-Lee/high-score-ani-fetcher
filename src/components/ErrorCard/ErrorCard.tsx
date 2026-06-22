@@ -8,6 +8,7 @@ import styles from "./ErrorCard.module.css";
 
 interface ErrorCardProps {
   error: Error;
+  onDismiss?: () => void;
 }
 
 const getCardTitleAndSubtitle = (
@@ -48,9 +49,16 @@ const getCardTitleAndSubtitle = (
   };
 };
 
-export function ErrorCard({ error }: ErrorCardProps) {
+export function ErrorCard({ error, onDismiss }: ErrorCardProps) {
   const { title: cardTitle, subtitle: cardSubtitle } =
     getCardTitleAndSubtitle(error);
+
+  const handleCopy = () => {
+    const textToCopy = cardSubtitle
+      ? `${cardTitle}\n${cardSubtitle}\n${error.message}`
+      : `${cardTitle}\n${error.message}`;
+    navigator.clipboard.writeText(textToCopy);
+  };
 
   return (
     <div className={styles.errorCard} data-testid="error-card">
@@ -66,6 +74,28 @@ export function ErrorCard({ error }: ErrorCardProps) {
             >
               {cardSubtitle}
             </div>
+          )}
+        </div>
+
+        <div className={styles.actionGroup}>
+          <button
+            className={styles.copyBtn}
+            onClick={handleCopy}
+            title="Copy error details"
+            data-testid="error-card-copy-btn"
+          >
+            Copy
+          </button>
+          {onDismiss && (
+            <button
+              className={styles.dismissBtn}
+              onClick={onDismiss}
+              title="Dismiss error"
+              aria-label="Dismiss error"
+              data-testid="error-card-dismiss-btn"
+            >
+              ✕
+            </button>
           )}
         </div>
       </div>
