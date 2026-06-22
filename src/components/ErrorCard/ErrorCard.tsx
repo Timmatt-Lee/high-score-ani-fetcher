@@ -1,4 +1,3 @@
-import { useState } from "react";
 import {
   AnimeScanHttpError,
   AnimeScanParseError,
@@ -50,21 +49,6 @@ const getCardTitleAndSubtitle = (
 };
 
 export function ErrorCard({ error }: ErrorCardProps) {
-  const [isCopied, setIsCopied] = useState(false);
-
-  const handleCopy = async () => {
-    const copyText = error.stack
-      ? `${error.toString()}\n\n${error.stack}`
-      : error.toString();
-    try {
-      await navigator.clipboard.writeText(copyText);
-      setIsCopied(true);
-      setTimeout(() => setIsCopied(false), 2000);
-    } catch (err) {
-      console.error("Failed to copy error details", err);
-    }
-  };
-
   const { title: cardTitle, subtitle: cardSubtitle } =
     getCardTitleAndSubtitle(error);
 
@@ -83,16 +67,6 @@ export function ErrorCard({ error }: ErrorCardProps) {
               {cardSubtitle}
             </div>
           )}
-        </div>
-        <div className={styles.actionGroup}>
-          <button
-            className={styles.copyBtn}
-            onClick={handleCopy}
-            data-testid="error-card-copy-btn"
-            title="Copy full error details including stack trace"
-          >
-            {isCopied ? "✓" : "Copy"}
-          </button>
         </div>
       </div>
 
