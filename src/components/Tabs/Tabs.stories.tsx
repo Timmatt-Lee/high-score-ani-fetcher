@@ -54,3 +54,18 @@ export const EmptyCounts: Story = {
     trashCount: 0,
   },
 };
+
+export const ResultsHoverTooltip: Story = {
+  args: {
+    activeTab: Tab.Search,
+    searchCount: 15,
+    favoritesCount: 3,
+    trashCount: 2,
+  },
+  play: async ({ canvasElement }) => {
+    const { within, userEvent } = await import("@storybook/test");
+    const canvas = within(canvasElement);
+    const resultsButton = canvas.getByText(/Results/);
+    await userEvent.hover(resultsButton);
+  },
+};

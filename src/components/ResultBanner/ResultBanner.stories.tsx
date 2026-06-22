@@ -4,40 +4,88 @@ import { ResultBanner } from "./ResultBanner";
 const meta: Meta<typeof ResultBanner> = {
   title: "Components/ResultBanner",
   component: ResultBanner,
-  decorators: [
-    (Story) => (
-      <div
-        style={{
-          padding: "40px",
-          background: "#121212",
-          display: "inline-block",
-        }}
-      >
-        <Story />
-      </div>
-    ),
-  ],
 };
 
 export default meta;
 type Story = StoryObj<typeof ResultBanner>;
 
+const baseArgs = {
+  successCount: 15,
+  addedCount: 10,
+  refetchedCount: 5,
+  skippedCachedCount: 20,
+  failedCount: 1,
+};
+
 export const ScannedWithResults: Story = {
   args: {
-    successCount: 15,
-    addedCount: 10,
-    refetchedCount: 5,
-    skippedCachedCount: 20,
+    ...baseArgs,
     failedCount: 0,
   },
 };
 
 export const ScannedWithErrors: Story = {
   args: {
-    successCount: 3,
-    addedCount: 2,
-    refetchedCount: 1,
-    skippedCachedCount: 5,
-    failedCount: 1,
+    ...baseArgs,
+  },
+};
+
+export const SuccessHoverExpand: Story = {
+  args: {
+    ...baseArgs,
+  },
+  play: async ({ canvasElement }) => {
+    const { within, userEvent } = await import("@storybook/test");
+    const canvas = within(canvasElement);
+    const chip = canvas.getByTestId("chip-success");
+    await userEvent.hover(chip);
+  },
+};
+
+export const AddedHoverExpand: Story = {
+  args: {
+    ...baseArgs,
+  },
+  play: async ({ canvasElement }) => {
+    const { within, userEvent } = await import("@storybook/test");
+    const canvas = within(canvasElement);
+    const chip = canvas.getByTestId("chip-added");
+    await userEvent.hover(chip);
+  },
+};
+
+export const UpdatedHoverExpand: Story = {
+  args: {
+    ...baseArgs,
+  },
+  play: async ({ canvasElement }) => {
+    const { within, userEvent } = await import("@storybook/test");
+    const canvas = within(canvasElement);
+    const chip = canvas.getByTestId("chip-updated");
+    await userEvent.hover(chip);
+  },
+};
+
+export const SkipHoverExpand: Story = {
+  args: {
+    ...baseArgs,
+  },
+  play: async ({ canvasElement }) => {
+    const { within, userEvent } = await import("@storybook/test");
+    const canvas = within(canvasElement);
+    const chip = canvas.getByTestId("chip-skip");
+    await userEvent.hover(chip);
+  },
+};
+
+export const FailHoverExpand: Story = {
+  args: {
+    ...baseArgs,
+  },
+  play: async ({ canvasElement }) => {
+    const { within, userEvent } = await import("@storybook/test");
+    const canvas = within(canvasElement);
+    const chip = canvas.getByTestId("chip-fail");
+    await userEvent.hover(chip);
   },
 };

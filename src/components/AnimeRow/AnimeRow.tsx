@@ -43,6 +43,7 @@ export function AnimeRow({
               disabled={isDisabled}
               aria-label="Add to Favorites"
               title="Add to Favorites"
+              data-tooltip="Add to Favorites"
             >
               <HeartIcon width="18" height="18" />
             </button>
@@ -52,6 +53,7 @@ export function AnimeRow({
               disabled={isDisabled}
               aria-label="Move to Trash"
               title="Move to Trash"
+              data-tooltip="Move to Trash"
             >
               <TrashIcon width="18" height="18" />
             </button>
@@ -65,6 +67,7 @@ export function AnimeRow({
             disabled={isDisabled}
             aria-label="Move to Trash"
             title="Move to Trash"
+            data-tooltip="Move to Trash"
           >
             <TrashIcon width="18" height="18" />
           </button>
@@ -77,6 +80,7 @@ export function AnimeRow({
             onClick={() => onRestoreFromTrash(item)}
             aria-label="Restore to Favorites"
             title="Restore to Favorites"
+            data-tooltip="Restore to Favorites"
           >
             <HeartIcon width="18" height="18" />
           </button>
@@ -112,8 +116,8 @@ export function AnimeRow({
       : "N/A";
 
   return (
-    <tr className={styles.animeRow} data-testid="anime-card">
-      <td className={styles.titleCell}>
+    <div className={styles.animeRow} data-testid="anime-card">
+      <div className={styles.titleCell}>
         <div className={styles.titleWrapper}>
           <a
             href={item.link}
@@ -125,18 +129,18 @@ export function AnimeRow({
           </a>
           <span className={styles.descriptionText}>{item.description}</span>
         </div>
-      </td>
-      <td className={styles.scoreCell}>
+      </div>
+      <div className={styles.scoreCell}>
         <span className={`${styles.scoreBadge} ${getScoreClass(item.score)}`}>
           ★ {item.score.toFixed(1)}
         </span>
-      </td>
-      <td className={styles.viewsCell}>{formatViews(item.watchCount)}</td>
-      <td className={styles.yearCell}>{uploadYear}</td>
-      <td className={styles.episodesCell}>{item.episodeCount}</td>
-      <td className={styles.actionsCell}>
+      </div>
+      <div className={styles.viewsCell}>{formatViews(item.watchCount)}</div>
+      <div className={styles.yearCell}>{uploadYear}</div>
+      <div className={styles.episodesCell}>{item.episodeCount}</div>
+      <div className={styles.actionsCell}>
         <div className={styles.rowActions}>{renderActions()}</div>
-      </td>
-    </tr>
+      </div>
+    </div>
   );
 }

@@ -1,4 +1,4 @@
-import { AnimeRow } from "../AnimeRow";
+import { AnimeTable } from "../AnimeTable";
 import { type AnimeItem } from "../../services/animeScanner";
 import { Tab } from "../Tabs";
 import styles from "./AnimeList.module.css";
@@ -65,57 +65,17 @@ export function AnimeList({
     );
   }
 
-  const renderHeader = (
-    label: string,
-    field: "title" | "score" | "watchCount" | "uploadDate" | "episodeCount",
-  ) => {
-    const isSorted = sortBy === field;
-    return (
-      <th
-        className={`${styles.sortableHeader} ${isSorted ? styles.sorted : ""}`}
-        onClick={() => onSort(field)}
-        data-testid={`sort-header-${field}`}
-        title={`Sort by ${label}`}
-      >
-        <div className={styles.headerContainer}>
-          <span className={styles.headerLabel}>{label}</span>
-          {isSorted && (
-            <span className={styles.sortIndicator}>
-              {sortOrder === "asc" ? "▲" : "▼"}
-            </span>
-          )}
-        </div>
-      </th>
-    );
-  };
-
   return (
-    <div className={styles.tableWrapper} data-testid="list-container">
-      <table className={styles.animeTable}>
-        <thead>
-          <tr>
-            {renderHeader("Anime Title", "title")}
-            {renderHeader("Score", "score")}
-            {renderHeader("Views", "watchCount")}
-            {renderHeader("Year", "uploadDate")}
-            {renderHeader("EP", "episodeCount")}
-            <th className={styles.actionsHeader}>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {list.map((item) => (
-            <AnimeRow
-              key={item.link}
-              item={item}
-              activeTab={activeTab}
-              onMoveToFavorites={onMoveToFavorites}
-              onMoveToTrash={onMoveToTrash}
-              onRestoreFromTrash={onRestoreFromTrash}
-              targetScore={targetScore}
-            />
-          ))}
-        </tbody>
-      </table>
-    </div>
+    <AnimeTable
+      activeTab={activeTab}
+      list={list}
+      sortBy={sortBy}
+      sortOrder={sortOrder}
+      onSort={onSort}
+      onMoveToFavorites={onMoveToFavorites}
+      onMoveToTrash={onMoveToTrash}
+      onRestoreFromTrash={onRestoreFromTrash}
+      targetScore={targetScore}
+    />
   );
 }

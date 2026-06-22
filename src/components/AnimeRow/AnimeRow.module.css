@@ -1,4 +1,8 @@
 .animeRow {
+  display: grid;
+  grid-template-columns: var(--grid-cols, 1fr 100px 100px 100px 100px 120px);
+  align-items: center;
+  padding: 12px;
   border-bottom: 1px solid var(--border);
   transition: background-color 0.2s ease;
 }
@@ -8,9 +12,7 @@
 }
 
 .titleCell {
-  padding: 16px 12px;
-  vertical-align: top;
-  width: 99%;
+  padding: 4px 12px;
 }
 
 .titleWrapper {
@@ -48,12 +50,10 @@
 .yearCell,
 .episodesCell,
 .actionsCell {
-  padding: 16px 12px;
-  vertical-align: middle;
+  padding: 4px 12px;
   font-size: 0.875rem;
   color: var(--text-main);
   white-space: nowrap;
-  width: 1%;
 }
 
 .scoreBadge {

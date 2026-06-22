@@ -29,6 +29,7 @@ export function Tabs({
         className={`${styles.tab} ${activeTab === Tab.Search ? styles.active : ""}`}
         onClick={() => setActiveTab(Tab.Search)}
         title="View scanned anime results"
+        data-tooltip="View scanned anime results"
       >
         Results ({searchCount})
       </button>
@@ -36,6 +37,7 @@ export function Tabs({
         className={`${styles.tab} ${activeTab === Tab.Favorites ? styles.active : ""}`}
         onClick={() => setActiveTab(Tab.Favorites)}
         title="View your favorite anime list"
+        data-tooltip="View your favorite anime list"
       >
         Favorites ({favoritesCount})
       </button>
@@ -43,6 +45,7 @@ export function Tabs({
         className={`${styles.tab} ${activeTab === Tab.Trash ? styles.active : ""}`}
         onClick={() => setActiveTab(Tab.Trash)}
         title="View trashed anime list"
+        data-tooltip="View trashed anime list"
       >
         Trash ({trashCount})
       </button>
@@ -50,6 +53,7 @@ export function Tabs({
         className={`${styles.tab} ${activeTab === Tab.Settings ? styles.active : ""}`}
         onClick={() => setActiveTab(Tab.Settings)}
         title="Open scanner configurations"
+        data-tooltip="Open scanner configurations"
       >
         Settings
       </button>
