@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen, act } from "@testing-library/react";
 import { ErrorCard } from "./ErrorCard";
 import {
   AnimeScanError,
@@ -198,7 +198,8 @@ describe("ErrorCard", () => {
     expect(screen.queryByTestId("error-card-dismiss-btn")).toBeNull();
   });
 
-  it("copies details without trace when copy button is clicked", () => {
+  it("copies details without trace when copy button is clicked and resets after timeout", () => {
+    vi.useFakeTimers();
     const error = new AnimeScanHttpError(
       1,
       AnimeScanStep.GET_TOTAL_PAGES,
@@ -219,11 +220,26 @@ describe("ErrorCard", () => {
 
     render(<ErrorCard error={error} />);
     const copyBtn = screen.getByTestId("error-card-copy-btn");
-    copyBtn.click();
+
+    act(() => {
+      copyBtn.click();
+    });
 
     expect(writeTextMock).toHaveBeenCalledWith(
       "My Anime\nPage: 1, Status Code: 403, When doing: fetching total pages\nHTTP request failed with status 403 (URL: https://example.com)",
     );
+
+    // Verify button has .copied class
+    expect(copyBtn.className).toContain("copied");
+
+    // Fast forward timer
+    act(() => {
+      vi.advanceTimersByTime(2000);
+    });
+
+    // Verify .copied class is removed
+    expect(copyBtn.className).not.toContain("copied");
+    vi.useRealTimers();
   });
 
   it("copies details without subtitle when copy button is clicked", () => {
@@ -240,7 +256,10 @@ describe("ErrorCard", () => {
 
     render(<ErrorCard error={error} />);
     const copyBtn = screen.getByTestId("error-card-copy-btn");
-    copyBtn.click();
+
+    act(() => {
+      copyBtn.click();
+    });
 
     expect(writeTextMock).toHaveBeenCalledWith("Error\nSystem is down");
   });

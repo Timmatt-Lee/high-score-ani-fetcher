@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import {
   AnimeScanHttpError,
   AnimeScanParseError,
@@ -5,6 +6,7 @@ import {
   getScanStepLabel,
 } from "../../services/animeScanner";
 import styles from "./ErrorCard.module.css";
+import { CopyIcon, CheckIcon } from "../Icons";
 
 interface ErrorCardProps {
   error: Error;
@@ -50,14 +52,24 @@ const getCardTitleAndSubtitle = (
 };
 
 export function ErrorCard({ error, onDismiss }: ErrorCardProps) {
+  const [isCopied, setIsCopied] = useState(false);
   const { title: cardTitle, subtitle: cardSubtitle } =
     getCardTitleAndSubtitle(error);
+
+  useEffect(() => {
+    if (!isCopied) return;
+    const timer = setTimeout(() => {
+      setIsCopied(false);
+    }, 2000);
+    return () => clearTimeout(timer);
+  }, [isCopied]);
 
   const handleCopy = () => {
     const textToCopy = cardSubtitle
       ? `${cardTitle}\n${cardSubtitle}\n${error.message}`
       : `${cardTitle}\n${error.message}`;
     navigator.clipboard.writeText(textToCopy);
+    setIsCopied(true);
   };
 
   return (
@@ -79,16 +91,20 @@ export function ErrorCard({ error, onDismiss }: ErrorCardProps) {
 
         <div className={styles.actionGroup}>
           <button
-            className={styles.copyBtn}
+            className={`${styles.iconBtn} ${styles.copyBtn} ${isCopied ? styles.copied : ""}`}
             onClick={handleCopy}
-            title="Copy error details"
+            title={isCopied ? "Copied!" : "Copy error details"}
             data-testid="error-card-copy-btn"
           >
-            Copy
+            {isCopied ? (
+              <CheckIcon width="14" height="14" />
+            ) : (
+              <CopyIcon width="14" height="14" />
+            )}
           </button>
           {onDismiss && (
             <button
-              className={styles.dismissBtn}
+              className={`${styles.iconBtn} ${styles.dismissBtn}`}
               onClick={onDismiss}
               title="Dismiss error"
               aria-label="Dismiss error"
