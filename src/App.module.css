@@ -296,3 +296,26 @@
 .inlineStatsCloseBtn:hover {
   color: var(--text-main);
 }
+
+@media (max-width: 600px) {
+  .header {
+    grid-template-columns: 1fr auto;
+    grid-template-rows: auto auto;
+    gap: 12px;
+  }
+  .header h1 {
+    font-size: 1.1rem;
+    grid-column: 1;
+    grid-row: 1;
+  }
+  .headerCenter {
+    grid-column: 1 / span 2;
+    grid-row: 2;
+    margin: 0;
+    width: 100%;
+  }
+  .headerRight {
+    grid-column: 2;
+    grid-row: 1;
+  }
+}

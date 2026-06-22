@@ -75,3 +75,36 @@
   border: 1px dashed var(--border);
   font-size: 0.95rem;
 }
+
+@media (max-width: 768px) {
+  .animeTable thead {
+    display: block;
+    background: var(--panel-bg);
+    border-bottom: 1px solid var(--border);
+    padding: 8px 12px;
+  }
+  .animeTable thead tr {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .animeTable th {
+    display: inline-flex;
+    position: static !important;
+    padding: 6px 12px !important;
+    border-bottom: none !important;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    font-size: 0.75rem !important;
+    text-transform: none !important;
+    letter-spacing: normal !important;
+  }
+  .animeTable th.sorted {
+    background: rgba(59, 130, 246, 0.1);
+    border-color: var(--accent);
+  }
+  .actionsHeader {
+    display: none !important;
+  }
+}

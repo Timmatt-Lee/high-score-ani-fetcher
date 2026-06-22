@@ -149,3 +149,32 @@
   background: rgba(255, 255, 255, 0.1);
   color: rgba(255, 255, 255, 0.9);
 }
+
+@media (max-width: 600px) {
+  .bannerContainer {
+    height: auto;
+    border-radius: 16px;
+    padding: 8px 12px;
+    width: 100%;
+    justify-content: space-between;
+  }
+  .bannerContent {
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: center;
+    width: 100%;
+  }
+  .group {
+    gap: 6px;
+    padding: 0;
+  }
+  .group:not(:last-child) {
+    border-right: none;
+    padding-right: 0;
+  }
+  .chip {
+    font-size: 0.8rem;
+    padding: 3px 8px;
+    height: 24px;
+  }
+}
