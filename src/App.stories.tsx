@@ -474,20 +474,27 @@ export const LargeListScrolled: Story = {
       );
       return (
         <ServiceProvider animeScraper={mockAnimeScraper as any}>
-          <Story />
+          <div
+            className="scrollable-test-container"
+            style={{
+              height: "600px",
+              overflowY: "auto",
+              position: "relative",
+              width: "100%",
+            }}
+          >
+            <Story />
+          </div>
         </ServiceProvider>
       );
     },
   ],
   play: async () => {
     await new Promise((resolve) => setTimeout(resolve, 500));
-    if (document.documentElement) {
-      document.documentElement.scrollTop = 800;
+    const container = document.querySelector(".scrollable-test-container");
+    if (container) {
+      container.scrollTop = 400;
     }
-    if (document.body) {
-      document.body.scrollTop = 800;
-    }
-    window.scrollTo(0, 800);
   },
 };
 
@@ -512,7 +519,17 @@ export const FavoritesLargeListScrolled: Story = {
       );
       return (
         <ServiceProvider animeScraper={mockAnimeScraper as any}>
-          <Story />
+          <div
+            className="scrollable-test-container"
+            style={{
+              height: "600px",
+              overflowY: "auto",
+              position: "relative",
+              width: "100%",
+            }}
+          >
+            <Story />
+          </div>
         </ServiceProvider>
       );
     },
@@ -523,13 +540,10 @@ export const FavoritesLargeListScrolled: Story = {
     const favTabBtn = await canvas.findByRole("button", { name: /Favorites/i });
     await userEvent.click(favTabBtn);
     await new Promise((resolve) => setTimeout(resolve, 500));
-    if (document.documentElement) {
-      document.documentElement.scrollTop = 800;
+    const container = document.querySelector(".scrollable-test-container");
+    if (container) {
+      container.scrollTop = 400;
     }
-    if (document.body) {
-      document.body.scrollTop = 800;
-    }
-    window.scrollTo(0, 800);
   },
 };
 
@@ -554,7 +568,17 @@ export const TrashLargeListScrolled: Story = {
       );
       return (
         <ServiceProvider animeScraper={mockAnimeScraper as any}>
-          <Story />
+          <div
+            className="scrollable-test-container"
+            style={{
+              height: "600px",
+              overflowY: "auto",
+              position: "relative",
+              width: "100%",
+            }}
+          >
+            <Story />
+          </div>
         </ServiceProvider>
       );
     },
@@ -565,12 +589,9 @@ export const TrashLargeListScrolled: Story = {
     const trashTabBtn = await canvas.findByRole("button", { name: /Trash/i });
     await userEvent.click(trashTabBtn);
     await new Promise((resolve) => setTimeout(resolve, 500));
-    if (document.documentElement) {
-      document.documentElement.scrollTop = 800;
+    const container = document.querySelector(".scrollable-test-container");
+    if (container) {
+      container.scrollTop = 400;
     }
-    if (document.body) {
-      document.body.scrollTop = 800;
-    }
-    window.scrollTo(0, 800);
   },
 };

@@ -76,21 +76,32 @@ export const Default: Story = {
     targetScore: 4.8,
   },
 };
-
 export const LargeListScrolled: Story = {
   args: {
     ...Default.args,
     list: largeList,
   },
+  decorators: [
+    (Story) => (
+      <div
+        className="scrollable-test-container"
+        style={{
+          height: "400px",
+          overflowY: "auto",
+          position: "relative",
+          width: "100%",
+        }}
+      >
+        <Story />
+      </div>
+    ),
+  ],
   play: async () => {
     await new Promise((resolve) => setTimeout(resolve, 500));
-    if (document.documentElement) {
-      document.documentElement.scrollTop = 800;
+    const container = document.querySelector(".scrollable-test-container");
+    if (container) {
+      container.scrollTop = 200;
     }
-    if (document.body) {
-      document.body.scrollTop = 800;
-    }
-    window.scrollTo(0, 800);
   },
 };
 
