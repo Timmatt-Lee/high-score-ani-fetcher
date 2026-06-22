@@ -94,3 +94,18 @@ export const FailHoverExpand: Story = {
     await userEvent.hover(chip);
   },
 };
+
+export const HoverDismissTooltip: Story = {
+  args: {
+    ...baseArgs,
+    onDismiss: () => {},
+  },
+  play: async ({ canvasElement }) => {
+    const { within } = await import("@storybook/test");
+    const canvas = within(canvasElement);
+    const dismissBtn = canvas.getByRole("button", {
+      name: /Dismiss scan results/i,
+    });
+    dismissBtn.classList.add("forceTooltip");
+  },
+};

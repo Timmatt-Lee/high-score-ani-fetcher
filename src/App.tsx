@@ -134,6 +134,8 @@ function App() {
               disabled={!isScanning}
               aria-label="Stop Scan"
               title="Stop Scan"
+              data-tooltip="Stop Scan"
+              data-tooltip-dir="bottom"
             >
               <StopIcon width="16" height="16" />
             </button>
@@ -145,6 +147,8 @@ function App() {
               }
               disabled={isScanning}
               title="Start scanning anime list from Bahamut"
+              data-tooltip="Start scanning anime list from Bahamut"
+              data-tooltip-dir="bottom"
             >
               <span className={styles.btnTextLong}>Scan 巴哈姆特動漫瘋</span>
               <span className={styles.btnTextShort}>Scan</span>
@@ -152,7 +156,6 @@ function App() {
           )}
         </div>
       </div>
-
       <div className={styles.mainLayout}>
         <div className={styles.sidebar}>
           <Tabs

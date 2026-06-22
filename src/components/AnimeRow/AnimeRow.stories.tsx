@@ -152,3 +152,17 @@ export const HoverTrashTooltip: Story = {
     trashBtn.classList.add("forceTooltip");
   },
 };
+
+export const HoverRestoreTooltip: Story = {
+  args: {
+    item: baseAnime,
+    activeTab: Tab.Trash,
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const restoreBtn = await canvas.findByRole("button", {
+      name: /Restore to Favorites/i,
+    });
+    restoreBtn.classList.add("forceTooltip");
+  },
+};

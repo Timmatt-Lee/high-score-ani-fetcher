@@ -74,3 +74,45 @@ export const ResultsHoverTooltip: Story = {
     resultsButton.classList.add("forceTooltip");
   },
 };
+
+export const FavoritesHoverTooltip: Story = {
+  args: {
+    activeTab: Tab.Favorites,
+    searchCount: 15,
+    favoritesCount: 3,
+    trashCount: 2,
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const favoritesButton = canvas.getByText(/Favorites/);
+    favoritesButton.classList.add("forceTooltip");
+  },
+};
+
+export const TrashHoverTooltip: Story = {
+  args: {
+    activeTab: Tab.Trash,
+    searchCount: 15,
+    favoritesCount: 3,
+    trashCount: 2,
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const trashButton = canvas.getByText(/Trash/);
+    trashButton.classList.add("forceTooltip");
+  },
+};
+
+export const SettingsHoverTooltip: Story = {
+  args: {
+    activeTab: Tab.Settings,
+    searchCount: 15,
+    favoritesCount: 3,
+    trashCount: 2,
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const settingsButton = canvas.getByText(/Settings/);
+    settingsButton.classList.add("forceTooltip");
+  },
+};
