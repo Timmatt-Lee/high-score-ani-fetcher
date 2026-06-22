@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react";
+import { within } from "@storybook/test";
 import { Tabs, Tab } from "./Tabs";
 
 const meta: Meta<typeof Tabs> = {
@@ -68,9 +69,8 @@ export const ResultsHoverTooltip: Story = {
     trashCount: 2,
   },
   play: async ({ canvasElement }) => {
-    const { within, userEvent } = await import("@storybook/test");
     const canvas = within(canvasElement);
     const resultsButton = canvas.getByText(/Results/);
-    await userEvent.hover(resultsButton);
+    resultsButton.classList.add("forceTooltip");
   },
 };

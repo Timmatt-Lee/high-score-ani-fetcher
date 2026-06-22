@@ -131,12 +131,11 @@ export const HoverFavoriteTooltip: Story = {
     activeTab: Tab.Search,
   },
   play: async ({ canvasElement }) => {
-    const { userEvent } = await import("@storybook/test");
     const canvas = within(canvasElement);
     const favBtn = await canvas.findByRole("button", {
       name: /Add to Favorites/i,
     });
-    await userEvent.hover(favBtn);
+    favBtn.classList.add("forceTooltip");
   },
 };
 
@@ -146,11 +145,10 @@ export const HoverTrashTooltip: Story = {
     activeTab: Tab.Search,
   },
   play: async ({ canvasElement }) => {
-    const { userEvent } = await import("@storybook/test");
     const canvas = within(canvasElement);
     const trashBtn = await canvas.findByRole("button", {
       name: /Move to Trash/i,
     });
-    await userEvent.hover(trashBtn);
+    trashBtn.classList.add("forceTooltip");
   },
 };
