@@ -694,6 +694,62 @@ describe("Scan functionality", () => {
     expect(screen.getByTestId("settings-tab")).toBeInTheDocument();
   });
 
+  it("supports importing backup data through SettingsTab", async () => {
+    render(
+      <ServiceProvider>
+        <App />
+      </ServiceProvider>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText("Settings")).toBeInTheDocument();
+    });
+
+    await act(async () => {
+      fireEvent.click(screen.getByText("Settings"));
+    });
+
+    const mockFileContent = JSON.stringify({
+      searchList: [
+        {
+          link: "https://example.com/anime/import-app",
+          title: "Imported App Anime",
+          watchCount: 500,
+          episodeCount: 12,
+          uploadDate: "2024-05-01T00:00:00.000Z",
+          score: 4.8,
+          ratingCount: 100,
+          description: "Successfully imported in app",
+        },
+      ],
+    });
+
+    const file = new File([mockFileContent], "backup.json", {
+      type: "application/json",
+    });
+
+    class MockFileReader {
+      onload: ((ev: ProgressEvent<FileReader>) => void) | null = null;
+      readAsText() {
+        if (this.onload) {
+          this.onload({
+            target: {
+              result: mockFileContent,
+            },
+          } as unknown as ProgressEvent<FileReader>);
+        }
+      }
+    }
+    vi.stubGlobal("FileReader", MockFileReader);
+
+    const input = screen.getByTestId("file-import-input");
+    fireEvent.change(input, { target: { files: [file] } });
+
+    await waitFor(() => {
+      expect(screen.getByText("Backup restored successfully!")).toBeDefined();
+    });
+  });
+
   it("supports sorting items by different columns in search results", async () => {
     const itemA = makeAnime({
       link: "https://ani.gamer.com.tw/anime.php?sn=1",

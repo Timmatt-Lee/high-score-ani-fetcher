@@ -46,6 +46,17 @@ const sampleList: AnimeItem[] = [
   },
 ];
 
+const largeList: AnimeItem[] = Array.from({ length: 40 }, (_, idx) => ({
+  link: `https://example.com/anime/${idx + 3}`,
+  title: `Anime Title ${idx + 1} with a decently long title for wrapping`,
+  watchCount: 10000 + idx * 15000,
+  episodeCount: 12 + (idx % 3) * 12,
+  uploadDate: new Date(2020 + (idx % 5), idx % 12, 1),
+  score: 7.0 + (idx % 25) * 0.1,
+  ratingCount: 500 + idx * 250,
+  description: `This is a long description text for anime card ${idx + 1} to test the multi-line clamp styling. It should truncate after two lines in mobile and desktop viewports correctly.`,
+}));
+
 export const DesktopView: Story = {
   args: {
     activeTab: Tab.Search,
@@ -71,5 +82,35 @@ export const MobileView: Story = {
     chromatic: {
       viewports: [320, 375],
     },
+  },
+};
+
+export const DesktopLargeListScrolled: Story = {
+  args: {
+    ...DesktopView.args,
+    list: largeList,
+  },
+  play: async () => {
+    await new Promise((resolve) => setTimeout(resolve, 300));
+    window.scrollTo(0, 800);
+  },
+};
+
+export const MobileLargeListScrolled: Story = {
+  args: {
+    ...DesktopView.args,
+    list: largeList,
+  },
+  parameters: {
+    viewport: {
+      defaultViewport: "mobile1",
+    },
+    chromatic: {
+      viewports: [320, 375],
+    },
+  },
+  play: async () => {
+    await new Promise((resolve) => setTimeout(resolve, 300));
+    window.scrollTo(0, 800);
   },
 };

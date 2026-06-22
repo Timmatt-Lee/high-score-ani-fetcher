@@ -484,3 +484,75 @@ export const LargeListScrolled: Story = {
     window.scrollTo(0, 800);
   },
 };
+
+export const FavoritesLargeListScrolled: Story = {
+  decorators: [
+    (Story) => {
+      const items = Array.from({ length: 35 }, (_, idx) =>
+        createMockAnime({
+          title: `最愛動畫項目 ${idx + 1}`,
+          score: 4.5 + (idx % 6) * 0.1,
+          watchCount: 50000 + idx * 10000,
+          link: `https://ani.gamer.com.tw/anime.php?sn=${2000 + idx}`,
+        }),
+      );
+      localStorage.setItem(
+        "animeData",
+        JSON.stringify({
+          searchList: [],
+          favoriteList: items,
+          trashList: [],
+        }),
+      );
+      return (
+        <ServiceProvider animeScraper={mockAnimeScraper as any}>
+          <Story />
+        </ServiceProvider>
+      );
+    },
+  ],
+  play: async ({ canvasElement }) => {
+    const { userEvent } = await import("@storybook/test");
+    const canvas = within(canvasElement);
+    const favTabBtn = await canvas.findByRole("button", { name: /Favorites/i });
+    await userEvent.click(favTabBtn);
+    await new Promise((resolve) => setTimeout(resolve, 300));
+    window.scrollTo(0, 800);
+  },
+};
+
+export const TrashLargeListScrolled: Story = {
+  decorators: [
+    (Story) => {
+      const items = Array.from({ length: 35 }, (_, idx) =>
+        createMockAnime({
+          title: `垃圾桶動畫項目 ${idx + 1}`,
+          score: 4.5 + (idx % 6) * 0.1,
+          watchCount: 50000 + idx * 10000,
+          link: `https://ani.gamer.com.tw/anime.php?sn=${3000 + idx}`,
+        }),
+      );
+      localStorage.setItem(
+        "animeData",
+        JSON.stringify({
+          searchList: [],
+          favoriteList: [],
+          trashList: items,
+        }),
+      );
+      return (
+        <ServiceProvider animeScraper={mockAnimeScraper as any}>
+          <Story />
+        </ServiceProvider>
+      );
+    },
+  ],
+  play: async ({ canvasElement }) => {
+    const { userEvent } = await import("@storybook/test");
+    const canvas = within(canvasElement);
+    const trashTabBtn = await canvas.findByRole("button", { name: /Trash/i });
+    await userEvent.click(trashTabBtn);
+    await new Promise((resolve) => setTimeout(resolve, 300));
+    window.scrollTo(0, 800);
+  },
+};

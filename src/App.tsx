@@ -174,7 +174,23 @@ function App() {
           )}
 
           {activeTab === Tab.Settings ? (
-            <SettingsTab settings={settings} onSave={saveSettings} />
+            <SettingsTab
+              settings={settings}
+              onSave={saveSettings}
+              searchList={searchList}
+              favoriteList={favoriteList}
+              trashList={trashList}
+              onImportData={({
+                searchList: s,
+                favoriteList: f,
+                trashList: t,
+              }) => {
+                setSearchList(s);
+                setFavoriteList(f);
+                setTrashList(t);
+                saveData(s, f, t);
+              }}
+            />
           ) : (
             <AnimeList
               activeTab={activeTab}

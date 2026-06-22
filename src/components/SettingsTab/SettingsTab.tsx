@@ -1,12 +1,38 @@
-import { type Settings } from "../../services/animeScanner";
+import { useState } from "react";
+import { z } from "zod";
+import {
+  type Settings,
+  type AnimeItem,
+  AnimeItemSchema,
+} from "../../services/animeScanner";
 import styles from "./SettingsTab.module.css";
 
 interface SettingsTabProps {
   settings: Settings;
   onSave: (settings: Settings) => void;
+  searchList: AnimeItem[];
+  favoriteList: AnimeItem[];
+  trashList: AnimeItem[];
+  onImportData: (data: {
+    searchList: AnimeItem[];
+    favoriteList: AnimeItem[];
+    trashList: AnimeItem[];
+  }) => void;
 }
 
-export function SettingsTab({ settings, onSave }: SettingsTabProps) {
+export function SettingsTab({
+  settings,
+  onSave,
+  searchList,
+  favoriteList,
+  trashList,
+  onImportData,
+}: SettingsTabProps) {
+  const [statusMsg, setStatusMsg] = useState<{
+    text: string;
+    isError: boolean;
+  } | null>(null);
+
   const handleChange = (key: keyof Settings, value: string) => {
     if (value.trim() === "") return;
     let num = Number(value);
@@ -17,6 +43,89 @@ export function SettingsTab({ settings, onSave }: SettingsTabProps) {
       num = Math.max(0, Math.min(100, num));
     }
     onSave({ ...settings, [key]: num });
+  };
+
+  const handleExport = () => {
+    try {
+      const serializeList = (list: AnimeItem[]) =>
+        list.map((item) => ({
+          ...item,
+          uploadDate: item.uploadDate.toISOString(),
+          scannedAt:
+            item.scannedAt instanceof Date
+              ? item.scannedAt.toISOString()
+              : item.scannedAt,
+        }));
+
+      const backupData = {
+        version: 1,
+        searchList: serializeList(searchList),
+        favoriteList: serializeList(favoriteList),
+        trashList: serializeList(trashList),
+      };
+
+      const blob = new Blob([JSON.stringify(backupData, null, 2)], {
+        type: "application/json",
+      });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `high-score-ani-fetcher-backup-${new Date().toISOString().slice(0, 10)}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+      setStatusMsg({ text: "Backup exported successfully!", isError: false });
+    } catch (err) {
+      console.error(err);
+      setStatusMsg({ text: "Failed to export backup data", isError: true });
+    }
+  };
+
+  const handleImport = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      try {
+        const text = event.target?.result;
+        if (typeof text !== "string") {
+          throw new Error("Invalid file content");
+        }
+        const parsed = JSON.parse(text);
+
+        const parseList = (listData: unknown): AnimeItem[] => {
+          const schemaResult = z.array(AnimeItemSchema).safeParse(listData);
+          if (!schemaResult.success) {
+            throw new Error("Data schema validation failed");
+          }
+          return schemaResult.data.map((item) => ({
+            ...item,
+            uploadDate: new Date(item.uploadDate),
+            scannedAt: item.scannedAt ? new Date(item.scannedAt) : undefined,
+          }));
+        };
+
+        const importedSearch = parseList(parsed.searchList || []);
+        const importedFavorites = parseList(parsed.favoriteList || []);
+        const importedTrash = parseList(parsed.trashList || []);
+
+        onImportData({
+          searchList: importedSearch,
+          favoriteList: importedFavorites,
+          trashList: importedTrash,
+        });
+
+        setStatusMsg({ text: "Backup restored successfully!", isError: false });
+      } catch (err: unknown) {
+        console.error(err);
+        const errorMsg = err instanceof Error ? err.message : String(err);
+        setStatusMsg({
+          text: errorMsg || "Failed to parse or validate backup file",
+          isError: true,
+        });
+      }
+    };
+    reader.readAsText(file);
   };
 
   return (
@@ -95,6 +204,49 @@ export function SettingsTab({ settings, onSave }: SettingsTabProps) {
           value={settings.requestDelayMs}
           onChange={(e) => handleChange("requestDelayMs", e.target.value)}
         />
+      </div>
+
+      <div className={styles.settingGroup}>
+        <div className={styles.textGroup}>
+          <label className={styles.label}>Backup & Restore</label>
+          <span className={styles.description}>
+            Export your current scanned anime lists and preferences to a backup
+            JSON file or restore them from one.
+          </span>
+        </div>
+        <div className={styles.backupActions}>
+          <button
+            type="button"
+            className={styles.backupBtn}
+            onClick={handleExport}
+            data-testid="btn-export-backup"
+          >
+            Export Backup
+          </button>
+          <label
+            className={styles.backupBtn}
+            data-testid="btn-import-backup-label"
+          >
+            Import Backup
+            <input
+              type="file"
+              accept=".json"
+              className={styles.fileInput}
+              onChange={handleImport}
+              data-testid="file-import-input"
+            />
+          </label>
+        </div>
+        {statusMsg && (
+          <span
+            className={`${styles.statusMsg} ${
+              statusMsg.isError ? styles.statusError : styles.statusSuccess
+            }`}
+            data-testid="backup-status-msg"
+          >
+            {statusMsg.text}
+          </span>
+        )}
       </div>
     </div>
   );

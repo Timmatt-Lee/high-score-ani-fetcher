@@ -12,6 +12,7 @@ const meta = {
       <div
         style={{
           background: "#0f172a",
+          padding: "20px",
         }}
       >
         <Story />
@@ -32,5 +33,9 @@ export const Default: Story = {
       requestDelayMs: 800,
     },
     onSave: (settings) => console.log("Save settings:", settings),
+    searchList: [],
+    favoriteList: [],
+    trashList: [],
+    onImportData: (data) => console.log("Import data:", data),
   },
 };

@@ -73,3 +73,53 @@
   font-size: 0.95rem;
   user-select: none;
 }
+
+.backupActions {
+  display: flex;
+  gap: 12px;
+  width: 100%;
+  margin-top: 8px;
+}
+
+.backupBtn {
+  flex: 1;
+  background-color: rgba(59, 130, 246, 0.1);
+  border: 1px solid var(--accent);
+  color: var(--accent);
+  padding: 10px 16px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  user-select: none;
+}
+
+.backupBtn:hover {
+  background-color: var(--accent);
+  color: white;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+.fileInput {
+  display: none;
+}
+
+.statusMsg {
+  font-size: 0.85rem;
+  font-weight: 600;
+  margin-top: 8px;
+}
+
+.statusSuccess {
+  color: var(--success);
+}
+
+.statusError {
+  color: var(--danger);
+}
