@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react";
+import { within } from "@storybook/test";
 import { AnimeTable } from "./AnimeTable";
 import { Tab } from "../Tabs";
 import { type AnimeItem } from "../../services/animeScanner";
@@ -91,7 +92,13 @@ export const DesktopLargeListScrolled: Story = {
     list: largeList,
   },
   play: async () => {
-    await new Promise((resolve) => setTimeout(resolve, 300));
+    await new Promise((resolve) => setTimeout(resolve, 500));
+    if (document.documentElement) {
+      document.documentElement.scrollTop = 800;
+    }
+    if (document.body) {
+      document.body.scrollTop = 800;
+    }
     window.scrollTo(0, 800);
   },
 };
@@ -110,7 +117,25 @@ export const MobileLargeListScrolled: Story = {
     },
   },
   play: async () => {
-    await new Promise((resolve) => setTimeout(resolve, 300));
+    await new Promise((resolve) => setTimeout(resolve, 500));
+    if (document.documentElement) {
+      document.documentElement.scrollTop = 800;
+    }
+    if (document.body) {
+      document.body.scrollTop = 800;
+    }
     window.scrollTo(0, 800);
+  },
+};
+
+export const HoverHeaderTooltip: Story = {
+  args: {
+    ...DesktopView.args,
+  },
+  play: async ({ canvasElement }) => {
+    const { userEvent } = await import("@storybook/test");
+    const canvas = within(canvasElement);
+    const scoreHeader = await canvas.findByTestId("sort-header-score");
+    await userEvent.hover(scoreHeader);
   },
 };

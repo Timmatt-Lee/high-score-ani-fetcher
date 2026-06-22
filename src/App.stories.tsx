@@ -480,7 +480,13 @@ export const LargeListScrolled: Story = {
     },
   ],
   play: async () => {
-    await new Promise((resolve) => setTimeout(resolve, 300));
+    await new Promise((resolve) => setTimeout(resolve, 500));
+    if (document.documentElement) {
+      document.documentElement.scrollTop = 800;
+    }
+    if (document.body) {
+      document.body.scrollTop = 800;
+    }
     window.scrollTo(0, 800);
   },
 };
@@ -516,7 +522,13 @@ export const FavoritesLargeListScrolled: Story = {
     const canvas = within(canvasElement);
     const favTabBtn = await canvas.findByRole("button", { name: /Favorites/i });
     await userEvent.click(favTabBtn);
-    await new Promise((resolve) => setTimeout(resolve, 300));
+    await new Promise((resolve) => setTimeout(resolve, 500));
+    if (document.documentElement) {
+      document.documentElement.scrollTop = 800;
+    }
+    if (document.body) {
+      document.body.scrollTop = 800;
+    }
     window.scrollTo(0, 800);
   },
 };
@@ -552,7 +564,13 @@ export const TrashLargeListScrolled: Story = {
     const canvas = within(canvasElement);
     const trashTabBtn = await canvas.findByRole("button", { name: /Trash/i });
     await userEvent.click(trashTabBtn);
-    await new Promise((resolve) => setTimeout(resolve, 300));
+    await new Promise((resolve) => setTimeout(resolve, 500));
+    if (document.documentElement) {
+      document.documentElement.scrollTop = 800;
+    }
+    if (document.body) {
+      document.body.scrollTop = 800;
+    }
     window.scrollTo(0, 800);
   },
 };

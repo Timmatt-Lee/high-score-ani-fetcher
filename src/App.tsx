@@ -146,7 +146,8 @@ function App() {
               disabled={isScanning}
               title="Start scanning anime list from Bahamut"
             >
-              Scan 巴哈姆特動漫瘋
+              <span className={styles.btnTextLong}>Scan 巴哈姆特動漫瘋</span>
+              <span className={styles.btnTextShort}>Scan</span>
             </button>
           )}
         </div>

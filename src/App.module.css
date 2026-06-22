@@ -319,3 +319,22 @@
     grid-row: 1;
   }
 }
+
+.btnTextShort {
+  display: none;
+}
+.btnTextLong {
+  display: inline;
+}
+
+@media (max-width: 480px) {
+  .appContainer {
+    padding: 0 12px 12px;
+  }
+  .btnTextLong {
+    display: none;
+  }
+  .btnTextShort {
+    display: inline;
+  }
+}
