@@ -201,7 +201,6 @@
   gap: 24px;
   align-items: flex-start;
   width: 100%;
-  margin-top: 24px;
   /* This is the flex container — no overflow set here so children can stick */
 }
 
@@ -220,6 +219,7 @@
   flex-direction: column;
   gap: 24px;
   min-width: 0;
+  --table-header-top: 71px;
 }
 
 @media (max-width: 768px) {
