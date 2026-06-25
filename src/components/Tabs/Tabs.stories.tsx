@@ -7,7 +7,7 @@ const meta: Meta<typeof Tabs> = {
   argTypes: {
     activeTab: {
       control: "select",
-      options: [Tab.Search, Tab.Favorites, Tab.Trash],
+      options: [Tab.Search, Tab.Favorites, Tab.Trash, Tab.Settings],
     },
     searchCount: { control: { type: "number", min: 0 } },
     favoritesCount: { control: { type: "number", min: 0 } },
@@ -51,11 +51,11 @@ export const TrashActive: Story = {
   },
 };
 
-export const EmptyCounts: Story = {
+export const SettingsActive: Story = {
   args: {
-    activeTab: Tab.Search,
-    searchCount: 0,
-    favoritesCount: 0,
-    trashCount: 0,
+    activeTab: Tab.Settings,
+    searchCount: 15,
+    favoritesCount: 3,
+    trashCount: 2,
   },
 };

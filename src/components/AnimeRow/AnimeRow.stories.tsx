@@ -19,7 +19,6 @@ const meta: Meta<typeof AnimeRow> = {
       >
         <div
           style={{
-            minWidth: "800px",
             background: "#1e293b",
             border: "1px solid #334155",
             borderRadius: "12px",
