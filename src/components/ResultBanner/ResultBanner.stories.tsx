@@ -4,11 +4,6 @@ import { ResultBanner } from "./ResultBanner";
 const meta: Meta<typeof ResultBanner> = {
   title: "Components/ResultBanner",
   component: ResultBanner,
-  parameters: {
-    chromatic: {
-      viewports: [320, 768, 1200],
-    },
-  },
 };
 
 export default meta;

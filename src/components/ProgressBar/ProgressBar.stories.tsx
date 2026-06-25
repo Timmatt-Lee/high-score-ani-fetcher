@@ -8,11 +8,6 @@ const meta: Meta<typeof ProgressBar> = {
     percent: { control: { type: "range", min: 0, max: 100 } },
     message: { control: "text" },
   },
-  parameters: {
-    chromatic: {
-      viewports: [320, 768, 1200],
-    },
-  },
 };
 
 export default meta;
