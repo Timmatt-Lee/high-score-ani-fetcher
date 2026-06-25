@@ -1,5 +1,4 @@
 import type { Meta, StoryObj } from "@storybook/react";
-import { within } from "@storybook/test";
 import { AnimeTable } from "./AnimeTable";
 import { Tab } from "../Tabs";
 import { type AnimeItem } from "../../services/animeScanner";
@@ -102,16 +101,5 @@ export const LargeListScrolled: Story = {
     if (container) {
       container.scrollTop = 200;
     }
-  },
-};
-
-export const HoverHeaderTooltip: Story = {
-  args: {
-    ...Default.args,
-  },
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement);
-    const scoreHeader = await canvas.findByTestId("sort-header-score");
-    scoreHeader.classList.add("forceTooltip");
   },
 };

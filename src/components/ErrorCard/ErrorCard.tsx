@@ -94,8 +94,6 @@ export function ErrorCard({ error, onDismiss }: ErrorCardProps) {
             className={`${styles.iconBtn} ${styles.copyBtn} ${isCopied ? styles.copied : ""}`}
             onClick={handleCopy}
             title={isCopied ? "Copied!" : "Copy error details"}
-            data-tooltip={isCopied ? "Copied!" : "Copy error details"}
-            data-tooltip-dir="bottom"
             data-testid="error-card-copy-btn"
           >
             {isCopied ? (
@@ -110,8 +108,6 @@ export function ErrorCard({ error, onDismiss }: ErrorCardProps) {
               onClick={onDismiss}
               title="Dismiss error"
               aria-label="Dismiss error"
-              data-tooltip="Dismiss error"
-              data-tooltip-dir="bottom"
               data-testid="error-card-dismiss-btn"
             >
               ✕

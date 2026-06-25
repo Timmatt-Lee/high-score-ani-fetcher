@@ -1,5 +1,4 @@
 import type { Meta, StoryObj } from "@storybook/react";
-import { within } from "@storybook/test";
 import { AnimeRow } from "./AnimeRow";
 import { Tab } from "../Tabs";
 import { type AnimeItem } from "../../services/animeScanner";
@@ -122,47 +121,5 @@ export const Disabled: Story = {
     item: baseAnime,
     activeTab: Tab.Search,
     isDisabled: true,
-  },
-};
-
-export const HoverFavoriteTooltip: Story = {
-  args: {
-    item: baseAnime,
-    activeTab: Tab.Search,
-  },
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement);
-    const favBtn = await canvas.findByRole("button", {
-      name: /Add to Favorites/i,
-    });
-    favBtn.classList.add("forceTooltip");
-  },
-};
-
-export const HoverTrashTooltip: Story = {
-  args: {
-    item: baseAnime,
-    activeTab: Tab.Search,
-  },
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement);
-    const trashBtn = await canvas.findByRole("button", {
-      name: /Move to Trash/i,
-    });
-    trashBtn.classList.add("forceTooltip");
-  },
-};
-
-export const HoverRestoreTooltip: Story = {
-  args: {
-    item: baseAnime,
-    activeTab: Tab.Trash,
-  },
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement);
-    const restoreBtn = await canvas.findByRole("button", {
-      name: /Restore to Favorites/i,
-    });
-    restoreBtn.classList.add("forceTooltip");
   },
 };

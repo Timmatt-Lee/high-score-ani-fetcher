@@ -45,8 +45,6 @@ export function AnimeTable({
         onClick={() => onSort(field)}
         data-testid={`sort-header-${field}`}
         title={`Sort by ${label}`}
-        data-tooltip={`Sort by ${label}`}
-        data-tooltip-dir="bottom"
       >
         <span className={styles.headerLabel}>{label}</span>
         {isSorted && (
@@ -58,6 +56,14 @@ export function AnimeTable({
     );
   };
 
+  if (list.length === 0) {
+    return (
+      <div className={styles.emptyState} data-testid="list-container">
+        No anime found in this list.
+      </div>
+    );
+  }
+
   return (
     <div className={styles.tableWrapper} data-testid="list-container">
       <div className={styles.animeTable}>
@@ -67,7 +73,7 @@ export function AnimeTable({
           {renderHeader("Views", "watchCount")}
           {renderHeader("Year", "uploadDate")}
           {renderHeader("EPs", "episodeCount")}
-          <div className={styles.actionsHeader}>Actions</div>
+          <div className={styles.actionsHeader}>Add to</div>
         </div>
         <div className={styles.tableBody}>
           {list.map((item) => (

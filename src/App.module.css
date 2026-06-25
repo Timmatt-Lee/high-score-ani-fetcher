@@ -3,23 +3,52 @@
   max-width: 1200px;
   min-height: 100vh;
   margin: 0 auto;
-  padding: 0 24px 24px;
+  padding: 84px 24px 24px; /* Added 84px top padding for the fixed header (60px height + 24px gap) */
   display: flex;
   flex-direction: column;
+  position: relative; /* Set anchor context for absolute positioning */
 }
 
 .header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  flex-wrap: wrap;
-  padding: 16px 0;
-  position: sticky;
+  flex-wrap: nowrap; /* Prevent vertical wrapping/collapsing entirely */
+  position: fixed;
   top: 0;
-  z-index: 100;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 1200px;
+  height: 60px;
+  padding: 0 24px;
+  z-index: 200;
   background: var(--bg-color);
-  border-bottom: 1px solid var(--border);
   gap: 16px;
+  box-sizing: border-box;
+}
+
+.header::before {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 24px;
+  right: 24px;
+  height: 1px;
+  background-color: var(--border);
+  z-index: 201;
+}
+
+.header::after {
+  content: "";
+  position: fixed;
+  top: 60px; /* Positioned directly under the 60px header */
+  left: 0;
+  right: 0;
+  height: 24px; /* Creates the padding gap below header line */
+  background: var(--bg-color);
+  z-index: 140; /* Under header content and table header, but above table rows */
+  pointer-events: none;
 }
 
 .headerCenter {
@@ -37,14 +66,39 @@
   align-items: center;
 }
 
+.titleWrapper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.logoIcon {
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+  animation: floatLogo 3s ease-in-out infinite;
+}
+
+@keyframes floatLogo {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-2px);
+  }
+}
+
 .header h1 {
   font-size: 1.2rem;
   font-weight: 700;
-  background: linear-gradient(135deg, #60a5fa, #a78bfa);
+  background: linear-gradient(135deg, #00b0f0, #008cbe);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   white-space: nowrap;
   flex-shrink: 0;
+  margin: 0;
 }
 
 .btn {
@@ -195,22 +249,45 @@
   }
 }
 
-/* --- Main Layout: sidebar + content --- */
-.mainLayout {
-  display: flex;
-  gap: 24px;
-  align-items: flex-start;
-  width: 100%;
-  /* This is the flex container — no overflow set here so children can stick */
+.tabsContainer {
+  position: fixed;
+  left: calc(
+    50vw - 600px - 58px
+  ); /* Float exactly next to the 1200px app container wrapper */
+  top: 95px;
+  z-index: 150;
 }
 
-.sidebar {
-  flex-shrink: 0;
-  position: sticky;
-  /* Header height (~71px) + layout margin (24px) = 95px */
-  top: 95px;
-  z-index: 50;
-  align-self: flex-start;
+@media (max-width: 1320px) {
+  .tabsContainer {
+    left: 12px; /* Stay anchored to the screen edge if screen is too narrow */
+  }
+}
+
+@media (max-width: 768px) {
+  .appContainer {
+    padding: 72px 12px 12px; /* 12px horizontal padding for unified full-width look on med/small screens */
+  }
+  .header::before {
+    left: 12px;
+    right: 12px;
+  }
+  .header::after {
+    display: none;
+  }
+  .tabsContainer {
+    position: sticky;
+    top: 60px; /* Sit flush under fixed .header during scroll */
+    left: auto;
+    z-index: 150;
+    margin-bottom: 12px; /* Reduced from 16px to unify spacing */
+    background: var(
+      --bg-color
+    ); /* Matches background to prevent rendering overlapping artifacts */
+    padding: 4px 0; /* Unified top and bottom padding to 4px */
+    width: 100%;
+    box-sizing: border-box;
+  }
 }
 
 .contentArea {
@@ -219,19 +296,20 @@
   flex-direction: column;
   gap: 24px;
   min-width: 0;
-  --table-header-top: 71px;
+  margin-left: 94px; /* Space adjusted for the new 78px width of floating tabs */
+  --table-header-top: 84px; /* 60px header + 24px gap */
 }
 
 @media (max-width: 768px) {
-  .mainLayout {
-    flex-direction: column;
-    gap: 20px;
-    align-items: stretch;
+  .contentArea {
+    margin-left: 0;
+    --table-header-top: 104px; /* Adjusted offset for unified 4px padding (with sub-pixel overlap) */
   }
+}
 
-  .sidebar {
-    position: sticky;
-    top: 95px;
+@media (max-width: 600px) {
+  .contentArea {
+    --table-header-top: 144px; /* Adjusted offset for unified 4px padding on 2-row grid */
   }
 }
 
@@ -300,46 +378,28 @@
 
 @media (max-width: 600px) {
   .header {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 12px;
+    flex-wrap: nowrap; /* Prevent columns from wrapping and collapsing */
+    gap: 8px;
+    padding: 12px 12px;
   }
   .header h1 {
-    font-size: 1.1rem;
-    white-space: normal;
-    text-align: center;
+    font-size: 0.95rem;
+    white-space: nowrap;
+    text-align: left;
   }
   .headerCenter {
-    order: 3;
-    margin: 0;
-    width: 100%;
+    margin: 0 8px;
     justify-content: center;
   }
   .headerRight {
-    order: 2;
-    width: 100%;
-    justify-content: center;
+    width: auto;
+    justify-content: flex-end;
   }
   .headerRight .btn {
-    width: 100%;
+    width: auto;
+    padding: 8px 12px;
+    font-size: 0.8rem;
   }
 }
 
-.btnTextShort {
-  display: none;
-}
-.btnTextLong {
-  display: inline;
-}
-
-@media (max-width: 480px) {
-  .appContainer {
-    padding: 0 12px 12px;
-  }
-  .btnTextLong {
-    display: none;
-  }
-  .btnTextShort {
-    display: inline;
-  }
-}
+/* Removed max-width: 480px appContainer padding override as it is inherited from max-width: 768px */

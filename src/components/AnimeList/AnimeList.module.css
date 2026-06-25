@@ -1,9 +1,0 @@
-.emptyState {
-  text-align: center;
-  color: var(--text-muted);
-  padding: 48px;
-  background-color: var(--panel-bg);
-  border-radius: var(--radius);
-  border: 1px dashed var(--border);
-  font-size: 0.95rem;
-}

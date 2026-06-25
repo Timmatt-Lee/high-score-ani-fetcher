@@ -3,7 +3,7 @@ import { useAnimeData } from "./hooks/useAnimeData";
 import { useAnimeScanner } from "./hooks/useAnimeScanner";
 import { type AnimeItem } from "./services/animeScanner";
 import { useSettings } from "./hooks/useSettings";
-import { AnimeList } from "./components/AnimeList";
+import { AnimeTable } from "./components/AnimeTable";
 import { ProgressBar } from "./components/ProgressBar";
 import { Tabs, Tab } from "./components/Tabs";
 import { ResultBanner } from "./components/ResultBanner";
@@ -104,7 +104,10 @@ function App() {
   return (
     <div className={styles.appContainer} data-testid="app-container">
       <div className={styles.header}>
-        <h1>巴哈姆特動漫瘋 Scanner</h1>
+        <div className={styles.titleWrapper}>
+          <img src="/icon.png" alt="Logo" className={styles.logoIcon} />
+          <h1>巴哈動畫評分</h1>
+        </div>
 
         <div className={styles.headerCenter}>
           {isScanning ? (
@@ -134,8 +137,6 @@ function App() {
               disabled={!isScanning}
               aria-label="Stop Scan"
               title="Stop Scan"
-              data-tooltip="Stop Scan"
-              data-tooltip-dir="bottom"
             >
               <StopIcon width="16" height="16" />
             </button>
@@ -147,70 +148,69 @@ function App() {
               }
               disabled={isScanning}
               title="Start scanning anime list from Bahamut"
-              data-tooltip="Start scanning anime list from Bahamut"
-              data-tooltip-dir="bottom"
             >
-              <span className={styles.btnTextLong}>Scan 巴哈姆特動漫瘋</span>
-              <span className={styles.btnTextShort}>Scan</span>
+              Scan
             </button>
           )}
         </div>
       </div>
-      <div className={styles.mainLayout}>
-        <div className={styles.sidebar}>
-          <Tabs
-            activeTab={activeTab}
-            setActiveTab={setActiveTab}
-            searchCount={displayedSearchList.length}
-            favoritesCount={favoriteList.length}
-            trashCount={trashList.length}
+      <div className={styles.tabsContainer}>
+        <Tabs
+          activeTab={activeTab}
+          setActiveTab={setActiveTab}
+          searchCount={displayedSearchList.length}
+          favoritesCount={favoriteList.length}
+          trashCount={trashList.length}
+        />
+      </div>
+
+      <div className={styles.contentArea}>
+        {error && (
+          <div
+            className={styles.fatalErrorContainer}
+            data-testid="fatal-error-container"
+          >
+            <ErrorCard error={error} onDismiss={clearError} />
+          </div>
+        )}
+
+        {activeTab === Tab.Settings ? (
+          <SettingsTab
+            settings={settings}
+            onSave={saveSettings}
+            searchList={searchList}
+            favoriteList={favoriteList}
+            trashList={trashList}
+            onImportData={({
+              searchList: s,
+              favoriteList: f,
+              trashList: t,
+            }) => {
+              setSearchList(s);
+              setFavoriteList(f);
+              setTrashList(t);
+              saveData(s, f, t);
+            }}
           />
-        </div>
-
-        <div className={styles.contentArea}>
-          {error && (
-            <div
-              className={styles.fatalErrorContainer}
-              data-testid="fatal-error-container"
-            >
-              <ErrorCard error={error} onDismiss={clearError} />
-            </div>
-          )}
-
-          {activeTab === Tab.Settings ? (
-            <SettingsTab
-              settings={settings}
-              onSave={saveSettings}
-              searchList={searchList}
-              favoriteList={favoriteList}
-              trashList={trashList}
-              onImportData={({
-                searchList: s,
-                favoriteList: f,
-                trashList: t,
-              }) => {
-                setSearchList(s);
-                setFavoriteList(f);
-                setTrashList(t);
-                saveData(s, f, t);
-              }}
-            />
-          ) : (
-            <AnimeList
-              activeTab={activeTab}
-              searchList={getSortedList(displayedSearchList)}
-              favoriteList={getSortedList(favoriteList)}
-              trashList={getSortedList(trashList)}
-              onMoveToFavorites={moveToFavorites}
-              onMoveToTrash={moveToTrash}
-              onRestoreFromTrash={restoreFromTrash}
-              sortBy={sortBy}
-              sortOrder={sortOrder}
-              onSort={handleSort}
-              targetScore={settings.targetScore}
-            />
-          )}
-        </div>
+        ) : (
+          <AnimeTable
+            activeTab={activeTab}
+            list={getSortedList(
+              activeTab === Tab.Search
+                ? displayedSearchList
+                : activeTab === Tab.Favorites
+                  ? favoriteList
+                  : trashList,
+            )}
+            onMoveToFavorites={moveToFavorites}
+            onMoveToTrash={moveToTrash}
+            onRestoreFromTrash={restoreFromTrash}
+            sortBy={sortBy}
+            sortOrder={sortOrder}
+            onSort={handleSort}
+            targetScore={settings.targetScore}
+          />
+        )}
       </div>
     </div>
   );

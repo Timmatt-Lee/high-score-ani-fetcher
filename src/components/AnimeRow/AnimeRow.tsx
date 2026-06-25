@@ -43,7 +43,6 @@ export function AnimeRow({
               disabled={isDisabled}
               aria-label="Add to Favorites"
               title="Add to Favorites"
-              data-tooltip="Add to Favorites"
             >
               <HeartIcon width="18" height="18" />
             </button>
@@ -53,7 +52,6 @@ export function AnimeRow({
               disabled={isDisabled}
               aria-label="Move to Trash"
               title="Move to Trash"
-              data-tooltip="Move to Trash"
             >
               <TrashIcon width="18" height="18" />
             </button>
@@ -67,7 +65,6 @@ export function AnimeRow({
             disabled={isDisabled}
             aria-label="Move to Trash"
             title="Move to Trash"
-            data-tooltip="Move to Trash"
           >
             <TrashIcon width="18" height="18" />
           </button>
@@ -80,7 +77,6 @@ export function AnimeRow({
             onClick={() => onRestoreFromTrash(item)}
             aria-label="Restore to Favorites"
             title="Restore to Favorites"
-            data-tooltip="Restore to Favorites"
           >
             <HeartIcon width="18" height="18" />
           </button>

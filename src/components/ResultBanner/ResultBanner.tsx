@@ -37,7 +37,6 @@ export function ResultBanner({
             onMouseLeave={() => setHoveredChip(null)}
             data-testid="chip-success"
             title="Total successfully scanned anime"
-            data-tooltip="Total successfully scanned anime"
           >
             <span className={styles.icon}>✓</span>
             <span className={styles.label}>
@@ -53,7 +52,6 @@ export function ResultBanner({
             onMouseLeave={() => setHoveredChip(null)}
             data-testid="chip-added"
             title="Newly added anime to the list"
-            data-tooltip="Newly added anime to the list"
           >
             <span className={styles.icon}>+</span>
             <span className={styles.label}>
@@ -69,7 +67,6 @@ export function ResultBanner({
             onMouseLeave={() => setHoveredChip(null)}
             data-testid="chip-updated"
             title="Existing anime updated with fresh details"
-            data-tooltip="Existing anime updated with fresh details"
           >
             <span className={styles.icon}>✎</span>
             <span className={styles.label}>
@@ -90,7 +87,6 @@ export function ResultBanner({
             onMouseLeave={() => setHoveredChip(null)}
             data-testid="chip-skip"
             title="Skipped anime with valid cached details"
-            data-tooltip="Skipped anime with valid cached details"
           >
             <span className={styles.icon}>⧗</span>
             <span className={styles.label}>
@@ -111,7 +107,6 @@ export function ResultBanner({
             onMouseLeave={() => setHoveredChip(null)}
             data-testid="chip-fail"
             title="Failed requests or parser errors"
-            data-tooltip="Failed requests or parser errors"
           >
             <span className={styles.icon}>⚠</span>
             <span className={styles.label}>
@@ -127,8 +122,6 @@ export function ResultBanner({
           onClick={onDismiss}
           aria-label="Dismiss scan results"
           title="Dismiss Results"
-          data-tooltip="Dismiss Results"
-          data-tooltip-dir="bottom"
         >
           ✕
         </button>

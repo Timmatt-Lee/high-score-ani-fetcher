@@ -13,9 +13,12 @@ describe("Tabs", () => {
         trashCount={1}
       />,
     );
-    expect(screen.getByText("Results (5)")).toBeDefined();
-    expect(screen.getByText("Favorites (2)")).toBeDefined();
-    expect(screen.getByText("Trash (1)")).toBeDefined();
+    expect(screen.getByText("Results")).toBeDefined();
+    expect(screen.getByText("(5)")).toBeDefined();
+    expect(screen.getByText("Favorites")).toBeDefined();
+    expect(screen.getByText("(2)")).toBeDefined();
+    expect(screen.getByText("Trash")).toBeDefined();
+    expect(screen.getByText("(1)")).toBeDefined();
   });
 
   it("calls setActiveTab when clicked", () => {
@@ -29,13 +32,13 @@ describe("Tabs", () => {
         trashCount={1}
       />,
     );
-    fireEvent.click(screen.getByText("Favorites (2)"));
+    fireEvent.click(screen.getByText("Favorites"));
     expect(setActiveTab).toHaveBeenCalledWith(Tab.Favorites);
 
-    fireEvent.click(screen.getByText("Results (5)"));
+    fireEvent.click(screen.getByText("Results"));
     expect(setActiveTab).toHaveBeenCalledWith(Tab.Search);
 
-    fireEvent.click(screen.getByText("Trash (1)"));
+    fireEvent.click(screen.getByText("Trash"));
     expect(setActiveTab).toHaveBeenCalledWith(Tab.Trash);
   });
 

@@ -2,12 +2,24 @@
   display: flex;
   flex-direction: column;
   gap: 6px;
-  background: rgba(30, 41, 59, 0.6);
+  background: var(--panel-bg);
   border: 1px solid var(--border);
   padding: 6px;
   border-radius: 16px;
-  backdrop-filter: blur(12px);
-  width: 200px;
+  width: 78px; /* Expand to comfortably show both icon + (count) in collapsed state */
+  transition:
+    width 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+    box-shadow 0.3s ease;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+.tabs:hover {
+  width: 178px; /* Expands smoothly on hover to show full names */
+  box-shadow:
+    0 10px 30px rgba(0, 0, 0, 0.4),
+    0 0 0 1px rgba(255, 255, 255, 0.05);
 }
 
 .tab {
@@ -17,15 +29,50 @@
   font-size: 0.85rem;
   font-weight: 600;
   cursor: pointer;
-  padding: 10px 16px;
+  padding: 10px;
   border-radius: 10px;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   white-space: nowrap;
   text-align: left;
-  width: 100%;
   display: flex;
   align-items: center;
-  gap: 8px;
+  justify-content: flex-start;
+  width: 100%; /* Change to 100% to match container constraints exactly without clipping */
+  box-sizing: border-box;
+  gap: 0px;
+}
+
+.tabIcon {
+  flex-shrink: 0;
+}
+
+.tabText {
+  max-width: 0;
+  opacity: 0;
+  overflow: hidden;
+  transition:
+    max-width 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+    opacity 0.2s ease,
+    margin 0.2s ease;
+  margin-left: 0;
+}
+
+.tabCount {
+  font-size: 0.75rem;
+  color: var(--accent);
+  transition: all 0.25s ease;
+  margin-left: auto; /* Push count badge to the right when expanded, keep it neat next to icon when collapsed */
+}
+
+/* Expand tab details when the tabs container is hovered */
+.tabs:hover .tabText {
+  max-width: 120px;
+  opacity: 1;
+  margin-left: 8px;
+}
+
+.tabs:hover .tabCount {
+  margin-left: 4px; /* Align normally next to text when expanded */
 }
 
 .tab:hover {
@@ -37,6 +84,10 @@
   background: var(--accent);
   color: #ffffff;
   box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+.tab.active .tabCount {
+  color: #ffffff;
 }
 
 .tab.hasErrors {
@@ -53,16 +104,29 @@
   .tabs {
     flex-direction: row;
     border-radius: 100px;
-    width: auto;
+    width: 100%;
     padding: 4px;
-    align-self: flex-start;
   }
 
   .tab {
     border-radius: 100px;
     justify-content: center;
-    width: auto;
+    flex: 1;
     padding: 8px 16px;
+  }
+
+  .tabText {
+    max-width: none;
+    opacity: 1;
+    margin-left: 6px;
+  }
+
+  .tabCount {
+    margin-left: 4px !important;
+  }
+
+  .tab:hover {
+    padding-right: 16px;
   }
 }
 
@@ -82,5 +146,19 @@
     width: auto;
     padding: 8px 12px;
     font-size: 0.8rem;
+  }
+
+  .tabText {
+    max-width: none;
+    opacity: 1;
+    margin-left: 4px;
+  }
+
+  .tabCount {
+    margin-left: 4px !important;
+  }
+
+  .tab:hover {
+    padding-right: 12px;
   }
 }

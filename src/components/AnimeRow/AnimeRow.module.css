@@ -1,6 +1,6 @@
 .animeRow {
   display: grid;
-  grid-template-columns: var(--grid-cols, 1fr 100px 100px 100px 100px 120px);
+  grid-template-columns: var(--grid-cols);
   align-items: center;
   padding: 0;
   border-bottom: 1px solid var(--border);
@@ -10,6 +10,12 @@
 
 .animeRow:hover {
   background-color: rgba(255, 255, 255, 0.02);
+}
+
+.animeRow:last-child {
+  border-bottom: none;
+  border-bottom-left-radius: 11px;
+  border-bottom-right-radius: 11px;
 }
 
 .titleCell {
@@ -131,4 +137,34 @@
   border-color: var(--danger);
   transform: scale(1.08);
   box-shadow: 0 0 8px rgba(239, 68, 68, 0.3);
+}
+
+@media (max-width: 768px) {
+  .yearCell {
+    display: none;
+  }
+}
+
+@media (max-width: 600px) {
+  .episodesCell {
+    display: none;
+  }
+  .titleCell,
+  .scoreCell,
+  .viewsCell,
+  .actionsCell {
+    padding: 8px 4px;
+    font-size: 0.75rem;
+  }
+  .actionBtn {
+    width: 28px;
+    height: 28px;
+  }
+  .rowActions {
+    gap: 4px;
+  }
+  .scoreBadge {
+    padding: 2px 4px;
+    font-size: 0.7rem;
+  }
 }

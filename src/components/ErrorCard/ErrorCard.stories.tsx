@@ -1,5 +1,4 @@
 import type { Meta, StoryObj } from "@storybook/react";
-import { within } from "@storybook/test";
 import { ErrorCard } from "./ErrorCard";
 import {
   AnimeScanHttpError,
@@ -95,28 +94,5 @@ export const WithCopiedState: Story = {
     if (copyBtn) {
       (copyBtn as HTMLButtonElement).click();
     }
-  },
-};
-
-export const HoverCopyTooltip: Story = {
-  args: {
-    error: new Error("Test error"),
-  },
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement);
-    const copyBtn = await canvas.findByTestId("error-card-copy-btn");
-    copyBtn.classList.add("forceTooltip");
-  },
-};
-
-export const HoverDismissTooltip: Story = {
-  args: {
-    error: new Error("Test error"),
-    onDismiss: () => {},
-  },
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement);
-    const dismissBtn = await canvas.findByTestId("error-card-dismiss-btn");
-    dismissBtn.classList.add("forceTooltip");
   },
 };

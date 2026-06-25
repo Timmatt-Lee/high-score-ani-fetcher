@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "巴哈姆特動漫瘋 Scanner",
+  "name": "巴哈動畫評分",
   "version": "1.0.0",
   "description": "Fetch and filter high score anime from 巴哈姆特動漫瘋.",
   "icons": {

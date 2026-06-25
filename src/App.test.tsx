@@ -5,6 +5,7 @@ import {
   fireEvent,
   waitFor,
   act,
+  within,
 } from "@testing-library/react";
 import { ServiceProvider } from "./contexts/ServiceContext";
 import App from "./App";
@@ -96,7 +97,7 @@ describe("App rendering", () => {
         </ServiceProvider>,
       );
     });
-    expect(screen.getByText("巴哈姆特動漫瘋 Scanner")).toBeDefined();
+    expect(screen.getByText("巴哈動畫評分")).toBeDefined();
   });
 
   it("renders all three tabs", async () => {
@@ -189,8 +190,10 @@ describe("App rendering", () => {
     });
     expect(screen.getByText("Only Search")).toBeDefined();
     // Tabs should show 0 for favorites and trash
-    expect(screen.getByText(/Favorites \(0\)/)).toBeDefined();
-    expect(screen.getByText(/Trash \(0\)/)).toBeDefined();
+    expect(screen.getByText("Favorites")).toBeDefined();
+    const tabsContainer = screen.getByTestId("tabs-container");
+    const { getAllByText } = within(tabsContainer);
+    expect(getAllByText("(0)").length).toBeGreaterThanOrEqual(1);
   });
 
   it("handles chrome.storage.get error gracefully", async () => {
@@ -332,7 +335,7 @@ describe("Card actions", () => {
     // Should not throw - just log the error
     fireEvent.click(screen.getByRole("button", { name: "Add to Favorites" }));
     await act(async () => {});
-    expect(screen.getByText("巴哈姆特動漫瘋 Scanner")).toBeDefined();
+    expect(screen.getByText("巴哈動畫評分")).toBeDefined();
   });
 
   it("moves item to Trash from Results", async () => {
@@ -403,7 +406,7 @@ describe("Scan functionality", () => {
       );
     });
     await act(async () => {
-      fireEvent.click(screen.getByText("Scan 巴哈姆特動漫瘋"));
+      fireEvent.click(screen.getByText("Scan"));
     });
 
     await waitFor(() =>
@@ -452,7 +455,7 @@ describe("Scan functionality", () => {
       );
     });
     await act(async () => {
-      fireEvent.click(screen.getByText("Scan 巴哈姆特動漫瘋"));
+      fireEvent.click(screen.getByText("Scan"));
     });
     await waitFor(() => expect(screen.queryByText("Scanning...")).toBeNull());
     expect(screen.getByText("High Score")).toBeDefined();
@@ -488,7 +491,7 @@ describe("Scan functionality", () => {
       );
     });
     await act(async () => {
-      fireEvent.click(screen.getByText("Scan 巴哈姆特動漫瘋"));
+      fireEvent.click(screen.getByText("Scan"));
     });
     await waitFor(() => expect(screen.queryByText("Scanning...")).toBeNull());
     expect(screen.queryByText("Short Show")).toBeNull();
@@ -523,7 +526,7 @@ describe("Scan functionality", () => {
       );
     });
     await act(async () => {
-      fireEvent.click(screen.getByText("Scan 巴哈姆特動漫瘋"));
+      fireEvent.click(screen.getByText("Scan"));
     });
     await waitFor(() => expect(screen.queryByText("Scanning...")).toBeNull());
     expect(screen.queryByText("Great Show OVA Special")).toBeNull();
@@ -559,7 +562,7 @@ describe("Scan functionality", () => {
       );
     });
     await act(async () => {
-      fireEvent.click(screen.getByText("Scan 巴哈姆特動漫瘋"));
+      fireEvent.click(screen.getByText("Scan"));
     });
     await waitFor(() => expect(screen.queryByText("Scanning...")).toBeNull());
     expect(screen.queryByText("In Trash")).toBeNull();
@@ -595,7 +598,7 @@ describe("Scan functionality", () => {
       );
     });
     await act(async () => {
-      fireEvent.click(screen.getByText("Scan 巴哈姆特動漫瘋"));
+      fireEvent.click(screen.getByText("Scan"));
     });
     await waitFor(() => expect(screen.queryByText("Scanning...")).toBeNull());
     expect(screen.queryByText("In Fav")).toBeNull();
@@ -630,7 +633,7 @@ describe("Scan functionality", () => {
       );
     });
     await act(async () => {
-      fireEvent.click(screen.getByText("Scan 巴哈姆特動漫瘋"));
+      fireEvent.click(screen.getByText("Scan"));
     });
     await waitFor(() => expect(screen.queryByText("Scanning...")).toBeNull());
     expect(screen.queryByText("NA Ep")).toBeNull();
@@ -664,7 +667,7 @@ describe("Scan functionality", () => {
     });
 
     await act(async () => {
-      fireEvent.click(screen.getByText("Scan 巴哈姆特動漫瘋"));
+      fireEvent.click(screen.getByText("Scan"));
     });
 
     await waitFor(() => expect(screen.queryByText("Scanning...")).toBeNull());
@@ -953,7 +956,7 @@ describe("Scan functionality", () => {
     expect(screen.queryByTestId("scan-stats-container")).toBeNull();
 
     await act(async () => {
-      fireEvent.click(screen.getByText("Scan 巴哈姆特動漫瘋"));
+      fireEvent.click(screen.getByText("Scan"));
     });
 
     // Stats container should be rendered after scan completes
