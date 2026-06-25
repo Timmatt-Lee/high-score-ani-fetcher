@@ -110,9 +110,7 @@ describe("useAnimeScanner", () => {
     await act(async () => {
       subject.next(new AnimeScanPageEvent(2, 5));
     });
-    expect(result.current.progress.message).toBe(
-      "Fetching list pages (2/5)...",
-    );
+    expect(result.current.progress.message).toBe("Loading anime index (2/5)");
 
     await act(async () => {
       subject.complete();

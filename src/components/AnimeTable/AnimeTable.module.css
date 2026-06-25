@@ -54,7 +54,7 @@
   border: 1px solid var(--border);
   margin: -1px -1px 0 -1px;
   position: sticky;
-  top: var(--table-header-top, 0px);
+  top: var(--table-header-top, 60px);
   z-index: 160;
   background: var(--panel-bg);
   padding: 0;

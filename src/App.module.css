@@ -39,12 +39,13 @@
   z-index: 201;
 }
 
-.header::after {
-  content: "";
+.headerSpacer {
   position: fixed;
   top: 60px; /* Positioned directly under the 60px header */
-  left: 0;
-  right: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 1200px;
   height: 24px; /* Creates the padding gap below header line */
   background: var(--bg-color);
   z-index: 140; /* Under header content and table header, but above table rows */
@@ -256,7 +257,7 @@
   gap: 24px;
   min-width: 0;
   margin-left: 0;
-  --table-header-top: 60px; /* Sits flush under fixed 60px header */
+  --table-header-top: 84px; /* Leaves 24px gap under fixed 60px header */
 }
 
 @media (max-width: 768px) {
@@ -267,8 +268,18 @@
     left: 12px;
     right: 12px;
   }
-  .header::after {
+}
+
+@media (max-width: 600px) {
+  .header h1 {
     display: none;
+  }
+  .headerCenter {
+    margin: 0 4px;
+  }
+  .header {
+    padding: 0 12px;
+    gap: 8px;
   }
 }
 
@@ -280,60 +291,43 @@
   z-index: 500;
   display: flex;
   align-items: center;
-  gap: 8px;
   background: rgba(22, 27, 38, 0.9);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   border: 1px solid var(--border);
   border-radius: 20px;
-  padding: 6px 16px 6px 6px;
+  padding: 8px 16px;
   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
-  cursor: default;
+  cursor: grab;
   transition:
     box-shadow 0.2s ease,
     border-color 0.2s ease;
   user-select: none;
+  width: auto;
+  box-sizing: border-box;
 }
 
 .floatingStatusContainer:active {
+  cursor: grabbing;
   box-shadow: 0 16px 48px rgba(0, 0, 0, 0.7);
   border-color: var(--accent);
-}
-
-.dragHandle {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  gap: 3px;
-  cursor: grab;
-  padding: 6px 8px;
-  color: var(--text-muted);
-  flex-shrink: 0;
-}
-
-.dragHandle:active {
-  cursor: grabbing;
-  color: var(--accent);
-}
-
-.dragDotRow {
-  display: flex;
-  gap: 3px;
-}
-
-.dragDot {
-  width: 3px;
-  height: 3px;
-  background-color: currentColor;
-  border-radius: 50%;
 }
 
 .floatingContent {
   display: flex;
   align-items: center;
-  gap: 12px;
+  justify-content: center;
   min-width: 0;
+}
+
+.bannerOverride {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  height: auto !important;
 }
 
 .inlineStats {

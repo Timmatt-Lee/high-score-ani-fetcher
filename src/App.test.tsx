@@ -974,7 +974,8 @@ describe("Scan functionality", () => {
     expect(screen.queryByTestId("scan-stats-container")).toBeNull();
   });
 
-  it("supports dragging the floating status bar to a new position", async () => {
+  it("supports dragging the floating status bar to a new position, but ignores dragging when clicking buttons", async () => {
+    vi.spyOn(animeScraper, "getTotalPages").mockResolvedValue(1);
     const subject = new Subject<AnimeScanEvent>();
     vi.spyOn(AnimeScanner.prototype, "scan").mockReturnValue(subject);
 
@@ -991,26 +992,41 @@ describe("Scan functionality", () => {
       fireEvent.click(screen.getByText("Scan"));
     });
 
-    const dragHandle = screen.getByTestId("floating-status-drag-handle");
+    // Wait for the scanning progress container to appear
+    await waitFor(() => {
+      expect(screen.getByTestId("progress-container")).toBeDefined();
+    });
+
     const floatingBar = screen.getByTestId("floating-status-bar");
 
-    // Simulate drag start on the handle
-    fireEvent.mouseDown(dragHandle, { clientX: 100, clientY: 200 });
-
-    // Simulate mouse move on document level
+    // 1. Verify dragging works when clicking container itself
+    fireEvent.mouseDown(floatingBar, { clientX: 100, clientY: 200 });
     fireEvent.mouseMove(document, { clientX: 150, clientY: 280 });
-
-    // The transform style should reflect translate offset change:
-    // dragOffset.x = 150 - 100 = 50px, dragOffset.y = 280 - 200 = 80px
     expect(floatingBar.style.transform).toContain("50px");
     expect(floatingBar.style.transform).toContain("80px");
-
-    // Simulate mouse up on document level to end drag
     fireEvent.mouseUp(document);
 
-    // Move mouse again after mouseUp, coordinates should not change further
-    fireEvent.mouseMove(document, { clientX: 200, clientY: 400 });
+    // 2. Complete the scan so the ResultBanner (with the dismiss button) is shown inside the floating container
+    await act(async () => {
+      subject.complete();
+    });
+
+    // Wait for ResultBanner to render
+    await waitFor(() => {
+      expect(screen.getByTestId("scan-stats-container")).toBeDefined();
+    });
+
+    const dismissButton = screen.getByRole("button", {
+      name: /Dismiss scan results/i,
+    });
+
+    // Simulate mousedown on the dismiss button inside the floating container
+    fireEvent.mouseDown(dismissButton, { clientX: 150, clientY: 280 });
+    fireEvent.mouseMove(document, { clientX: 250, clientY: 380 });
+
+    // Position should NOT change (should still be 50px, 80px)
     expect(floatingBar.style.transform).toContain("50px");
     expect(floatingBar.style.transform).toContain("80px");
+    fireEvent.mouseUp(document);
   });
 });

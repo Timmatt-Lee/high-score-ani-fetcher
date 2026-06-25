@@ -8,6 +8,7 @@ interface ResultBannerProps {
   skippedCachedCount: number;
   failedCount: number;
   onDismiss?: () => void;
+  className?: string;
 }
 
 type HoverableChip = "success" | "added" | "updated" | "skip" | "fail" | null;
@@ -19,13 +20,17 @@ export function ResultBanner({
   skippedCachedCount,
   failedCount,
   onDismiss,
+  className,
 }: ResultBannerProps) {
   const [hoveredChip, setHoveredChip] = useState<HoverableChip>(null);
 
-  // Helper to check if a chip is expanded (either directly hovered, or no chip is hovered and it defaults to compact)
   const isExpanded = (chip: HoverableChip) => hoveredChip === chip;
+
   return (
-    <div className={styles.bannerContainer} data-testid="scan-stats-container">
+    <div
+      className={`${styles.bannerContainer} ${className || ""}`}
+      data-testid="scan-stats-container"
+    >
       <div className={styles.bannerContent}>
         {/* Success Group (Success, Added, Updated) */}
         <div className={styles.group} data-group="success">
@@ -39,9 +44,8 @@ export function ResultBanner({
             title="Total successfully scanned anime"
           >
             <span className={styles.icon}>✓</span>
-            <span className={styles.label}>
-              {isExpanded("success") ? `success ${successCount}` : successCount}
-            </span>
+            <span className={styles.chipText}>success</span>
+            <span className={styles.count}>{successCount}</span>
           </div>
 
           <div
@@ -54,9 +58,8 @@ export function ResultBanner({
             title="Newly added anime to the list"
           >
             <span className={styles.icon}>+</span>
-            <span className={styles.label}>
-              {isExpanded("added") ? `new ${addedCount}` : addedCount}
-            </span>
+            <span className={styles.chipText}>new</span>
+            <span className={styles.count}>{addedCount}</span>
           </div>
 
           <div
@@ -69,11 +72,8 @@ export function ResultBanner({
             title="Existing anime updated with fresh details"
           >
             <span className={styles.icon}>✎</span>
-            <span className={styles.label}>
-              {isExpanded("updated")
-                ? `update ${refetchedCount}`
-                : refetchedCount}
-            </span>
+            <span className={styles.chipText}>update</span>
+            <span className={styles.count}>{refetchedCount}</span>
           </div>
         </div>
 
@@ -89,11 +89,8 @@ export function ResultBanner({
             title="Skipped anime with valid cached details"
           >
             <span className={styles.icon}>⧗</span>
-            <span className={styles.label}>
-              {isExpanded("skip")
-                ? `skip ${skippedCachedCount}`
-                : skippedCachedCount}
-            </span>
+            <span className={styles.chipText}>skip</span>
+            <span className={styles.count}>{skippedCachedCount}</span>
           </div>
         </div>
 
@@ -109,9 +106,8 @@ export function ResultBanner({
             title="Failed requests or parser errors"
           >
             <span className={styles.icon}>⚠</span>
-            <span className={styles.label}>
-              {isExpanded("fail") ? `fail ${failedCount}` : failedCount}
-            </span>
+            <span className={styles.chipText}>fail</span>
+            <span className={styles.count}>{failedCount}</span>
           </div>
         </div>
       </div>

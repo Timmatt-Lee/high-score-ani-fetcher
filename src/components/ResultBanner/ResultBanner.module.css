@@ -121,11 +121,32 @@
   transform: scale(0.95);
 }
 
+.chipText {
+  max-width: 0;
+  opacity: 0;
+  overflow: hidden;
+  transition:
+    max-width 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+    opacity 0.2s ease,
+    margin-right 0.25s ease;
+  display: inline-block;
+  white-space: nowrap;
+  font-size: 0.8rem;
+  line-height: 1;
+}
+
+.chip:hover .chipText,
+.chip.expanded .chipText {
+  max-width: 80px;
+  opacity: 1;
+  margin-right: 4px;
+}
+
 .icon {
   font-size: 0.95rem;
 }
 
-.label {
+.count {
   white-space: nowrap;
 }
 

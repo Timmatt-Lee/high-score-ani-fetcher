@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useAnimeData } from "./hooks/useAnimeData";
 import { useAnimeScanner } from "./hooks/useAnimeScanner";
 import { type AnimeItem } from "./services/animeScanner";
@@ -21,19 +21,34 @@ function App() {
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
 
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+  const dragOffsetRef = useRef({ x: 0, y: 0 });
+  const floatingBarRef = useRef<HTMLDivElement | null>(null);
 
   const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
-    const startX = e.clientX - dragOffset.x;
-    const startY = e.clientY - dragOffset.y;
+    // If the click is on a button or inside a button, do not drag
+    if ((e.target as HTMLElement).closest("button")) {
+      return;
+    }
+    const container = floatingBarRef.current;
+    /* v8 ignore next 3 */
+    if (!container) {
+      return;
+    }
+
+    const startX = e.clientX - dragOffsetRef.current.x;
+    const startY = e.clientY - dragOffsetRef.current.y;
+    let currentX = dragOffsetRef.current.x;
+    let currentY = dragOffsetRef.current.y;
 
     const handleMouseMove = (moveEvent: MouseEvent) => {
-      setDragOffset({
-        x: moveEvent.clientX - startX,
-        y: moveEvent.clientY - startY,
-      });
+      currentX = moveEvent.clientX - startX;
+      currentY = moveEvent.clientY - startY;
+      container.style.transform = `translate(calc(-50% + ${currentX}px), ${currentY}px)`;
     };
 
     const handleMouseUp = () => {
+      dragOffsetRef.current = { x: currentX, y: currentY };
+      setDragOffset({ x: currentX, y: currentY });
       document.removeEventListener("mousemove", handleMouseMove);
       document.removeEventListener("mouseup", handleMouseUp);
     };
@@ -125,6 +140,7 @@ function App() {
 
   return (
     <div className={styles.appContainer} data-testid="app-container">
+      <div className={styles.headerSpacer} />
       <div className={styles.header}>
         <div className={styles.titleWrapper}>
           <img src="/icon.png" alt="Logo" className={styles.logoIcon} />
@@ -218,31 +234,14 @@ function App() {
 
       {(isScanning || (scanStats && !isScanning)) && (
         <div
+          ref={floatingBarRef}
           className={styles.floatingStatusContainer}
           style={{
             transform: `translate(calc(-50% + ${dragOffset.x}px), ${dragOffset.y}px)`,
           }}
+          onMouseDown={handleMouseDown}
           data-testid="floating-status-bar"
         >
-          <div
-            className={styles.dragHandle}
-            onMouseDown={handleMouseDown}
-            title="Drag to reposition"
-            data-testid="floating-status-drag-handle"
-          >
-            <div className={styles.dragDotRow}>
-              <span className={styles.dragDot}></span>
-              <span className={styles.dragDot}></span>
-            </div>
-            <div className={styles.dragDotRow}>
-              <span className={styles.dragDot}></span>
-              <span className={styles.dragDot}></span>
-            </div>
-            <div className={styles.dragDotRow}>
-              <span className={styles.dragDot}></span>
-              <span className={styles.dragDot}></span>
-            </div>
-          </div>
           <div className={styles.floatingContent}>
             {isScanning ? (
               <ProgressBar
@@ -258,6 +257,7 @@ function App() {
                   skippedCachedCount={scanStats.skippedCachedCount}
                   failedCount={scanStats.failedCount}
                   onDismiss={() => setScanStats(null)}
+                  className={styles.bannerOverride}
                 />
               )
             )}

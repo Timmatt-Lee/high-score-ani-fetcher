@@ -37,35 +37,36 @@ describe("ResultBanner", () => {
 
     // Hover success chip
     fireEvent.mouseEnter(successChip);
-    expect(screen.getByText("success 15")).toBeDefined();
+    expect(successChip.className).toContain("expanded");
+    expect(screen.getByText("success")).toBeDefined();
+    expect(screen.getByText("15")).toBeDefined();
 
     // Leave success chip
     fireEvent.mouseLeave(successChip);
-    expect(screen.queryByText("success 15")).toBeNull();
-    expect(screen.getByText("15")).toBeDefined();
+    expect(successChip.className).toContain("collapsed");
 
     // Hover added chip
     const addedChip = screen.getByTestId("chip-added");
     fireEvent.mouseEnter(addedChip);
-    expect(screen.getByText("new 10")).toBeDefined();
+    expect(addedChip.className).toContain("expanded");
     fireEvent.mouseLeave(addedChip);
 
     // Hover updated chip
     const updatedChip = screen.getByTestId("chip-updated");
     fireEvent.mouseEnter(updatedChip);
-    expect(screen.getByText("update 5")).toBeDefined();
+    expect(updatedChip.className).toContain("expanded");
     fireEvent.mouseLeave(updatedChip);
 
     // Hover skip chip
     const skipChip = screen.getByTestId("chip-skip");
     fireEvent.mouseEnter(skipChip);
-    expect(screen.getByText("skip 20")).toBeDefined();
+    expect(skipChip.className).toContain("expanded");
     fireEvent.mouseLeave(skipChip);
 
     // Hover fail chip
     const failChip = screen.getByTestId("chip-fail");
     fireEvent.mouseEnter(failChip);
-    expect(screen.getByText("fail 1")).toBeDefined();
+    expect(failChip.className).toContain("expanded");
     fireEvent.mouseLeave(failChip);
   });
 

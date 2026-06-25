@@ -55,6 +55,15 @@ export function useAnimeScanner(
   const handleScan = async (options?: PipelineOptions) => {
     // Reset state before starting a new scan
     setError(null);
+    const isRetry = !!(
+      options &&
+      options.onlyPages &&
+      options.onlyPages.length > 0
+    );
+    setProgress({
+      percent: 0,
+      message: isRetry ? "Retrying anime index" : "Loading anime index",
+    });
     setIsScanning(true);
 
     let skippedCachedCount = 0;
@@ -70,15 +79,9 @@ export function useAnimeScanner(
       failedCount: 0,
     });
 
-    const isRetry = !!(
-      options &&
-      options.onlyPages &&
-      options.onlyPages.length > 0
-    );
     let totalPages = totalPagesCount;
 
     if (!isRetry) {
-      setProgress({ percent: 0, message: "Getting total pages..." });
       try {
         const totalPagesResult = await animeScraper.getTotalPages();
         totalPages = totalPagesResult;
@@ -98,8 +101,6 @@ export function useAnimeScanner(
         });
         return;
       }
-    } else {
-      setProgress({ percent: 0, message: "Retrying failed items..." });
     }
 
     const existingMap = new Map<string, AnimeItem>();
@@ -178,9 +179,9 @@ export function useAnimeScanner(
       const rawPercent = Math.floor(detailsPercent * 99);
       const percent = Math.min(99, rawPercent);
 
-      const msg = `Scanning (${detailsCompletedCount}/${detailsTotalCount})...`;
+      const msg = `Parsing (${detailsCompletedCount}/${detailsTotalCount})`;
       const truncated = currentTitle.slice(0, 30);
-      const finalMsg = `${msg} [${truncated}]`;
+      const finalMsg = `${msg} "${truncated}"`;
       setProgress({ percent, message: finalMsg });
     };
 
@@ -203,11 +204,11 @@ export function useAnimeScanner(
       next: (event) => {
         if (event instanceof AnimeScanPageEvent) {
           const actionPrefix = isRetry
-            ? "Retrying list pages"
-            : "Fetching list pages";
+            ? "Retrying anime index"
+            : "Loading anime index";
           setProgress({
             percent: 0,
-            message: `${actionPrefix} (${event.currentPage}/${event.totalPages})...`,
+            message: `${actionPrefix} (${event.currentPage}/${event.totalPages})`,
           });
         } else if (!(event instanceof Error)) {
           detailsCompletedCount++;

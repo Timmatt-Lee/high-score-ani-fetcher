@@ -2,8 +2,8 @@
   display: flex;
   flex-direction: row;
   gap: 4px;
-  background: rgba(22, 27, 38, 0.4);
-  border: 1px solid var(--border);
+  background: transparent;
+  border: none;
   padding: 4px;
   border-radius: 12px;
   height: 38px;
@@ -57,20 +57,32 @@
 }
 
 .tabCount {
-  font-size: 0.7rem;
-  font-weight: 700;
-  background: rgba(255, 255, 255, 0.1);
+  font-size: 0.8rem;
+  font-weight: 600;
   color: var(--text-muted);
-  padding: 1px 6px;
-  border-radius: 10px;
   margin-left: 4px;
   transition: all 0.2s ease;
-  height: 16px;
-  min-width: 16px;
   display: inline-flex;
   align-items: center;
-  justify-content: center;
   line-height: 1;
+}
+
+.tabCount::before {
+  content: "";
+}
+
+.tabCount::after {
+  content: "";
+}
+
+.tab:hover .tabCount::before,
+.tab.active .tabCount::before {
+  content: "(";
+}
+
+.tab:hover .tabCount::after,
+.tab.active .tabCount::after {
+  content: ")";
 }
 
 .tab:hover {
@@ -79,7 +91,6 @@
 }
 
 .tab:hover .tabCount {
-  background: rgba(255, 255, 255, 0.15);
   color: var(--text-main);
 }
 
@@ -90,7 +101,6 @@
 }
 
 .tab.active .tabCount {
-  background: rgba(255, 255, 255, 0.25);
   color: #ffffff;
 }
 
@@ -112,5 +122,13 @@
     max-width: 0;
     opacity: 0;
     margin-left: 0;
+  }
+
+  /* Also prevent showing parenthesis since text is collapsed */
+  .tab:hover .tabCount::before,
+  .tab.active .tabCount::before,
+  .tab:hover .tabCount::after,
+  .tab.active .tabCount::after {
+    content: "";
   }
 }
