@@ -251,9 +251,15 @@
 
 .tabsContainer {
   position: fixed;
-  bottom: 24px;
-  right: 24px;
+  top: 84px;
+  left: calc(50vw - 600px + 24px);
   z-index: 500;
+}
+
+@media (max-width: 1248px) {
+  .tabsContainer {
+    left: 24px;
+  }
 }
 
 @media (max-width: 768px) {
@@ -269,10 +275,10 @@
   }
   .tabsContainer {
     position: fixed;
-    bottom: 16px;
-    right: 16px;
-    left: auto;
-    top: auto;
+    top: 72px;
+    left: 12px;
+    right: auto;
+    bottom: auto;
     z-index: 500;
     margin-bottom: 0;
     background: transparent;
