@@ -31,35 +31,58 @@ export function Tabs({
         onClick={() => setActiveTab(Tab.Search)}
         title="View scanned anime results"
       >
-        <SearchIcon width="16" height="16" className={styles.tabIcon} />
-        <span className={styles.tabText}>Results</span>
-        <span className={styles.tabCount}>({searchCount})</span>
+        <SearchIcon width="20" height="20" className={styles.tabIcon} />
+        <span className={styles.tabTextContainer}>
+          <span>Results</span>
+          <span>({searchCount})</span>
+        </span>
+        {searchCount > 0 && (
+          <span className={styles.tabBadge} data-testid="tab-badge-search">
+            {searchCount}
+          </span>
+        )}
       </button>
       <button
         className={`${styles.tab} ${activeTab === Tab.Favorites ? styles.active : ""}`}
         onClick={() => setActiveTab(Tab.Favorites)}
         title="View your favorite anime list"
       >
-        <HeartIcon width="16" height="16" className={styles.tabIcon} />
-        <span className={styles.tabText}>Favorites</span>
-        <span className={styles.tabCount}>({favoritesCount})</span>
+        <HeartIcon width="20" height="20" className={styles.tabIcon} />
+        <span className={styles.tabTextContainer}>
+          <span>Favorites</span>
+          <span>({favoritesCount})</span>
+        </span>
+        {favoritesCount > 0 && (
+          <span className={styles.tabBadge} data-testid="tab-badge-favorites">
+            {favoritesCount}
+          </span>
+        )}
       </button>
       <button
         className={`${styles.tab} ${activeTab === Tab.Trash ? styles.active : ""}`}
         onClick={() => setActiveTab(Tab.Trash)}
         title="View trashed anime list"
       >
-        <TrashIcon width="16" height="16" className={styles.tabIcon} />
-        <span className={styles.tabText}>Trash</span>
-        <span className={styles.tabCount}>({trashCount})</span>
+        <TrashIcon width="20" height="20" className={styles.tabIcon} />
+        <span className={styles.tabTextContainer}>
+          <span>Trash</span>
+          <span>({trashCount})</span>
+        </span>
+        {trashCount > 0 && (
+          <span className={styles.tabBadge} data-testid="tab-badge-trash">
+            {trashCount}
+          </span>
+        )}
       </button>
       <button
         className={`${styles.tab} ${activeTab === Tab.Settings ? styles.active : ""}`}
         onClick={() => setActiveTab(Tab.Settings)}
         title="Open scanner configurations"
       >
-        <SettingsIcon width="16" height="16" className={styles.tabIcon} />
-        <span className={styles.tabText}>Settings</span>
+        <SettingsIcon width="20" height="20" className={styles.tabIcon} />
+        <span className={styles.tabTextContainer}>
+          <span>Settings</span>
+        </span>
       </button>
     </div>
   );

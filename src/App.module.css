@@ -251,17 +251,9 @@
 
 .tabsContainer {
   position: fixed;
-  left: calc(
-    50vw - 600px - 58px
-  ); /* Float exactly next to the 1200px app container wrapper */
-  top: 95px;
-  z-index: 150;
-}
-
-@media (max-width: 1320px) {
-  .tabsContainer {
-    left: 12px; /* Stay anchored to the screen edge if screen is too narrow */
-  }
+  bottom: 24px;
+  right: 24px;
+  z-index: 500;
 }
 
 @media (max-width: 768px) {
@@ -276,16 +268,16 @@
     display: none;
   }
   .tabsContainer {
-    position: sticky;
-    top: 60px; /* Sit flush under fixed .header during scroll */
+    position: fixed;
+    bottom: 16px;
+    right: 16px;
     left: auto;
-    z-index: 150;
-    margin-bottom: 12px; /* Reduced from 16px to unify spacing */
-    background: var(
-      --bg-color
-    ); /* Matches background to prevent rendering overlapping artifacts */
-    padding: 4px 0; /* Unified top and bottom padding to 4px */
-    width: 100%;
+    top: auto;
+    z-index: 500;
+    margin-bottom: 0;
+    background: transparent;
+    padding: 0;
+    width: auto;
     box-sizing: border-box;
   }
 }
@@ -296,20 +288,20 @@
   flex-direction: column;
   gap: 24px;
   min-width: 0;
-  margin-left: 94px; /* Space adjusted for the new 78px width of floating tabs */
+  margin-left: 0; /* Full width since tabs are floating */
   --table-header-top: 84px; /* 60px header + 24px gap */
 }
 
 @media (max-width: 768px) {
   .contentArea {
     margin-left: 0;
-    --table-header-top: 104px; /* Adjusted offset for unified 4px padding (with sub-pixel overlap) */
+    --table-header-top: 72px; /* 60px header + 12px unified spacing */
   }
 }
 
 @media (max-width: 600px) {
   .contentArea {
-    --table-header-top: 144px; /* Adjusted offset for unified 4px padding on 2-row grid */
+    --table-header-top: 72px; /* Matches 72px as no sticky header layout shift is present */
   }
 }
 
