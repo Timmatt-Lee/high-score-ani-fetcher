@@ -320,16 +320,6 @@
   min-width: 0;
 }
 
-.bannerOverride {
-  background: transparent !important;
-  border: none !important;
-  box-shadow: none !important;
-  padding: 0 !important;
-  backdrop-filter: none !important;
-  -webkit-backdrop-filter: none !important;
-  height: auto !important;
-}
-
 .inlineStats {
   display: flex;
   align-items: center;

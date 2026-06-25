@@ -257,7 +257,6 @@ function App() {
                   skippedCachedCount={scanStats.skippedCachedCount}
                   failedCount={scanStats.failedCount}
                   onDismiss={() => setScanStats(null)}
-                  className={styles.bannerOverride}
                 />
               )
             )}
