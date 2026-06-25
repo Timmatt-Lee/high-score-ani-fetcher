@@ -18,23 +18,44 @@ const meta: Meta<typeof ProgressBar> = {
 export default meta;
 type Story = StoryObj<typeof ProgressBar>;
 
-export const Initializing: Story = {
+export const Step1Shimmer: Story = {
   args: {
     percent: 0,
-    message: "Initializing scanner...",
+    message: "Getting total pages...",
   },
 };
 
-export const InProgress: Story = {
+export const Step1Progressing: Story = {
+  args: {
+    percent: 0,
+    message: "Loading anime index (22/66)",
+  },
+};
+
+export const Step1Completed: Story = {
+  args: {
+    percent: 0,
+    message: "Loading anime index (66/66)",
+  },
+};
+
+export const Step2Progressing: Story = {
   args: {
     percent: 45,
-    message: "Scanning page 3 of 6 (Frieren: Beyond Journey's End)...",
+    message: 'Parsing (45/120) "Frieren: Beyond Journey\'s End"',
   },
 };
 
-export const NearCompletion: Story = {
+export const Step2NearCompletion: Story = {
   args: {
     percent: 95,
     message: "Saving results to database...",
+  },
+};
+
+export const Step2Completed: Story = {
+  args: {
+    percent: 100,
+    message: "Scan completed",
   },
 };
