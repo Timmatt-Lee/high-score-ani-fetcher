@@ -14,11 +14,11 @@ describe("Tabs", () => {
       />,
     );
     expect(screen.getByText("Results")).toBeDefined();
-    expect(screen.getByText("(5)")).toBeDefined();
+    expect(screen.getByText("5")).toBeDefined();
     expect(screen.getByText("Favorites")).toBeDefined();
-    expect(screen.getByText("(2)")).toBeDefined();
+    expect(screen.getByText("2")).toBeDefined();
     expect(screen.getByText("Trash")).toBeDefined();
-    expect(screen.getByText("(1)")).toBeDefined();
+    expect(screen.getByText("1")).toBeDefined();
   });
 
   it("calls setActiveTab when clicked", () => {
@@ -58,7 +58,7 @@ describe("Tabs", () => {
     expect(setActiveTab).toHaveBeenCalledWith(Tab.Settings);
   });
 
-  it("renders badges when counts are greater than 0, and hides badges when counts are 0", () => {
+  it("renders badges and correct counts", () => {
     const { rerender } = render(
       <Tabs
         activeTab={Tab.Search}
@@ -70,20 +70,20 @@ describe("Tabs", () => {
     );
     expect(screen.queryByTestId("tab-badge-search")?.textContent).toBe("5");
     expect(screen.queryByTestId("tab-badge-favorites")?.textContent).toBe("2");
-    expect(screen.queryByTestId("tab-badge-trash")).toBeNull();
+    expect(screen.queryByTestId("tab-badge-trash")?.textContent).toBe("0");
 
-    // Rerender with 0 counts to verify they disappear
+    // Rerender with different counts
     rerender(
       <Tabs
         activeTab={Tab.Search}
         setActiveTab={() => {}}
         searchCount={0}
-        favoritesCount={0}
-        trashCount={0}
+        favoritesCount={1}
+        trashCount={10}
       />,
     );
-    expect(screen.queryByTestId("tab-badge-search")).toBeNull();
-    expect(screen.queryByTestId("tab-badge-favorites")).toBeNull();
-    expect(screen.queryByTestId("tab-badge-trash")).toBeNull();
+    expect(screen.queryByTestId("tab-badge-search")?.textContent).toBe("0");
+    expect(screen.queryByTestId("tab-badge-favorites")?.textContent).toBe("1");
+    expect(screen.queryByTestId("tab-badge-trash")?.textContent).toBe("10");
   });
 });

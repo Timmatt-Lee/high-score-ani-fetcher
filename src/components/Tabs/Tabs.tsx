@@ -33,12 +33,9 @@ export function Tabs({
       >
         <SearchIcon width="16" height="16" className={styles.tabIcon} />
         <span className={styles.tabText}>Results</span>
-        <span className={styles.tabCount}>({searchCount})</span>
-        {searchCount > 0 && (
-          <span className={styles.tabBadge} data-testid="tab-badge-search">
-            {searchCount}
-          </span>
-        )}
+        <span className={styles.tabCount} data-testid="tab-badge-search">
+          {searchCount}
+        </span>
       </button>
       <button
         className={`${styles.tab} ${activeTab === Tab.Favorites ? styles.active : ""}`}
@@ -47,12 +44,9 @@ export function Tabs({
       >
         <HeartIcon width="16" height="16" className={styles.tabIcon} />
         <span className={styles.tabText}>Favorites</span>
-        <span className={styles.tabCount}>({favoritesCount})</span>
-        {favoritesCount > 0 && (
-          <span className={styles.tabBadge} data-testid="tab-badge-favorites">
-            {favoritesCount}
-          </span>
-        )}
+        <span className={styles.tabCount} data-testid="tab-badge-favorites">
+          {favoritesCount}
+        </span>
       </button>
       <button
         className={`${styles.tab} ${activeTab === Tab.Trash ? styles.active : ""}`}
@@ -61,12 +55,9 @@ export function Tabs({
       >
         <TrashIcon width="16" height="16" className={styles.tabIcon} />
         <span className={styles.tabText}>Trash</span>
-        <span className={styles.tabCount}>({trashCount})</span>
-        {trashCount > 0 && (
-          <span className={styles.tabBadge} data-testid="tab-badge-trash">
-            {trashCount}
-          </span>
-        )}
+        <span className={styles.tabCount} data-testid="tab-badge-trash">
+          {trashCount}
+        </span>
       </button>
       <button
         className={`${styles.tab} ${activeTab === Tab.Settings ? styles.active : ""}`}

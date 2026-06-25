@@ -14,8 +14,8 @@
 .tab {
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 0 12px;
+  justify-content: center;
+  padding: 0 10px;
   border-radius: 8px;
   border: none;
   background: transparent;
@@ -28,6 +28,7 @@
   white-space: nowrap;
   box-sizing: border-box;
   position: relative;
+  gap: 0;
 }
 
 .tabIcon {
@@ -38,17 +39,48 @@
 }
 
 .tabText {
-  display: inline;
+  max-width: 0;
+  opacity: 0;
+  overflow: hidden;
+  transition:
+    max-width 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+    opacity 0.2s ease,
+    margin-left 0.25s ease;
+  display: inline-block;
+}
+
+.tab:hover .tabText,
+.tab.active .tabText {
+  max-width: 100px;
+  opacity: 1;
+  margin-left: 6px;
 }
 
 .tabCount {
-  font-size: 0.75rem;
-  opacity: 0.8;
+  font-size: 0.7rem;
+  font-weight: 700;
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text-muted);
+  padding: 1px 6px;
+  border-radius: 10px;
+  margin-left: 4px;
+  transition: all 0.2s ease;
+  height: 16px;
+  min-width: 16px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
 }
 
 .tab:hover {
   color: var(--text-main);
   background: rgba(255, 255, 255, 0.05);
+}
+
+.tab:hover .tabCount {
+  background: rgba(255, 255, 255, 0.15);
+  color: var(--text-main);
 }
 
 .tab.active {
@@ -57,20 +89,9 @@
   box-shadow: 0 4px 10px rgba(0, 176, 240, 0.25);
 }
 
-.tabBadge {
-  background: var(--danger);
-  color: white;
-  font-size: 0.65rem;
-  font-weight: 700;
-  height: 16px;
-  min-width: 16px;
-  padding: 0 4px;
-  border-radius: 8px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  margin-left: 2px;
-  line-height: 1;
+.tab.active .tabCount {
+  background: rgba(255, 255, 255, 0.25);
+  color: #ffffff;
 }
 
 @media (max-width: 768px) {
@@ -79,14 +100,17 @@
     padding: 2px;
   }
   .tab {
-    padding: 0 8px;
+    padding: 0 6px;
     font-size: 0.8rem;
-    gap: 4px;
   }
 }
 
 @media (max-width: 600px) {
-  .tabText {
-    display: none; /* Only show icons and counts/badges on extra small screens */
+  /* On very small screen, don't expand text on hover/active to fit space perfectly */
+  .tab:hover .tabText,
+  .tab.active .tabText {
+    max-width: 0;
+    opacity: 0;
+    margin-left: 0;
   }
 }

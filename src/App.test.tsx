@@ -193,7 +193,7 @@ describe("App rendering", () => {
     expect(screen.getByText("Favorites")).toBeDefined();
     const tabsContainer = screen.getByTestId("tabs-container");
     const { getAllByText } = within(tabsContainer);
-    expect(getAllByText("(0)").length).toBeGreaterThanOrEqual(1);
+    expect(getAllByText("0").length).toBeGreaterThanOrEqual(1);
   });
 
   it("handles chrome.storage.get error gracefully", async () => {
