@@ -973,4 +973,44 @@ describe("Scan functionality", () => {
 
     expect(screen.queryByTestId("scan-stats-container")).toBeNull();
   });
+
+  it("supports dragging the floating status bar to a new position", async () => {
+    const subject = new Subject<AnimeScanEvent>();
+    vi.spyOn(AnimeScanner.prototype, "scan").mockReturnValue(subject);
+
+    await act(async () => {
+      render(
+        <ServiceProvider>
+          <App />
+        </ServiceProvider>,
+      );
+    });
+
+    // Start scan to show progress bar in floating container
+    await act(async () => {
+      fireEvent.click(screen.getByText("Scan"));
+    });
+
+    const dragHandle = screen.getByTestId("floating-status-drag-handle");
+    const floatingBar = screen.getByTestId("floating-status-bar");
+
+    // Simulate drag start on the handle
+    fireEvent.mouseDown(dragHandle, { clientX: 100, clientY: 200 });
+
+    // Simulate mouse move on document level
+    fireEvent.mouseMove(document, { clientX: 150, clientY: 280 });
+
+    // The transform style should reflect translate offset change:
+    // dragOffset.x = 150 - 100 = 50px, dragOffset.y = 280 - 200 = 80px
+    expect(floatingBar.style.transform).toContain("50px");
+    expect(floatingBar.style.transform).toContain("80px");
+
+    // Simulate mouse up on document level to end drag
+    fireEvent.mouseUp(document);
+
+    // Move mouse again after mouseUp, coordinates should not change further
+    fireEvent.mouseMove(document, { clientX: 200, clientY: 400 });
+    expect(floatingBar.style.transform).toContain("50px");
+    expect(floatingBar.style.transform).toContain("80px");
+  });
 });

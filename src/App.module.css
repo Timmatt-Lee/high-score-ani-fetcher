@@ -249,22 +249,19 @@
   }
 }
 
-.tabsContainer {
-  position: fixed;
-  top: 84px;
-  left: calc(50vw - 600px + 24px);
-  z-index: 500;
-}
-
-@media (max-width: 1248px) {
-  .tabsContainer {
-    left: 24px;
-  }
+.contentArea {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  min-width: 0;
+  margin-left: 0;
+  --table-header-top: 60px; /* Sits flush under fixed 60px header */
 }
 
 @media (max-width: 768px) {
   .appContainer {
-    padding: 72px 12px 12px; /* 12px horizontal padding for unified full-width look on med/small screens */
+    padding: 84px 12px 12px; /* Uniform top padding matching header height + 24px gap */
   }
   .header::before {
     left: 12px;
@@ -273,42 +270,70 @@
   .header::after {
     display: none;
   }
-  .tabsContainer {
-    position: fixed;
-    top: 72px;
-    left: 12px;
-    right: auto;
-    bottom: auto;
-    z-index: 500;
-    margin-bottom: 0;
-    background: transparent;
-    padding: 0;
-    width: auto;
-    box-sizing: border-box;
-  }
 }
 
-.contentArea {
-  flex-grow: 1;
+.floatingStatusContainer {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 500;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(22, 27, 38, 0.9);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 6px 16px 6px 6px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+  cursor: default;
+  transition:
+    box-shadow 0.2s ease,
+    border-color 0.2s ease;
+  user-select: none;
+}
+
+.floatingStatusContainer:active {
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.7);
+  border-color: var(--accent);
+}
+
+.dragHandle {
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  justify-content: center;
+  align-items: center;
+  gap: 3px;
+  cursor: grab;
+  padding: 6px 8px;
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.dragHandle:active {
+  cursor: grabbing;
+  color: var(--accent);
+}
+
+.dragDotRow {
+  display: flex;
+  gap: 3px;
+}
+
+.dragDot {
+  width: 3px;
+  height: 3px;
+  background-color: currentColor;
+  border-radius: 50%;
+}
+
+.floatingContent {
+  display: flex;
+  align-items: center;
+  gap: 12px;
   min-width: 0;
-  margin-left: 0; /* Full width since tabs are floating */
-  --table-header-top: 84px; /* 60px header + 24px gap */
-}
-
-@media (max-width: 768px) {
-  .contentArea {
-    margin-left: 0;
-    --table-header-top: 72px; /* 60px header + 12px unified spacing */
-  }
-}
-
-@media (max-width: 600px) {
-  .contentArea {
-    --table-header-top: 72px; /* Matches 72px as no sticky header layout shift is present */
-  }
 }
 
 .inlineStats {

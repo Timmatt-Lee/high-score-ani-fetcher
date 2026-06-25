@@ -20,6 +20,28 @@ function App() {
   >("watchCount");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
 
+  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+
+  const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
+    const startX = e.clientX - dragOffset.x;
+    const startY = e.clientY - dragOffset.y;
+
+    const handleMouseMove = (moveEvent: MouseEvent) => {
+      setDragOffset({
+        x: moveEvent.clientX - startX,
+        y: moveEvent.clientY - startY,
+      });
+    };
+
+    const handleMouseUp = () => {
+      document.removeEventListener("mousemove", handleMouseMove);
+      document.removeEventListener("mouseup", handleMouseUp);
+    };
+
+    document.addEventListener("mousemove", handleMouseMove);
+    document.addEventListener("mouseup", handleMouseUp);
+  };
+
   const { settings, saveSettings, isLoaded: isSettingsLoaded } = useSettings();
 
   const {
@@ -110,23 +132,13 @@ function App() {
         </div>
 
         <div className={styles.headerCenter}>
-          {isScanning ? (
-            <ProgressBar
-              percent={progress.percent}
-              message={progress.message}
-            />
-          ) : (
-            scanStats && (
-              <ResultBanner
-                successCount={scanStats.successCount}
-                addedCount={scanStats.addedCount}
-                refetchedCount={scanStats.refetchedCount}
-                skippedCachedCount={scanStats.skippedCachedCount}
-                failedCount={scanStats.failedCount}
-                onDismiss={() => setScanStats(null)}
-              />
-            )
-          )}
+          <Tabs
+            activeTab={activeTab}
+            setActiveTab={setActiveTab}
+            searchCount={displayedSearchList.length}
+            favoritesCount={favoriteList.length}
+            trashCount={trashList.length}
+          />
         </div>
 
         <div className={styles.headerRight}>
@@ -153,15 +165,6 @@ function App() {
             </button>
           )}
         </div>
-      </div>
-      <div className={styles.tabsContainer}>
-        <Tabs
-          activeTab={activeTab}
-          setActiveTab={setActiveTab}
-          searchCount={displayedSearchList.length}
-          favoritesCount={favoriteList.length}
-          trashCount={trashList.length}
-        />
       </div>
 
       <div className={styles.contentArea}>
@@ -212,6 +215,55 @@ function App() {
           />
         )}
       </div>
+
+      {(isScanning || (scanStats && !isScanning)) && (
+        <div
+          className={styles.floatingStatusContainer}
+          style={{
+            transform: `translate(calc(-50% + ${dragOffset.x}px), ${dragOffset.y}px)`,
+          }}
+          data-testid="floating-status-bar"
+        >
+          <div
+            className={styles.dragHandle}
+            onMouseDown={handleMouseDown}
+            title="Drag to reposition"
+            data-testid="floating-status-drag-handle"
+          >
+            <div className={styles.dragDotRow}>
+              <span className={styles.dragDot}></span>
+              <span className={styles.dragDot}></span>
+            </div>
+            <div className={styles.dragDotRow}>
+              <span className={styles.dragDot}></span>
+              <span className={styles.dragDot}></span>
+            </div>
+            <div className={styles.dragDotRow}>
+              <span className={styles.dragDot}></span>
+              <span className={styles.dragDot}></span>
+            </div>
+          </div>
+          <div className={styles.floatingContent}>
+            {isScanning ? (
+              <ProgressBar
+                percent={progress.percent}
+                message={progress.message}
+              />
+            ) : (
+              scanStats && (
+                <ResultBanner
+                  successCount={scanStats.successCount}
+                  addedCount={scanStats.addedCount}
+                  refetchedCount={scanStats.refetchedCount}
+                  skippedCachedCount={scanStats.skippedCachedCount}
+                  failedCount={scanStats.failedCount}
+                  onDismiss={() => setScanStats(null)}
+                />
+              )
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
