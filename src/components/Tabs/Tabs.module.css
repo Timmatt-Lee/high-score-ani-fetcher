@@ -9,6 +9,12 @@
   overflow: visible;
   width: auto;
   pointer-events: auto;
+  opacity: 0.2;
+  transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.tabs:hover {
+  opacity: 1;
 }
 
 .tab {
