@@ -48,7 +48,7 @@ test.describe("Popup Scanning & Interaction", () => {
 
   test("should scan and display mocked results", async ({ page }) => {
     const scanButton = page.getByRole("button", {
-      name: "Scan 巴哈姆特動漫瘋",
+      name: "Scan",
     });
     await scanButton.click();
 
@@ -65,7 +65,7 @@ test.describe("Popup Scanning & Interaction", () => {
   });
 
   test("should handle favorite and trash workflow", async ({ page }) => {
-    await page.getByRole("button", { name: "Scan 巴哈姆特動漫瘋" }).click();
+    await page.getByRole("button", { name: "Scan" }).click();
 
     // Wait for the card to be fully rendered
     const firstCard = page
@@ -77,7 +77,10 @@ test.describe("Popup Scanning & Interaction", () => {
     await firstCard.getByRole("button", { name: "Favorite" }).click();
 
     // Verify in Favorites tab
-    await page.getByRole("button", { name: /Favorites/ }).click();
+    await page
+      .getByRole("button")
+      .filter({ hasText: /Favorites/ })
+      .click();
     await expect(
       page.getByTestId("list-container").getByText("測試動畫第一季"),
     ).toBeVisible();
@@ -89,14 +92,14 @@ test.describe("Popup Scanning & Interaction", () => {
     await favCard.getByRole("button", { name: "Trash" }).click();
 
     // Verify in Trash tab
-    await page.getByRole("button", { name: /Trash/ }).click();
+    await page.getByRole("button").filter({ hasText: /Trash/ }).click();
     await expect(
       page.getByTestId("list-container").getByText("測試動畫第一季"),
     ).toBeVisible();
   });
 
   test("should persist data after reload", async ({ page }) => {
-    await page.getByRole("button", { name: "Scan 巴哈姆特動漫瘋" }).click();
+    await page.getByRole("button", { name: "Scan" }).click();
     const firstCard = page
       .getByTestId("anime-card")
       .filter({ hasText: "測試動畫第一季" });
@@ -109,7 +112,10 @@ test.describe("Popup Scanning & Interaction", () => {
     await page.waitForLoadState("domcontentloaded");
 
     // Check if still in Favorites
-    await page.getByRole("button", { name: /Favorites/ }).click();
+    await page
+      .getByRole("button")
+      .filter({ hasText: /Favorites/ })
+      .click();
     await expect(
       page.getByTestId("list-container").getByText("測試動畫第一季"),
     ).toBeVisible();
