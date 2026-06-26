@@ -13,13 +13,6 @@ const meta: Meta<typeof ProgressBar> = {
 export default meta;
 type Story = StoryObj<typeof ProgressBar>;
 
-export const Step1Shimmer: Story = {
-  args: {
-    percent: 0,
-    message: "Getting total pages...",
-  },
-};
-
 export const Step1Progressing: Story = {
   args: {
     percent: 0,
@@ -45,12 +38,5 @@ export const Step2NearCompletion: Story = {
   args: {
     percent: 95,
     message: "Saving results to database...",
-  },
-};
-
-export const Step2Completed: Story = {
-  args: {
-    percent: 100,
-    message: "Scan completed",
   },
 };
