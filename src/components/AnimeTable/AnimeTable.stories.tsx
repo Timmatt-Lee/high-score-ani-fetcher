@@ -84,16 +84,18 @@ export const LargeListScrolled: Story = {
     (Story) => (
       <div
         className="scrollable-test-container"
-        style={
-          {
-            height: "400px",
-            overflowY: "auto",
-            position: "relative",
-            width: "100%",
-            "--table-header-top": "0px",
-          } as React.CSSProperties
-        }
+        style={{
+          height: "400px",
+          overflowY: "auto",
+          position: "relative",
+          width: "100%",
+        }}
       >
+        <style>{`
+          .scrollable-test-container {
+            --table-header-top: 0px !important;
+          }
+        `}</style>
         <Story />
       </div>
     ),
