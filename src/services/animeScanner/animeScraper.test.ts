@@ -160,18 +160,36 @@ describe("animeScraper.scrapeAnimesOnPage", () => {
     );
   });
 
-  it("throws AnimeScanParseError when watch count is NaN", async () => {
+  it("defaults watch count to 0 when watch count is NaN, '統計中', or invalid", async () => {
+    mockFetch(
+      makeHtml(`
+      <a class="theme-list-main" href="/animeVideo.php?sn=123">
+        <p class="theme-name">Test Anime</p>
+        <p>統計中</p>
+        <div class="theme-detail-info-block">
+          <span class="theme-number">共12集</span>
+          <p class="theme-time">年份：2024</p>
+        </div>
+      </a>
+    `),
+    );
+    const result = await animeScraper.scrapeAnimesOnPage(1);
+    expect(result[0].watchCount).toBe(0);
+
     mockFetch(
       makeHtml(`
       <a class="theme-list-main" href="/animeVideo.php?sn=123">
         <p class="theme-name">Test Anime</p>
         <p>InvalidCount</p>
+        <div class="theme-detail-info-block">
+          <span class="theme-number">共12集</span>
+          <p class="theme-time">年份：2024</p>
+        </div>
       </a>
     `),
     );
-    await expect(animeScraper.scrapeAnimesOnPage(1)).rejects.toThrow(
-      AnimeScanParseError,
-    );
+    const resultInvalid = await animeScraper.scrapeAnimesOnPage(1);
+    expect(resultInvalid[0].watchCount).toBe(0);
   });
 
   it("handles watch count with 萬 suffix", async () => {

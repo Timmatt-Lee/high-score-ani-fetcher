@@ -65,9 +65,25 @@ export function ErrorCard({ error, onDismiss }: ErrorCardProps) {
   }, [isCopied]);
 
   const handleCopy = () => {
+    let details = "";
+    if (error instanceof AnimeScanError) {
+      details += `URL: ${error.url}\n`;
+      if (error instanceof AnimeScanHttpError) {
+        details += `Status: ${error.status}\n`;
+      }
+      if (
+        error instanceof AnimeScanHttpError ||
+        error instanceof AnimeScanParseError
+      ) {
+        if (error.html) {
+          details += `HTML/Body Snippet:\n${error.html}\n`;
+        }
+      }
+    }
+
     const textToCopy = cardSubtitle
-      ? `${cardTitle}\n${cardSubtitle}\n${error.message}`
-      : `${cardTitle}\n${error.message}`;
+      ? `${cardTitle}\n${cardSubtitle}\n${error.message}\n${details}`.trim()
+      : `${cardTitle}\n${error.message}\n${details}`.trim();
     navigator.clipboard.writeText(textToCopy);
     setIsCopied(true);
   };

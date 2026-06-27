@@ -226,7 +226,7 @@ describe("ErrorCard", () => {
     });
 
     expect(writeTextMock).toHaveBeenCalledWith(
-      "My Anime\nPage: 1, Status Code: 403, When doing: fetching total pages\nHTTP request failed with status 403 (URL: https://example.com)",
+      "My Anime\nPage: 1, Status Code: 403, When doing: fetching total pages\nHTTP request failed with status 403 (URL: https://example.com)\nURL: https://example.com\nStatus: 403\nHTML/Body Snippet:\nForbidden",
     );
 
     // Verify button has .copied class
@@ -262,5 +262,134 @@ describe("ErrorCard", () => {
     });
 
     expect(writeTextMock).toHaveBeenCalledWith("Error\nSystem is down");
+  });
+
+  it("copies details with HTML/Body Snippet for AnimeScanParseError", () => {
+    const error = new AnimeScanParseError(
+      1,
+      AnimeScanStep.PARSE_ANIME_INFO,
+      "https://example.com",
+      "<div>Bad HTML</div>",
+      "Parse error",
+      "Some Anime",
+    );
+
+    const writeTextMock = vi.fn();
+    Object.defineProperty(navigator, "clipboard", {
+      value: {
+        writeText: writeTextMock,
+      },
+      writable: true,
+      configurable: true,
+    });
+
+    render(<ErrorCard error={error} />);
+    const copyBtn = screen.getByTestId("error-card-copy-btn");
+
+    act(() => {
+      copyBtn.click();
+    });
+
+    expect(writeTextMock).toHaveBeenCalledWith(
+      "Some Anime\nPage: 1, When doing: parsing anime info\nParse error\nURL: https://example.com\nHTML/Body Snippet:\n<div>Bad HTML</div>",
+    );
+  });
+
+  it("copies details when AnimeScanHttpError has no html snippet", () => {
+    const error = new AnimeScanHttpError(
+      1,
+      AnimeScanStep.GET_TOTAL_PAGES,
+      "https://example.com",
+      "",
+      500,
+      "Some Anime",
+    );
+
+    const writeTextMock = vi.fn();
+    Object.defineProperty(navigator, "clipboard", {
+      value: {
+        writeText: writeTextMock,
+      },
+      writable: true,
+      configurable: true,
+    });
+
+    render(<ErrorCard error={error} />);
+    const copyBtn = screen.getByTestId("error-card-copy-btn");
+
+    act(() => {
+      copyBtn.click();
+    });
+
+    expect(writeTextMock).toHaveBeenCalledWith(
+      "Some Anime\nPage: 1, Status Code: 500, When doing: fetching total pages\nHTTP request failed with status 500 (URL: https://example.com)\nURL: https://example.com\nStatus: 500",
+    );
+  });
+
+  it("copies details when AnimeScanParseError has no html snippet", () => {
+    const error = new AnimeScanParseError(
+      1,
+      AnimeScanStep.PARSE_ANIME_INFO,
+      "https://example.com",
+      "",
+      "Parse error",
+      "Some Anime",
+    );
+
+    const writeTextMock = vi.fn();
+    Object.defineProperty(navigator, "clipboard", {
+      value: {
+        writeText: writeTextMock,
+      },
+      writable: true,
+      configurable: true,
+    });
+
+    render(<ErrorCard error={error} />);
+    const copyBtn = screen.getByTestId("error-card-copy-btn");
+
+    act(() => {
+      copyBtn.click();
+    });
+
+    expect(writeTextMock).toHaveBeenCalledWith(
+      "Some Anime\nPage: 1, When doing: parsing anime info\nParse error\nURL: https://example.com",
+    );
+  });
+
+  it("copies details when error is a custom AnimeScanError", () => {
+    class CustomError extends AnimeScanError {
+      constructor() {
+        super(
+          "Custom msg",
+          1,
+          AnimeScanStep.GET_TOTAL_PAGES,
+          "https://example.com",
+          "Some Anime",
+        );
+        this.name = "TestCustomError";
+      }
+    }
+    const error = new CustomError();
+
+    const writeTextMock = vi.fn();
+    Object.defineProperty(navigator, "clipboard", {
+      value: {
+        writeText: writeTextMock,
+      },
+      writable: true,
+      configurable: true,
+    });
+
+    render(<ErrorCard error={error} />);
+    const copyBtn = screen.getByTestId("error-card-copy-btn");
+
+    act(() => {
+      copyBtn.click();
+    });
+
+    expect(writeTextMock).toHaveBeenCalledWith(
+      "Some Anime\nPage: 1, When doing: fetching total pages\nCustom msg\nURL: https://example.com",
+    );
   });
 });

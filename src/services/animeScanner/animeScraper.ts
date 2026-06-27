@@ -169,18 +169,14 @@ export class AnimeScraper {
     }
 
     const str = watchCountEl.textContent.trim();
-    const watchCount = str.includes("萬")
-      ? Math.floor(parseFloat(str.replace("萬", "")) * 10000)
-      : parseInt(str.replace(/,/g, ""), 10);
-
-    if (isNaN(watchCount)) {
-      throw new AnimeScanParseError(
-        page,
-        AnimeScanStep.PARSE_ANIME_INFO,
-        url,
-        card.outerHTML.substring(0, 500),
-        "Failed to parse watch count",
-      );
+    let watchCount = 0;
+    if (str && str !== "統計中") {
+      const parsed = str.includes("萬")
+        ? Math.floor(parseFloat(str.replace("萬", "")) * 10000)
+        : parseInt(str.replace(/,/g, ""), 10);
+      if (!isNaN(parsed)) {
+        watchCount = parsed;
+      }
     }
 
     const detailBlock = card.querySelector(".theme-detail-info-block");
