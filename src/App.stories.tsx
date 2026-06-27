@@ -184,9 +184,10 @@ export const PopulatedFavoritesTab: Story = {
     },
   ],
   play: async ({ canvasElement }) => {
+    const { userEvent } = await import("@storybook/test");
     const canvas = within(canvasElement);
     const favTab = await canvas.findByRole("button", { name: /Favorites/i });
-    favTab.click();
+    await userEvent.click(favTab);
   },
 };
 
@@ -203,9 +204,10 @@ export const PopulatedTrashTab: Story = {
     },
   ],
   play: async ({ canvasElement }) => {
+    const { userEvent } = await import("@storybook/test");
     const canvas = within(canvasElement);
     const trashTab = await canvas.findByRole("button", { name: /Trash/i });
-    trashTab.click();
+    await userEvent.click(trashTab);
   },
 };
 
@@ -219,11 +221,12 @@ export const SettingsTab: Story = {
     ),
   ],
   play: async ({ canvasElement }) => {
+    const { userEvent } = await import("@storybook/test");
     const canvas = within(canvasElement);
     const settingsBtn = await canvas.findByRole("button", {
       name: /Settings/i,
     });
-    settingsBtn.click();
+    await userEvent.click(settingsBtn);
   },
 };
 
