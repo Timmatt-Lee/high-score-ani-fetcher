@@ -144,6 +144,10 @@
   .yearCell {
     display: none;
   }
+  .actionsCell {
+    padding-left: 8px;
+    padding-right: 8px;
+  }
 }
 
 @media (max-width: 600px) {

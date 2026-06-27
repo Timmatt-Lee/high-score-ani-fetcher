@@ -56,7 +56,7 @@ body {
 
 @media (max-width: 768px) {
   :root {
-    --grid-cols: 1fr 70px 80px 70px 90px;
+    --grid-cols: 1fr 70px 80px 70px 110px;
   }
 }
 
