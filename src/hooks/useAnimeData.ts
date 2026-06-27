@@ -40,7 +40,11 @@ export function useAnimeData() {
 
     const loadData = async () => {
       try {
-        if (typeof chrome !== "undefined" && chrome.storage) {
+        if (
+          typeof chrome !== "undefined" &&
+          chrome.storage &&
+          chrome.storage.local
+        ) {
           const data = await chrome.storage.local.get([
             "searchList",
             "favoriteList",
@@ -99,7 +103,11 @@ export function useAnimeData() {
         trashList: serializeList(t),
       };
 
-      if (typeof chrome !== "undefined" && chrome.storage) {
+      if (
+        typeof chrome !== "undefined" &&
+        chrome.storage &&
+        chrome.storage.local
+      ) {
         await chrome.storage.local.set(payload);
       } else {
         localStorage.setItem("animeData", JSON.stringify(payload));
