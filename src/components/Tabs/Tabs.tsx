@@ -30,6 +30,7 @@ export function Tabs({
         className={`${styles.tab} ${activeTab === Tab.Search ? styles.active : ""}`}
         onClick={() => setActiveTab(Tab.Search)}
         title="View scanned anime results"
+        data-testid="tab-search"
       >
         <SearchIcon width="16" height="16" className={styles.tabIcon} />
         <span className={styles.tabText}>Results</span>
@@ -41,6 +42,7 @@ export function Tabs({
         className={`${styles.tab} ${activeTab === Tab.Favorites ? styles.active : ""}`}
         onClick={() => setActiveTab(Tab.Favorites)}
         title="View your favorite anime list"
+        data-testid="tab-favorites"
       >
         <HeartIcon width="16" height="16" className={styles.tabIcon} />
         <span className={styles.tabText}>Favorites</span>
@@ -52,6 +54,7 @@ export function Tabs({
         className={`${styles.tab} ${activeTab === Tab.Trash ? styles.active : ""}`}
         onClick={() => setActiveTab(Tab.Trash)}
         title="View trashed anime list"
+        data-testid="tab-trash"
       >
         <TrashIcon width="16" height="16" className={styles.tabIcon} />
         <span className={styles.tabText}>Trash</span>
@@ -63,6 +66,7 @@ export function Tabs({
         className={`${styles.tab} ${activeTab === Tab.Settings ? styles.active : ""}`}
         onClick={() => setActiveTab(Tab.Settings)}
         title="Open scanner configurations"
+        data-testid="tab-settings"
       >
         <SettingsIcon width="16" height="16" className={styles.tabIcon} />
         <span className={styles.tabText}>Settings</span>

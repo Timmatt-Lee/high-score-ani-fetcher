@@ -184,7 +184,7 @@ export const PopulatedFavoritesTab: Story = {
     const canvas = within(canvasElement);
     // Wait for the app container to be mounted in the DOM
     await canvas.findByTestId("app-container", {}, { timeout: 5000 });
-    const favTab = await canvas.findByRole("button", { name: /Favorites/i });
+    const favTab = await canvas.findByTestId("tab-favorites");
     await userEvent.click(favTab);
   },
 };
@@ -204,7 +204,7 @@ export const PopulatedTrashTab: Story = {
     const canvas = within(canvasElement);
     // Wait for the app container to be mounted in the DOM
     await canvas.findByTestId("app-container", {}, { timeout: 5000 });
-    const trashTab = await canvas.findByRole("button", { name: /Trash/i });
+    const trashTab = await canvas.findByTestId("tab-trash");
     await userEvent.click(trashTab);
   },
 };
@@ -223,9 +223,7 @@ export const SettingsTab: Story = {
     const canvas = within(canvasElement);
     // Wait for the app container to be mounted in the DOM
     await canvas.findByTestId("app-container", {}, { timeout: 5000 });
-    const settingsBtn = await canvas.findByRole("button", {
-      name: /Settings/i,
-    });
+    const settingsBtn = await canvas.findByTestId("tab-settings");
     await userEvent.click(settingsBtn);
   },
 };
