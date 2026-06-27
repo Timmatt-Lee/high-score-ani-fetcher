@@ -129,7 +129,7 @@ export function SettingsTab({
   };
 
   return (
-    <div className={styles.container} data-testid="settings-tab">
+    <div className={styles.settingsGrid} data-testid="settings-tab">
       <div className={styles.settingGroup}>
         <div className={styles.textGroup}>
           <label className={styles.label}>Target Score (e.g. 4.8)</label>

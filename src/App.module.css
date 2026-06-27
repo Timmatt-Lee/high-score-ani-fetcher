@@ -164,16 +164,6 @@
   gap: 16px;
   animation: fadeIn 0.3s ease-out;
   width: 100%;
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 0 24px;
-  box-sizing: border-box;
-}
-
-@media (max-width: 768px) {
-  .fatalErrorContainer {
-    padding: 0 12px;
-  }
 }
 
 .dismissBtn {
@@ -203,16 +193,6 @@
   flex-direction: column;
   gap: 16px;
   width: 100%;
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 0 24px;
-  box-sizing: border-box;
-}
-
-@media (max-width: 768px) {
-  .errorsPanel {
-    padding: 0 12px;
-  }
 }
 
 .summaryBar {
@@ -274,13 +254,20 @@
   flex-direction: column;
   gap: 24px;
   min-width: 0;
-  margin-left: 0;
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 24px;
+  box-sizing: border-box;
   --table-header-top: 84px; /* Leaves 24px gap under fixed 60px header */
 }
 
 @media (max-width: 768px) {
   .appContainer {
     padding: 84px 0 12px; /* Set top/bottom padding, horizontal is 0 */
+  }
+  .contentArea {
+    padding: 0 12px;
   }
   .header {
     padding: 0 12px;
