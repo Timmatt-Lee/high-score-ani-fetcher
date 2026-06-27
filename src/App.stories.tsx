@@ -8,7 +8,6 @@ import {
   AnimeScanner,
   type AnimeItem,
 } from "./services/animeScanner";
-import { AnimeScraper } from "./services/animeScanner/animeScraper";
 import { Observable } from "rxjs";
 import { within } from "@storybook/test";
 
@@ -303,48 +302,8 @@ export const ScanCompleted: Story = {
 // 4. Error States
 // ---------------------------------------------------------------------------
 
-/** Fatal error — getTotalPages fails before any data is fetched. */
-export const ScanFatalError: Story = {
-  decorators: [
-    (Story) => {
-      localStorage.clear();
-      return <Story />;
-    },
-  ],
-  render: () => {
-    const mockAnimeScraperWithFatalError = {
-      ...mockAnimeScraper,
-      getTotalPages: async () => {
-        throw new AnimeScanHttpError(
-          1,
-          AnimeScanStep.GET_TOTAL_PAGES,
-          "https://ani.gamer.com.tw/animeList.php",
-          "",
-          500,
-          undefined,
-        );
-      },
-    };
-
-    return (
-      <ServiceProvider
-        animeScraper={mockAnimeScraperWithFatalError as unknown as AnimeScraper}
-      >
-        <App />
-      </ServiceProvider>
-    );
-  },
-  play: async ({ canvasElement }) => {
-    const { userEvent } = await import("@storybook/test");
-    const canvas = within(canvasElement);
-    await canvas.findByTestId("app-container", {}, { timeout: 5000 });
-    const scanBtn = await canvas.findByRole("button", { name: /Scan/i });
-    await userEvent.click(scanBtn);
-  },
-};
-
-/** Partial failure — scan errors mid-way, shows ErrorCard + partial data. */
-export const ScanPartialFailure: Story = {
+/** Scan error — scan errors mid-way, shows ErrorCard + partial data. */
+export const ScanError: Story = {
   decorators: [
     (Story) => {
       AnimeScanner.prototype.scan = function (this: any) {
