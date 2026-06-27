@@ -389,6 +389,6 @@ export const ScrolledWithStickyHeader: Story = {
   ],
   play: async () => {
     await new Promise((resolve) => setTimeout(resolve, 500));
-    window.scrollTo(0, 400);
+    window.scrollTo(0, 100);
   },
 };
