@@ -20,6 +20,10 @@
   padding: 0;
 }
 
+html {
+  background-color: var(--bg-color);
+}
+
 body {
   font-family:
     "Inter",

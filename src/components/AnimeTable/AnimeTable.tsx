@@ -65,57 +65,61 @@ export function AnimeTable({
 
   if (list.length === 0) {
     return (
-      <div className={styles.emptyState} data-testid="list-container">
-        No anime found in this list.
+      <div className={styles.container}>
+        <div className={styles.emptyState} data-testid="list-container">
+          No anime found in this list.
+        </div>
       </div>
     );
   }
 
   return (
-    <div className={styles.tableWrapper} data-testid="list-container">
-      <div className={styles.animeTable}>
-        <div className={styles.tableHeader}>
-          {renderHeader("Anime Title", "title")}
-          {renderHeader("Score", "score")}
-          {renderHeader("Views", "watchCount")}
-          {renderHeader("Year", "uploadDate")}
-          {renderHeader("EPs", "episodeCount")}
-          <div className={styles.actionsHeader}>Add to</div>
-        </div>
-        <div
-          className={styles.tableBody}
-          style={{
-            height: `${virtualizer.getTotalSize()}px`,
-            width: "100%",
-            position: "relative",
-          }}
-        >
-          {virtualizer.getVirtualItems().map((virtualRow) => {
-            const item = list[virtualRow.index];
-            return (
-              <div
-                key={item.link}
-                data-index={virtualRow.index}
-                ref={virtualizer.measureElement}
-                style={{
-                  position: "absolute",
-                  top: 0,
-                  left: 0,
-                  width: "100%",
-                  transform: `translateY(${virtualRow.start}px)`,
-                }}
-              >
-                <AnimeRow
-                  item={item}
-                  activeTab={activeTab}
-                  onMoveToFavorites={onMoveToFavorites}
-                  onMoveToTrash={onMoveToTrash}
-                  onRestoreFromTrash={onRestoreFromTrash}
-                  targetScore={targetScore}
-                />
-              </div>
-            );
-          })}
+    <div className={styles.container}>
+      <div className={styles.tableWrapper} data-testid="list-container">
+        <div className={styles.animeTable}>
+          <div className={styles.tableHeader}>
+            {renderHeader("Anime Title", "title")}
+            {renderHeader("Score", "score")}
+            {renderHeader("Views", "watchCount")}
+            {renderHeader("Year", "uploadDate")}
+            {renderHeader("EPs", "episodeCount")}
+            <div className={styles.actionsHeader}>Add to</div>
+          </div>
+          <div
+            className={styles.tableBody}
+            style={{
+              height: `${virtualizer.getTotalSize()}px`,
+              width: "100%",
+              position: "relative",
+            }}
+          >
+            {virtualizer.getVirtualItems().map((virtualRow) => {
+              const item = list[virtualRow.index];
+              return (
+                <div
+                  key={item.link}
+                  data-index={virtualRow.index}
+                  ref={virtualizer.measureElement}
+                  style={{
+                    position: "absolute",
+                    top: 0,
+                    left: 0,
+                    width: "100%",
+                    transform: `translateY(${virtualRow.start}px)`,
+                  }}
+                >
+                  <AnimeRow
+                    item={item}
+                    activeTab={activeTab}
+                    onMoveToFavorites={onMoveToFavorites}
+                    onMoveToTrash={onMoveToTrash}
+                    onRestoreFromTrash={onRestoreFromTrash}
+                    targetScore={targetScore}
+                  />
+                </div>
+              );
+            })}
+          </div>
         </div>
       </div>
     </div>

@@ -37,17 +37,21 @@
   .tableWrapper {
     overflow: visible;
   }
-  .animeTable {
+  .container {
     padding: 0 12px;
   }
 }
 
-.animeTable {
+.container {
   width: 100%;
   max-width: 1200px;
   margin: 0 auto;
   padding: 0 24px;
   box-sizing: border-box;
+}
+
+.animeTable {
+  width: 100%;
   display: flex;
   flex-direction: column;
   min-width: 0;
@@ -67,35 +71,6 @@
   align-items: center;
   border-top-left-radius: var(--radius);
   border-top-right-radius: var(--radius);
-}
-
-.tableHeader::before,
-.tableHeader::after {
-  content: "";
-  position: absolute;
-  top: -1px;
-  width: var(--radius);
-  height: var(--radius);
-  pointer-events: none;
-  z-index: 161;
-}
-
-.tableHeader::before {
-  left: -1px;
-  background: radial-gradient(
-    circle at bottom right,
-    transparent var(--radius),
-    var(--bg-color) var(--radius)
-  );
-}
-
-.tableHeader::after {
-  right: -1px;
-  background: radial-gradient(
-    circle at bottom left,
-    transparent var(--radius),
-    var(--bg-color) var(--radius)
-  );
 }
 
 .sortableHeader {
@@ -148,16 +123,6 @@
 }
 
 @media (max-width: 768px) {
-  .tableWrapper {
-    border-left: none;
-    border-right: none;
-  }
-  .tableHeader {
-    border-left: none;
-    border-right: none;
-    margin-left: 0;
-    margin-right: 0;
-  }
   .tableHeader > [data-testid="sort-header-uploadDate"] {
     display: none;
   }

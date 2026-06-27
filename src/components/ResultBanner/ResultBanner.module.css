@@ -1,9 +1,4 @@
 .bannerContainer {
-  width: 100%;
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 0 24px;
-  box-sizing: border-box;
   display: flex;
   align-items: center;
   gap: 12px;
@@ -166,12 +161,6 @@
 .dismissBtn:hover {
   background: rgba(255, 255, 255, 0.1);
   color: rgba(255, 255, 255, 0.9);
-}
-
-@media (max-width: 768px) {
-  .bannerContainer {
-    padding: 0 12px;
-  }
 }
 
 @media (max-width: 600px) {
