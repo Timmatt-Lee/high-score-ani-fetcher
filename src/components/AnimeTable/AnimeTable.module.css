@@ -140,6 +140,17 @@
 }
 
 @media (max-width: 768px) {
+  .tableWrapper {
+    border-left: none;
+    border-right: none;
+    border-radius: 0;
+  }
+  .tableHeader {
+    border-left: none;
+    border-right: none;
+    margin-left: 0;
+    margin-right: 0;
+  }
   .tableHeader > [data-testid="sort-header-uploadDate"] {
     display: none;
   }

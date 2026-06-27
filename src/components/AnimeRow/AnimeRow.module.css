@@ -148,6 +148,10 @@
     padding-left: 8px;
     padding-right: 8px;
   }
+  .animeRow:last-child {
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+  }
 }
 
 @media (max-width: 600px) {
