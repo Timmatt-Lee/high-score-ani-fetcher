@@ -79,7 +79,7 @@ export function AnimeTable({
   const virtualizer = useWindowVirtualizer({
     count: list.length,
     estimateSize: () => 88,
-    overscan: 5,
+    overscan: 20,
   });
 
   if (list.length === 0) {

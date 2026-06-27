@@ -20,12 +20,14 @@
 
 .titleCell {
   padding: 12px 16px;
+  min-width: 0; /* critical to allow CSS Grid track to shrink below min-content */
 }
 
 .titleWrapper {
   display: flex;
   flex-direction: column;
   gap: 4px;
+  min-width: 0;
 }
 
 .titleLink {
@@ -35,6 +37,8 @@
   font-size: 0.95rem;
   transition: color 0.2s ease;
   line-height: 1.4;
+  word-break: break-word; /* allow long names without spaces to break */
+  overflow-wrap: anywhere;
 }
 
 .titleLink:hover {
