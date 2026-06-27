@@ -1,10 +1,11 @@
 .appContainer {
   width: 100%;
-  min-height: 100vh;
+  height: 100%;
   padding: 84px 0 24px; /* Only top/bottom padding */
   display: flex;
   flex-direction: column;
   position: relative; /* Set anchor context for absolute positioning */
+  overflow: hidden;
 }
 
 .header {
@@ -253,13 +254,13 @@
   display: flex;
   flex-direction: column;
   gap: 24px;
-  min-width: 0;
+  min-height: 0; /* allows children to shrink */
   width: 100%;
   max-width: 1200px;
   margin: 0 auto;
-  padding: 0 24px;
+  padding: 0 24px 24px 24px; /* added bottom padding */
   box-sizing: border-box;
-  --table-header-top: 84px; /* Leaves 24px gap under fixed 60px header */
+  overflow: hidden; /* Prevent window scroll */
 }
 
 @media (max-width: 768px) {

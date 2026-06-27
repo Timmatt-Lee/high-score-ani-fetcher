@@ -2,8 +2,8 @@ import { AnimeRow } from "../AnimeRow";
 import { type AnimeItem } from "../../services/animeScanner";
 import { Tab } from "../Tabs";
 import styles from "./AnimeTable.module.css";
-import { useWindowVirtualizer } from "@tanstack/react-virtual";
-import { useState, useEffect, useRef } from "react";
+import { useVirtualizer } from "@tanstack/react-virtual";
+import { useRef } from "react";
 
 interface AnimeTableProps {
   activeTab: Tab;
@@ -36,23 +36,7 @@ export function AnimeTable({
   onRestoreFromTrash,
   targetScore,
 }: AnimeTableProps) {
-  const [isSticky, setIsSticky] = useState(false);
-  const headerRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const handleScroll = () => {
-      if (headerRef.current) {
-        const rect = headerRef.current.getBoundingClientRect();
-        // tableHeader is set to top: var(--table-header-top, 60px) in CSS.
-        // It sticks at 84px in the app, or 60px fallback.
-        // Add a 1px tolerance to detect when it's fully stuck.
-        setIsSticky(rect.top <= 85);
-      }
-    };
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    handleScroll(); // Check initial state
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
+  const parentRef = useRef<HTMLDivElement>(null);
 
   const renderHeader = (
     label: string,
@@ -76,16 +60,17 @@ export function AnimeTable({
     );
   };
 
-  const virtualizer = useWindowVirtualizer({
+  const virtualizer = useVirtualizer({
     count: list.length,
+    getScrollElement: () => parentRef.current,
     estimateSize: () => 88,
     overscan: 20,
+    initialRect: { width: 800, height: 800 },
   });
 
   if (list.length === 0) {
     return (
       <div className={styles.tableWrapper} data-testid="list-container">
-        <div className={styles.tableBackdrop} />
         <div className={styles.emptyState}>No anime found in this list.</div>
       </div>
     );
@@ -93,12 +78,8 @@ export function AnimeTable({
 
   return (
     <div className={styles.tableWrapper} data-testid="list-container">
-      <div className={styles.tableBackdrop} />
       <div className={styles.animeTable}>
-        <div
-          ref={headerRef}
-          className={`${styles.tableHeader} ${isSticky ? styles.isSticky : ""}`}
-        >
+        <div className={styles.tableHeader}>
           {renderHeader("Anime Title", "title")}
           {renderHeader("Score", "score")}
           {renderHeader("Views", "watchCount")}
@@ -106,40 +87,41 @@ export function AnimeTable({
           {renderHeader("EPs", "episodeCount")}
           <div className={styles.actionsHeader}>Add to</div>
         </div>
-        <div
-          className={styles.tableBody}
-          style={{
-            height: `${virtualizer.getTotalSize()}px`,
-            width: "100%",
-            position: "relative",
-          }}
-        >
-          {virtualizer.getVirtualItems().map((virtualRow) => {
-            const item = list[virtualRow.index];
-            return (
-              <div
-                key={item.link}
-                data-index={virtualRow.index}
-                ref={virtualizer.measureElement}
-                style={{
-                  position: "absolute",
-                  top: 0,
-                  left: 0,
-                  width: "100%",
-                  transform: `translateY(${virtualRow.start}px)`,
-                }}
-              >
-                <AnimeRow
-                  item={item}
-                  activeTab={activeTab}
-                  onMoveToFavorites={onMoveToFavorites}
-                  onMoveToTrash={onMoveToTrash}
-                  onRestoreFromTrash={onRestoreFromTrash}
-                  targetScore={targetScore}
-                />
-              </div>
-            );
-          })}
+        <div ref={parentRef} className={styles.tableBody}>
+          <div
+            style={{
+              height: `${virtualizer.getTotalSize()}px`,
+              width: "100%",
+              position: "relative",
+            }}
+          >
+            {virtualizer.getVirtualItems().map((virtualRow) => {
+              const item = list[virtualRow.index];
+              return (
+                <div
+                  key={item.link}
+                  data-index={virtualRow.index}
+                  ref={virtualizer.measureElement}
+                  style={{
+                    position: "absolute",
+                    top: 0,
+                    left: 0,
+                    width: "100%",
+                    transform: `translateY(${virtualRow.start}px)`,
+                  }}
+                >
+                  <AnimeRow
+                    item={item}
+                    activeTab={activeTab}
+                    onMoveToFavorites={onMoveToFavorites}
+                    onMoveToTrash={onMoveToTrash}
+                    onRestoreFromTrash={onRestoreFromTrash}
+                    targetScore={targetScore}
+                  />
+                </div>
+              );
+            })}
+          </div>
         </div>
       </div>
     </div>
