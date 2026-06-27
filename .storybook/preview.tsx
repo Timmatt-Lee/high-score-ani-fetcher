@@ -3,7 +3,14 @@ import * as React from "react";
 import "../src/index.css";
 
 const preview: Preview = {
-  decorators: [(Story) => <Story />],
+  decorators: [
+    (Story) => {
+      React.useEffect(() => {
+        window.scrollTo(0, 0);
+      }, []);
+      return <Story />;
+    },
+  ],
   parameters: {
     layout: "fullscreen",
     // Configure Chromatic to capture all snapshots at 1200px width
