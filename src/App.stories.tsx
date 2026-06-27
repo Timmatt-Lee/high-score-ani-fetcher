@@ -423,26 +423,13 @@ export const ScrolledWithStickyHeader: Story = {
       );
       return (
         <ServiceProvider animeScraper={mockAnimeScraper as any}>
-          <div
-            className="scrollable-test-container"
-            style={{
-              height: "600px",
-              overflowY: "auto",
-              position: "relative",
-              width: "100%",
-            }}
-          >
-            <Story />
-          </div>
+          <Story />
         </ServiceProvider>
       );
     },
   ],
   play: async () => {
     await new Promise((resolve) => setTimeout(resolve, 500));
-    const container = document.querySelector(".scrollable-test-container");
-    if (container) {
-      container.scrollTop = 400;
-    }
+    window.scrollTo(0, 400);
   },
 };
