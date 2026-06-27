@@ -73,6 +73,35 @@
   border-top-right-radius: var(--radius);
 }
 
+.tableHeader.isSticky::before,
+.tableHeader.isSticky::after {
+  content: "";
+  position: absolute;
+  top: -1px;
+  width: var(--radius);
+  height: var(--radius);
+  pointer-events: none;
+  z-index: 161;
+}
+
+.tableHeader.isSticky::before {
+  left: -1px;
+  background: radial-gradient(
+    circle at bottom right,
+    transparent var(--radius),
+    var(--bg-color) var(--radius)
+  );
+}
+
+.tableHeader.isSticky::after {
+  right: -1px;
+  background: radial-gradient(
+    circle at bottom left,
+    transparent var(--radius),
+    var(--bg-color) var(--radius)
+  );
+}
+
 .sortableHeader {
   display: flex;
   align-items: center;

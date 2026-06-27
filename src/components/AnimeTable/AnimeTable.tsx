@@ -3,6 +3,7 @@ import { type AnimeItem } from "../../services/animeScanner";
 import { Tab } from "../Tabs";
 import styles from "./AnimeTable.module.css";
 import { useWindowVirtualizer } from "@tanstack/react-virtual";
+import { useState, useEffect, useRef } from "react";
 
 interface AnimeTableProps {
   activeTab: Tab;
@@ -35,6 +36,24 @@ export function AnimeTable({
   onRestoreFromTrash,
   targetScore,
 }: AnimeTableProps) {
+  const [isSticky, setIsSticky] = useState(false);
+  const headerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      if (headerRef.current) {
+        const rect = headerRef.current.getBoundingClientRect();
+        // tableHeader is set to top: var(--table-header-top, 60px) in CSS.
+        // It sticks at 84px in the app, or 60px fallback.
+        // Add a 1px tolerance to detect when it's fully stuck.
+        setIsSticky(rect.top <= 85);
+      }
+    };
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    handleScroll(); // Check initial state
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
   const renderHeader = (
     label: string,
     field: "title" | "score" | "watchCount" | "uploadDate" | "episodeCount",
@@ -77,7 +96,10 @@ export function AnimeTable({
     <div className={styles.container}>
       <div className={styles.tableWrapper} data-testid="list-container">
         <div className={styles.animeTable}>
-          <div className={styles.tableHeader}>
+          <div
+            ref={headerRef}
+            className={`${styles.tableHeader} ${isSticky ? styles.isSticky : ""}`}
+          >
             {renderHeader("Anime Title", "title")}
             {renderHeader("Score", "score")}
             {renderHeader("Views", "watchCount")}
