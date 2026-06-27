@@ -1,9 +1,7 @@
 .appContainer {
   width: 100%;
-  max-width: 1200px;
   min-height: 100vh;
-  margin: 0 auto;
-  padding: 84px 24px 24px; /* Left and right padding to align table with header logo */
+  padding: 84px 0 24px; /* Only top/bottom padding */
   display: flex;
   flex-direction: column;
   position: relative; /* Set anchor context for absolute positioning */
@@ -166,6 +164,16 @@
   gap: 16px;
   animation: fadeIn 0.3s ease-out;
   width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 24px;
+  box-sizing: border-box;
+}
+
+@media (max-width: 768px) {
+  .fatalErrorContainer {
+    padding: 0 12px;
+  }
 }
 
 .dismissBtn {
@@ -194,7 +202,17 @@
   display: flex;
   flex-direction: column;
   gap: 16px;
-  padding-right: 4px;
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 24px;
+  box-sizing: border-box;
+}
+
+@media (max-width: 768px) {
+  .errorsPanel {
+    padding: 0 12px;
+  }
 }
 
 .summaryBar {
@@ -262,7 +280,7 @@
 
 @media (max-width: 768px) {
   .appContainer {
-    padding: 84px 12px 12px; /* Set left/right padding to 12px to align with header */
+    padding: 84px 0 12px; /* Set top/bottom padding, horizontal is 0 */
   }
   .header {
     padding: 0 12px;
