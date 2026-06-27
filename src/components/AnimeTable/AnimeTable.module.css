@@ -49,8 +49,7 @@
 .tableHeader {
   display: grid;
   grid-template-columns: var(--grid-cols);
-  border: 1px solid var(--border);
-  margin: -1px -1px 0 -1px;
+  border-bottom: 1px solid var(--border);
   position: sticky;
   top: var(--table-header-top, 60px);
   z-index: 160;
@@ -143,7 +142,6 @@
   .tableWrapper {
     border-left: none;
     border-right: none;
-    border-radius: 0;
   }
   .tableHeader {
     border-left: none;

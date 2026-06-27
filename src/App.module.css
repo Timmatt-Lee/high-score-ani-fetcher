@@ -3,7 +3,7 @@
   max-width: 1200px;
   min-height: 100vh;
   margin: 0 auto;
-  padding: 84px 0 24px; /* Left/right padding removed for edge-to-edge content */
+  padding: 84px 24px 24px; /* Left and right padding to align table with header logo */
   display: flex;
   flex-direction: column;
   position: relative; /* Set anchor context for absolute positioning */
@@ -260,18 +260,9 @@
   --table-header-top: 84px; /* Leaves 24px gap under fixed 60px header */
 }
 
-.contentArea > :not([data-testid="list-container"]) {
-  padding-left: 24px;
-  padding-right: 24px;
-}
-
 @media (max-width: 768px) {
   .appContainer {
     padding: 84px 0 12px; /* Set left/right padding to 0 */
-  }
-  .contentArea > :not([data-testid="list-container"]) {
-    padding-left: 12px;
-    padding-right: 12px;
   }
   .header::before {
     left: 12px;

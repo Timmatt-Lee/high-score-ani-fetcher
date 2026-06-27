@@ -111,19 +111,7 @@ const meta: Meta<typeof App> = {
           run();
         });
       };
-      return (
-        <div
-          style={{
-            width: "100%",
-            maxWidth: "1200px",
-            minHeight: "1000px",
-            background: "var(--bg-color)",
-            padding: "20px",
-          }}
-        >
-          <Story />
-        </div>
-      );
+      return <Story />;
     },
   ],
   parameters: {
@@ -389,6 +377,6 @@ export const ScrolledWithStickyHeader: Story = {
   ],
   play: async () => {
     await new Promise((resolve) => setTimeout(resolve, 500));
-    window.scrollTo(0, 100);
+    window.scrollTo(0, 250);
   },
 };
