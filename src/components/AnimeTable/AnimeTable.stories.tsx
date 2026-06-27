@@ -21,6 +21,13 @@ const meta: Meta<typeof AnimeTable> = {
       viewports: [320, 768, 1200],
     },
   },
+  decorators: [
+    (Story) => (
+      <div style={{ "--table-header-top": "0px" } as React.CSSProperties}>
+        <Story />
+      </div>
+    ),
+  ],
 };
 
 export default meta;

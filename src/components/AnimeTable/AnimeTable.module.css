@@ -1,14 +1,25 @@
 .tableWrapper {
   width: 100%;
-  flex-grow: 1;
-  min-height: 300px;
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: 1fr;
+  grid-template-rows: 1fr;
+  overflow: visible;
+  isolation: isolate;
+}
+
+.tableBackdrop {
+  grid-area: 1 / 1;
+  position: sticky;
+  top: var(--table-header-top, 84px);
+  width: 100%;
+  height: 100%;
+  max-height: calc(100vh - var(--table-header-top, 84px) - 24px);
   background-color: var(--panel-bg);
   border: 1px solid var(--border);
   border-radius: var(--radius);
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
-  overflow: hidden; /* Contains the internal scroll */
+  z-index: -1;
+  pointer-events: none;
 }
 
 .emptyState {
@@ -40,29 +51,28 @@
 }
 
 .animeTable {
+  grid-area: 1 / 1;
   width: 100%;
-  flex-grow: 1;
   display: flex;
   flex-direction: column;
-  min-height: 0; /* allows shrinking */
-}
-
-.tableBody {
-  flex-grow: 1;
-  overflow-y: auto;
-  overflow-x: hidden;
-  position: relative;
-  min-height: 0;
+  min-width: 0;
+  z-index: 1; /* Stay above backdrop */
 }
 
 .tableHeader {
   display: grid;
   grid-template-columns: var(--grid-cols);
+  border-top: 1px solid var(--border);
   border-bottom: 1px solid var(--border);
+  margin-top: -1px; /* Overlaps the wrapper's top border so it's not doubled, but pulls away when sticky */
+  position: sticky;
+  top: var(--table-header-top, 60px);
+  z-index: 160;
   background: var(--panel-bg);
   padding: 0;
   align-items: center;
-  flex-shrink: 0; /* Never shrink the header */
+  border-top-left-radius: var(--radius);
+  border-top-right-radius: var(--radius);
 }
 
 .tableHeader.isSticky::before,
