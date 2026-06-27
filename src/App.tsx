@@ -140,6 +140,7 @@ function App() {
 
   return (
     <div className={styles.appContainer} data-testid="app-container">
+      <div className={styles.headerBg} />
       <div className={styles.headerSpacer} />
       <div className={styles.header}>
         <div className={styles.titleWrapper}>
