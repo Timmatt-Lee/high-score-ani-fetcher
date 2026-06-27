@@ -182,6 +182,8 @@ export const PopulatedFavoritesTab: Story = {
   play: async ({ canvasElement }) => {
     const { userEvent } = await import("@storybook/test");
     const canvas = within(canvasElement);
+    // Wait for the app container to be mounted in the DOM
+    await canvas.findByTestId("app-container", {}, { timeout: 5000 });
     const favTab = await canvas.findByRole("button", { name: /Favorites/i });
     await userEvent.click(favTab);
   },
@@ -200,6 +202,8 @@ export const PopulatedTrashTab: Story = {
   play: async ({ canvasElement }) => {
     const { userEvent } = await import("@storybook/test");
     const canvas = within(canvasElement);
+    // Wait for the app container to be mounted in the DOM
+    await canvas.findByTestId("app-container", {}, { timeout: 5000 });
     const trashTab = await canvas.findByRole("button", { name: /Trash/i });
     await userEvent.click(trashTab);
   },
@@ -217,6 +221,8 @@ export const SettingsTab: Story = {
   play: async ({ canvasElement }) => {
     const { userEvent } = await import("@storybook/test");
     const canvas = within(canvasElement);
+    // Wait for the app container to be mounted in the DOM
+    await canvas.findByTestId("app-container", {}, { timeout: 5000 });
     const settingsBtn = await canvas.findByRole("button", {
       name: /Settings/i,
     });
@@ -251,9 +257,11 @@ export const ScanInProgress: Story = {
     },
   ],
   play: async ({ canvasElement }) => {
+    const { userEvent } = await import("@storybook/test");
     const canvas = within(canvasElement);
+    await canvas.findByTestId("app-container", {}, { timeout: 5000 });
     const scanBtn = await canvas.findByRole("button", { name: /Scan/i });
-    scanBtn.click();
+    await userEvent.click(scanBtn);
   },
 };
 
@@ -285,9 +293,11 @@ export const ScanCompleted: Story = {
     );
   },
   play: async ({ canvasElement }) => {
+    const { userEvent } = await import("@storybook/test");
     const canvas = within(canvasElement);
+    await canvas.findByTestId("app-container", {}, { timeout: 5000 });
     const scanBtn = await canvas.findByRole("button", { name: /Scan/i });
-    scanBtn.click();
+    await userEvent.click(scanBtn);
   },
 };
 
@@ -327,9 +337,11 @@ export const ScanFatalError: Story = {
     );
   },
   play: async ({ canvasElement }) => {
+    const { userEvent } = await import("@storybook/test");
     const canvas = within(canvasElement);
+    await canvas.findByTestId("app-container", {}, { timeout: 5000 });
     const scanBtn = await canvas.findByRole("button", { name: /Scan/i });
-    scanBtn.click();
+    await userEvent.click(scanBtn);
   },
 };
 
@@ -379,9 +391,11 @@ export const ScanPartialFailure: Story = {
     },
   ],
   play: async ({ canvasElement }) => {
+    const { userEvent } = await import("@storybook/test");
     const canvas = within(canvasElement);
+    await canvas.findByTestId("app-container", {}, { timeout: 5000 });
     const scanBtn = await canvas.findByRole("button", { name: /Scan/i });
-    scanBtn.click();
+    await userEvent.click(scanBtn);
   },
 };
 
