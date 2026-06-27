@@ -13,7 +13,7 @@
   top: var(--table-header-top, 84px);
   width: 100%;
   height: 100%;
-  max-height: calc(100vh - var(--table-header-top, 84px) - 24px);
+  max-height: calc(100vh - var(--table-header-top, 84px));
   background-color: var(--panel-bg);
   border: 1px solid var(--border);
   border-radius: var(--radius);
