@@ -2,9 +2,11 @@ import { Subject, type Observable } from "rxjs";
 import { AnimeScraper } from "./animeScraper";
 import {
   type AnimeScanEvent,
-  type PipelineOptions,
+  type ScannerOptions,
   type AnimeItem,
   AnimeScanPageEvent,
+  AnimeScanSkippedEvent,
+  AnimeScanQueuedEvent,
 } from "./types";
 
 /**
@@ -14,28 +16,29 @@ import {
  */
 export class AnimeScanner {
   private totalPages: number;
-  private filterItem: (item: AnimeItem) => boolean;
+  private isScanRequired: (item: AnimeItem) => boolean;
   private scraper: AnimeScraper;
-  private options: PipelineOptions;
+  private options: ScannerOptions;
   private eventSubject = new Subject<AnimeScanEvent>();
 
   constructor(
     totalPages: number,
-    filterItem: (item: AnimeItem) => boolean,
+    isScanRequired: (item: AnimeItem) => boolean,
     scraper: AnimeScraper,
-    options: PipelineOptions,
+    options: ScannerOptions,
   ) {
     this.totalPages = totalPages;
-    this.filterItem = filterItem;
+    this.isScanRequired = isScanRequired;
     this.scraper = scraper;
     this.options = options;
   }
 
   scan(): Observable<AnimeScanEvent> {
     const run = async () => {
-      const pagesToScan =
-        this.options.onlyPages ??
-        Array.from({ length: this.totalPages }, (_, i) => i + 1);
+      const pagesToScan = Array.from(
+        { length: this.totalPages },
+        (_, i) => i + 1,
+      );
 
       const itemsToScan: { item: AnimeItem; page: number }[] = [];
 
@@ -44,8 +47,11 @@ export class AnimeScanner {
         try {
           const animeItems = await this.scraper.scrapeAnimesOnPage(page);
           for (const item of animeItems) {
-            if (this.filterItem(item)) {
+            if (this.isScanRequired(item)) {
               itemsToScan.push({ item, page });
+              this.eventSubject.next(new AnimeScanQueuedEvent(item));
+            } else {
+              this.eventSubject.next(new AnimeScanSkippedEvent(item));
             }
           }
           this.eventSubject.next(
@@ -82,7 +88,7 @@ export class AnimeScanner {
       page,
       item.title,
     );
-    const fullItem = { ...item, ...res, scannedAt: new Date() };
+    const fullItem = { ...item, ...res, scannedAt: new Date().toISOString() };
     this.eventSubject.next(fullItem);
   }
 }

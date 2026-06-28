@@ -9,7 +9,7 @@ const makeAnime = (): AnimeItem => ({
   title: "Test Anime",
   watchCount: 100,
   episodeCount: 12,
-  uploadDate: new Date("2024-01-01"),
+  uploadDate: "2024-01-01T00:00:00.000Z",
   score: 4.5,
   ratingCount: 50,
   description: "Desc",
@@ -28,7 +28,7 @@ describe("AnimeRow", () => {
     renderInTable(
       <AnimeRow
         item={makeAnime()}
-        activeTab={Tab.Search}
+        activeTab={Tab.Scanned}
         onMoveToFavorites={vi.fn()}
         onMoveToTrash={vi.fn()}
       />,
@@ -40,11 +40,11 @@ describe("AnimeRow", () => {
 
   it("renders N/A for invalid upload date", () => {
     const item = makeAnime();
-    item.uploadDate = new Date(NaN);
+    item.uploadDate = "Invalid Date";
     renderInTable(
       <AnimeRow
         item={item}
-        activeTab={Tab.Search}
+        activeTab={Tab.Scanned}
         onMoveToFavorites={vi.fn()}
         onMoveToTrash={vi.fn()}
       />,
@@ -58,7 +58,7 @@ describe("AnimeRow", () => {
     renderInTable(
       <AnimeRow
         item={item}
-        activeTab={Tab.Search}
+        activeTab={Tab.Scanned}
         onMoveToFavorites={vi.fn()}
         onMoveToTrash={vi.fn()}
       />,
@@ -70,7 +70,7 @@ describe("AnimeRow", () => {
     renderInTable(
       <AnimeRow
         item={item2}
-        activeTab={Tab.Search}
+        activeTab={Tab.Scanned}
         onMoveToFavorites={vi.fn()}
         onMoveToTrash={vi.fn()}
       />,
@@ -82,7 +82,7 @@ describe("AnimeRow", () => {
     renderInTable(
       <AnimeRow
         item={item3}
-        activeTab={Tab.Search}
+        activeTab={Tab.Scanned}
         onMoveToFavorites={vi.fn()}
         onMoveToTrash={vi.fn()}
       />,
@@ -97,7 +97,7 @@ describe("AnimeRow", () => {
     const { container: c1 } = renderInTable(
       <AnimeRow
         item={item1}
-        activeTab={Tab.Search}
+        activeTab={Tab.Scanned}
         onMoveToFavorites={vi.fn()}
         onMoveToTrash={vi.fn()}
       />,
@@ -110,7 +110,7 @@ describe("AnimeRow", () => {
     const { container: c2 } = renderInTable(
       <AnimeRow
         item={item2}
-        activeTab={Tab.Search}
+        activeTab={Tab.Scanned}
         onMoveToFavorites={vi.fn()}
         onMoveToTrash={vi.fn()}
       />,
@@ -123,7 +123,7 @@ describe("AnimeRow", () => {
     const { container: c3 } = renderInTable(
       <AnimeRow
         item={item3}
-        activeTab={Tab.Search}
+        activeTab={Tab.Scanned}
         onMoveToFavorites={vi.fn()}
         onMoveToTrash={vi.fn()}
       />,
@@ -136,7 +136,7 @@ describe("AnimeRow", () => {
     const { container: c4 } = renderInTable(
       <AnimeRow
         item={item4}
-        activeTab={Tab.Search}
+        activeTab={Tab.Scanned}
         onMoveToFavorites={vi.fn()}
         onMoveToTrash={vi.fn()}
         targetScore={5.0}
@@ -151,7 +151,7 @@ describe("AnimeRow", () => {
     renderInTable(
       <AnimeRow
         item={makeAnime()}
-        activeTab={Tab.Search}
+        activeTab={Tab.Scanned}
         onMoveToFavorites={favFn}
         onMoveToTrash={trashFn}
       />,

@@ -3,7 +3,7 @@ import styles from "./Tabs.module.css";
 import { SearchIcon, HeartIcon, TrashIcon, SettingsIcon } from "../Icons";
 
 export enum Tab {
-  Search,
+  Scanned,
   Favorites,
   Trash,
   Settings,
@@ -12,7 +12,7 @@ export enum Tab {
 interface TabsProps {
   activeTab: Tab;
   setActiveTab: (tab: Tab) => void;
-  searchCount: number;
+  scannedCount: number;
   favoritesCount: number;
   trashCount: number;
 }
@@ -20,22 +20,22 @@ interface TabsProps {
 export function Tabs({
   activeTab,
   setActiveTab,
-  searchCount,
+  scannedCount,
   favoritesCount,
   trashCount,
 }: TabsProps) {
   return (
     <div className={styles.tabs} data-testid="tabs-container">
       <button
-        className={`${styles.tab} ${activeTab === Tab.Search ? styles.active : ""}`}
-        onClick={() => setActiveTab(Tab.Search)}
+        className={`${styles.tab} ${activeTab === Tab.Scanned ? styles.active : ""}`}
+        onClick={() => setActiveTab(Tab.Scanned)}
         title="View scanned anime results"
-        data-testid="tab-search"
+        data-testid="tab-scanned"
       >
         <SearchIcon width="16" height="16" className={styles.tabIcon} />
         <span className={styles.tabText}>Results</span>
-        <span className={styles.tabCount} data-testid="tab-badge-search">
-          {searchCount}
+        <span className={styles.tabCount} data-testid="tab-badge-scanned">
+          {scannedCount}
         </span>
       </button>
       <button

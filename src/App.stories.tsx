@@ -20,7 +20,7 @@ const createMockAnime = (overrides: Partial<AnimeItem> = {}): AnimeItem => ({
   title: "葬送的芙莉蓮",
   watchCount: 120000,
   episodeCount: 28,
-  uploadDate: new Date("2023-09-29T00:00:00.000Z"),
+  uploadDate: "2023-09-29T00:00:00.000Z",
   score: 4.9,
   ratingCount: 15432,
   description: "芙莉蓮與勇者一行人打倒魔王後，展開的新旅程與歲月流逝的故事。",
@@ -75,7 +75,7 @@ const seedExistingData = () => {
   localStorage.setItem(
     "animeData",
     JSON.stringify({
-      searchList: existingSearch,
+      scannedList: existingSearch,
       favoriteList: existingFavorites,
       trashList: existingTrash,
     }),
@@ -295,18 +295,8 @@ export const ScanError: Story = {
   decorators: [
     (Story) => {
       AnimeScanner.prototype.scan = function (this: any) {
-        const options = this.options;
         return new Observable((subscriber) => {
           const run = async () => {
-            if (options && options.onlyPages && options.onlyPages.length > 0) {
-              await new Promise((resolve) => setTimeout(resolve, 10));
-              subscriber.next(
-                createMockAnime({ title: "Retry Progress Detail", score: 4.9 }),
-              );
-              subscriber.complete();
-              return;
-            }
-
             await new Promise((resolve) => setTimeout(resolve, 20));
             subscriber.next(
               createMockAnime({
@@ -341,5 +331,35 @@ export const ScanError: Story = {
     await canvas.findByTestId("app-container", {}, { timeout: 5000 });
     const scanBtn = await canvas.findByRole("button", { name: /Scan/i });
     await userEvent.click(scanBtn);
+  },
+};
+
+/** Settings Import Error — shows ErrorCard when backup file import fails schema validation. */
+export const SettingsImportError: Story = {
+  decorators: [
+    (Story) => (
+      <ServiceProvider animeScraper={mockAnimeScraper as any}>
+        <Story />
+      </ServiceProvider>
+    ),
+  ],
+  play: async ({ canvasElement }) => {
+    const { userEvent, fireEvent } = await import("@storybook/test");
+    const canvas = within(canvasElement);
+    await canvas.findByTestId("app-container", {}, { timeout: 5000 });
+
+    // Go to Settings tab
+    const settingsBtn = await canvas.findByTestId("tab-settings");
+    await userEvent.click(settingsBtn);
+
+    // Mock file input trigger with invalid content
+    const fileInput = await canvas.findByTestId("file-import-input");
+    const invalidFile = new File(
+      [JSON.stringify({ scannedList: [{ title: 12345 }] })],
+      "bad-backup.json",
+      { type: "application/json" },
+    );
+
+    fireEvent.change(fileInput, { target: { files: [invalidFile] } });
   },
 };

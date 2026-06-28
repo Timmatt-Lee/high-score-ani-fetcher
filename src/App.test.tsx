@@ -66,7 +66,7 @@ const makeAnime = (overrides: Partial<AnimeItem> = {}): AnimeItem => ({
   title: "Test Anime",
   watchCount: 10000,
   episodeCount: 12,
-  uploadDate: new Date("2024-01-01"),
+  uploadDate: "2024-01-01T00:00:00.000Z",
   score: 8.5,
   ratingCount: 500,
   description: "A great show.",
@@ -126,7 +126,7 @@ describe("App rendering", () => {
 
   it("loads saved data from chrome.storage on mount", async () => {
     const anime = makeAnime();
-    storageMock["searchList"] = [anime];
+    storageMock["scannedList"] = [anime];
     await act(async () => {
       render(
         <ServiceProvider>
@@ -145,7 +145,7 @@ describe("App rendering", () => {
     localStorage.setItem(
       "animeData",
       JSON.stringify({
-        searchList: [anime],
+        scannedList: [anime],
         favoriteList: [fav],
         trashList: [trashItem],
       }),
@@ -180,7 +180,7 @@ describe("App rendering", () => {
     vi.stubGlobal("chrome", undefined);
     const anime = makeAnime({ title: "Only Search" });
     // Deliberately omit favoriteList and trashList to trigger the || [] fallback
-    localStorage.setItem("animeData", JSON.stringify({ searchList: [anime] }));
+    localStorage.setItem("animeData", JSON.stringify({ scannedList: [anime] }));
     await act(async () => {
       render(
         <ServiceProvider>
@@ -280,7 +280,7 @@ describe("Tab switching", () => {
 // --- Actions ---
 describe("Card actions", () => {
   it("moves item to Favorites", async () => {
-    storageMock["searchList"] = [makeAnime()];
+    storageMock["scannedList"] = [makeAnime()];
     await act(async () => {
       render(
         <ServiceProvider>
@@ -299,7 +299,7 @@ describe("Card actions", () => {
     localStorage.setItem(
       "animeData",
       JSON.stringify({
-        searchList: [makeAnime()],
+        scannedList: [makeAnime()],
         favoriteList: [],
         trashList: [],
       }),
@@ -320,7 +320,7 @@ describe("Card actions", () => {
     vi.stubGlobal("chrome", {
       storage: {
         local: {
-          get: vi.fn(async () => ({ searchList: [makeAnime()] })),
+          get: vi.fn(async () => ({ scannedList: [makeAnime()] })),
           set: vi.fn().mockRejectedValue(new Error("quota exceeded")),
         },
       },
@@ -339,7 +339,7 @@ describe("Card actions", () => {
   });
 
   it("moves item to Trash from Results", async () => {
-    storageMock["searchList"] = [makeAnime()];
+    storageMock["scannedList"] = [makeAnime()];
     await act(async () => {
       render(
         <ServiceProvider>
@@ -432,8 +432,8 @@ describe("Scan functionality", () => {
 
     vi.spyOn(animeScraper, "getTotalPages").mockResolvedValue(1);
     vi.spyOn(AnimeScanner.prototype, "scan").mockImplementation(
-      function (this: { filterItem: (item: AnimeItem) => boolean }) {
-        const filtered = [highScore, lowScore].filter(this.filterItem);
+      function (this: { isScanRequired: (item: AnimeItem) => boolean }) {
+        const filtered = [highScore, lowScore].filter(this.isScanRequired);
         const details = [
           {
             ...highScore,
@@ -470,8 +470,8 @@ describe("Scan functionality", () => {
     });
     vi.spyOn(animeScraper, "getTotalPages").mockResolvedValue(1);
     vi.spyOn(AnimeScanner.prototype, "scan").mockImplementation(
-      function (this: { filterItem: (item: AnimeItem) => boolean }) {
-        const filtered = [shortShow].filter(this.filterItem);
+      function (this: { isScanRequired: (item: AnimeItem) => boolean }) {
+        const filtered = [shortShow].filter(this.isScanRequired);
         return createMockObservable(
           filtered.map((item) => ({
             ...item,
@@ -505,8 +505,8 @@ describe("Scan functionality", () => {
     });
     vi.spyOn(animeScraper, "getTotalPages").mockResolvedValue(1);
     vi.spyOn(AnimeScanner.prototype, "scan").mockImplementation(
-      function (this: { filterItem: (item: AnimeItem) => boolean }) {
-        const filtered = [ova].filter(this.filterItem);
+      function (this: { isScanRequired: (item: AnimeItem) => boolean }) {
+        const filtered = [ova].filter(this.isScanRequired);
         return createMockObservable(
           filtered.map((item) => ({
             ...item,
@@ -541,8 +541,8 @@ describe("Scan functionality", () => {
     storageMock["trashList"] = [trashItem];
     vi.spyOn(animeScraper, "getTotalPages").mockResolvedValue(1);
     vi.spyOn(AnimeScanner.prototype, "scan").mockImplementation(
-      function (this: { filterItem: (item: AnimeItem) => boolean }) {
-        const filtered = [trashItem].filter(this.filterItem);
+      function (this: { isScanRequired: (item: AnimeItem) => boolean }) {
+        const filtered = [trashItem].filter(this.isScanRequired);
         return createMockObservable(
           filtered.map((item) => ({
             ...item,
@@ -577,8 +577,8 @@ describe("Scan functionality", () => {
     storageMock["favoriteList"] = [favItem];
     vi.spyOn(animeScraper, "getTotalPages").mockResolvedValue(1);
     vi.spyOn(AnimeScanner.prototype, "scan").mockImplementation(
-      function (this: { filterItem: (item: AnimeItem) => boolean }) {
-        const filtered = [favItem].filter(this.filterItem);
+      function (this: { isScanRequired: (item: AnimeItem) => boolean }) {
+        const filtered = [favItem].filter(this.isScanRequired);
         return createMockObservable(
           filtered.map((item) => ({
             ...item,
@@ -612,8 +612,8 @@ describe("Scan functionality", () => {
     });
     vi.spyOn(animeScraper, "getTotalPages").mockResolvedValue(1);
     vi.spyOn(AnimeScanner.prototype, "scan").mockImplementation(
-      function (this: { filterItem: (item: AnimeItem) => boolean }) {
-        const filtered = [naEp].filter(this.filterItem);
+      function (this: { isScanRequired: (item: AnimeItem) => boolean }) {
+        const filtered = [naEp].filter(this.isScanRequired);
         return createMockObservable(
           filtered.map((item) => ({
             ...item,
@@ -677,6 +677,15 @@ describe("Scan functionality", () => {
     expect(
       screen.getByText(/HTTP request failed with status 502/),
     ).toBeDefined();
+
+    // Dismiss the error card
+    const dismissBtn = screen.getByRole("button", { name: "Dismiss error" });
+    await act(async () => {
+      fireEvent.click(dismissBtn);
+    });
+
+    // Verify error container is gone
+    expect(screen.queryByTestId("fatal-error-container")).toBeNull();
   });
 
   it("renders SettingsTab when Settings tab is active", async () => {
@@ -713,7 +722,7 @@ describe("Scan functionality", () => {
     });
 
     const mockFileContent = JSON.stringify({
-      searchList: [
+      scannedList: [
         {
           link: "https://example.com/anime/import-app",
           title: "Imported App Anime",
@@ -748,8 +757,13 @@ describe("Scan functionality", () => {
     const input = screen.getByTestId("file-import-input");
     fireEvent.change(input, { target: { files: [file] } });
 
+    await act(async () => {
+      const searchTab = screen.getByTestId("tab-scanned");
+      fireEvent.click(searchTab);
+    });
+
     await waitFor(() => {
-      expect(screen.getByText("Backup restored successfully!")).toBeDefined();
+      expect(screen.getByText("Imported App Anime")).toBeInTheDocument();
     });
   });
 
@@ -760,7 +774,7 @@ describe("Scan functionality", () => {
       score: 9.5,
       watchCount: 10000,
       episodeCount: 12,
-      uploadDate: new Date("2024-01-01"),
+      uploadDate: "2024-01-01T00:00:00.000Z",
     });
     const itemB = makeAnime({
       link: "https://ani.gamer.com.tw/anime.php?sn=2",
@@ -768,7 +782,7 @@ describe("Scan functionality", () => {
       score: 8.0,
       watchCount: 50000,
       episodeCount: 24,
-      uploadDate: new Date("2023-01-01"),
+      uploadDate: "2023-01-01T00:00:00.000Z",
     });
     const itemC = makeAnime({
       link: "https://ani.gamer.com.tw/anime.php?sn=3",
@@ -776,27 +790,24 @@ describe("Scan functionality", () => {
       score: 9.0,
       watchCount: 5000,
       episodeCount: 6,
-      uploadDate: new Date("2025-01-01"),
+      uploadDate: "2025-01-01T00:00:00.000Z",
     });
     const itemD = makeAnime({
       link: "https://ani.gamer.com.tw/anime.php?sn=4",
       title: "Date N/A Anime",
-      uploadDate: new Date(NaN),
+      uploadDate: "Invalid Date",
     });
 
     const useAnimeDataSpy = vi
       .spyOn(useAnimeDataModule, "useAnimeData")
       .mockReturnValue({
-        searchList: [itemA, itemB, itemC, itemD],
+        scannedList: [itemA, itemB, itemC, itemD],
         favoriteList: [],
         trashList: [],
         moveToFavorites: vi.fn(),
         moveToTrash: vi.fn(),
-        saveData: vi.fn(),
+        updateLists: vi.fn(),
         isLoaded: true,
-        setSearchList: vi.fn(),
-        setFavoriteList: vi.fn(),
-        setTrashList: vi.fn(),
       });
 
     await act(async () => {
@@ -879,31 +890,30 @@ describe("Scan functionality", () => {
     useAnimeDataSpy.mockRestore();
   });
 
-  it("handles sorting when multiple items have invalid uploadDate (NaN)", async () => {
+  it("handles sorting when multiple items have invalid uploadDate (NaN) or mismatched types", async () => {
     const itemX = makeAnime({
       link: "https://ani.gamer.com.tw/anime.php?sn=10",
       title: "X Anime",
-      uploadDate: new Date(NaN),
+      uploadDate: "Invalid Date",
     });
+    // @ts-expect-error - testing sorting with mismatched type
+    itemX.watchCount = "mismatched";
     const itemY = makeAnime({
       link: "https://ani.gamer.com.tw/anime.php?sn=11",
       title: "Y Anime",
-      uploadDate: new Date(NaN),
+      uploadDate: "Invalid Date",
     });
 
     const useAnimeDataSpy = vi
       .spyOn(useAnimeDataModule, "useAnimeData")
       .mockReturnValue({
-        searchList: [itemX, itemY],
+        scannedList: [itemX, itemY],
         favoriteList: [],
         trashList: [],
         moveToFavorites: vi.fn(),
         moveToTrash: vi.fn(),
-        saveData: vi.fn(),
+        updateLists: vi.fn(),
         isLoaded: true,
-        setSearchList: vi.fn(),
-        setFavoriteList: vi.fn(),
-        setTrashList: vi.fn(),
       });
 
     await act(async () => {
@@ -912,6 +922,11 @@ describe("Scan functionality", () => {
           <App />
         </ServiceProvider>,
       );
+    });
+
+    // Sort by watchCount to trigger the typeof comparison failure (reaches return 0)
+    await act(async () => {
+      fireEvent.click(screen.getByTestId("sort-header-watchCount"));
     });
 
     // Sort by uploadDate descending then ascending to trigger all comparisons

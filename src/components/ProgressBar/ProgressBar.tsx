@@ -43,7 +43,7 @@ export function ProgressBar({
         {steps.map((step) => (
           <div
             key={step.index}
-            className={`${styles[`step${step.index + 1}`] || styles.stepDefault} ${
+            className={`${step.index === 0 ? styles.step1 : styles.step2} ${
               step.isCompleted
                 ? styles.completed
                 : step.isActive

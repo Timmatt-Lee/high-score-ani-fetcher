@@ -7,10 +7,12 @@ export {
 } from "./animeScanError";
 export {
   type AnimeScanEvent,
-  type PipelineOptions,
+  type ScannerOptions,
   type AnimeItem,
   AnimeItemSchema,
   type Settings,
   SettingsSchema,
   AnimeScanPageEvent,
+  AnimeScanSkippedEvent,
+  AnimeScanQueuedEvent,
 } from "./types";

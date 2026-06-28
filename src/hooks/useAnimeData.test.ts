@@ -27,7 +27,7 @@ const makeAnime = (title: string): AnimeItem => ({
   title,
   watchCount: 100,
   episodeCount: 12,
-  uploadDate: new Date("2024-01-01"),
+  uploadDate: "2024-01-01T00:00:00.000Z",
   score: 8.5,
   ratingCount: 50,
   description: "Desc",
@@ -47,7 +47,7 @@ describe("useAnimeData", () => {
 
   // --- Chrome storage path ---
   it("loads data from chrome.storage on mount", async () => {
-    storageMock["searchList"] = [makeAnime("Test")];
+    storageMock["scannedList"] = [makeAnime("Test")];
     storageMock["favoriteList"] = [makeAnime("Fav")];
     storageMock["trashList"] = [makeAnime("Trash")];
     const { result } = renderHook(() => useAnimeData());
@@ -56,8 +56,8 @@ describe("useAnimeData", () => {
       await new Promise((resolve) => setTimeout(resolve, 0));
     });
 
-    expect(result.current.searchList).toHaveLength(1);
-    expect(result.current.searchList[0].title).toBe("Test");
+    expect(result.current.scannedList).toHaveLength(1);
+    expect(result.current.scannedList[0].title).toBe("Test");
     expect(result.current.favoriteList).toHaveLength(1);
     expect(result.current.trashList).toHaveLength(1);
   });
@@ -71,7 +71,7 @@ describe("useAnimeData", () => {
     localStorage.setItem(
       "animeData",
       JSON.stringify({
-        searchList: [anime],
+        scannedList: [anime],
         favoriteList: [fav],
         trashList: [trashItem],
       }),
@@ -83,10 +83,34 @@ describe("useAnimeData", () => {
       await new Promise((resolve) => setTimeout(resolve, 0));
     });
 
-    expect(result.current.searchList).toHaveLength(1);
-    expect(result.current.searchList[0].title).toBe("Local");
+    expect(result.current.scannedList).toHaveLength(1);
+    expect(result.current.scannedList[0].title).toBe("Local");
     expect(result.current.favoriteList).toHaveLength(1);
     expect(result.current.trashList).toHaveLength(1);
+  });
+
+  it("migrates searchList to scannedList fallback in chrome.storage on mount", async () => {
+    storageMock["searchList"] = [makeAnime("Migrated Chrome")];
+    const { result } = renderHook(() => useAnimeData());
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+    expect(result.current.scannedList).toHaveLength(1);
+    expect(result.current.scannedList[0].title).toBe("Migrated Chrome");
+  });
+
+  it("migrates searchList to scannedList fallback in localStorage on mount", async () => {
+    vi.stubGlobal("chrome", undefined);
+    localStorage.setItem(
+      "animeData",
+      JSON.stringify({ searchList: [makeAnime("Migrated Local")] }),
+    );
+    const { result } = renderHook(() => useAnimeData());
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+    expect(result.current.scannedList).toHaveLength(1);
+    expect(result.current.scannedList[0].title).toBe("Migrated Local");
   });
 
   it("handles empty localStorage gracefully", async () => {
@@ -97,14 +121,14 @@ describe("useAnimeData", () => {
       await new Promise((resolve) => setTimeout(resolve, 0));
     });
 
-    expect(result.current.searchList).toHaveLength(0);
+    expect(result.current.scannedList).toHaveLength(0);
   });
 
   it("handles localStorage data with missing keys using || [] fallback", async () => {
     vi.stubGlobal("chrome", undefined);
     localStorage.setItem(
       "animeData",
-      JSON.stringify({ searchList: [makeAnime("Only")] }),
+      JSON.stringify({ scannedList: [makeAnime("Only")] }),
     );
 
     const { result } = renderHook(() => useAnimeData());
@@ -113,7 +137,7 @@ describe("useAnimeData", () => {
       await new Promise((resolve) => setTimeout(resolve, 0));
     });
 
-    expect(result.current.searchList).toHaveLength(1);
+    expect(result.current.scannedList).toHaveLength(1);
     expect(result.current.favoriteList).toHaveLength(0);
     expect(result.current.trashList).toHaveLength(0);
   });
@@ -128,7 +152,7 @@ describe("useAnimeData", () => {
       await new Promise((resolve) => setTimeout(resolve, 0));
     });
 
-    expect(result.current.searchList).toHaveLength(0);
+    expect(result.current.scannedList).toHaveLength(0);
     expect(result.current.favoriteList).toHaveLength(0);
     expect(result.current.trashList).toHaveLength(0);
   });
@@ -137,7 +161,7 @@ describe("useAnimeData", () => {
     vi.stubGlobal("chrome", undefined);
     localStorage.setItem(
       "animeData",
-      JSON.stringify({ searchList: [null, 123, makeAnime("Valid")] }),
+      JSON.stringify({ scannedList: [null, 123, makeAnime("Valid")] }),
     );
 
     const { result } = renderHook(() => useAnimeData());
@@ -146,7 +170,7 @@ describe("useAnimeData", () => {
       await new Promise((resolve) => setTimeout(resolve, 0));
     });
 
-    expect(result.current.searchList).toHaveLength(0);
+    expect(result.current.scannedList).toHaveLength(0);
   });
 
   // --- Load error path (lines 32-34) ---
@@ -166,7 +190,45 @@ describe("useAnimeData", () => {
       await new Promise((resolve) => setTimeout(resolve, 0));
     });
 
-    expect(result.current.searchList).toHaveLength(0);
+    expect(result.current.scannedList).toHaveLength(0);
+  });
+
+  it("handles localStorage.getItem error gracefully", async () => {
+    vi.stubGlobal("chrome", undefined);
+    const consoleErrorSpy = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => {});
+    vi.spyOn(Storage.prototype, "getItem").mockImplementationOnce(() => {
+      throw new Error("localStorage error");
+    });
+
+    const { result } = renderHook(() => useAnimeData());
+
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+
+    expect(result.current.scannedList).toHaveLength(0);
+    expect(consoleErrorSpy).toHaveBeenCalled();
+    consoleErrorSpy.mockRestore();
+  });
+
+  it("handles localStorage JSON.parse error gracefully", async () => {
+    vi.stubGlobal("chrome", undefined);
+    localStorage.setItem("animeData", "invalid-json");
+    const consoleErrorSpy = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => {});
+
+    const { result } = renderHook(() => useAnimeData());
+
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+
+    expect(result.current.scannedList).toHaveLength(0);
+    expect(consoleErrorSpy).toHaveBeenCalled();
+    consoleErrorSpy.mockRestore();
   });
 
   // --- Save via localStorage fallback (lines 48-53) ---
@@ -175,7 +237,7 @@ describe("useAnimeData", () => {
     localStorage.setItem(
       "animeData",
       JSON.stringify({
-        searchList: [makeAnime("Test")],
+        scannedList: [makeAnime("Test")],
         favoriteList: [],
         trashList: [],
       }),
@@ -200,7 +262,7 @@ describe("useAnimeData", () => {
     vi.stubGlobal("chrome", {
       storage: {
         local: {
-          get: vi.fn(async () => ({ searchList: [makeAnime("Test")] })),
+          get: vi.fn(async () => ({ scannedList: [makeAnime("Test")] })),
           set: vi.fn().mockRejectedValue(new Error("quota exceeded")),
         },
       },
@@ -222,7 +284,7 @@ describe("useAnimeData", () => {
   // --- Core operations ---
   it("moves item to favorites", async () => {
     const anime = makeAnime("Test");
-    storageMock["searchList"] = [anime];
+    storageMock["scannedList"] = [anime];
     const { result } = renderHook(() => useAnimeData());
 
     await act(async () => {
@@ -233,13 +295,13 @@ describe("useAnimeData", () => {
       result.current.moveToFavorites(anime);
     });
 
-    expect(result.current.searchList).toHaveLength(0);
+    expect(result.current.scannedList).toHaveLength(0);
     expect(result.current.favoriteList).toHaveLength(1);
   });
 
   it("moves item to trash from both search and favorites", async () => {
     const anime = makeAnime("Test");
-    storageMock["searchList"] = [anime];
+    storageMock["scannedList"] = [anime];
     storageMock["favoriteList"] = [anime];
     const { result } = renderHook(() => useAnimeData());
 
@@ -251,7 +313,7 @@ describe("useAnimeData", () => {
       result.current.moveToTrash(anime);
     });
 
-    expect(result.current.searchList).toHaveLength(0);
+    expect(result.current.scannedList).toHaveLength(0);
     expect(result.current.favoriteList).toHaveLength(0);
     expect(result.current.trashList).toHaveLength(1);
   });
@@ -275,72 +337,51 @@ describe("useAnimeData", () => {
 
   it("handles malformed loaded data by failing validation and returning empty list", async () => {
     const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
-    storageMock["searchList"] = [{ title: 12345 }];
+    storageMock["scannedList"] = [{ title: 12345 }];
     const { result } = renderHook(() => useAnimeData());
 
     await act(async () => {
       await new Promise((resolve) => setTimeout(resolve, 0));
     });
 
-    expect(result.current.searchList).toHaveLength(0);
+    expect(result.current.scannedList).toHaveLength(0);
     expect(consoleSpy).toHaveBeenCalled();
     consoleSpy.mockRestore();
   });
 
   it("handles non-array loaded data gracefully", async () => {
     const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
-    storageMock["searchList"] = "not-an-array";
+    storageMock["scannedList"] = "not-an-array";
     const { result } = renderHook(() => useAnimeData());
 
     await act(async () => {
       await new Promise((resolve) => setTimeout(resolve, 0));
     });
 
-    expect(result.current.searchList).toHaveLength(0);
+    expect(result.current.scannedList).toHaveLength(0);
     expect(consoleSpy).toHaveBeenCalled();
     consoleSpy.mockRestore();
   });
 
-  it("migrates scannedAt property for items with score > 0 on load", async () => {
-    const itemWithoutScannedAt = makeAnime("NoScannedAt");
-    itemWithoutScannedAt.score = 9.0;
-    delete itemWithoutScannedAt.scannedAt;
+  it("successfully loads and validates list containing dates as strings or Date objects", async () => {
+    const itemWithValidString = makeAnime("ValidString");
+    itemWithValidString.uploadDate = "2026-04-01T00:00:00.000Z";
+    itemWithValidString.scannedAt = "2026-06-28T02:30:00.000Z";
 
-    const itemWithScannedAt = makeAnime("WithScannedAt");
-    itemWithScannedAt.score = 9.0;
-    const existingDate = new Date("2026-06-20");
-    itemWithScannedAt.scannedAt = existingDate;
+    const itemWithValidDate = makeAnime("ValidDate");
+    (itemWithValidDate as unknown as Record<string, unknown>).uploadDate =
+      new Date("2026-04-01T00:00:00.000Z");
+    (itemWithValidDate as unknown as Record<string, unknown>).scannedAt =
+      new Date("2026-06-28T02:30:00.000Z");
 
-    storageMock["searchList"] = [itemWithoutScannedAt, itemWithScannedAt];
-    const { result } = renderHook(() => useAnimeData());
+    const itemWithInvalidDate = makeAnime("InvalidDate");
+    (itemWithInvalidDate as unknown as Record<string, unknown>).uploadDate =
+      new Date("Invalid Date");
 
-    await act(async () => {
-      await new Promise((resolve) => setTimeout(resolve, 0));
-    });
-
-    expect(result.current.searchList).toHaveLength(2);
-    // The one without scannedAt gets migrated
-    expect(result.current.searchList[0].scannedAt).toBeInstanceOf(Date);
-    // The one with scannedAt remains unchanged
-    expect(result.current.searchList[1].scannedAt?.getTime()).toBe(
-      existingDate.getTime(),
-    );
-  });
-
-  it("cleans up corrupted scannedAt values (like empty objects or Invalid Date strings) on load", async () => {
-    const itemWithCorruptedObject = makeAnime("CorruptedObject");
-    itemWithCorruptedObject.score = 9.0;
-    (itemWithCorruptedObject as unknown as { scannedAt: unknown }).scannedAt =
-      {};
-
-    const itemWithCorruptedString = makeAnime("CorruptedString");
-    itemWithCorruptedString.score = 9.0;
-    (itemWithCorruptedString as unknown as { scannedAt: unknown }).scannedAt =
-      "Invalid Date";
-
-    storageMock["searchList"] = [
-      itemWithCorruptedObject,
-      itemWithCorruptedString,
+    storageMock["scannedList"] = [
+      itemWithValidString,
+      itemWithValidDate,
+      itemWithInvalidDate,
     ];
     const { result } = renderHook(() => useAnimeData());
 
@@ -348,10 +389,35 @@ describe("useAnimeData", () => {
       await new Promise((resolve) => setTimeout(resolve, 0));
     });
 
-    expect(result.current.searchList).toHaveLength(2);
-    // Both items are successfully validated and assigned a fresh Date as fallback migration
-    expect(result.current.searchList[0].scannedAt).toBeInstanceOf(Date);
-    expect(result.current.searchList[1].scannedAt).toBeInstanceOf(Date);
+    expect(result.current.scannedList).toHaveLength(3);
+    expect(result.current.scannedList[0].uploadDate).toBe(
+      "2026-04-01T00:00:00.000Z",
+    );
+    expect(result.current.scannedList[0].scannedAt).toBe(
+      "2026-06-28T02:30:00.000Z",
+    );
+    expect(result.current.scannedList[1].uploadDate).toBe(
+      "2026-04-01T00:00:00.000Z",
+    );
+    expect(result.current.scannedList[1].scannedAt).toBe(
+      "2026-06-28T02:30:00.000Z",
+    );
+    expect(result.current.scannedList[2].uploadDate).toBe("Invalid Date");
+  });
+
+  it("fails validation and returns empty list on invalid property types", async () => {
+    const itemWithCorruptedObject = makeAnime("CorruptedObject");
+    (itemWithCorruptedObject as unknown as Record<string, unknown>).scannedAt =
+      {};
+
+    storageMock["scannedList"] = [itemWithCorruptedObject];
+    const { result } = renderHook(() => useAnimeData());
+
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+
+    expect(result.current.scannedList).toHaveLength(0);
   });
 
   it("sets isLoaded to true after data loading finishes", async () => {

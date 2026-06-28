@@ -248,7 +248,7 @@ export class AnimeScraper {
       title,
       watchCount,
       episodeCount,
-      uploadDate,
+      uploadDate: uploadDate.toISOString(),
       score: 0,
       ratingCount: 0,
       description: "",

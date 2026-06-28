@@ -7,9 +7,9 @@ const meta: Meta<typeof Tabs> = {
   argTypes: {
     activeTab: {
       control: "select",
-      options: [Tab.Search, Tab.Favorites, Tab.Trash, Tab.Settings],
+      options: [Tab.Scanned, Tab.Favorites, Tab.Trash, Tab.Settings],
     },
-    searchCount: { control: { type: "number", min: 0 } },
+    scannedCount: { control: { type: "number", min: 0 } },
     favoritesCount: { control: { type: "number", min: 0 } },
     trashCount: { control: { type: "number", min: 0 } },
     setActiveTab: { action: "setActiveTab" },
@@ -24,10 +24,10 @@ const meta: Meta<typeof Tabs> = {
 export default meta;
 type Story = StoryObj<typeof Tabs>;
 
-export const SearchActive: Story = {
+export const ScannedActive: Story = {
   args: {
-    activeTab: Tab.Search,
-    searchCount: 15,
+    activeTab: Tab.Scanned,
+    scannedCount: 15,
     favoritesCount: 3,
     trashCount: 2,
   },
@@ -36,7 +36,7 @@ export const SearchActive: Story = {
 export const FavoritesActive: Story = {
   args: {
     activeTab: Tab.Favorites,
-    searchCount: 15,
+    scannedCount: 15,
     favoritesCount: 3,
     trashCount: 2,
   },
@@ -45,7 +45,7 @@ export const FavoritesActive: Story = {
 export const TrashActive: Story = {
   args: {
     activeTab: Tab.Trash,
-    searchCount: 15,
+    scannedCount: 15,
     favoritesCount: 3,
     trashCount: 2,
   },
@@ -54,7 +54,7 @@ export const TrashActive: Story = {
 export const SettingsActive: Story = {
   args: {
     activeTab: Tab.Settings,
-    searchCount: 15,
+    scannedCount: 15,
     favoritesCount: 3,
     trashCount: 2,
   },

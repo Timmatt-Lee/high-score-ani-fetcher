@@ -30,7 +30,7 @@ export function AnimeRow({
 }: AnimeRowProps) {
   const renderActions = () => {
     switch (activeTab) {
-      case Tab.Search:
+      case Tab.Scanned:
         return (
           <>
             <button
@@ -98,10 +98,10 @@ export function AnimeRow({
     return styles.scoreAverage;
   };
 
-  const uploadYear =
-    item.uploadDate instanceof Date && !isNaN(item.uploadDate.getTime())
-      ? item.uploadDate.getUTCFullYear().toString()
-      : "N/A";
+  const uploadDateObj = new Date(item.uploadDate);
+  const uploadYear = !isNaN(uploadDateObj.getTime())
+    ? uploadDateObj.getUTCFullYear().toString()
+    : "N/A";
 
   return (
     <div className={styles.animeRow} data-testid="anime-card">

@@ -6,9 +6,9 @@ describe("Tabs", () => {
   it("renders all tabs with correct counts", () => {
     render(
       <Tabs
-        activeTab={Tab.Search}
+        activeTab={Tab.Scanned}
         setActiveTab={() => {}}
-        searchCount={5}
+        scannedCount={5}
         favoritesCount={2}
         trashCount={1}
       />,
@@ -25,9 +25,9 @@ describe("Tabs", () => {
     const setActiveTab = vi.fn();
     render(
       <Tabs
-        activeTab={Tab.Search}
+        activeTab={Tab.Scanned}
         setActiveTab={setActiveTab}
-        searchCount={5}
+        scannedCount={5}
         favoritesCount={2}
         trashCount={1}
       />,
@@ -36,7 +36,7 @@ describe("Tabs", () => {
     expect(setActiveTab).toHaveBeenCalledWith(Tab.Favorites);
 
     fireEvent.click(screen.getByText("Results"));
-    expect(setActiveTab).toHaveBeenCalledWith(Tab.Search);
+    expect(setActiveTab).toHaveBeenCalledWith(Tab.Scanned);
 
     fireEvent.click(screen.getByText("Trash"));
     expect(setActiveTab).toHaveBeenCalledWith(Tab.Trash);
@@ -46,9 +46,9 @@ describe("Tabs", () => {
     const setActiveTab = vi.fn();
     render(
       <Tabs
-        activeTab={Tab.Search}
+        activeTab={Tab.Scanned}
         setActiveTab={setActiveTab}
-        searchCount={10}
+        scannedCount={10}
         favoritesCount={2}
         trashCount={1}
       />,
@@ -61,28 +61,28 @@ describe("Tabs", () => {
   it("renders badges and correct counts", () => {
     const { rerender } = render(
       <Tabs
-        activeTab={Tab.Search}
+        activeTab={Tab.Scanned}
         setActiveTab={() => {}}
-        searchCount={5}
+        scannedCount={5}
         favoritesCount={2}
         trashCount={0}
       />,
     );
-    expect(screen.queryByTestId("tab-badge-search")?.textContent).toBe("5");
+    expect(screen.queryByTestId("tab-badge-scanned")?.textContent).toBe("5");
     expect(screen.queryByTestId("tab-badge-favorites")?.textContent).toBe("2");
     expect(screen.queryByTestId("tab-badge-trash")?.textContent).toBe("0");
 
     // Rerender with different counts
     rerender(
       <Tabs
-        activeTab={Tab.Search}
+        activeTab={Tab.Scanned}
         setActiveTab={() => {}}
-        searchCount={0}
+        scannedCount={0}
         favoritesCount={1}
         trashCount={10}
       />,
     );
-    expect(screen.queryByTestId("tab-badge-search")?.textContent).toBe("0");
+    expect(screen.queryByTestId("tab-badge-scanned")?.textContent).toBe("0");
     expect(screen.queryByTestId("tab-badge-favorites")?.textContent).toBe("1");
     expect(screen.queryByTestId("tab-badge-trash")?.textContent).toBe("10");
   });

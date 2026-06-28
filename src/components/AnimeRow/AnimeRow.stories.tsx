@@ -38,7 +38,7 @@ const meta: Meta<typeof AnimeRow> = {
   argTypes: {
     activeTab: {
       control: "select",
-      options: [Tab.Search, Tab.Favorites, Tab.Trash],
+      options: [Tab.Scanned, Tab.Favorites, Tab.Trash],
     },
     onMoveToFavorites: { action: "moveToFavorites" },
     onMoveToTrash: { action: "moveToTrash" },
@@ -58,7 +58,7 @@ const baseAnime: AnimeItem = {
   title: "Frieren: Beyond Journey's End",
   watchCount: 1500000,
   episodeCount: 28,
-  uploadDate: new Date("2023-09-29"),
+  uploadDate: "2023-09-29T00:00:00.000Z",
   score: 9.39,
   ratingCount: 120000,
   description:
@@ -68,7 +68,7 @@ const baseAnime: AnimeItem = {
 export const SearchTab: Story = {
   args: {
     item: baseAnime,
-    activeTab: Tab.Search,
+    activeTab: Tab.Scanned,
   },
 };
 
@@ -97,12 +97,11 @@ export const LongText: Story = {
       description:
         "This is an extremely long description designed to test if the row handles large amounts of paragraph text gracefully without overflowing the layout boundaries. It should wrap properly and maintain the visual spacing guidelines.",
     },
-    activeTab: Tab.Search,
+    activeTab: Tab.Scanned,
   },
 };
 
-const mockInvalidDate = new Date(NaN);
-mockInvalidDate.toISOString = () => "Invalid Date";
+const mockInvalidDate = "Invalid Date";
 
 export const InvalidDate: Story = {
   args: {
@@ -110,6 +109,6 @@ export const InvalidDate: Story = {
       ...baseAnime,
       uploadDate: mockInvalidDate,
     },
-    activeTab: Tab.Search,
+    activeTab: Tab.Scanned,
   },
 };

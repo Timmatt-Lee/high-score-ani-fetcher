@@ -1,105 +1,129 @@
-import { useState } from "react";
-import { type Settings, type AnimeItem } from "../../services/animeScanner";
+import type { ChangeEvent } from "react";
+import { z } from "zod";
 import {
-  serializeAnimeList,
-  parseAnimeList,
-} from "../../utils/animeSerializer";
+  type Settings,
+  type AnimeItem,
+  SettingsSchema,
+  AnimeItemSchema,
+} from "../../services/animeScanner";
 import styles from "./SettingsTab.module.css";
 
 interface SettingsTabProps {
   settings: Settings;
   onSave: (settings: Settings) => void;
-  searchList: AnimeItem[];
+  scannedList: AnimeItem[];
   favoriteList: AnimeItem[];
   trashList: AnimeItem[];
   onImportData: (data: {
-    searchList: AnimeItem[];
+    scannedList: AnimeItem[];
     favoriteList: AnimeItem[];
     trashList: AnimeItem[];
   }) => void;
+  onError: (error: Error) => void;
 }
 
 export function SettingsTab({
   settings,
   onSave,
-  searchList,
+  scannedList,
   favoriteList,
   trashList,
   onImportData,
+  onError,
 }: SettingsTabProps) {
-  const [statusMsg, setStatusMsg] = useState<{
-    text: string;
-    isError: boolean;
-  } | null>(null);
-
   const handleChange = (key: keyof Settings, value: string) => {
     if (value.trim() === "") return;
-    let num = Number(value);
+    const num = Number(value);
     if (isNaN(num)) return;
-    if (key === "targetScore") {
-      num = Math.max(0.0, Math.min(5.0, num));
-    } else if (key === "rescanThreshold") {
-      num = Math.max(0, Math.min(100, num));
-    }
-    onSave({ ...settings, [key]: num });
+
+    const parsed = SettingsSchema.parse({ ...settings, [key]: num });
+    onSave(parsed);
   };
   const handleExport = () => {
-    try {
-      const backupData = {
-        version: 1,
-        searchList: serializeAnimeList(searchList),
-        favoriteList: serializeAnimeList(favoriteList),
-        trashList: serializeAnimeList(trashList),
-      };
+    const backupData = {
+      version: 1,
+      scannedList,
+      favoriteList,
+      trashList,
+    };
 
+    let url: string;
+    try {
       const blob = new Blob([JSON.stringify(backupData, null, 2)], {
         type: "application/json",
       });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `high-score-ani-fetcher-backup-${new Date().toISOString().slice(0, 10)}.json`;
-      a.click();
-      URL.revokeObjectURL(url);
-      setStatusMsg({ text: "Backup exported successfully!", isError: false });
+      url = URL.createObjectURL(blob);
     } catch (err) {
       console.error(err);
-      setStatusMsg({ text: "Failed to export backup data", isError: true });
+      onError(new Error("Failed to export backup data", { cause: err }));
+      return;
     }
+
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `high-score-ani-fetcher-backup-${new Date().toISOString().slice(0, 10)}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
   };
 
-  const handleImport = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImport = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
     const reader = new FileReader();
     reader.onload = (event) => {
-      try {
-        const text = event.target?.result;
-        if (typeof text !== "string") {
-          throw new Error("Invalid file content");
-        }
-        const parsed = JSON.parse(text);
-
-        const importedSearch = parseAnimeList(parsed.searchList || []);
-        const importedFavorites = parseAnimeList(parsed.favoriteList || []);
-        const importedTrash = parseAnimeList(parsed.trashList || []);
-
-        onImportData({
-          searchList: importedSearch,
-          favoriteList: importedFavorites,
-          trashList: importedTrash,
-        });
-
-        setStatusMsg({ text: "Backup restored successfully!", isError: false });
-      } catch (err: unknown) {
-        console.error(err);
-        const errorMsg = err instanceof Error ? err.message : String(err);
-        setStatusMsg({
-          text: errorMsg || "Failed to parse or validate backup file",
-          isError: true,
-        });
+      const text = event.target?.result;
+      if (typeof text !== "string") {
+        onError(new Error("Invalid file content"));
+        return;
       }
+
+      let parsed: unknown;
+      try {
+        parsed = JSON.parse(text);
+      } catch (err) {
+        console.error(err);
+        onError(
+          new Error("Failed to parse or validate backup file", { cause: err }),
+        );
+        return;
+      }
+
+      const backupObj = parsed as Record<string, unknown>;
+
+      const parseList = (list: unknown) => z.array(AnimeItemSchema).parse(list);
+
+      let importedScanned: AnimeItem[];
+      let importedFavorites: AnimeItem[];
+      let importedTrash: AnimeItem[];
+
+      try {
+        importedScanned = parseList(
+          backupObj.scannedList || backupObj.searchList || [],
+        );
+        importedFavorites = parseList(backupObj.favoriteList || []);
+        importedTrash = parseList(backupObj.trashList || []);
+      } catch (err) {
+        console.error(err);
+        const isZod = err instanceof z.ZodError;
+        const errMsg = isZod
+          ? "Data schema validation failed"
+          : err instanceof Error
+            ? err.message
+            : String(err);
+        onError(
+          new Error(errMsg || "Failed to parse or validate backup file", {
+            cause: err,
+          }),
+        );
+        return;
+      }
+
+      onImportData({
+        scannedList: importedScanned,
+        favoriteList: importedFavorites,
+        trashList: importedTrash,
+      });
     };
     reader.readAsText(file);
   };
@@ -213,16 +237,6 @@ export function SettingsTab({
             />
           </label>
         </div>
-        {statusMsg && (
-          <span
-            className={`${styles.statusMsg} ${
-              statusMsg.isError ? styles.statusError : styles.statusSuccess
-            }`}
-            data-testid="backup-status-msg"
-          >
-            {statusMsg.text}
-          </span>
-        )}
       </div>
     </div>
   );

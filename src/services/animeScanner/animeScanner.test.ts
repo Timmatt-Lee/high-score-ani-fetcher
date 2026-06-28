@@ -11,6 +11,8 @@ import {
   type AnimeItem,
   type AnimeDetails,
   AnimeScanPageEvent,
+  AnimeScanSkippedEvent,
+  AnimeScanQueuedEvent,
 } from "./types";
 import { AnimeScraper } from "./animeScraper";
 
@@ -27,7 +29,11 @@ const runPipeline = (pipeline: AnimeScanner) => {
     pipeline.scan().subscribe({
       next: (event: AnimeScanEvent) => {
         events.push(event);
-        if (event instanceof AnimeScanPageEvent) {
+        if (
+          event instanceof AnimeScanPageEvent ||
+          event instanceof AnimeScanSkippedEvent ||
+          event instanceof AnimeScanQueuedEvent
+        ) {
           // ignore
         } else if (!(event instanceof Error)) {
           animeItems.push(event);
@@ -71,11 +77,11 @@ describe("AnimeScanner", () => {
       } as AnimeDetails;
     });
 
-    const filterItem = (item: AnimeItem) => item.title !== "B";
+    const isScanRequired = (item: AnimeItem) => item.title !== "B";
 
     const pipeline = new AnimeScanner(
       2,
-      filterItem,
+      isScanRequired,
       {
         getTotalPages: vi.fn(),
         scrapeAnimesOnPage: listSpy,
@@ -245,49 +251,6 @@ describe("AnimeScanner", () => {
     });
 
     await runPromise;
-  });
-
-  it("handles onlyPages option inputs to limit scanned pages", async () => {
-    const listSpy = vi.fn();
-    const detailSpy = vi.fn();
-
-    listSpy.mockResolvedValueOnce([
-      { link: "http://newPageItem", title: "New Page Item" } as AnimeItem,
-    ]);
-
-    detailSpy.mockImplementation(async (link: string) => {
-      return {
-        score: 9.5,
-        ratingCount: 200,
-        description: `Retried ${link}`,
-      };
-    });
-
-    const pipeline = new AnimeScanner(
-      5, // total pages 5, but we only scan 1 because of onlyPages option
-      () => true,
-      {
-        getTotalPages: vi.fn(),
-        scrapeAnimesOnPage: listSpy,
-        scrapeAnimeDetails: detailSpy,
-        delay: vi.fn().mockResolvedValue(undefined),
-      } as unknown as AnimeScraper,
-      {
-        onlyPages: [3],
-        requestDelayMs: 0,
-      },
-    );
-
-    const { animeItems } = await runPipeline(pipeline);
-    expect(listSpy).toHaveBeenCalledTimes(1);
-    expect(listSpy).toHaveBeenCalledWith(3); // only page 3 retried
-    expect(detailSpy).toHaveBeenCalledTimes(1); // newPageItem
-    expect(detailSpy).toHaveBeenCalledWith(
-      "http://newPageItem",
-      3,
-      "New Page Item",
-    );
-    expect(animeItems).toHaveLength(1);
   });
 
   it("emits error when fetchPage throws unexpected error", async () => {

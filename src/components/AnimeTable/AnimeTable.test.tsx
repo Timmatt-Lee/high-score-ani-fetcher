@@ -10,7 +10,7 @@ const sampleList: AnimeItem[] = [
     title: "Frieren: Beyond Journey's End",
     watchCount: 1500000,
     episodeCount: 28,
-    uploadDate: new Date("2023-09-29"),
+    uploadDate: "2023-09-29T00:00:00.000Z",
     score: 9.39,
     ratingCount: 120000,
     description: "An elf mage journey.",
@@ -22,7 +22,7 @@ describe("AnimeTable", () => {
     const handleSort = vi.fn();
     render(
       <AnimeTable
-        activeTab={Tab.Search}
+        activeTab={Tab.Scanned}
         list={sampleList}
         sortBy="score"
         sortOrder="desc"

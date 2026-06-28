@@ -13,6 +13,8 @@ import {
   type AnimeScanEvent,
   type AnimeItem,
   AnimeScanPageEvent,
+  AnimeScanSkippedEvent,
+  AnimeScanQueuedEvent,
 } from "../services/animeScanner/types";
 import { Observable, Subject } from "rxjs";
 
@@ -21,7 +23,7 @@ const makeAnime = (title: string): AnimeItem => ({
   title,
   watchCount: 100,
   episodeCount: 12,
-  uploadDate: new Date("2024-01-01"),
+  uploadDate: "2024-01-01T00:00:00.000Z",
   score: 8.5,
   ratingCount: 50,
   description: "Desc",
@@ -47,8 +49,8 @@ describe("useAnimeScanner", () => {
     const mockAnime = makeAnime("Test");
     vi.spyOn(animeScraper, "getTotalPages").mockResolvedValue(1);
     vi.spyOn(AnimeScanner.prototype, "scan").mockImplementation(
-      function (this: { filterItem: (item: AnimeItem) => boolean }) {
-        if (this.filterItem(mockAnime)) {
+      function (this: { isScanRequired: (item: AnimeItem) => boolean }) {
+        if (this.isScanRequired(mockAnime)) {
           return createMockObservable([
             {
               ...mockAnime,
@@ -75,7 +77,7 @@ describe("useAnimeScanner", () => {
     });
 
     expect(onComplete).toHaveBeenCalledWith({
-      newSearchItems: [
+      updatedScannedList: [
         { ...mockAnime, score: 9.0, ratingCount: 100, description: "x" },
       ],
       updatedFavoriteList: [],
@@ -103,6 +105,7 @@ describe("useAnimeScanner", () => {
     });
 
     await act(async () => {
+      subject.next(new AnimeScanQueuedEvent(mockAnime));
       subject.next(mockAnime);
     });
     expect(result.current.progress.message).toContain("ProgressTest");
@@ -111,13 +114,13 @@ describe("useAnimeScanner", () => {
       subject.next(new AnimeScanPageEvent(2, 5));
     });
     expect(result.current.progress.message).toBe("Loading anime index (2/5)");
-    expect(result.current.progress.stepPercent).toBe(40);
+    expect(result.current.progress.percent).toBe(40);
 
     // Test zero totalPages branch fallback
     await act(async () => {
       subject.next(new AnimeScanPageEvent(2, 0));
     });
-    expect(result.current.progress.stepPercent).toBe(0);
+    expect(result.current.progress.percent).toBe(0);
 
     await act(async () => {
       subject.complete();
@@ -163,8 +166,8 @@ describe("useAnimeScanner", () => {
 
     vi.spyOn(animeScraper, "getTotalPages").mockResolvedValue(1);
     vi.spyOn(AnimeScanner.prototype, "scan").mockImplementation(
-      function (this: { filterItem: (item: AnimeItem) => boolean }) {
-        const items = [trashItem, favItem].filter(this.filterItem);
+      function (this: { isScanRequired: (item: AnimeItem) => boolean }) {
+        const items = [trashItem, favItem].filter(this.isScanRequired);
         return createMockObservable(
           items.map((item) => ({
             ...item,
@@ -193,7 +196,7 @@ describe("useAnimeScanner", () => {
     });
 
     expect(onComplete).toHaveBeenCalledWith({
-      newSearchItems: [],
+      updatedScannedList: [],
       updatedFavoriteList: [
         {
           ...favItem,
@@ -227,16 +230,26 @@ describe("useAnimeScanner", () => {
 
     vi.spyOn(animeScraper, "getTotalPages").mockResolvedValue(1);
     vi.spyOn(AnimeScanner.prototype, "scan").mockImplementation(
-      function (this: { filterItem: (item: AnimeItem) => boolean }) {
-        const items = [shortShow, ovaShow, naShow].filter(this.filterItem);
-        return createMockObservable(
-          items.map((item) => ({
-            ...item,
+      function (this: { isScanRequired: (item: AnimeItem) => boolean }) {
+        const kept: AnimeItem[] = [];
+        const skipped: AnimeItem[] = [];
+        for (const item of [shortShow, ovaShow, naShow]) {
+          if (this.isScanRequired(item)) {
+            kept.push(item);
+          } else {
+            skipped.push(item);
+          }
+        }
+        return createMockObservable([
+          ...skipped.map((x) => new AnimeScanSkippedEvent(x)),
+          ...kept.map((x) => new AnimeScanQueuedEvent(x)),
+          ...kept.map((x) => ({
+            ...x,
             score: 9.0,
             ratingCount: 100,
             description: "x",
           })),
-        );
+        ]);
       },
     );
 
@@ -253,7 +266,7 @@ describe("useAnimeScanner", () => {
     });
 
     expect(onComplete).toHaveBeenCalledWith({
-      newSearchItems: [],
+      updatedScannedList: [],
       updatedFavoriteList: [],
       updatedTrashList: [],
     });
@@ -281,7 +294,7 @@ describe("useAnimeScanner", () => {
     });
 
     expect(onComplete).toHaveBeenCalledWith({
-      newSearchItems: [
+      updatedScannedList: [
         { ...lowScore, score: 4.0, ratingCount: 10, description: "Meh" },
       ],
       updatedFavoriteList: [],
@@ -521,9 +534,9 @@ describe("useAnimeScanner", () => {
     expect(onComplete).toHaveBeenCalled();
     const completedResult =
       onComplete.mock.calls[onComplete.mock.calls.length - 1][0];
-    expect(completedResult.newSearchItems[0].title).toBe("Z_Anime");
-    expect(completedResult.newSearchItems[1].title).toBe("A_Anime");
-    expect(completedResult.newSearchItems[2].title).toBe("M_Anime");
+    expect(completedResult.updatedScannedList[0].title).toBe("Z_Anime");
+    expect(completedResult.updatedScannedList[1].title).toBe("A_Anime");
+    expect(completedResult.updatedScannedList[2].title).toBe("M_Anime");
   });
 
   it("preserves fav/trash items not found in scan results", async () => {
@@ -546,7 +559,7 @@ describe("useAnimeScanner", () => {
     });
 
     expect(onComplete).toHaveBeenCalledWith({
-      newSearchItems: [],
+      updatedScannedList: [],
       updatedFavoriteList: [favItem],
       updatedTrashList: [trashItem],
     });
@@ -693,87 +706,10 @@ describe("useAnimeScanner", () => {
     });
 
     expect(onComplete).toHaveBeenCalledWith({
-      newSearchItems: [],
+      updatedScannedList: [],
       updatedFavoriteList: [favItem],
       updatedTrashList: [trashItem],
     });
-  });
-
-  it("handles retry scans by pre-populating merged items map and bypassing total page fetch", async () => {
-    const searchItem = makeAnime("SearchItem");
-    const favItem = makeAnime("FavItem");
-    const trashItem = makeAnime("TrashItem");
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let capturedPipeline: any = null;
-    vi.spyOn(AnimeScanner.prototype, "scan")
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      .mockImplementation(function (this: any) {
-        // eslint-disable-next-line @typescript-eslint/no-this-alias
-        capturedPipeline = this;
-        return createMockObservable([
-          new AnimeScanPageEvent(1, 1),
-          { ...searchItem, score: 9.0 },
-        ]);
-      });
-
-    const onComplete = vi.fn();
-    const { result } = renderHook(
-      () => useAnimeScanner([searchItem], [favItem], [trashItem], onComplete),
-      { wrapper: ServiceProvider },
-    );
-
-    // Call handleScan with retry options
-    await act(async () => {
-      await result.current.handleScan({
-        onlyPages: [3],
-        requestDelayMs: 800,
-      });
-    });
-
-    // Check that getTotalPages was not called
-    const pagesSpy = vi.spyOn(animeScraper, "getTotalPages");
-    expect(pagesSpy).not.toHaveBeenCalled();
-
-    // Check that AnimeScanner was instantiated with option args
-    expect(capturedPipeline).not.toBeNull();
-    expect(capturedPipeline.totalPages).toBe(0);
-    expect(capturedPipeline.options).toEqual({
-      onlyPages: [3],
-      requestDelayMs: 800,
-    });
-
-    expect(onComplete).toHaveBeenCalled();
-  });
-
-  it("handles empty options object as non-retry conditions", async () => {
-    // 1. Empty options should be treated as non-retry
-    vi.spyOn(animeScraper, "getTotalPages").mockResolvedValue(2);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let capturedPipeline: any = null;
-    vi.spyOn(AnimeScanner.prototype, "scan")
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      .mockImplementation(function (this: any) {
-        // eslint-disable-next-line @typescript-eslint/no-this-alias
-        capturedPipeline = this;
-        return createMockObservable([]);
-      });
-
-    const onComplete = vi.fn();
-    const { result } = renderHook(
-      () => useAnimeScanner([], [], [], onComplete),
-      {
-        wrapper: ServiceProvider,
-      },
-    );
-
-    await act(async () => {
-      await result.current.handleScan({ requestDelayMs: 800 }); // empty options
-    });
-
-    expect(capturedPipeline).not.toBeNull();
-    expect(capturedPipeline.totalPages).toBe(2);
-    expect(capturedPipeline.options).toEqual({ requestDelayMs: 800 });
   });
 
   it("skips scan for cached items with low score", async () => {
@@ -784,11 +720,11 @@ describe("useAnimeScanner", () => {
     const scanSpy = vi
       .spyOn(AnimeScanner.prototype, "scan")
       .mockImplementation(function (this: {
-        filterItem: (item: AnimeItem) => boolean;
+        isScanRequired: (item: AnimeItem) => boolean;
       }) {
-        const isKept = this.filterItem(lowScoreItem);
+        const isKept = this.isScanRequired(lowScoreItem);
         expect(isKept).toBe(false);
-        return createMockObservable([]);
+        return createMockObservable([new AnimeScanSkippedEvent(lowScoreItem)]);
       });
 
     const onComplete = vi.fn();
@@ -815,11 +751,14 @@ describe("useAnimeScanner", () => {
     const scanSpy = vi
       .spyOn(AnimeScanner.prototype, "scan")
       .mockImplementation(function (this: {
-        filterItem: (item: AnimeItem) => boolean;
+        isScanRequired: (item: AnimeItem) => boolean;
       }) {
-        expect(this.filterItem(zeroScoreItem)).toBe(true);
-        expect(this.filterItem(highScoreItem)).toBe(true);
-        return createMockObservable([]);
+        expect(this.isScanRequired(zeroScoreItem)).toBe(true);
+        expect(this.isScanRequired(highScoreItem)).toBe(true);
+        return createMockObservable([
+          new AnimeScanQueuedEvent(zeroScoreItem),
+          new AnimeScanQueuedEvent(highScoreItem),
+        ]);
       });
 
     const onComplete = vi.fn();
@@ -838,16 +777,16 @@ describe("useAnimeScanner", () => {
   it("skips scan for cached items with fresh scannedAt date", async () => {
     const freshItem = makeAnime("FreshItem");
     freshItem.score = 4.9; // Above threshold
-    freshItem.scannedAt = new Date(); // Scanned just now, very fresh
+    freshItem.scannedAt = new Date().toISOString(); // Scanned just now, very fresh
 
     vi.spyOn(animeScraper, "getTotalPages").mockResolvedValue(1);
     const scanSpy = vi
       .spyOn(AnimeScanner.prototype, "scan")
       .mockImplementation(function (this: {
-        filterItem: (item: AnimeItem) => boolean;
+        isScanRequired: (item: AnimeItem) => boolean;
       }) {
-        expect(this.filterItem(freshItem)).toBe(false);
-        return createMockObservable([]);
+        expect(this.isScanRequired(freshItem)).toBe(false);
+        return createMockObservable([new AnimeScanSkippedEvent(freshItem)]);
       });
 
     const onComplete = vi.fn();
@@ -867,16 +806,18 @@ describe("useAnimeScanner", () => {
     const expiredItem = makeAnime("ExpiredItem");
     expiredItem.score = 4.9; // Above threshold
     // 15 days ago (default cache duration is 14 days)
-    expiredItem.scannedAt = new Date(Date.now() - 15 * 24 * 60 * 60 * 1000);
+    expiredItem.scannedAt = new Date(
+      Date.now() - 15 * 24 * 60 * 60 * 1000,
+    ).toISOString();
 
     vi.spyOn(animeScraper, "getTotalPages").mockResolvedValue(1);
     const scanSpy = vi
       .spyOn(AnimeScanner.prototype, "scan")
       .mockImplementation(function (this: {
-        filterItem: (item: AnimeItem) => boolean;
+        isScanRequired: (item: AnimeItem) => boolean;
       }) {
-        expect(this.filterItem(expiredItem)).toBe(true);
-        return createMockObservable([]);
+        expect(this.isScanRequired(expiredItem)).toBe(true);
+        return createMockObservable([new AnimeScanQueuedEvent(expiredItem)]);
       });
 
     const onComplete = vi.fn();
@@ -914,24 +855,6 @@ describe("useAnimeScanner", () => {
     });
 
     expect(result.current.isScanning).toBe(false);
-  });
-
-  it("handles empty onlyPages array in options as non-retry", async () => {
-    vi.spyOn(animeScraper, "getTotalPages").mockResolvedValue(1);
-    const scanSpy = vi
-      .spyOn(AnimeScanner.prototype, "scan")
-      .mockReturnValue(createMockObservable([]));
-    const onComplete = vi.fn();
-    const { result } = renderHook(
-      () => useAnimeScanner([], [], [], onComplete),
-      { wrapper: ServiceProvider },
-    );
-
-    await act(async () => {
-      await result.current.handleScan({ onlyPages: [], requestDelayMs: 0 });
-    });
-
-    expect(scanSpy).toHaveBeenCalled();
   });
 
   it("handles non-Error objects thrown by getTotalPages", async () => {

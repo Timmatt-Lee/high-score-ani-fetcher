@@ -17,18 +17,18 @@ describe("SettingsTab", () => {
       title: "Anime 1",
       watchCount: 100,
       episodeCount: 12,
-      uploadDate: new Date("2024-01-01T00:00:00.000Z"),
+      uploadDate: "2024-01-01T00:00:00.000Z",
       score: 4.5,
       ratingCount: 10,
       description: "Desc",
-      scannedAt: new Date("2024-01-02T00:00:00.000Z"),
+      scannedAt: "2024-01-02T00:00:00.000Z",
     },
     {
       link: "https://example.com/anime/2",
       title: "Anime 2",
       watchCount: 200,
       episodeCount: 24,
-      uploadDate: new Date("2024-02-01T00:00:00.000Z"),
+      uploadDate: "2024-02-01T00:00:00.000Z",
       score: 4.6,
       ratingCount: 20,
       description: "Desc 2",
@@ -38,6 +38,7 @@ describe("SettingsTab", () => {
 
   beforeEach(() => {
     vi.restoreAllMocks();
+    vi.unstubAllGlobals();
   });
 
   const renderComponent = (props = {}) => {
@@ -45,10 +46,11 @@ describe("SettingsTab", () => {
       <SettingsTab
         settings={defaultSettings}
         onSave={vi.fn()}
-        searchList={[]}
+        scannedList={[]}
         favoriteList={[]}
         trashList={[]}
         onImportData={vi.fn()}
+        onError={vi.fn()}
         {...props}
       />,
     );
@@ -199,7 +201,7 @@ describe("SettingsTab", () => {
     });
 
     renderComponent({
-      searchList: sampleSearchList,
+      scannedList: sampleSearchList,
     });
 
     const exportBtn = screen.getByTestId("btn-export-backup");
@@ -208,7 +210,6 @@ describe("SettingsTab", () => {
     expect(mockCreateUrl).toHaveBeenCalled();
     expect(mockClick).toHaveBeenCalled();
     expect(mockRevokeUrl).toHaveBeenCalled();
-    expect(screen.getByText("Backup exported successfully!")).toBeDefined();
   });
 
   it("imports backup successfully", async () => {
@@ -219,7 +220,7 @@ describe("SettingsTab", () => {
 
     // Mock FileReader behavior with scannedAt string field included
     const mockFileContent = JSON.stringify({
-      searchList: [
+      scannedList: [
         {
           link: "https://example.com/anime/import",
           title: "Imported Anime",
@@ -257,16 +258,16 @@ describe("SettingsTab", () => {
 
     await waitFor(() => {
       expect(handleImportData).toHaveBeenCalled();
-      expect(screen.getByText("Backup restored successfully!")).toBeDefined();
     });
   });
 
   it("renders validation error on invalid backup file schema", async () => {
-    renderComponent();
+    const handleError = vi.fn();
+    renderComponent({ onError: handleError });
 
     // Invalid JSON schema
     const mockFileContent = JSON.stringify({
-      searchList: [
+      scannedList: [
         {
           link: "invalid-url",
           title: 12345, // Title must be a string in schema
@@ -296,14 +297,24 @@ describe("SettingsTab", () => {
     fireEvent.change(input, { target: { files: [file] } });
 
     await waitFor(() => {
-      const msg = screen.getByTestId("backup-status-msg");
-      expect(msg.textContent).toContain("Data schema validation failed");
+      expect(handleError).toHaveBeenCalled();
+      expect(handleError.mock.calls[0][0].message).toContain(
+        "Data schema validation failed",
+      );
     });
   });
 
-  it("renders validation error on string throws during import", async () => {
-    renderComponent();
-    const file = new File(["{}"], "backup.json", { type: "application/json" });
+  it("renders error on invalid JSON syntax during import", async () => {
+    const handleError = vi.fn();
+    renderComponent({ onError: handleError });
+    const file = new File(["{invalid-json"], "backup.json", {
+      type: "application/json",
+    });
+
+    // Mock JSON.parse to throw a string error
+    vi.spyOn(JSON, "parse").mockImplementationOnce(() => {
+      throw "syntax error string";
+    });
 
     class MockFileReader {
       onload: ((ev: ProgressEvent<FileReader>) => void) | null = null;
@@ -311,9 +322,7 @@ describe("SettingsTab", () => {
         if (this.onload) {
           this.onload({
             target: {
-              get result() {
-                throw "string error thrown";
-              },
+              result: "{invalid-json",
             },
           } as unknown as ProgressEvent<FileReader>);
         }
@@ -321,13 +330,68 @@ describe("SettingsTab", () => {
     }
     vi.stubGlobal("FileReader", MockFileReader);
 
+    const consoleErrorSpy = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => {});
+
     const input = screen.getByTestId("file-import-input");
     fireEvent.change(input, { target: { files: [file] } });
 
     await waitFor(() => {
-      const msg = screen.getByTestId("backup-status-msg");
-      expect(msg.textContent).toContain("string error thrown");
+      expect(handleError).toHaveBeenCalled();
+      expect(handleError.mock.calls[0][0].message).toContain(
+        "Failed to parse or validate backup file",
+      );
     });
+    expect(consoleErrorSpy).toHaveBeenCalled();
+  });
+
+  it("handles string throws during schema validation during import", async () => {
+    const handleError = vi.fn();
+    renderComponent({ onError: handleError });
+    const file = new File(
+      [JSON.stringify({ scannedList: [] })],
+      "backup.json",
+      {
+        type: "application/json",
+      },
+    );
+
+    // Mock JSON.parse to return a custom object with a throwing getter
+    vi.spyOn(JSON, "parse").mockReturnValueOnce({
+      get scannedList() {
+        throw "custom schema error thrown";
+      },
+    });
+
+    class MockFileReader {
+      onload: ((ev: ProgressEvent<FileReader>) => void) | null = null;
+      readAsText() {
+        if (this.onload) {
+          this.onload({
+            target: {
+              result: JSON.stringify({ scannedList: [] }),
+            },
+          } as unknown as ProgressEvent<FileReader>);
+        }
+      }
+    }
+    vi.stubGlobal("FileReader", MockFileReader);
+
+    const consoleErrorSpy = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => {});
+
+    const input = screen.getByTestId("file-import-input");
+    fireEvent.change(input, { target: { files: [file] } });
+
+    await waitFor(() => {
+      expect(handleError).toHaveBeenCalled();
+      expect(handleError.mock.calls[0][0].message).toContain(
+        "custom schema error thrown",
+      );
+    });
+    expect(consoleErrorSpy).toHaveBeenCalled();
   });
 
   it("renders error when export backup throws an error", () => {
@@ -342,19 +406,25 @@ describe("SettingsTab", () => {
       .spyOn(console, "error")
       .mockImplementation(() => {});
 
+    const handleError = vi.fn();
     renderComponent({
-      searchList: sampleSearchList,
+      scannedList: sampleSearchList,
+      onError: handleError,
     });
 
     const exportBtn = screen.getByTestId("btn-export-backup");
     fireEvent.click(exportBtn);
 
-    expect(screen.getByText("Failed to export backup data")).toBeDefined();
+    expect(handleError).toHaveBeenCalled();
+    expect(handleError.mock.calls[0][0].message).toContain(
+      "Failed to export backup data",
+    );
     expect(consoleErrorSpy).toHaveBeenCalled();
   });
 
   it("renders error when reader result is not a string", async () => {
-    renderComponent();
+    const handleError = vi.fn();
+    renderComponent({ onError: handleError });
     const file = new File(["{}"], "backup.json", { type: "application/json" });
 
     class MockFileReader {
@@ -371,18 +441,15 @@ describe("SettingsTab", () => {
     }
     vi.stubGlobal("FileReader", MockFileReader);
 
-    const consoleErrorSpy = vi
-      .spyOn(console, "error")
-      .mockImplementation(() => {});
-
     const input = screen.getByTestId("file-import-input");
     fireEvent.change(input, { target: { files: [file] } });
 
     await waitFor(() => {
-      const msg = screen.getByTestId("backup-status-msg");
-      expect(msg.textContent).toContain("Invalid file content");
+      expect(handleError).toHaveBeenCalled();
+      expect(handleError.mock.calls[0][0].message).toContain(
+        "Invalid file content",
+      );
     });
-    expect(consoleErrorSpy).toHaveBeenCalled();
   });
 
   it("does nothing when import file input changes but no file is selected", () => {
@@ -426,47 +493,10 @@ describe("SettingsTab", () => {
 
     await waitFor(() => {
       expect(handleImportData).toHaveBeenCalledWith({
-        searchList: [],
+        scannedList: [],
         favoriteList: [],
         trashList: [],
       });
-      expect(screen.getByText("Backup restored successfully!")).toBeDefined();
     });
-  });
-
-  it("renders default fallback message when import fails with empty string error", async () => {
-    renderComponent();
-    const file = new File(["{}"], "backup.json", { type: "application/json" });
-
-    class MockFileReader {
-      onload: ((ev: ProgressEvent<FileReader>) => void) | null = null;
-      readAsText() {
-        if (this.onload) {
-          this.onload({
-            target: {
-              get result() {
-                throw "";
-              },
-            },
-          } as unknown as ProgressEvent<FileReader>);
-        }
-      }
-    }
-    vi.stubGlobal("FileReader", MockFileReader);
-
-    const consoleErrorSpy = vi
-      .spyOn(console, "error")
-      .mockImplementation(() => {});
-
-    const input = screen.getByTestId("file-import-input");
-    fireEvent.change(input, { target: { files: [file] } });
-
-    await waitFor(() => {
-      const msg = screen.getByTestId("backup-status-msg");
-      expect(msg.textContent).toContain(
-        "Failed to parse or validate backup file",
-      );
-    });
-    expect(consoleErrorSpy).toHaveBeenCalled();
   });
 });

@@ -1,54 +1,50 @@
-import { useState, useRef } from "react";
-import { useAnimeData } from "./hooks/useAnimeData";
-import { useAnimeScanner } from "./hooks/useAnimeScanner";
-import { type AnimeItem } from "./services/animeScanner";
-import { useSettings } from "./hooks/useSettings";
-import { AnimeTable } from "./components/AnimeTable";
-import { ProgressBar } from "./components/ProgressBar";
-import { Tabs, Tab } from "./components/Tabs";
-import { ResultBanner } from "./components/ResultBanner";
-import { ErrorCard } from "./components/ErrorCard/ErrorCard";
-import { SettingsTab } from "./components/SettingsTab";
-import { StopIcon } from "./components/Icons";
+import React, { useState, useRef } from "react";
 import styles from "./App.module.css";
-import "./index.css";
+import { Tabs, Tab } from "./components/Tabs/Tabs";
+import { ProgressBar } from "./components/ProgressBar/ProgressBar";
+import { ResultBanner } from "./components/ResultBanner/ResultBanner";
+import { AnimeTable } from "./components/AnimeTable/AnimeTable";
+import { ErrorCard } from "./components/ErrorCard/ErrorCard";
+import { useAnimeScanner } from "./hooks/useAnimeScanner";
+import { useAnimeData } from "./hooks/useAnimeData";
+import { useSettings } from "./hooks/useSettings";
+import { SettingsTab } from "./components/SettingsTab/SettingsTab";
+import { type AnimeItem } from "./services/animeScanner";
+import { StopIcon } from "./components/Icons";
 
 function App() {
-  const [activeTab, setActiveTab] = useState<Tab>(Tab.Search);
+  const [activeTab, setActiveTab] = useState<Tab>(Tab.Scanned);
   const [sortBy, setSortBy] = useState<
     "title" | "score" | "watchCount" | "uploadDate" | "episodeCount"
   >("watchCount");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
 
+  // Draggable floating bar state
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
-  const dragOffsetRef = useRef({ x: 0, y: 0 });
+  const isDraggingRef = useRef(false);
+  const dragStartRef = useRef({ x: 0, y: 0 });
   const floatingBarRef = useRef<HTMLDivElement | null>(null);
 
-  const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
-    // If the click is on a button or inside a button, do not drag
-    if ((e.target as HTMLElement).closest("button")) {
-      return;
-    }
-    const container = floatingBarRef.current;
-    /* v8 ignore next 3 */
-    if (!container) {
-      return;
-    }
+  const handleMouseDown = (e: React.MouseEvent) => {
+    // Avoid triggering drag if clicking action buttons inside the banner
+    if ((e.target as HTMLElement).closest("button")) return;
 
-    const startX = e.clientX - dragOffsetRef.current.x;
-    const startY = e.clientY - dragOffsetRef.current.y;
-    let currentX = dragOffsetRef.current.x;
-    let currentY = dragOffsetRef.current.y;
+    isDraggingRef.current = true;
+    dragStartRef.current = {
+      x: e.clientX - dragOffset.x,
+      y: e.clientY - dragOffset.y,
+    };
 
     const handleMouseMove = (moveEvent: MouseEvent) => {
-      currentX = moveEvent.clientX - startX;
-      currentY = moveEvent.clientY - startY;
-      container.style.transform = `translate(calc(-50% + ${currentX}px), ${currentY}px)`;
+      if (!isDraggingRef.current) return;
+      setDragOffset({
+        x: moveEvent.clientX - dragStartRef.current.x,
+        y: moveEvent.clientY - dragStartRef.current.y,
+      });
     };
 
     const handleMouseUp = () => {
-      dragOffsetRef.current = { x: currentX, y: currentY };
-      setDragOffset({ x: currentX, y: currentY });
+      isDraggingRef.current = false;
       document.removeEventListener("mousemove", handleMouseMove);
       document.removeEventListener("mouseup", handleMouseUp);
     };
@@ -60,15 +56,12 @@ function App() {
   const { settings, saveSettings, isLoaded: isSettingsLoaded } = useSettings();
 
   const {
-    searchList,
-    setSearchList,
+    scannedList,
     favoriteList,
-    setFavoriteList,
     trashList,
-    setTrashList,
     moveToFavorites,
     moveToTrash,
-    saveData,
+    updateLists,
     isLoaded: isAnimeDataLoaded,
   } = useAnimeData();
 
@@ -79,18 +72,22 @@ function App() {
     clearError,
     handleScan,
     cancelScan,
-    scanStats,
-    setScanStats,
-  } = useAnimeScanner(searchList, favoriteList, trashList, (result) => {
-    setSearchList(result.newSearchItems);
-    setFavoriteList(result.updatedFavoriteList);
-    setTrashList(result.updatedTrashList);
-    saveData(
-      result.newSearchItems,
+    scanResult,
+    setScanResult,
+  } = useAnimeScanner(scannedList, favoriteList, trashList, (result) => {
+    updateLists(
+      result.updatedScannedList,
       result.updatedFavoriteList,
       result.updatedTrashList,
     );
   });
+
+  const [appError, setAppError] = useState<Error | null>(null);
+  const activeError = error || appError;
+  const handleDismissError = () => {
+    clearError();
+    setAppError(null);
+  };
 
   const handleSort = (
     field: "title" | "score" | "watchCount" | "uploadDate" | "episodeCount",
@@ -109,8 +106,8 @@ function App() {
       const valB = b[sortBy];
 
       if (sortBy === "uploadDate") {
-        const timeA = a.uploadDate.getTime();
-        const timeB = b.uploadDate.getTime();
+        const timeA = new Date(a.uploadDate).getTime();
+        const timeB = new Date(b.uploadDate).getTime();
         const valA = isNaN(timeA) ? 0 : timeA;
         const valB = isNaN(timeB) ? 0 : timeB;
         return sortOrder === "asc" ? valA - valB : valB - valA;
@@ -122,10 +119,11 @@ function App() {
           : valB.localeCompare(valA, "zh-Hant");
       }
 
-      // Remaining sortable properties (score, watchCount, episodeCount) are numbers
-      const numA = valA as number;
-      const numB = valB as number;
-      return sortOrder === "asc" ? numA - numB : numB - numA;
+      if (typeof valA === "number" && typeof valB === "number") {
+        return sortOrder === "asc" ? valA - valB : valB - valA;
+      }
+
+      return 0;
     });
   };
 
@@ -133,7 +131,7 @@ function App() {
     return null;
   }
 
-  const displayedSearchList = searchList.filter(
+  const displayedScannedList = scannedList.filter(
     (item) => item.score >= settings.targetScore,
   );
 
@@ -151,7 +149,7 @@ function App() {
           <Tabs
             activeTab={activeTab}
             setActiveTab={setActiveTab}
-            searchCount={displayedSearchList.length}
+            scannedCount={displayedScannedList.length}
             favoritesCount={favoriteList.length}
             trashCount={trashList.length}
           />
@@ -171,9 +169,7 @@ function App() {
           ) : (
             <button
               className={styles.btn}
-              onClick={() =>
-                handleScan({ requestDelayMs: settings.requestDelayMs })
-              }
+              onClick={() => handleScan()}
               disabled={isScanning}
               title="Start scanning anime list from Bahamut"
             >
@@ -184,12 +180,12 @@ function App() {
       </div>
 
       <div className={styles.contentArea}>
-        {error && (
+        {activeError && (
           <div
             className={styles.fatalErrorContainer}
             data-testid="fatal-error-container"
           >
-            <ErrorCard error={error} onDismiss={clearError} />
+            <ErrorCard error={activeError} onDismiss={handleDismissError} />
           </div>
         )}
 
@@ -197,26 +193,24 @@ function App() {
           <SettingsTab
             settings={settings}
             onSave={saveSettings}
-            searchList={searchList}
+            scannedList={scannedList}
             favoriteList={favoriteList}
             trashList={trashList}
             onImportData={({
-              searchList: s,
+              scannedList: s,
               favoriteList: f,
               trashList: t,
             }) => {
-              setSearchList(s);
-              setFavoriteList(f);
-              setTrashList(t);
-              saveData(s, f, t);
+              updateLists(s, f, t);
             }}
+            onError={setAppError}
           />
         ) : (
           <AnimeTable
             activeTab={activeTab}
             list={getSortedList(
-              activeTab === Tab.Search
-                ? displayedSearchList
+              activeTab === Tab.Scanned
+                ? displayedScannedList
                 : activeTab === Tab.Favorites
                   ? favoriteList
                   : trashList,
@@ -231,7 +225,7 @@ function App() {
         )}
       </div>
 
-      {(isScanning || (scanStats && !isScanning)) && (
+      {(isScanning || (scanResult && !isScanning)) && (
         <div
           ref={floatingBarRef}
           className={styles.floatingStatusContainer}
@@ -246,18 +240,18 @@ function App() {
               <ProgressBar
                 stepsCount={2}
                 currentStepIndex={progress.step - 1}
-                currentStepPercent={progress.stepPercent}
+                currentStepPercent={progress.percent}
                 message={progress.message}
               />
             ) : (
-              scanStats && (
+              scanResult && (
                 <ResultBanner
-                  successCount={scanStats.successCount}
-                  addedCount={scanStats.addedCount}
-                  updatedCount={scanStats.updatedCount}
-                  skippedCachedCount={scanStats.skippedCachedCount}
-                  failedCount={scanStats.failedCount}
-                  onDismiss={() => setScanStats(null)}
+                  successCount={scanResult.successCount}
+                  addedCount={scanResult.addedCount}
+                  updatedCount={scanResult.updatedCount}
+                  skippedCachedCount={scanResult.skippedCachedCount}
+                  failedCount={scanResult.failedCount}
+                  onDismiss={() => setScanResult(null)}
                 />
               )
             )}

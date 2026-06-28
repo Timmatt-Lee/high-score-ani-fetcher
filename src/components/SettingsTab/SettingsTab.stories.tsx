@@ -4,6 +4,9 @@ import { SettingsTab } from "./SettingsTab";
 const meta = {
   title: "Components/SettingsTab",
   component: SettingsTab,
+  argTypes: {
+    onError: { action: "error" },
+  },
   parameters: {
     layout: "fullscreen",
     chromatic: {
@@ -24,9 +27,10 @@ export const Default: Story = {
       requestDelayMs: 800,
     },
     onSave: (settings) => console.log("Save settings:", settings),
-    searchList: [],
+    scannedList: [],
     favoriteList: [],
     trashList: [],
     onImportData: (data) => console.log("Import data:", data),
+    onError: (err) => console.error("Settings error callback:", err),
   },
 };

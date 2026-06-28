@@ -119,7 +119,7 @@ describe("animeScraper.scrapeAnimesOnPage", () => {
     expect(result[0].title).toBe("Test Anime");
     expect(result[0].episodeCount).toBe(12);
     expect(result[0].watchCount).toBe(25000);
-    expect(result[0].uploadDate.getUTCFullYear()).toBe(2024);
+    expect(new Date(result[0].uploadDate).getUTCFullYear()).toBe(2024);
   });
 
   it("throws AnimeScanParseError when title is missing", async () => {
@@ -282,8 +282,8 @@ describe("animeScraper.scrapeAnimesOnPage", () => {
     );
     const result = await animeScraper.scrapeAnimesOnPage(1);
     expect(result).toHaveLength(1);
-    expect(result[0].uploadDate.getUTCFullYear()).toBe(2026);
-    expect(result[0].uploadDate.getUTCMonth()).toBe(3); // April is index 3
+    expect(new Date(result[0].uploadDate).getUTCFullYear()).toBe(2026);
+    expect(new Date(result[0].uploadDate).getUTCMonth()).toBe(3); // April is index 3
   });
 
   it("throws AnimeScanParseError when detail block is missing", async () => {
