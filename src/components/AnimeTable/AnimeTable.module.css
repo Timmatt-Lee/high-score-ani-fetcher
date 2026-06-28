@@ -75,6 +75,16 @@
   border-top-right-radius: var(--radius);
 }
 
+/*
+ * 🚨 STICKY CORNER MASK HACK (丙方案)
+ * Why we need this:
+ * Because we use global window scrolling, the parent container (.tableWrapper) CANNOT have `overflow: hidden`
+ * (otherwise `position: sticky` on the header will break).
+ * Since we can't clip the children with overflow:hidden, when table rows scroll up, they would bleed 
+ * through the transparent corners of the tableHeader's border-radius.
+ * To fix this bleeding, we dynamically overlay two fake background-colored (var(--bg-color)) mask corners
+ * via ::before and ::after ONLY when the header is stuck (isSticky is true).
+ */
 .tableHeader.isSticky::before,
 .tableHeader.isSticky::after {
   content: "";

@@ -37,6 +37,9 @@ export function AnimeTable({
   const [isSticky, setIsSticky] = useState(false);
   const headerRef = useRef<HTMLDivElement>(null);
 
+  // Detect when tableHeader is stuck to dynamically toggle the mask corners (isSticky).
+  // This is required because we use global window scrolling, which prevents using overflow:hidden
+  // on the container. Without a mask, scrolled rows would bleed out of the header's rounded corners.
   useEffect(() => {
     const handleScroll = () => {
       if (headerRef.current) {
