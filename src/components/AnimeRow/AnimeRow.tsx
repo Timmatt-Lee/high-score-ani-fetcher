@@ -15,7 +15,6 @@ function formatViews(views: number): string {
 
 interface AnimeRowProps {
   item: AnimeItem;
-  isDisabled?: boolean;
   activeTab: Tab;
   onMoveToFavorites: (item: AnimeItem) => void;
   onMoveToTrash: (item: AnimeItem) => void;
@@ -25,7 +24,6 @@ interface AnimeRowProps {
 
 export function AnimeRow({
   item,
-  isDisabled,
   activeTab,
   onMoveToFavorites,
   onMoveToTrash,
@@ -40,7 +38,6 @@ export function AnimeRow({
             <button
               className={`${styles.actionBtn} ${styles.fav}`}
               onClick={() => onMoveToFavorites(item)}
-              disabled={isDisabled}
               aria-label="Add to Favorites"
               title="Add to Favorites"
             >
@@ -49,7 +46,6 @@ export function AnimeRow({
             <button
               className={`${styles.actionBtn} ${styles.trash}`}
               onClick={() => onMoveToTrash(item)}
-              disabled={isDisabled}
               aria-label="Move to Trash"
               title="Move to Trash"
             >
@@ -62,7 +58,6 @@ export function AnimeRow({
           <button
             className={`${styles.actionBtn} ${styles.trash}`}
             onClick={() => onMoveToTrash(item)}
-            disabled={isDisabled}
             aria-label="Move to Trash"
             title="Move to Trash"
           >
@@ -72,7 +67,6 @@ export function AnimeRow({
       case Tab.Trash:
         return (
           <button
-            disabled={isDisabled}
             className={`${styles.actionBtn} ${styles.fav}`}
             onClick={() => onRestoreFromTrash(item)}
             aria-label="Restore to Favorites"
