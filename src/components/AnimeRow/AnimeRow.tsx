@@ -18,7 +18,6 @@ interface AnimeRowProps {
   activeTab: Tab;
   onMoveToFavorites: (item: AnimeItem) => void;
   onMoveToTrash: (item: AnimeItem) => void;
-  onRestoreFromTrash: (item: AnimeItem) => void;
   targetScore?: number;
 }
 
@@ -27,7 +26,6 @@ export function AnimeRow({
   activeTab,
   onMoveToFavorites,
   onMoveToTrash,
-  onRestoreFromTrash,
   targetScore = 4.8,
 }: AnimeRowProps) {
   const renderActions = () => {
@@ -68,7 +66,7 @@ export function AnimeRow({
         return (
           <button
             className={`${styles.actionBtn} ${styles.fav}`}
-            onClick={() => onRestoreFromTrash(item)}
+            onClick={() => onMoveToFavorites(item)}
             aria-label="Restore to Favorites"
             title="Restore to Favorites"
           >

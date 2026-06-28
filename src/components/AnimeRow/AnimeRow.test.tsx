@@ -31,7 +31,6 @@ describe("AnimeRow", () => {
         activeTab={Tab.Search}
         onMoveToFavorites={vi.fn()}
         onMoveToTrash={vi.fn()}
-        onRestoreFromTrash={vi.fn()}
       />,
     );
     expect(screen.getByText("Test Anime")).toBeDefined();
@@ -48,7 +47,6 @@ describe("AnimeRow", () => {
         activeTab={Tab.Search}
         onMoveToFavorites={vi.fn()}
         onMoveToTrash={vi.fn()}
-        onRestoreFromTrash={vi.fn()}
       />,
     );
     expect(screen.getByText("N/A")).toBeDefined();
@@ -63,7 +61,6 @@ describe("AnimeRow", () => {
         activeTab={Tab.Search}
         onMoveToFavorites={vi.fn()}
         onMoveToTrash={vi.fn()}
-        onRestoreFromTrash={vi.fn()}
       />,
     );
     expect(screen.getByText("1.2M")).toBeDefined();
@@ -76,7 +73,6 @@ describe("AnimeRow", () => {
         activeTab={Tab.Search}
         onMoveToFavorites={vi.fn()}
         onMoveToTrash={vi.fn()}
-        onRestoreFromTrash={vi.fn()}
       />,
     );
     expect(screen.getByText("2.4K")).toBeDefined();
@@ -89,7 +85,6 @@ describe("AnimeRow", () => {
         activeTab={Tab.Search}
         onMoveToFavorites={vi.fn()}
         onMoveToTrash={vi.fn()}
-        onRestoreFromTrash={vi.fn()}
       />,
     );
     expect(screen.getByText("500")).toBeDefined();
@@ -105,7 +100,6 @@ describe("AnimeRow", () => {
         activeTab={Tab.Search}
         onMoveToFavorites={vi.fn()}
         onMoveToTrash={vi.fn()}
-        onRestoreFromTrash={vi.fn()}
       />,
     );
     expect(c1.querySelector('[class*="scoreExcellent"]')).toBeDefined();
@@ -119,7 +113,6 @@ describe("AnimeRow", () => {
         activeTab={Tab.Search}
         onMoveToFavorites={vi.fn()}
         onMoveToTrash={vi.fn()}
-        onRestoreFromTrash={vi.fn()}
       />,
     );
     expect(c2.querySelector('[class*="scoreGood"]')).toBeDefined();
@@ -133,7 +126,6 @@ describe("AnimeRow", () => {
         activeTab={Tab.Search}
         onMoveToFavorites={vi.fn()}
         onMoveToTrash={vi.fn()}
-        onRestoreFromTrash={vi.fn()}
       />,
     );
     expect(c3.querySelector('[class*="scoreAverage"]')).toBeDefined();
@@ -147,7 +139,6 @@ describe("AnimeRow", () => {
         activeTab={Tab.Search}
         onMoveToFavorites={vi.fn()}
         onMoveToTrash={vi.fn()}
-        onRestoreFromTrash={vi.fn()}
         targetScore={5.0}
       />,
     );
@@ -163,7 +154,6 @@ describe("AnimeRow", () => {
         activeTab={Tab.Search}
         onMoveToFavorites={favFn}
         onMoveToTrash={trashFn}
-        onRestoreFromTrash={vi.fn()}
       />,
     );
     fireEvent.click(screen.getByRole("button", { name: "Add to Favorites" }));
@@ -182,7 +172,6 @@ describe("AnimeRow", () => {
         activeTab={Tab.Favorites}
         onMoveToFavorites={vi.fn()}
         onMoveToTrash={vi.fn()}
-        onRestoreFromTrash={vi.fn()}
       />,
     );
     expect(
@@ -197,9 +186,8 @@ describe("AnimeRow", () => {
       <AnimeRow
         item={makeAnime()}
         activeTab={Tab.Trash}
-        onMoveToFavorites={vi.fn()}
+        onMoveToFavorites={restoreFn}
         onMoveToTrash={vi.fn()}
-        onRestoreFromTrash={restoreFn}
       />,
     );
     expect(screen.queryByRole("button", { name: "Move to Trash" })).toBeNull();
@@ -218,7 +206,6 @@ describe("AnimeRow", () => {
           activeTab={"InvalidTab" as unknown as Tab}
           onMoveToFavorites={vi.fn()}
           onMoveToTrash={vi.fn()}
-          onRestoreFromTrash={vi.fn()}
         />,
       ),
     ).toThrowError("Unhandled activeTab state: InvalidTab");
@@ -232,7 +219,6 @@ describe("AnimeRow", () => {
         activeTab={Tab.Settings}
         onMoveToFavorites={vi.fn()}
         onMoveToTrash={vi.fn()}
-        onRestoreFromTrash={vi.fn()}
       />,
     );
     expect(

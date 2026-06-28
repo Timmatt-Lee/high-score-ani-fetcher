@@ -13,7 +13,6 @@ const meta: Meta<typeof AnimeTable> = {
     },
     onMoveToFavorites: { action: "moveToFavorites" },
     onMoveToTrash: { action: "moveToTrash" },
-    onRestoreFromTrash: { action: "restoreFromTrash" },
     onSort: { action: "sort" },
   },
   parameters: {
@@ -78,7 +77,6 @@ export const Default: Story = {
     onSort: () => {},
     onMoveToFavorites: () => {},
     onMoveToTrash: () => {},
-    onRestoreFromTrash: () => {},
     targetScore: 4.8,
   },
 };

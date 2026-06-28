@@ -68,7 +68,6 @@ function App() {
     setTrashList,
     moveToFavorites,
     moveToTrash,
-    restoreFromTrash,
     saveData,
     isLoaded: isAnimeDataLoaded,
   } = useAnimeData();
@@ -224,7 +223,6 @@ function App() {
             )}
             onMoveToFavorites={moveToFavorites}
             onMoveToTrash={moveToTrash}
-            onRestoreFromTrash={restoreFromTrash}
             sortBy={sortBy}
             sortOrder={sortOrder}
             onSort={handleSort}

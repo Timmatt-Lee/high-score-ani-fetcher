@@ -119,10 +119,12 @@ export function useAnimeData() {
 
   const moveToFavorites = (item: AnimeItem) => {
     const newSearch = searchList.filter((i) => i.link !== item.link);
+    const newTrash = trashList.filter((i) => i.link !== item.link);
     const newFav = [...favoriteList, item];
     setSearchList(newSearch);
+    setTrashList(newTrash);
     setFavoriteList(newFav);
-    saveData(newSearch, newFav, trashList);
+    saveData(newSearch, newFav, newTrash);
   };
 
   const moveToTrash = (item: AnimeItem) => {
@@ -135,14 +137,6 @@ export function useAnimeData() {
     saveData(newSearch, newFav, newTrash);
   };
 
-  const restoreFromTrash = (item: AnimeItem) => {
-    const newTrash = trashList.filter((i) => i.link !== item.link);
-    const newFav = [...favoriteList, item];
-    setTrashList(newTrash);
-    setFavoriteList(newFav);
-    saveData(searchList, newFav, newTrash);
-  };
-
   return {
     searchList,
     setSearchList,
@@ -152,7 +146,6 @@ export function useAnimeData() {
     setTrashList,
     moveToFavorites,
     moveToTrash,
-    restoreFromTrash,
     saveData,
     isLoaded,
   };

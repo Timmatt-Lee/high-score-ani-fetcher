@@ -266,7 +266,7 @@ describe("useAnimeData", () => {
     });
 
     await act(async () => {
-      result.current.restoreFromTrash(anime);
+      result.current.moveToFavorites(anime);
     });
 
     expect(result.current.trashList).toHaveLength(0);

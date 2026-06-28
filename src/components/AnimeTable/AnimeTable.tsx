@@ -21,7 +21,6 @@ interface AnimeTableProps {
   ) => void;
   onMoveToFavorites: (item: AnimeItem) => void;
   onMoveToTrash: (item: AnimeItem) => void;
-  onRestoreFromTrash: (item: AnimeItem) => void;
   targetScore?: number;
 }
 
@@ -33,7 +32,6 @@ export function AnimeTable({
   onSort,
   onMoveToFavorites,
   onMoveToTrash,
-  onRestoreFromTrash,
   targetScore,
 }: AnimeTableProps) {
   const [isSticky, setIsSticky] = useState(false);
@@ -135,7 +133,6 @@ export function AnimeTable({
                   activeTab={activeTab}
                   onMoveToFavorites={onMoveToFavorites}
                   onMoveToTrash={onMoveToTrash}
-                  onRestoreFromTrash={onRestoreFromTrash}
                   targetScore={targetScore}
                 />
               </div>

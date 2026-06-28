@@ -42,7 +42,6 @@ const meta: Meta<typeof AnimeRow> = {
     },
     onMoveToFavorites: { action: "moveToFavorites" },
     onMoveToTrash: { action: "moveToTrash" },
-    onRestoreFromTrash: { action: "restoreFromTrash" },
   },
   parameters: {
     chromatic: {

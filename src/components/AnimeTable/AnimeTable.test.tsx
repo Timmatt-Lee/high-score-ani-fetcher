@@ -29,7 +29,6 @@ describe("AnimeTable", () => {
         onSort={handleSort}
         onMoveToFavorites={vi.fn()}
         onMoveToTrash={vi.fn()}
-        onRestoreFromTrash={vi.fn()}
         targetScore={4.8}
       />,
     );
