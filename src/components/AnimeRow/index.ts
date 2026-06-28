@@ -1,1 +1,1 @@
-export * from "./AnimeRow";
+export { AnimeRow } from "./AnimeRow";

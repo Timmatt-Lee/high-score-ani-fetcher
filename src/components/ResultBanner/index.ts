@@ -1,1 +1,1 @@
-export * from "./ResultBanner";
+export { ResultBanner } from "./ResultBanner";
