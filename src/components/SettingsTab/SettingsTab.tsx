@@ -1,10 +1,9 @@
 import { useState } from "react";
-import { z } from "zod";
+import { type Settings, type AnimeItem } from "../../services/animeScanner";
 import {
-  type Settings,
-  type AnimeItem,
-  AnimeItemSchema,
-} from "../../services/animeScanner";
+  serializeAnimeList,
+  parseAnimeList,
+} from "../../utils/animeSerializer";
 import styles from "./SettingsTab.module.css";
 
 interface SettingsTabProps {
@@ -44,24 +43,13 @@ export function SettingsTab({
     }
     onSave({ ...settings, [key]: num });
   };
-
   const handleExport = () => {
     try {
-      const serializeList = (list: AnimeItem[]) =>
-        list.map((item) => ({
-          ...item,
-          uploadDate: item.uploadDate.toISOString(),
-          scannedAt:
-            item.scannedAt instanceof Date
-              ? item.scannedAt.toISOString()
-              : item.scannedAt,
-        }));
-
       const backupData = {
         version: 1,
-        searchList: serializeList(searchList),
-        favoriteList: serializeList(favoriteList),
-        trashList: serializeList(trashList),
+        searchList: serializeAnimeList(searchList),
+        favoriteList: serializeAnimeList(favoriteList),
+        trashList: serializeAnimeList(trashList),
       };
 
       const blob = new Blob([JSON.stringify(backupData, null, 2)], {
@@ -93,21 +81,9 @@ export function SettingsTab({
         }
         const parsed = JSON.parse(text);
 
-        const parseList = (listData: unknown): AnimeItem[] => {
-          const schemaResult = z.array(AnimeItemSchema).safeParse(listData);
-          if (!schemaResult.success) {
-            throw new Error("Data schema validation failed");
-          }
-          return schemaResult.data.map((item) => ({
-            ...item,
-            uploadDate: new Date(item.uploadDate),
-            scannedAt: item.scannedAt ? new Date(item.scannedAt) : undefined,
-          }));
-        };
-
-        const importedSearch = parseList(parsed.searchList || []);
-        const importedFavorites = parseList(parsed.favoriteList || []);
-        const importedTrash = parseList(parsed.trashList || []);
+        const importedSearch = parseAnimeList(parsed.searchList || []);
+        const importedFavorites = parseAnimeList(parsed.favoriteList || []);
+        const importedTrash = parseAnimeList(parsed.trashList || []);
 
         onImportData({
           searchList: importedSearch,

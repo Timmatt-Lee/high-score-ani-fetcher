@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { z } from "zod";
 import { type AnimeItem, AnimeItemSchema } from "../services/animeScanner";
+import { serializeAnimeList } from "../utils/animeSerializer";
 
 export function useAnimeData() {
   const [searchList, setSearchList] = useState<AnimeItem[]>([]);
@@ -87,20 +88,10 @@ export function useAnimeData() {
   // Save data when state changes
   const saveData = async (s: AnimeItem[], f: AnimeItem[], t: AnimeItem[]) => {
     try {
-      const serializeList = (list: AnimeItem[]) =>
-        list.map((item) => ({
-          ...item,
-          uploadDate: item.uploadDate.toISOString(),
-          scannedAt:
-            item.scannedAt instanceof Date
-              ? item.scannedAt.toISOString()
-              : item.scannedAt,
-        }));
-
       const payload = {
-        searchList: serializeList(s),
-        favoriteList: serializeList(f),
-        trashList: serializeList(t),
+        searchList: serializeAnimeList(s),
+        favoriteList: serializeAnimeList(f),
+        trashList: serializeAnimeList(t),
       };
 
       if (
