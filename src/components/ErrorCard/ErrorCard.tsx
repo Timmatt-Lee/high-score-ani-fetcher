@@ -10,7 +10,7 @@ import { CopyIcon, CheckIcon } from "../Icons";
 
 interface ErrorCardProps {
   error: Error;
-  onDismiss?: () => void;
+  onDismiss: () => void;
 }
 
 const getCardTitleAndSubtitle = (
@@ -81,9 +81,7 @@ export function ErrorCard({ error, onDismiss }: ErrorCardProps) {
       }
     }
 
-    const textToCopy = cardSubtitle
-      ? `${cardTitle}\n${cardSubtitle}\n${error.message}\n${details}`.trim()
-      : `${cardTitle}\n${error.message}\n${details}`.trim();
+    const textToCopy = `${cardTitle}\n${error.message}\n${details}`.trim();
     navigator.clipboard.writeText(textToCopy);
     setIsCopied(true);
   };
@@ -118,17 +116,15 @@ export function ErrorCard({ error, onDismiss }: ErrorCardProps) {
               <CopyIcon width="14" height="14" />
             )}
           </button>
-          {onDismiss && (
-            <button
-              className={`${styles.iconBtn} ${styles.dismissBtn}`}
-              onClick={onDismiss}
-              title="Dismiss error"
-              aria-label="Dismiss error"
-              data-testid="error-card-dismiss-btn"
-            >
-              ✕
-            </button>
-          )}
+          <button
+            className={`${styles.iconBtn} ${styles.dismissBtn}`}
+            onClick={onDismiss}
+            title="Dismiss error"
+            aria-label="Dismiss error"
+            data-testid="error-card-dismiss-btn"
+          >
+            ✕
+          </button>
         </div>
       </div>
       <div className={styles.errorMessage} data-testid="error-card-message">

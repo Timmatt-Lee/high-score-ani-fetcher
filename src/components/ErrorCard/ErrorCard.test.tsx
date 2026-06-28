@@ -19,7 +19,7 @@ describe("ErrorCard", () => {
       "葬送的芙莉蓮",
     );
 
-    render(<ErrorCard error={error} />);
+    render(<ErrorCard error={error} onDismiss={vi.fn()} />);
 
     expect(screen.getByTestId("error-card-title").textContent).toBe(
       "葬送的芙莉蓮",
@@ -42,7 +42,7 @@ describe("ErrorCard", () => {
       undefined,
     );
 
-    render(<ErrorCard error={error} />);
+    render(<ErrorCard error={error} onDismiss={vi.fn()} />);
 
     expect(screen.getByTestId("error-card-title").textContent).toBe("Page: 3");
     expect(screen.getByTestId("error-card-subtitle").textContent).toBe(
@@ -60,7 +60,7 @@ describe("ErrorCard", () => {
       "鬼滅之刃",
     );
 
-    render(<ErrorCard error={error} />);
+    render(<ErrorCard error={error} onDismiss={vi.fn()} />);
 
     expect(screen.getByTestId("error-card-title").textContent).toBe("鬼滅之刃");
     expect(screen.getByTestId("error-card-subtitle").textContent).toBe(
@@ -77,7 +77,7 @@ describe("ErrorCard", () => {
       "Parse failed",
     );
 
-    render(<ErrorCard error={error} />);
+    render(<ErrorCard error={error} onDismiss={vi.fn()} />);
 
     expect(screen.getByTestId("error-card-title").textContent).toBe(
       "Parser Error",
@@ -115,7 +115,9 @@ describe("ErrorCard", () => {
         "bad html",
         "Parse failed",
       );
-      const { unmount } = render(<ErrorCard error={error} />);
+      const { unmount } = render(
+        <ErrorCard error={error} onDismiss={vi.fn()} />,
+      );
       expect(screen.getByTestId("error-card-subtitle").textContent).toBe(
         expected,
       );
@@ -132,16 +134,16 @@ describe("ErrorCard", () => {
       "Parse failed",
     );
     const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
-    expect(() => render(<ErrorCard error={error} />)).toThrow(
-      "Unhandled AnimeScanStep: 999",
-    );
+    expect(() =>
+      render(<ErrorCard error={error} onDismiss={vi.fn()} />),
+    ).toThrow("Unhandled AnimeScanStep: 999");
     consoleSpy.mockRestore();
   });
 
   it("renders Unknown/Fatal error correctly", () => {
     const error = new Error("Fatal System Error");
 
-    render(<ErrorCard error={error} />);
+    render(<ErrorCard error={error} onDismiss={vi.fn()} />);
 
     expect(screen.getByTestId("error-card-title").textContent).toBe("Error");
   });
@@ -154,7 +156,7 @@ describe("ErrorCard", () => {
       }
     }
     const error = new CustomError();
-    const { unmount } = render(<ErrorCard error={error} />);
+    const { unmount } = render(<ErrorCard error={error} onDismiss={vi.fn()} />);
     expect(screen.getByTestId("error-card-title").textContent).toBe(
       "TestCustomError",
     );
@@ -162,7 +164,9 @@ describe("ErrorCard", () => {
 
     const errorWithNoName = new Error("Fatal System Error");
     Object.defineProperty(errorWithNoName, "name", { value: "" });
-    const { unmount: unmount2 } = render(<ErrorCard error={errorWithNoName} />);
+    const { unmount: unmount2 } = render(
+      <ErrorCard error={errorWithNoName} onDismiss={vi.fn()} />,
+    );
     expect(screen.getByTestId("error-card-title").textContent).toBe("Error");
     unmount2();
 
@@ -173,7 +177,9 @@ describe("ErrorCard", () => {
       }
     }
     const errorNoName = new CustomErrorNoName();
-    const { unmount: unmount3 } = render(<ErrorCard error={errorNoName} />);
+    const { unmount: unmount3 } = render(
+      <ErrorCard error={errorNoName} onDismiss={vi.fn()} />,
+    );
     expect(screen.getByTestId("error-card-title").textContent).toBe(
       "Unexpected Error",
     );
@@ -190,12 +196,6 @@ describe("ErrorCard", () => {
 
     dismissBtn.click();
     expect(onDismiss).toHaveBeenCalledTimes(1);
-  });
-
-  it("does not render dismiss button when onDismiss is omitted", () => {
-    const error = new Error("Test error");
-    render(<ErrorCard error={error} />);
-    expect(screen.queryByTestId("error-card-dismiss-btn")).toBeNull();
   });
 
   it("copies details without trace when copy button is clicked and resets after timeout", () => {
@@ -218,7 +218,7 @@ describe("ErrorCard", () => {
       configurable: true,
     });
 
-    render(<ErrorCard error={error} />);
+    render(<ErrorCard error={error} onDismiss={vi.fn()} />);
     const copyBtn = screen.getByTestId("error-card-copy-btn");
 
     act(() => {
@@ -226,7 +226,7 @@ describe("ErrorCard", () => {
     });
 
     expect(writeTextMock).toHaveBeenCalledWith(
-      "My Anime\nPage: 1, Status Code: 403, When doing: fetching total pages\nHTTP request failed with status 403 (URL: https://example.com)\nURL: https://example.com\nStatus: 403\nHTML/Body Snippet:\nForbidden",
+      "My Anime\nHTTP request failed with status 403 (URL: https://example.com)\nURL: https://example.com\nStatus: 403\nHTML/Body Snippet:\nForbidden",
     );
 
     // Verify button has .copied class
@@ -254,7 +254,7 @@ describe("ErrorCard", () => {
       configurable: true,
     });
 
-    render(<ErrorCard error={error} />);
+    render(<ErrorCard error={error} onDismiss={vi.fn()} />);
     const copyBtn = screen.getByTestId("error-card-copy-btn");
 
     act(() => {
@@ -283,7 +283,7 @@ describe("ErrorCard", () => {
       configurable: true,
     });
 
-    render(<ErrorCard error={error} />);
+    render(<ErrorCard error={error} onDismiss={vi.fn()} />);
     const copyBtn = screen.getByTestId("error-card-copy-btn");
 
     act(() => {
@@ -291,7 +291,7 @@ describe("ErrorCard", () => {
     });
 
     expect(writeTextMock).toHaveBeenCalledWith(
-      "Some Anime\nPage: 1, When doing: parsing anime info\nParse error\nURL: https://example.com\nHTML/Body Snippet:\n<div>Bad HTML</div>",
+      "Some Anime\nParse error\nURL: https://example.com\nHTML/Body Snippet:\n<div>Bad HTML</div>",
     );
   });
 
@@ -314,7 +314,7 @@ describe("ErrorCard", () => {
       configurable: true,
     });
 
-    render(<ErrorCard error={error} />);
+    render(<ErrorCard error={error} onDismiss={vi.fn()} />);
     const copyBtn = screen.getByTestId("error-card-copy-btn");
 
     act(() => {
@@ -322,7 +322,7 @@ describe("ErrorCard", () => {
     });
 
     expect(writeTextMock).toHaveBeenCalledWith(
-      "Some Anime\nPage: 1, Status Code: 500, When doing: fetching total pages\nHTTP request failed with status 500 (URL: https://example.com)\nURL: https://example.com\nStatus: 500",
+      "Some Anime\nHTTP request failed with status 500 (URL: https://example.com)\nURL: https://example.com\nStatus: 500",
     );
   });
 
@@ -345,7 +345,7 @@ describe("ErrorCard", () => {
       configurable: true,
     });
 
-    render(<ErrorCard error={error} />);
+    render(<ErrorCard error={error} onDismiss={vi.fn()} />);
     const copyBtn = screen.getByTestId("error-card-copy-btn");
 
     act(() => {
@@ -353,7 +353,7 @@ describe("ErrorCard", () => {
     });
 
     expect(writeTextMock).toHaveBeenCalledWith(
-      "Some Anime\nPage: 1, When doing: parsing anime info\nParse error\nURL: https://example.com",
+      "Some Anime\nParse error\nURL: https://example.com",
     );
   });
 
@@ -381,7 +381,7 @@ describe("ErrorCard", () => {
       configurable: true,
     });
 
-    render(<ErrorCard error={error} />);
+    render(<ErrorCard error={error} onDismiss={vi.fn()} />);
     const copyBtn = screen.getByTestId("error-card-copy-btn");
 
     act(() => {
@@ -389,7 +389,7 @@ describe("ErrorCard", () => {
     });
 
     expect(writeTextMock).toHaveBeenCalledWith(
-      "Some Anime\nPage: 1, When doing: fetching total pages\nCustom msg\nURL: https://example.com",
+      "Some Anime\nCustom msg\nURL: https://example.com",
     );
   });
 });

@@ -9,6 +9,9 @@ import {
 const meta: Meta<typeof ErrorCard> = {
   title: "Components/ErrorCard",
   component: ErrorCard,
+  argTypes: {
+    onDismiss: { action: "dismiss" },
+  },
   parameters: {
     chromatic: {
       viewports: [320, 768, 1200],
