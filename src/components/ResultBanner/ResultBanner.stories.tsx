@@ -4,6 +4,9 @@ import { ResultBanner } from "./ResultBanner";
 const meta: Meta<typeof ResultBanner> = {
   title: "Components/ResultBanner",
   component: ResultBanner,
+  argTypes: {
+    onDismiss: { action: "dismiss" },
+  },
 };
 
 export default meta;

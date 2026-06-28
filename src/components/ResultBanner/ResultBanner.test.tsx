@@ -11,6 +11,7 @@ describe("ResultBanner", () => {
         updatedCount={5}
         skippedCachedCount={20}
         failedCount={1}
+        onDismiss={vi.fn()}
       />,
     );
 
@@ -30,6 +31,7 @@ describe("ResultBanner", () => {
         updatedCount={5}
         skippedCachedCount={20}
         failedCount={1}
+        onDismiss={vi.fn()}
       />,
     );
 

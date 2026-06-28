@@ -7,7 +7,7 @@ interface ResultBannerProps {
   updatedCount: number;
   skippedCachedCount: number;
   failedCount: number;
-  onDismiss?: () => void;
+  onDismiss: () => void;
 }
 
 type HoverableChip = "success" | "added" | "updated" | "skip" | "fail" | null;
@@ -107,16 +107,14 @@ export function ResultBanner({
         </div>
       </div>
 
-      {onDismiss && (
-        <button
-          className={styles.dismissBtn}
-          onClick={onDismiss}
-          aria-label="Dismiss scan results"
-          title="Dismiss Results"
-        >
-          ✕
-        </button>
-      )}
+      <button
+        className={styles.dismissBtn}
+        onClick={onDismiss}
+        aria-label="Dismiss scan results"
+        title="Dismiss Results"
+      >
+        ✕
+      </button>
     </div>
   );
 }
