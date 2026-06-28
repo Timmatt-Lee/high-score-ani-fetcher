@@ -5,7 +5,9 @@ const meta: Meta<typeof ProgressBar> = {
   title: "Components/ProgressBar",
   component: ProgressBar,
   argTypes: {
-    percent: { control: { type: "range", min: 0, max: 100 } },
+    stepsCount: { control: "number" },
+    currentStepIndex: { control: "number" },
+    currentStepPercent: { control: { type: "range", min: 0, max: 100 } },
     message: { control: "text" },
   },
 };
@@ -15,28 +17,36 @@ type Story = StoryObj<typeof ProgressBar>;
 
 export const Step1Progressing: Story = {
   args: {
-    percent: 0,
+    stepsCount: 2,
+    currentStepIndex: 0,
+    currentStepPercent: 33,
     message: "Loading anime index (22/66)",
   },
 };
 
 export const Step1Completed: Story = {
   args: {
-    percent: 0,
+    stepsCount: 2,
+    currentStepIndex: 0,
+    currentStepPercent: 100,
     message: "Loading anime index (66/66)",
   },
 };
 
 export const Step2Progressing: Story = {
   args: {
-    percent: 45,
+    stepsCount: 2,
+    currentStepIndex: 1,
+    currentStepPercent: 45,
     message: 'Parsing (45/120) "Frieren: Beyond Journey\'s End"',
   },
 };
 
 export const Step2NearCompletion: Story = {
   args: {
-    percent: 95,
+    stepsCount: 2,
+    currentStepIndex: 1,
+    currentStepPercent: 95,
     message: "Saving results to database...",
   },
 };

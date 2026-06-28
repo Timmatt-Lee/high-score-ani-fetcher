@@ -111,6 +111,13 @@ describe("useAnimeScanner", () => {
       subject.next(new AnimeScanPageEvent(2, 5));
     });
     expect(result.current.progress.message).toBe("Loading anime index (2/5)");
+    expect(result.current.progress.stepPercent).toBe(40);
+
+    // Test zero totalPages branch fallback
+    await act(async () => {
+      subject.next(new AnimeScanPageEvent(2, 0));
+    });
+    expect(result.current.progress.stepPercent).toBe(0);
 
     await act(async () => {
       subject.complete();

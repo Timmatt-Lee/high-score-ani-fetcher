@@ -4,7 +4,7 @@ import styles from "./ResultBanner.module.css";
 interface ResultBannerProps {
   successCount: number;
   addedCount: number;
-  refetchedCount: number;
+  updatedCount: number;
   skippedCachedCount: number;
   failedCount: number;
   onDismiss?: () => void;
@@ -16,7 +16,7 @@ type HoverableChip = "success" | "added" | "updated" | "skip" | "fail" | null;
 export function ResultBanner({
   successCount,
   addedCount,
-  refetchedCount,
+  updatedCount,
   skippedCachedCount,
   failedCount,
   onDismiss,
@@ -73,7 +73,7 @@ export function ResultBanner({
           >
             <span className={styles.icon}>✎</span>
             <span className={styles.chipText}>update</span>
-            <span className={styles.count}>{refetchedCount}</span>
+            <span className={styles.count}>{updatedCount}</span>
           </div>
         </div>
 

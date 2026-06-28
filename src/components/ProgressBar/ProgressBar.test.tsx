@@ -3,8 +3,15 @@ import { render, screen } from "@testing-library/react";
 import { ProgressBar } from "./ProgressBar";
 
 describe("ProgressBar", () => {
-  it("renders progress and message for Step 2", () => {
-    render(<ProgressBar percent={50} message="Halfway" />);
+  it("renders progress and message for Step 2 active", () => {
+    render(
+      <ProgressBar
+        stepsCount={2}
+        currentStepIndex={1}
+        currentStepPercent={50}
+        message="Halfway"
+      />,
+    );
     expect(screen.getByText(/Halfway/)).toBeDefined();
 
     // Step 1 should be completed with a checkmark
@@ -20,10 +27,14 @@ describe("ProgressBar", () => {
     expect(step2Inner.style.width).toBe("50%");
   });
 
-  it("parses percent from message for Step 1, checks inactive step 2, and handles edge cases", () => {
-    // 1. With page count in message
+  it("renders Step 1 active and Step 2 inactive", () => {
     const { rerender } = render(
-      <ProgressBar percent={0} message="Loading anime index (10/50)" />,
+      <ProgressBar
+        stepsCount={2}
+        currentStepIndex={0}
+        currentStepPercent={20}
+        message="Loading anime index"
+      />,
     );
     expect(screen.getByText(/Loading anime index/)).toBeDefined();
 
@@ -31,39 +42,44 @@ describe("ProgressBar", () => {
     expect(step1.className).toContain("active");
 
     const step1Inner = screen.getByTestId("step1-inner");
-    expect(step1Inner.style.width).toBe("20%"); // 10/50 = 20%
+    expect(step1Inner.style.width).toBe("20%");
 
     // Step 2 should be inactive
     const step2 = screen.getByTestId("step-circle-2");
     expect(step2.className).toContain("inactive");
 
-    // 2. Edge case: total is 0 in message
-    rerender(<ProgressBar percent={0} message="Loading anime index (10/0)" />);
-    const zeroProgress = screen.getByTestId("step1-inner");
-    expect(zeroProgress.style.width).toBe("0%");
-
-    // 3. Edge case: empty message
-    rerender(<ProgressBar percent={30} message="" />);
-    expect(screen.queryByTestId("progress-status-text")).toBeNull();
-
-    // 4. Edge case: message already prefixed with "["
-    rerender(<ProgressBar percent={45} message="[Custom] Scanning..." />);
-    expect(screen.getByText("[Custom] Scanning...")).toBeDefined();
-
-    // 5. Step 1 active with percent === 100 (for branch coverage)
+    // Test fallback style class when step style is not defined (e.g. step3)
     rerender(
-      <ProgressBar percent={100} message="Loading anime index (10/50)" />,
+      <ProgressBar
+        stepsCount={3}
+        currentStepIndex={0}
+        currentStepPercent={20}
+        message="Loading anime index"
+      />,
     );
-    expect(screen.getByTestId("step-circle-2").className).toContain("inactive");
+    expect(screen.getByTestId("step-circle-3")).toBeDefined();
 
-    // 6. Step 2 active with percent === 0 (for branch coverage)
-    rerender(<ProgressBar percent={0} message="Scanning details..." />);
-    const step2InnerZero = screen.getByTestId("step2-inner");
-    expect(step2InnerZero.style.transition).toBe("none");
+    // Test transition-none when percent is 0
+    rerender(
+      <ProgressBar
+        stepsCount={2}
+        currentStepIndex={0}
+        currentStepPercent={0}
+        message="Loading anime index"
+      />,
+    );
+    const zeroProgressInner = screen.getByTestId("step1-inner");
+    expect(zeroProgressInner.style.transition).toBe("none");
 
-    // 7. Step 1 with no regex match and no shimmer keywords (falls through to step2)
-    rerender(<ProgressBar percent={0} message="Getting total pages..." />);
-    expect(screen.getByTestId("step-circle-1").className).toContain("active");
-    expect(screen.getByTestId("step1-inner").style.width).toBe("0%");
+    // Test empty message
+    rerender(
+      <ProgressBar
+        stepsCount={2}
+        currentStepIndex={0}
+        currentStepPercent={0}
+        message=""
+      />,
+    );
+    expect(screen.queryByTestId("progress-status-text")).toBeNull();
   });
 });

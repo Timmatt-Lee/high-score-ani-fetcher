@@ -244,7 +244,9 @@ function App() {
           <div className={styles.floatingContent}>
             {isScanning ? (
               <ProgressBar
-                percent={progress.percent}
+                stepsCount={2}
+                currentStepIndex={progress.step - 1}
+                currentStepPercent={progress.stepPercent}
                 message={progress.message}
               />
             ) : (
@@ -252,7 +254,7 @@ function App() {
                 <ResultBanner
                   successCount={scanStats.successCount}
                   addedCount={scanStats.addedCount}
-                  refetchedCount={scanStats.refetchedCount}
+                  updatedCount={scanStats.updatedCount}
                   skippedCachedCount={scanStats.skippedCachedCount}
                   failedCount={scanStats.failedCount}
                   onDismiss={() => setScanStats(null)}

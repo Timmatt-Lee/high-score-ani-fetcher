@@ -24,13 +24,18 @@ export function useAnimeScanner(
   const { animeScraper } = useServices();
   const { settings } = useSettings();
   const [isScanning, setIsScanning] = useState(false);
-  const [progress, setProgress] = useState({ percent: 0, message: "" });
+  const [progress, setProgress] = useState({
+    percent: 0,
+    message: "",
+    step: 1,
+    stepPercent: 0,
+  });
   const [error, setError] = useState<Error | null>(null);
   const [totalPagesCount, setTotalPagesCount] = useState(0);
   const [scanStats, setScanStats] = useState<{
     successCount: number;
     skippedCachedCount: number;
-    refetchedCount: number;
+    updatedCount: number;
     addedCount: number;
     failedCount: number;
   } | null>(null);
@@ -63,18 +68,20 @@ export function useAnimeScanner(
     setProgress({
       percent: 0,
       message: isRetry ? "Retrying anime index" : "Loading anime index",
+      step: 1,
+      stepPercent: 0,
     });
     setIsScanning(true);
 
     let skippedCachedCount = 0;
-    let refetchedCount = 0;
+    let updatedCount = 0;
     let addedCount = 0;
     let successCount = 0;
 
     setScanStats({
       successCount: 0,
       skippedCachedCount: 0,
-      refetchedCount: 0,
+      updatedCount: 0,
       addedCount: 0,
       failedCount: 0,
     });
@@ -91,11 +98,11 @@ export function useAnimeScanner(
         console.error("Scan failed", error);
         setError(error);
         setIsScanning(false);
-        setProgress({ percent: 0, message: "" });
+        setProgress({ percent: 0, message: "", step: 1, stepPercent: 0 });
         setScanStats({
           successCount: 0,
           skippedCachedCount: 0,
-          refetchedCount: 0,
+          updatedCount: 0,
           addedCount: 0,
           failedCount: 1,
         });
@@ -165,7 +172,7 @@ export function useAnimeScanner(
         setScanStats({
           successCount,
           skippedCachedCount,
-          refetchedCount,
+          updatedCount,
           addedCount,
           failedCount: 0,
         });
@@ -182,7 +189,12 @@ export function useAnimeScanner(
       const msg = `Parsing (${detailsCompletedCount}/${detailsTotalCount})`;
       const truncated = currentTitle.slice(0, 30);
       const finalMsg = `${msg} "${truncated}"`;
-      setProgress({ percent, message: finalMsg });
+      setProgress({
+        percent,
+        message: finalMsg,
+        step: 2,
+        stepPercent: percent,
+      });
     };
 
     const pipelineOptions: PipelineOptions = {
@@ -206,9 +218,15 @@ export function useAnimeScanner(
           const actionPrefix = isRetry
             ? "Retrying anime index"
             : "Loading anime index";
+          const stepPercent =
+            event.totalPages > 0
+              ? Math.round((event.currentPage / event.totalPages) * 100)
+              : 0;
           setProgress({
             percent: 0,
             message: `${actionPrefix} (${event.currentPage}/${event.totalPages})`,
+            step: 1,
+            stepPercent,
           });
         } else if (!(event instanceof Error)) {
           detailsCompletedCount++;
@@ -217,14 +235,14 @@ export function useAnimeScanner(
           successCount++;
           const storedAnimeItem = existingMap.get(event.link);
           if (storedAnimeItem) {
-            refetchedCount++;
+            updatedCount++;
           } else {
             addedCount++;
           }
           setScanStats({
             successCount,
             skippedCachedCount,
-            refetchedCount,
+            updatedCount,
             addedCount,
             failedCount: 0,
           });
@@ -265,17 +283,22 @@ export function useAnimeScanner(
           updatedTrashList: [...trashListRef.current],
         });
         setIsScanning(false);
-        setProgress({ percent: 100, message: "Done!" });
+        setProgress({
+          percent: 100,
+          message: "Done!",
+          step: 2,
+          stepPercent: 100,
+        });
       },
       error: (err: unknown) => {
         const error = err instanceof Error ? err : new Error(String(err));
         setError(error);
         setIsScanning(false);
-        setProgress({ percent: 0, message: "" });
+        setProgress({ percent: 0, message: "", step: 1, stepPercent: 0 });
         setScanStats({
           successCount,
           skippedCachedCount,
-          refetchedCount,
+          updatedCount,
           addedCount,
           failedCount: 1,
         });
@@ -291,7 +314,7 @@ export function useAnimeScanner(
       scanSubscriptionRef.current = null;
     }
     setIsScanning(false);
-    setProgress({ percent: 0, message: "" });
+    setProgress({ percent: 0, message: "", step: 1, stepPercent: 0 });
   };
 
   return {

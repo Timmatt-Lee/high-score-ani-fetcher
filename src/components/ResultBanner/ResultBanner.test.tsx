@@ -8,7 +8,7 @@ describe("ResultBanner", () => {
       <ResultBanner
         successCount={15}
         addedCount={10}
-        refetchedCount={5}
+        updatedCount={5}
         skippedCachedCount={20}
         failedCount={1}
       />,
@@ -27,7 +27,7 @@ describe("ResultBanner", () => {
       <ResultBanner
         successCount={15}
         addedCount={10}
-        refetchedCount={5}
+        updatedCount={5}
         skippedCachedCount={20}
         failedCount={1}
       />,
@@ -76,7 +76,7 @@ describe("ResultBanner", () => {
       <ResultBanner
         successCount={15}
         addedCount={10}
-        refetchedCount={5}
+        updatedCount={5}
         skippedCachedCount={20}
         failedCount={1}
         onDismiss={handleDismiss}

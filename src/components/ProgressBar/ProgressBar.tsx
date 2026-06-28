@@ -1,86 +1,78 @@
 import styles from "./ProgressBar.module.css";
 
 interface ProgressBarProps {
-  percent: number;
-  message: string;
+  stepsCount: number; // Total number of steps
+  currentStepIndex: number; // 0-indexed active step index
+  currentStepPercent: number; // 0-100 percentage for the active step
+  message: string; // Status message to display
 }
 
-export function ProgressBar({ percent, message }: ProgressBarProps) {
-  const isStep1 =
-    message.includes("Getting total pages") ||
-    message.includes("list pages") ||
-    message.includes("anime index");
-  const isStep2 = !isStep1;
+export function ProgressBar({
+  stepsCount,
+  currentStepIndex,
+  currentStepPercent,
+  message,
+}: ProgressBarProps) {
+  // Generate step structures dynamically based on stepsCount
+  const steps = Array.from({ length: stepsCount }, (_, i) => {
+    const isCompleted = i < currentStepIndex;
+    const isActive = i === currentStepIndex;
+    const isInactive = i > currentStepIndex;
 
-  // Parse page progress if available in Step 1
-  const match = message.match(/\((\d+)\/(\d+)\)/);
-  let step1Percent = 0;
+    // Percent completed inside this specific step capsule
+    const percent = isCompleted ? 100 : isActive ? currentStepPercent : 0;
 
-  if (isStep1) {
-    if (match) {
-      const current = parseInt(match[1], 10);
-      const total = parseInt(match[2], 10);
-      if (total > 0) {
-        step1Percent = Math.round((current / total) * 100);
-      }
-    }
-  } else {
-    // Step 2 is active, which means Step 1 is completed
-    step1Percent = 100;
-  }
-
-  const step2Percent = isStep2 ? percent : 0;
-
-  const displayMessage = message;
+    return {
+      index: i,
+      isCompleted,
+      isActive,
+      isInactive,
+      percent,
+    };
+  });
 
   return (
     <div className={styles.progressContainer} data-testid="progress-container">
-      {displayMessage && (
+      {message && (
         <div className={styles.statusText} data-testid="progress-status-text">
-          {displayMessage}
+          {message}
         </div>
       )}
 
       <div className={styles.stepperContainer}>
-        {/* Step 1 Progress Bar / Badge */}
-        <div
-          className={`${styles.step1} ${isStep2 ? styles.completed : styles.active}`}
-          data-testid="step-circle-1"
-        >
-          {isStep2 ? (
-            <span className={styles.checkmark} data-testid="check-1">
-              ✓
-            </span>
-          ) : (
-            <div
-              className={styles.barInner}
-              style={{
-                width: `${step1Percent}%`,
-                transition: step1Percent === 0 ? "none" : undefined,
-              }}
-              data-testid="step1-inner"
-            />
-          )}
-        </div>
-
-        {/* Step 2 Progress Bar / Inactive Capsule */}
-        <div
-          className={`${styles.step2} ${isStep2 ? styles.active : styles.inactive}`}
-          data-testid="step-circle-2"
-        >
-          {isStep2 ? (
-            <div
-              className={styles.barInner}
-              style={{
-                width: `${step2Percent}%`,
-                transition: step2Percent === 0 ? "none" : undefined,
-              }}
-              data-testid="step2-inner"
-            />
-          ) : (
-            <div className={styles.inactiveDot} />
-          )}
-        </div>
+        {steps.map((step) => (
+          <div
+            key={step.index}
+            className={`${styles[`step${step.index + 1}`] || styles.stepDefault} ${
+              step.isCompleted
+                ? styles.completed
+                : step.isActive
+                  ? styles.active
+                  : styles.inactive
+            }`}
+            data-testid={`step-circle-${step.index + 1}`}
+          >
+            {step.isCompleted ? (
+              <span
+                className={styles.checkmark}
+                data-testid={`check-${step.index + 1}`}
+              >
+                ✓
+              </span>
+            ) : step.isActive ? (
+              <div
+                className={styles.barInner}
+                style={{
+                  width: `${step.percent}%`,
+                  transition: step.percent === 0 ? "none" : undefined,
+                }}
+                data-testid={`step${step.index + 1}-inner`}
+              />
+            ) : (
+              <div className={styles.inactiveDot} />
+            )}
+          </div>
+        ))}
       </div>
     </div>
   );
