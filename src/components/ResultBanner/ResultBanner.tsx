@@ -8,7 +8,6 @@ interface ResultBannerProps {
   skippedCachedCount: number;
   failedCount: number;
   onDismiss?: () => void;
-  className?: string;
 }
 
 type HoverableChip = "success" | "added" | "updated" | "skip" | "fail" | null;
@@ -20,17 +19,13 @@ export function ResultBanner({
   skippedCachedCount,
   failedCount,
   onDismiss,
-  className,
 }: ResultBannerProps) {
   const [hoveredChip, setHoveredChip] = useState<HoverableChip>(null);
 
   const isExpanded = (chip: HoverableChip) => hoveredChip === chip;
 
   return (
-    <div
-      className={`${styles.bannerContainer} ${className || ""}`}
-      data-testid="scan-stats-container"
-    >
+    <div className={styles.bannerContainer} data-testid="scan-stats-container">
       <div className={styles.bannerContent}>
         {/* Success Group (Success, Added, Updated) */}
         <div className={styles.group} data-group="success">
