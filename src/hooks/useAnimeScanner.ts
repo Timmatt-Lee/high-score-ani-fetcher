@@ -136,72 +136,85 @@ export function useAnimeScanner(
       });
 
       // 4. Scan detail pages (Stage 2)
-      if (detailsTotalCount > 0) {
-        let scannedCount = 0;
-        await animeScanner.scanAnimeDetails({
-          items: itemsToScan,
-          requestDelayMs: settings.requestDelayMs,
-          onDetailScanned: (item) => {
-            scannedCount++;
-            const detailsPercent = scannedCount / detailsTotalCount;
-            const rawPercent = Math.floor(detailsPercent * 99);
-            const percent = Math.min(99, rawPercent);
-
-            const msg = `Parsing (${scannedCount}/${detailsTotalCount})`;
-            const finalMsg = `${msg} "${item.title}"`;
-            setProgress({
-              percent,
-              message: finalMsg,
-              step: 2,
-            });
-
-            successCount++;
-            const storedAnimeItem = allScannedAnimeMap.get(item.link);
-            if (storedAnimeItem) {
-              updatedCount++;
-            } else {
-              addedCount++;
-            }
-
-            setScanResult({
-              successCount,
-              skippedCachedCount,
-              updatedCount,
-              addedCount,
-              failedCount: 0,
-            });
-
-            const currentFav = [...favoriteListRef.current];
-            const currentTrash = [...trashListRef.current];
-            const currentScanned = [...scannedListRef.current];
-
-            let isUpdated = false;
-            for (const list of [currentFav, currentTrash, currentScanned]) {
-              const idx = list.findIndex((x) => x.link === item.link);
-              if (idx !== -1) {
-                list[idx] = item;
-                isUpdated = true;
-                break;
-              }
-            }
-
-            if (!isUpdated) {
-              currentScanned.push(item);
-            }
-
-            onScanUpdate({
-              updatedScannedList: currentScanned,
-              updatedFavoriteList: currentFav,
-              updatedTrashList: currentTrash,
-            });
-
-            scannedListRef.current = currentScanned;
-            favoriteListRef.current = currentFav;
-            trashListRef.current = currentTrash;
-          },
-          signal,
+      if (detailsTotalCount === 0) {
+        onScanUpdate({
+          updatedScannedList: [...scannedListRef.current],
+          updatedFavoriteList: [...favoriteListRef.current],
+          updatedTrashList: [...trashListRef.current],
         });
+        setIsScanning(false);
+        setProgress({
+          percent: 100,
+          message: "Done!",
+          step: 2,
+        });
+        return;
       }
+
+      let scannedCount = 0;
+      await animeScanner.scanAnimeDetails({
+        items: itemsToScan,
+        requestDelayMs: settings.requestDelayMs,
+        onDetailScanned: (item) => {
+          scannedCount++;
+          const detailsPercent = scannedCount / detailsTotalCount;
+          const rawPercent = Math.floor(detailsPercent * 99);
+          const percent = Math.min(99, rawPercent);
+
+          const msg = `Parsing (${scannedCount}/${detailsTotalCount})`;
+          const finalMsg = `${msg} "${item.title}"`;
+          setProgress({
+            percent,
+            message: finalMsg,
+            step: 2,
+          });
+
+          successCount++;
+          const storedAnimeItem = allScannedAnimeMap.get(item.link);
+          if (storedAnimeItem) {
+            updatedCount++;
+          } else {
+            addedCount++;
+          }
+
+          setScanResult({
+            successCount,
+            skippedCachedCount,
+            updatedCount,
+            addedCount,
+            failedCount: 0,
+          });
+
+          const currentFav = [...favoriteListRef.current];
+          const currentTrash = [...trashListRef.current];
+          const currentScanned = [...scannedListRef.current];
+
+          let isUpdated = false;
+          for (const list of [currentFav, currentTrash, currentScanned]) {
+            const idx = list.findIndex((x) => x.link === item.link);
+            if (idx !== -1) {
+              list[idx] = item;
+              isUpdated = true;
+              break;
+            }
+          }
+
+          if (!isUpdated) {
+            currentScanned.push(item);
+          }
+
+          onScanUpdate({
+            updatedScannedList: currentScanned,
+            updatedFavoriteList: currentFav,
+            updatedTrashList: currentTrash,
+          });
+
+          scannedListRef.current = currentScanned;
+          favoriteListRef.current = currentFav;
+          trashListRef.current = currentTrash;
+        },
+        signal,
+      });
 
       // Complete
       onScanUpdate({
