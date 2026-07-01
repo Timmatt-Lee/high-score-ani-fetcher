@@ -19,14 +19,9 @@ export function useSettings() {
     const loadSettings = async () => {
       const chromeStorage = getStorage();
       try {
-        let raw: unknown = null;
-        if (chromeStorage) {
-          raw = (await chromeStorage.get(["settings"])).settings ?? null;
-        } else {
-          await Promise.resolve();
-          const stored = localStorage.getItem("settings");
-          raw = stored ? (JSON.parse(stored) as unknown) : null;
-        }
+        const raw: unknown = chromeStorage
+          ? ((await chromeStorage.get(["settings"])).settings ?? null)
+          : JSON.parse(localStorage.getItem("settings") ?? "null");
 
         if (raw) {
           const parsed = SettingsSchema.safeParse(raw);
