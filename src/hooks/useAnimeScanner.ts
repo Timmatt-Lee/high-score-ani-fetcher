@@ -98,15 +98,15 @@ export function useAnimeScanner(
         const isStored = !!storedAnime;
         if (!isStored) return true;
 
-        if (storedAnime!.scannedAt) {
-          const ageMs = Date.now() - new Date(storedAnime!.scannedAt).getTime();
+        if (storedAnime.scannedAt) {
+          const ageMs = Date.now() - new Date(storedAnime.scannedAt).getTime();
           const ageDays = ageMs / (1000 * 60 * 60 * 24);
           if (ageDays < settings.cacheExpireDays) return false;
         }
 
         const threshold =
           settings.targetScore * (settings.rescanThreshold / 100);
-        if (storedAnime!.score > 0 && storedAnime!.score < threshold)
+        if (storedAnime.score > 0 && storedAnime.score < threshold)
           return false;
 
         return true;
