@@ -6,11 +6,8 @@ export {
   AnimeScanParseError,
 } from "./animeScanError";
 export {
-  type ScannerOptions,
   type AnimeItem,
   AnimeItemSchema,
   type AnimeInfo,
   AnimeInfoSchema,
-  type Settings,
-  SettingsSchema,
 } from "./types";

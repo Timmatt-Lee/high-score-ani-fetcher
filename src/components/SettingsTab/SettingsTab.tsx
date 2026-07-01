@@ -1,11 +1,7 @@
 import type { ChangeEvent } from "react";
 import { z } from "zod";
-import {
-  type Settings,
-  type AnimeItem,
-  SettingsSchema,
-  AnimeItemSchema,
-} from "../../services/animeScanner";
+import { type Settings, SettingsSchema } from "../../types/settings";
+import { type AnimeItem, AnimeItemSchema } from "../../services/animeScanner";
 import styles from "./SettingsTab.module.css";
 
 interface SettingsTabProps {

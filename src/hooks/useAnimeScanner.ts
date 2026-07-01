@@ -64,6 +64,7 @@ export function useAnimeScanner(
     let updatedCount = 0;
     let addedCount = 0;
     let successCount = 0;
+    let failedCount = 0;
 
     const scan = async (signal: AbortSignal) => {
       // 1. Get total pages
@@ -137,7 +138,6 @@ export function useAnimeScanner(
           updatedFavoriteList: [...favoriteListRef.current],
           updatedTrashList: [...trashListRef.current],
         });
-        setIsScanning(false);
         setProgress({
           percent: 100,
           message: "Done!",
@@ -231,28 +231,28 @@ export function useAnimeScanner(
     try {
       await scan(signal);
     } catch (err: unknown) {
+      setProgress({ percent: 0, message: "", step: 1 });
+
       if (
         (err instanceof Error || err instanceof DOMException) &&
         err.name === "AbortError"
       ) {
-        setIsScanning(false);
-        setProgress({ percent: 0, message: "", step: 1 });
         return;
       }
 
       const error = err instanceof Error ? err : new Error(String(err));
       console.error("Scan failed", error);
       setError(error);
+      failedCount = 1;
+    } finally {
       setIsScanning(false);
-      setProgress({ percent: 0, message: "", step: 1 });
       setScanResult({
         successCount,
         skippedCachedCount,
         updatedCount,
         addedCount,
-        failedCount: 1,
+        failedCount,
       });
-    } finally {
       if (abortControllerRef.current === controller) {
         abortControllerRef.current = null;
       }
@@ -263,6 +263,10 @@ export function useAnimeScanner(
     abortControllerRef.current?.abort();
   };
 
+  const clearScanResult = () => {
+    setScanResult(null);
+  };
+
   return {
     isScanning,
     progress,
@@ -271,6 +275,6 @@ export function useAnimeScanner(
     handleScan,
     cancelScan,
     scanResult,
-    setScanResult,
+    clearScanResult,
   };
 }

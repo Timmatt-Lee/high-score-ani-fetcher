@@ -73,7 +73,7 @@ function App() {
     handleScan,
     cancelScan,
     scanResult,
-    setScanResult,
+    clearScanResult,
   } = useAnimeScanner(scannedList, favoriteList, trashList, (result) => {
     updateLists(
       result.updatedScannedList,
@@ -251,7 +251,7 @@ function App() {
                   updatedCount={scanResult.updatedCount}
                   skippedCachedCount={scanResult.skippedCachedCount}
                   failedCount={scanResult.failedCount}
-                  onDismiss={() => setScanResult(null)}
+                  onDismiss={() => clearScanResult()}
                 />
               )
             )}

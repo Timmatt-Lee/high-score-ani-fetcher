@@ -136,7 +136,28 @@ describe("useSettings", () => {
 
     expect(result.current.settings).toEqual(defaultSettings);
     expect(console.error).toHaveBeenCalledWith(
-      "Failed to load settings",
+      "Failed to load settings from chrome.storage",
+      expect.any(Error),
+    );
+  });
+
+  it("handles localStorage load error gracefully", async () => {
+    vi.stubGlobal("chrome", undefined);
+    vi.stubGlobal("localStorage", {
+      getItem: vi.fn().mockImplementation(() => {
+        throw new Error("localStorage read failed");
+      }),
+    });
+
+    const { result } = renderHook(() => useSettings());
+
+    await vi.waitFor(() => {
+      expect(result.current.isLoaded).toBe(true);
+    });
+
+    expect(result.current.settings).toEqual(defaultSettings);
+    expect(console.error).toHaveBeenCalledWith(
+      "Failed to load settings from localStorage",
       expect.any(Error),
     );
   });
@@ -201,7 +222,7 @@ describe("useSettings", () => {
     });
 
     expect(console.error).toHaveBeenCalledWith(
-      "Failed to save settings",
+      "Failed to save settings to chrome.storage",
       expect.any(Error),
     );
   });
