@@ -85,32 +85,14 @@ export function useAnimeScanner(
       });
 
       // 3. Filter items and calculate skipped/stats in memory (Stage 1 filter)
-      const allScannedAnimeMap = new Map<
-        string,
-        {
-          item: AnimeItem;
-          listType: "scanned" | "favorite" | "trash";
-          index: number;
-        }
-      >();
-      scannedListRef.current.forEach((x, index) =>
-        allScannedAnimeMap.set(x.link, { item: x, listType: "scanned", index }),
-      );
-      favoriteListRef.current.forEach((x, index) =>
-        allScannedAnimeMap.set(x.link, {
-          item: x,
-          listType: "favorite",
-          index,
-        }),
-      );
-      trashListRef.current.forEach((x, index) =>
-        allScannedAnimeMap.set(x.link, { item: x, listType: "trash", index }),
-      );
+      const allScannedAnimeMap = new Map<string, AnimeItem>();
+      scannedListRef.current.forEach((x) => allScannedAnimeMap.set(x.link, x));
+      favoriteListRef.current.forEach((x) => allScannedAnimeMap.set(x.link, x));
+      trashListRef.current.forEach((x) => allScannedAnimeMap.set(x.link, x));
 
       const isScanRequired = (item: AnimeInfo) => {
-        const stored = allScannedAnimeMap.get(item.link);
-        if (stored) {
-          const storedAnimeItem = stored.item;
+        const storedAnimeItem = allScannedAnimeMap.get(item.link);
+        if (storedAnimeItem) {
           if (storedAnimeItem.scannedAt) {
             const ageMs =
               Date.now() - new Date(storedAnimeItem.scannedAt).getTime();
@@ -201,12 +183,12 @@ export function useAnimeScanner(
 
           if (stored) {
             updatedCount++;
-            if (stored.listType === "favorite") {
-              currentFav[stored.index] = item;
-            } else if (stored.listType === "trash") {
-              currentTrash[stored.index] = item;
-            } else {
-              currentScanned[stored.index] = item;
+            for (const list of [currentFav, currentTrash, currentScanned]) {
+              const idx = list.findIndex((x) => x.link === item.link);
+              if (idx !== -1) {
+                list[idx] = item;
+                break;
+              }
             }
           } else {
             addedCount++;
