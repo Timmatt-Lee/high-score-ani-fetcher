@@ -65,19 +65,7 @@ export function useAnimeScanner(
     let addedCount = 0;
     let successCount = 0;
 
-    setScanResult({
-      successCount: 0,
-      skippedCachedCount: 0,
-      updatedCount: 0,
-      addedCount: 0,
-      failedCount: 0,
-    });
-
-    const controller = new AbortController();
-    abortControllerRef.current = controller;
-    const signal = controller.signal;
-
-    try {
+    const scan = async (signal: AbortSignal) => {
       // 1. Get total pages
       const totalPages = await animeScanner.getTotalPages();
 
@@ -227,6 +215,22 @@ export function useAnimeScanner(
         message: "Done!",
         step: 2,
       });
+    };
+
+    setScanResult({
+      successCount: 0,
+      skippedCachedCount: 0,
+      updatedCount: 0,
+      addedCount: 0,
+      failedCount: 0,
+    });
+
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+    const signal = controller.signal;
+
+    try {
+      await scan(signal);
     } catch (err: unknown) {
       if (
         (err instanceof Error || err instanceof DOMException) &&
