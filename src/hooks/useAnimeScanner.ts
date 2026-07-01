@@ -91,26 +91,21 @@ export function useAnimeScanner(
       trashListRef.current.forEach((x) => allScannedAnimeMap.set(x.link, x));
 
       const isScanRequired = (item: AnimeInfo) => {
-        const storedAnimeItem = allScannedAnimeMap.get(item.link);
-        if (storedAnimeItem) {
-          if (storedAnimeItem.scannedAt) {
-            const ageMs =
-              Date.now() - new Date(storedAnimeItem.scannedAt).getTime();
-            const ageDays = ageMs / (1000 * 60 * 60 * 24);
-            if (ageDays < settings.cacheExpireDays) {
-              return false;
-            }
-          }
-
-          const threshold =
-            settings.targetScore * (settings.rescanThreshold / 100);
-          if (storedAnimeItem.score > 0 && storedAnimeItem.score < threshold) {
-            return false;
-          }
-        }
-
         if (isNaN(item.episodeCount) || item.episodeCount < 10) return false;
         if (item.title.includes("OVA")) return false;
+
+        const stored = allScannedAnimeMap.get(item.link);
+        if (!stored) return true;
+
+        if (stored.scannedAt) {
+          const ageMs = Date.now() - new Date(stored.scannedAt).getTime();
+          const ageDays = ageMs / (1000 * 60 * 60 * 24);
+          if (ageDays < settings.cacheExpireDays) return false;
+        }
+
+        const threshold =
+          settings.targetScore * (settings.rescanThreshold / 100);
+        if (stored.score > 0 && stored.score < threshold) return false;
 
         return true;
       };
