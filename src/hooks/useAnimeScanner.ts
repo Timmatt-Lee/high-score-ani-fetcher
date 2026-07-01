@@ -137,17 +137,17 @@ export function useAnimeScanner(
 
       // 4. Scan detail pages (Stage 2)
       if (detailsTotalCount > 0) {
-        let localCompletedCount = 0;
+        let scannedCount = 0;
         await animeScanner.scanAnimeDetails({
           items: itemsToScan,
           requestDelayMs: settings.requestDelayMs,
           onDetailScanned: (item) => {
-            localCompletedCount++;
-            const detailsPercent = localCompletedCount / detailsTotalCount;
+            scannedCount++;
+            const detailsPercent = scannedCount / detailsTotalCount;
             const rawPercent = Math.floor(detailsPercent * 99);
             const percent = Math.min(99, rawPercent);
 
-            const msg = `Parsing (${localCompletedCount}/${detailsTotalCount})`;
+            const msg = `Parsing (${scannedCount}/${detailsTotalCount})`;
             const finalMsg = `${msg} "${item.title}"`;
             setProgress({
               percent,
