@@ -94,18 +94,20 @@ export function useAnimeScanner(
         if (isNaN(item.episodeCount) || item.episodeCount < 10) return false;
         if (item.title.includes("OVA")) return false;
 
-        const stored = allScannedAnimeMap.get(item.link);
-        if (!stored) return true;
+        const storedAnime = allScannedAnimeMap.get(item.link);
+        const isStored = !!storedAnime;
+        if (!isStored) return true;
 
-        if (stored.scannedAt) {
-          const ageMs = Date.now() - new Date(stored.scannedAt).getTime();
+        if (storedAnime!.scannedAt) {
+          const ageMs = Date.now() - new Date(storedAnime!.scannedAt).getTime();
           const ageDays = ageMs / (1000 * 60 * 60 * 24);
           if (ageDays < settings.cacheExpireDays) return false;
         }
 
         const threshold =
           settings.targetScore * (settings.rescanThreshold / 100);
-        if (stored.score > 0 && stored.score < threshold) return false;
+        if (storedAnime!.score > 0 && storedAnime!.score < threshold)
+          return false;
 
         return true;
       };
@@ -170,13 +172,14 @@ export function useAnimeScanner(
           });
 
           successCount++;
-          const stored = allScannedAnimeMap.get(item.link);
+          const storedAnime = allScannedAnimeMap.get(item.link);
+          const isStored = !!storedAnime;
 
           const currentFav = [...favoriteListRef.current];
           const currentTrash = [...trashListRef.current];
           const currentScanned = [...scannedListRef.current];
 
-          if (stored) {
+          if (isStored) {
             updatedCount++;
             for (const list of [currentFav, currentTrash, currentScanned]) {
               const idx = list.findIndex((x) => x.link === item.link);
