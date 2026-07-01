@@ -95,8 +95,7 @@ export function useAnimeScanner(
         if (item.title.includes("OVA")) return false;
 
         const storedAnime = allScannedAnimeMap.get(item.link);
-        const isStored = !!storedAnime;
-        if (!isStored) return true;
+        if (!storedAnime) return true;
 
         if (storedAnime.scannedAt) {
           const ageMs = Date.now() - new Date(storedAnime.scannedAt).getTime();
@@ -173,13 +172,12 @@ export function useAnimeScanner(
 
           successCount++;
           const storedAnime = allScannedAnimeMap.get(item.link);
-          const isStored = !!storedAnime;
 
           const currentFav = [...favoriteListRef.current];
           const currentTrash = [...trashListRef.current];
           const currentScanned = [...scannedListRef.current];
 
-          if (isStored) {
+          if (storedAnime) {
             updatedCount++;
             for (const list of [currentFav, currentTrash, currentScanned]) {
               const idx = list.findIndex((x) => x.link === item.link);
