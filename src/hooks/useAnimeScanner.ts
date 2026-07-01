@@ -74,7 +74,7 @@ export function useAnimeScanner(
         totalPages,
         requestDelayMs: settings.requestDelayMs,
         onPageScanned: (page) => {
-          const percent = Math.round((page / totalPages) * 100);
+          const percent = Math.min(99, Math.round((page / totalPages) * 100));
           setProgress({
             percent,
             message: `Loading anime index (${page}/${totalPages})`,
@@ -85,14 +85,32 @@ export function useAnimeScanner(
       });
 
       // 3. Filter items and calculate skipped/stats in memory (Stage 1 filter)
-      const allScannedAnimeMap = new Map<string, AnimeItem>();
-      scannedListRef.current.forEach((x) => allScannedAnimeMap.set(x.link, x));
-      favoriteListRef.current.forEach((x) => allScannedAnimeMap.set(x.link, x));
-      trashListRef.current.forEach((x) => allScannedAnimeMap.set(x.link, x));
+      const allScannedAnimeMap = new Map<
+        string,
+        {
+          item: AnimeItem;
+          listType: "scanned" | "favorite" | "trash";
+          index: number;
+        }
+      >();
+      scannedListRef.current.forEach((x, index) =>
+        allScannedAnimeMap.set(x.link, { item: x, listType: "scanned", index }),
+      );
+      favoriteListRef.current.forEach((x, index) =>
+        allScannedAnimeMap.set(x.link, {
+          item: x,
+          listType: "favorite",
+          index,
+        }),
+      );
+      trashListRef.current.forEach((x, index) =>
+        allScannedAnimeMap.set(x.link, { item: x, listType: "trash", index }),
+      );
 
       const isScanRequired = (item: AnimeInfo) => {
-        const storedAnimeItem = allScannedAnimeMap.get(item.link);
-        if (storedAnimeItem) {
+        const stored = allScannedAnimeMap.get(item.link);
+        if (stored) {
+          const storedAnimeItem = stored.item;
           if (storedAnimeItem.scannedAt) {
             const ageMs =
               Date.now() - new Date(storedAnimeItem.scannedAt).getTime();
@@ -161,9 +179,10 @@ export function useAnimeScanner(
         requestDelayMs: settings.requestDelayMs,
         onDetailScanned: (item) => {
           scannedCount++;
-          const detailsPercent = scannedCount / detailsTotalCount;
-          const rawPercent = Math.floor(detailsPercent * 99);
-          const percent = Math.min(99, rawPercent);
+          const percent = Math.min(
+            99,
+            Math.round((scannedCount / detailsTotalCount) * 100),
+          );
 
           const msg = `Parsing (${scannedCount}/${detailsTotalCount})`;
           const finalMsg = `${msg} "${item.title}"`;
@@ -174,11 +193,24 @@ export function useAnimeScanner(
           });
 
           successCount++;
-          const storedAnimeItem = allScannedAnimeMap.get(item.link);
-          if (storedAnimeItem) {
+          const stored = allScannedAnimeMap.get(item.link);
+
+          const currentFav = [...favoriteListRef.current];
+          const currentTrash = [...trashListRef.current];
+          const currentScanned = [...scannedListRef.current];
+
+          if (stored) {
             updatedCount++;
+            if (stored.listType === "favorite") {
+              currentFav[stored.index] = item;
+            } else if (stored.listType === "trash") {
+              currentTrash[stored.index] = item;
+            } else {
+              currentScanned[stored.index] = item;
+            }
           } else {
             addedCount++;
+            currentScanned.push(item);
           }
 
           setScanResult({
@@ -188,24 +220,6 @@ export function useAnimeScanner(
             addedCount,
             failedCount: 0,
           });
-
-          const currentFav = [...favoriteListRef.current];
-          const currentTrash = [...trashListRef.current];
-          const currentScanned = [...scannedListRef.current];
-
-          let isUpdated = false;
-          for (const list of [currentFav, currentTrash, currentScanned]) {
-            const idx = list.findIndex((x) => x.link === item.link);
-            if (idx !== -1) {
-              list[idx] = item;
-              isUpdated = true;
-              break;
-            }
-          }
-
-          if (!isUpdated) {
-            currentScanned.push(item);
-          }
 
           onScanUpdate({
             updatedScannedList: currentScanned,
