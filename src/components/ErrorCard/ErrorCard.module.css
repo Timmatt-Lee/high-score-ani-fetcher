@@ -1,7 +1,7 @@
 .errorCard {
-  background: rgba(239, 68, 68, 0.03);
-  border: 1px solid rgba(239, 68, 68, 0.15);
-  border-left: 3px solid var(--danger, #ef4444);
+  background: rgba(244, 63, 94, 0.06);
+  border: 1px solid rgba(244, 63, 94, 0.2);
+  border-left: 4px solid #f43f5e;
   border-radius: 8px;
   padding: 14px;
   display: flex;
@@ -42,23 +42,39 @@
   margin-top: 2px;
 }
 
-.copyBtn {
-  font-size: 0.75rem;
-  font-weight: 600;
-  padding: 4px 10px;
-  border-radius: 6px;
+.iconBtn {
+  background: transparent;
   border: 1px solid rgba(255, 255, 255, 0.1);
   background: rgba(255, 255, 255, 0.04);
-  color: var(--text-main, #f3f4f6);
+  color: var(--text-muted, #9ca3af);
   cursor: pointer;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
   transition: all 0.2s ease;
-  white-space: nowrap;
+  box-sizing: border-box;
+  flex-shrink: 0;
 }
 
-.copyBtn:hover {
+.iconBtn:hover {
   background: rgba(255, 255, 255, 0.1);
-  border-color: rgba(255, 255, 255, 0.2);
-  transform: translateY(-0.5px);
+  border-color: rgba(255, 255, 255, 0.25);
+  color: var(--text-main, #f8fafc);
+  transform: scale(1.05);
+}
+
+.copied {
+  color: var(--success, #10b981) !important;
+  border-color: rgba(16, 185, 129, 0.3) !important;
+  background: rgba(16, 185, 129, 0.1) !important;
+  box-shadow: 0 0 8px rgba(16, 185, 129, 0.2);
+}
+
+.dismissBtn {
+  font-size: 0.8rem;
 }
 
 .errorMessage {

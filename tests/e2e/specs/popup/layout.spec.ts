@@ -6,16 +6,14 @@ test.describe("Popup Layout", () => {
   });
 
   test("should display initial UI elements", async ({ page }) => {
-    await expect(page.getByText("AniFetcher Pro")).toBeVisible();
-    await expect(
-      page.getByRole("button", { name: "Scan 巴哈姆特動漫瘋" }),
-    ).toBeVisible();
+    await expect(page.getByText("巴哈動畫評分")).toBeVisible();
+    await expect(page.getByRole("button", { name: "Scan" })).toBeVisible();
     await expect(page.getByText("No anime found in this list.")).toBeVisible();
   });
 
   test("should switch between tabs", async ({ page }) => {
-    const favTab = page.getByText(/Favorites/);
-    const resultsTab = page.getByText(/Results/);
+    const favTab = page.getByRole("button").filter({ hasText: /Favorites/ });
+    const resultsTab = page.getByRole("button").filter({ hasText: /Results/ });
 
     await favTab.click();
     await expect(page.getByText("No anime found in this list.")).toBeVisible();

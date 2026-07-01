@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   AnimeScanHttpError,
   AnimeScanParseError,
@@ -6,9 +6,11 @@ import {
   getScanStepLabel,
 } from "../../services/animeScanner";
 import styles from "./ErrorCard.module.css";
+import { CopyIcon, CheckIcon } from "../Icons";
 
 interface ErrorCardProps {
   error: Error;
+  onDismiss: () => void;
 }
 
 const getCardTitleAndSubtitle = (
@@ -49,24 +51,40 @@ const getCardTitleAndSubtitle = (
   };
 };
 
-export function ErrorCard({ error }: ErrorCardProps) {
+export function ErrorCard({ error, onDismiss }: ErrorCardProps) {
   const [isCopied, setIsCopied] = useState(false);
-
-  const handleCopy = async () => {
-    const copyText = error.stack
-      ? `${error.toString()}\n\n${error.stack}`
-      : error.toString();
-    try {
-      await navigator.clipboard.writeText(copyText);
-      setIsCopied(true);
-      setTimeout(() => setIsCopied(false), 2000);
-    } catch (err) {
-      console.error("Failed to copy error details", err);
-    }
-  };
-
   const { title: cardTitle, subtitle: cardSubtitle } =
     getCardTitleAndSubtitle(error);
+
+  useEffect(() => {
+    if (!isCopied) return;
+    const timer = setTimeout(() => {
+      setIsCopied(false);
+    }, 2000);
+    return () => clearTimeout(timer);
+  }, [isCopied]);
+
+  const handleCopy = () => {
+    let details = "";
+    if (error instanceof AnimeScanError) {
+      details += `URL: ${error.url}\n`;
+      if (error instanceof AnimeScanHttpError) {
+        details += `Status: ${error.status}\n`;
+      }
+      if (
+        error instanceof AnimeScanHttpError ||
+        error instanceof AnimeScanParseError
+      ) {
+        if (error.html) {
+          details += `HTML/Body Snippet:\n${error.html}\n`;
+        }
+      }
+    }
+
+    const textToCopy = `${cardTitle}\n${error.message}\n${details}`.trim();
+    navigator.clipboard.writeText(textToCopy);
+    setIsCopied(true);
+  };
 
   return (
     <div className={styles.errorCard} data-testid="error-card">
@@ -84,18 +102,31 @@ export function ErrorCard({ error }: ErrorCardProps) {
             </div>
           )}
         </div>
+
         <div className={styles.actionGroup}>
           <button
-            className={styles.copyBtn}
+            className={`${styles.iconBtn} ${styles.copyBtn} ${isCopied ? styles.copied : ""}`}
             onClick={handleCopy}
+            title={isCopied ? "Copied!" : "Copy error details"}
             data-testid="error-card-copy-btn"
-            title="Copy full error details including stack trace"
           >
-            {isCopied ? "✓" : "Copy"}
+            {isCopied ? (
+              <CheckIcon width="14" height="14" />
+            ) : (
+              <CopyIcon width="14" height="14" />
+            )}
+          </button>
+          <button
+            className={`${styles.iconBtn} ${styles.dismissBtn}`}
+            onClick={onDismiss}
+            title="Dismiss error"
+            aria-label="Dismiss error"
+            data-testid="error-card-dismiss-btn"
+          >
+            ✕
           </button>
         </div>
       </div>
-
       <div className={styles.errorMessage} data-testid="error-card-message">
         {error.message}
       </div>

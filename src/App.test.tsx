@@ -5,33 +5,18 @@ import {
   fireEvent,
   waitFor,
   act,
+  within,
 } from "@testing-library/react";
 import { ServiceProvider } from "./contexts/ServiceContext";
 import App from "./App";
 import * as useAnimeDataModule from "./hooks/useAnimeData";
-import { animeScraper } from "./services/animeScanner/animeScraper";
+import { animeScanner } from "./services/animeScanner/animeScanner";
 import {
   AnimeScanHttpError,
-  AnimeScanParseError,
   AnimeScanStep,
   AnimeScanner,
 } from "./services/animeScanner";
-import {
-  type AnimeScanEvent,
-  type AnimeItem,
-} from "./services/animeScanner/types";
-import { Observable, Subject } from "rxjs";
-
-function createMockObservable(
-  events: AnimeScanEvent[] = [],
-): Observable<AnimeScanEvent> {
-  return new Observable<AnimeScanEvent>((subscriber) => {
-    for (const event of events) {
-      subscriber.next(event);
-    }
-    subscriber.complete();
-  });
-}
+import { type AnimeItem, type AnimeInfo } from "./services/animeScanner/types";
 
 // --- Chrome storage mock (default) ---
 const storageMock: Record<string, unknown> = {};
@@ -61,7 +46,7 @@ const makeAnime = (overrides: Partial<AnimeItem> = {}): AnimeItem => ({
   title: "Test Anime",
   watchCount: 10000,
   episodeCount: 12,
-  uploadDate: new Date("2024-01-01"),
+  uploadDate: "2024-01-01T00:00:00.000Z",
   score: 8.5,
   ratingCount: 500,
   description: "A great show.",
@@ -92,7 +77,7 @@ describe("App rendering", () => {
         </ServiceProvider>,
       );
     });
-    expect(screen.getByText("AniFetcher Pro")).toBeDefined();
+    expect(screen.getByText("巴哈動畫評分")).toBeDefined();
   });
 
   it("renders all three tabs", async () => {
@@ -121,7 +106,7 @@ describe("App rendering", () => {
 
   it("loads saved data from chrome.storage on mount", async () => {
     const anime = makeAnime();
-    storageMock["searchList"] = [anime];
+    storageMock["scannedList"] = [anime];
     await act(async () => {
       render(
         <ServiceProvider>
@@ -140,7 +125,7 @@ describe("App rendering", () => {
     localStorage.setItem(
       "animeData",
       JSON.stringify({
-        searchList: [anime],
+        scannedList: [anime],
         favoriteList: [fav],
         trashList: [trashItem],
       }),
@@ -175,7 +160,7 @@ describe("App rendering", () => {
     vi.stubGlobal("chrome", undefined);
     const anime = makeAnime({ title: "Only Search" });
     // Deliberately omit favoriteList and trashList to trigger the || [] fallback
-    localStorage.setItem("animeData", JSON.stringify({ searchList: [anime] }));
+    localStorage.setItem("animeData", JSON.stringify({ scannedList: [anime] }));
     await act(async () => {
       render(
         <ServiceProvider>
@@ -185,8 +170,10 @@ describe("App rendering", () => {
     });
     expect(screen.getByText("Only Search")).toBeDefined();
     // Tabs should show 0 for favorites and trash
-    expect(screen.getByText(/Favorites \(0\)/)).toBeDefined();
-    expect(screen.getByText(/Trash \(0\)/)).toBeDefined();
+    expect(screen.getByText("Favorites")).toBeDefined();
+    const tabsContainer = screen.getByTestId("tabs-container");
+    const { getAllByText } = within(tabsContainer);
+    expect(getAllByText("0").length).toBeGreaterThanOrEqual(1);
   });
 
   it("handles chrome.storage.get error gracefully", async () => {
@@ -273,7 +260,7 @@ describe("Tab switching", () => {
 // --- Actions ---
 describe("Card actions", () => {
   it("moves item to Favorites", async () => {
-    storageMock["searchList"] = [makeAnime()];
+    storageMock["scannedList"] = [makeAnime()];
     await act(async () => {
       render(
         <ServiceProvider>
@@ -281,7 +268,7 @@ describe("Card actions", () => {
         </ServiceProvider>,
       );
     });
-    fireEvent.click(screen.getByRole("button", { name: "Favorite" }));
+    fireEvent.click(screen.getByRole("button", { name: "Add to Favorites" }));
     expect(screen.queryByText("Test Anime")).toBeNull();
     fireEvent.click(screen.getByText(/Favorites/));
     expect(screen.getByText("Test Anime")).toBeDefined();
@@ -292,7 +279,7 @@ describe("Card actions", () => {
     localStorage.setItem(
       "animeData",
       JSON.stringify({
-        searchList: [makeAnime()],
+        scannedList: [makeAnime()],
         favoriteList: [],
         trashList: [],
       }),
@@ -304,7 +291,7 @@ describe("Card actions", () => {
         </ServiceProvider>,
       );
     });
-    fireEvent.click(screen.getByRole("button", { name: "Favorite" }));
+    fireEvent.click(screen.getByRole("button", { name: "Add to Favorites" }));
     const saved = JSON.parse(localStorage.getItem("animeData") || "{}");
     expect(saved.favoriteList).toHaveLength(1);
   });
@@ -313,7 +300,7 @@ describe("Card actions", () => {
     vi.stubGlobal("chrome", {
       storage: {
         local: {
-          get: vi.fn(async () => ({ searchList: [makeAnime()] })),
+          get: vi.fn(async () => ({ scannedList: [makeAnime()] })),
           set: vi.fn().mockRejectedValue(new Error("quota exceeded")),
         },
       },
@@ -326,13 +313,13 @@ describe("Card actions", () => {
       );
     });
     // Should not throw - just log the error
-    fireEvent.click(screen.getByRole("button", { name: "Favorite" }));
+    fireEvent.click(screen.getByRole("button", { name: "Add to Favorites" }));
     await act(async () => {});
-    expect(screen.getByText("AniFetcher Pro")).toBeDefined();
+    expect(screen.getByText("巴哈動畫評分")).toBeDefined();
   });
 
   it("moves item to Trash from Results", async () => {
-    storageMock["searchList"] = [makeAnime()];
+    storageMock["scannedList"] = [makeAnime()];
     await act(async () => {
       render(
         <ServiceProvider>
@@ -340,7 +327,7 @@ describe("Card actions", () => {
         </ServiceProvider>,
       );
     });
-    fireEvent.click(screen.getByRole("button", { name: "Trash" }));
+    fireEvent.click(screen.getByRole("button", { name: "Move to Trash" }));
     expect(screen.queryByText("Test Anime")).toBeNull();
     fireEvent.click(screen.getByText(/Trash/));
     expect(screen.getByText("Test Anime")).toBeDefined();
@@ -360,7 +347,7 @@ describe("Card actions", () => {
       );
     });
     fireEvent.click(screen.getByText(/Favorites/));
-    fireEvent.click(screen.getByRole("button", { name: "Trash" }));
+    fireEvent.click(screen.getByRole("button", { name: "Move to Trash" }));
     fireEvent.click(screen.getByText(/Trash/));
     expect(screen.getByText("Fav Anime")).toBeDefined();
   });
@@ -375,9 +362,11 @@ describe("Card actions", () => {
       );
     });
     fireEvent.click(screen.getByText(/Trash/));
-    fireEvent.click(screen.getByRole("button", { name: "Favorite" }));
+    fireEvent.click(
+      screen.getByRole("button", { name: "Restore to Favorites" }),
+    );
     expect(screen.queryByText("Test Anime")).toBeNull();
-    fireEvent.click(screen.getByText(/Results/));
+    fireEvent.click(screen.getByText(/Favorites/));
     expect(screen.getByText("Test Anime")).toBeDefined();
   });
 });
@@ -385,9 +374,15 @@ describe("Card actions", () => {
 // --- Scan ---
 describe("Scan functionality", () => {
   it("shows Scanning... and progress bar while running", async () => {
-    const subject = new Subject<AnimeScanEvent>();
-    vi.spyOn(animeScraper, "getTotalPages").mockResolvedValue(1);
-    vi.spyOn(AnimeScanner.prototype, "scan").mockReturnValue(subject);
+    vi.spyOn(animeScanner, "getTotalPages").mockResolvedValue(1);
+
+    let resolvePages: (value: AnimeInfo[]) => void;
+    vi.spyOn(AnimeScanner.prototype, "scanPages").mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          resolvePages = resolve;
+        }),
+    );
 
     await act(async () => {
       render(
@@ -397,14 +392,15 @@ describe("Scan functionality", () => {
       );
     });
     await act(async () => {
-      fireEvent.click(screen.getByText("Scan 巴哈姆特動漫瘋"));
+      fireEvent.click(screen.getByText("Scan"));
     });
 
     await waitFor(() =>
       expect(screen.getByTestId("progress-container")).toBeDefined(),
     );
+
     await act(async () => {
-      subject.complete();
+      resolvePages([]);
     });
   });
 
@@ -421,20 +417,21 @@ describe("Scan functionality", () => {
       link: "http://other",
     });
 
-    vi.spyOn(animeScraper, "getTotalPages").mockResolvedValue(1);
-    vi.spyOn(AnimeScanner.prototype, "scan").mockImplementation(
-      function (this: { filterItem: (item: AnimeItem) => boolean }) {
-        const filtered = [highScore, lowScore].filter(this.filterItem);
-        const details = [
-          {
-            ...highScore,
-            score: 5.0,
+    vi.spyOn(animeScanner, "getTotalPages").mockResolvedValue(1);
+    vi.spyOn(AnimeScanner.prototype, "scanPages").mockResolvedValue([
+      highScore,
+      lowScore,
+    ]);
+    vi.spyOn(AnimeScanner.prototype, "scanAnimeDetails").mockImplementation(
+      async (options) => {
+        for (const item of options.items) {
+          options.onDetailScanned({
+            ...item,
             ratingCount: 100,
-            description: "Good",
-          },
-          { ...lowScore, score: 4.0, ratingCount: 10, description: "Meh" },
-        ].filter((item) => filtered.some((f) => f.link === item.link));
-        return createMockObservable(details);
+            description: item.title === "High Score" ? "Good" : "Meh",
+            score: item.title === "High Score" ? 5.0 : 4.0,
+          } as AnimeItem);
+        }
       },
     );
 
@@ -446,7 +443,7 @@ describe("Scan functionality", () => {
       );
     });
     await act(async () => {
-      fireEvent.click(screen.getByText("Scan 巴哈姆特動漫瘋"));
+      fireEvent.click(screen.getByText("Scan"));
     });
     await waitFor(() => expect(screen.queryByText("Scanning...")).toBeNull());
     expect(screen.getByText("High Score")).toBeDefined();
@@ -459,20 +456,10 @@ describe("Scan functionality", () => {
       episodeCount: 5,
       score: 9.0,
     });
-    vi.spyOn(animeScraper, "getTotalPages").mockResolvedValue(1);
-    vi.spyOn(AnimeScanner.prototype, "scan").mockImplementation(
-      function (this: { filterItem: (item: AnimeItem) => boolean }) {
-        const filtered = [shortShow].filter(this.filterItem);
-        return createMockObservable(
-          filtered.map((item) => ({
-            ...item,
-            score: 9.0,
-            ratingCount: 100,
-            description: "x",
-          })),
-        );
-      },
-    );
+    vi.spyOn(animeScanner, "getTotalPages").mockResolvedValue(1);
+    vi.spyOn(AnimeScanner.prototype, "scanPages").mockResolvedValue([
+      shortShow,
+    ]);
 
     await act(async () => {
       render(
@@ -482,7 +469,7 @@ describe("Scan functionality", () => {
       );
     });
     await act(async () => {
-      fireEvent.click(screen.getByText("Scan 巴哈姆特動漫瘋"));
+      fireEvent.click(screen.getByText("Scan"));
     });
     await waitFor(() => expect(screen.queryByText("Scanning...")).toBeNull());
     expect(screen.queryByText("Short Show")).toBeNull();
@@ -494,20 +481,8 @@ describe("Scan functionality", () => {
       episodeCount: 12,
       score: 9.0,
     });
-    vi.spyOn(animeScraper, "getTotalPages").mockResolvedValue(1);
-    vi.spyOn(AnimeScanner.prototype, "scan").mockImplementation(
-      function (this: { filterItem: (item: AnimeItem) => boolean }) {
-        const filtered = [ova].filter(this.filterItem);
-        return createMockObservable(
-          filtered.map((item) => ({
-            ...item,
-            score: 9.0,
-            ratingCount: 100,
-            description: "x",
-          })),
-        );
-      },
-    );
+    vi.spyOn(animeScanner, "getTotalPages").mockResolvedValue(1);
+    vi.spyOn(AnimeScanner.prototype, "scanPages").mockResolvedValue([ova]);
 
     await act(async () => {
       render(
@@ -517,7 +492,7 @@ describe("Scan functionality", () => {
       );
     });
     await act(async () => {
-      fireEvent.click(screen.getByText("Scan 巴哈姆特動漫瘋"));
+      fireEvent.click(screen.getByText("Scan"));
     });
     await waitFor(() => expect(screen.queryByText("Scanning...")).toBeNull());
     expect(screen.queryByText("Great Show OVA Special")).toBeNull();
@@ -530,20 +505,10 @@ describe("Scan functionality", () => {
       score: 9.0,
     });
     storageMock["trashList"] = [trashItem];
-    vi.spyOn(animeScraper, "getTotalPages").mockResolvedValue(1);
-    vi.spyOn(AnimeScanner.prototype, "scan").mockImplementation(
-      function (this: { filterItem: (item: AnimeItem) => boolean }) {
-        const filtered = [trashItem].filter(this.filterItem);
-        return createMockObservable(
-          filtered.map((item) => ({
-            ...item,
-            score: 9.0,
-            ratingCount: 100,
-            description: "x",
-          })),
-        );
-      },
-    );
+    vi.spyOn(animeScanner, "getTotalPages").mockResolvedValue(1);
+    vi.spyOn(AnimeScanner.prototype, "scanPages").mockResolvedValue([
+      trashItem,
+    ]);
 
     await act(async () => {
       render(
@@ -553,7 +518,7 @@ describe("Scan functionality", () => {
       );
     });
     await act(async () => {
-      fireEvent.click(screen.getByText("Scan 巴哈姆特動漫瘋"));
+      fireEvent.click(screen.getByText("Scan"));
     });
     await waitFor(() => expect(screen.queryByText("Scanning...")).toBeNull());
     expect(screen.queryByText("In Trash")).toBeNull();
@@ -566,20 +531,8 @@ describe("Scan functionality", () => {
       score: 9.0,
     });
     storageMock["favoriteList"] = [favItem];
-    vi.spyOn(animeScraper, "getTotalPages").mockResolvedValue(1);
-    vi.spyOn(AnimeScanner.prototype, "scan").mockImplementation(
-      function (this: { filterItem: (item: AnimeItem) => boolean }) {
-        const filtered = [favItem].filter(this.filterItem);
-        return createMockObservable(
-          filtered.map((item) => ({
-            ...item,
-            score: 9.0,
-            ratingCount: 100,
-            description: "x",
-          })),
-        );
-      },
-    );
+    vi.spyOn(animeScanner, "getTotalPages").mockResolvedValue(1);
+    vi.spyOn(AnimeScanner.prototype, "scanPages").mockResolvedValue([favItem]);
 
     await act(async () => {
       render(
@@ -589,7 +542,7 @@ describe("Scan functionality", () => {
       );
     });
     await act(async () => {
-      fireEvent.click(screen.getByText("Scan 巴哈姆特動漫瘋"));
+      fireEvent.click(screen.getByText("Scan"));
     });
     await waitFor(() => expect(screen.queryByText("Scanning...")).toBeNull());
     expect(screen.queryByText("In Fav")).toBeNull();
@@ -601,20 +554,8 @@ describe("Scan functionality", () => {
       episodeCount: NaN,
       score: 9.0,
     });
-    vi.spyOn(animeScraper, "getTotalPages").mockResolvedValue(1);
-    vi.spyOn(AnimeScanner.prototype, "scan").mockImplementation(
-      function (this: { filterItem: (item: AnimeItem) => boolean }) {
-        const filtered = [naEp].filter(this.filterItem);
-        return createMockObservable(
-          filtered.map((item) => ({
-            ...item,
-            score: 9.0,
-            ratingCount: 100,
-            description: "x",
-          })),
-        );
-      },
-    );
+    vi.spyOn(animeScanner, "getTotalPages").mockResolvedValue(1);
+    vi.spyOn(AnimeScanner.prototype, "scanPages").mockResolvedValue([naEp]);
 
     await act(async () => {
       render(
@@ -624,30 +565,24 @@ describe("Scan functionality", () => {
       );
     });
     await act(async () => {
-      fireEvent.click(screen.getByText("Scan 巴哈姆特動漫瘋"));
+      fireEvent.click(screen.getByText("Scan"));
     });
     await waitFor(() => expect(screen.queryByText("Scanning...")).toBeNull());
     expect(screen.queryByText("NA Ep")).toBeNull();
   });
 
-  it("renders warning alert when scan encounters errors and supports details toggle", async () => {
-    const anime = makeAnime({ title: "Partial Success", score: 9.0 });
+  it("renders error card in fatal error container when scan fails or encounters error", async () => {
     const mockError = new AnimeScanHttpError(
       1,
-      AnimeScanStep.GET_TOTAL_PAGES,
+      AnimeScanStep.SCAN_LIST_PAGE,
       "https://ani.gamer.com.tw/animeList.php?page=1",
       "HTTP 502",
       502,
       undefined,
     );
 
-    vi.spyOn(animeScraper, "getTotalPages").mockResolvedValue(2);
-    vi.spyOn(AnimeScanner.prototype, "scan").mockImplementation(() => {
-      return createMockObservable([
-        { ...anime, score: 9.0, ratingCount: 100, description: "x" },
-        mockError,
-      ]);
-    });
+    vi.spyOn(animeScanner, "getTotalPages").mockResolvedValue(2);
+    vi.spyOn(AnimeScanner.prototype, "scanPages").mockRejectedValue(mockError);
 
     await act(async () => {
       render(
@@ -658,190 +593,16 @@ describe("Scan functionality", () => {
     });
 
     await act(async () => {
-      fireEvent.click(screen.getByText("Scan 巴哈姆特動漫瘋"));
+      fireEvent.click(screen.getByText("Scan"));
     });
 
     await waitFor(() => expect(screen.queryByText("Scanning...")).toBeNull());
 
-    // Verify errors panel renders HTTP error details
-    expect(screen.getByTestId("errors-panel")).toBeDefined();
-    expect(screen.getByText(/HTTP Network Errors \(1\)/)).toBeDefined();
+    expect(screen.getByTestId("fatal-error-container")).toBeDefined();
     expect(
-      screen.getAllByText(/Status Code: 502/).length,
-    ).toBeGreaterThanOrEqual(1);
+      screen.getByText(/HTTP request failed with status 502/),
+    ).toBeDefined();
   });
-
-  it("renders page numbers and failed details counts in Errors tab summary when there are many errors", async () => {
-    const anime = makeAnime({ title: "Partial Success", score: 9.0 });
-    const errorsList = Array.from(
-      { length: 11 },
-      (_, i) =>
-        new AnimeScanHttpError(
-          i + 1,
-          AnimeScanStep.GET_TOTAL_PAGES,
-          `https://ani.gamer.com.tw/animeList.php?page=${i + 1}`,
-          `Error ${i}`,
-          500,
-          undefined,
-        ),
-    );
-
-    vi.spyOn(animeScraper, "getTotalPages").mockResolvedValue(1);
-    vi.spyOn(AnimeScanner.prototype, "scan").mockImplementation(() => {
-      return createMockObservable([
-        { ...anime, score: 9.0, ratingCount: 100, description: "x" },
-        ...errorsList,
-      ]);
-    });
-
-    await act(async () => {
-      render(
-        <ServiceProvider>
-          <App />
-        </ServiceProvider>,
-      );
-    });
-
-    await act(async () => {
-      fireEvent.click(screen.getByText("Scan 巴哈姆特動漫瘋"));
-    });
-
-    await waitFor(() => expect(screen.queryByText("Scanning...")).toBeNull());
-
-    // Expect summary text to be rendered
-    expect(screen.getByText("11 errors occurred")).toBeDefined();
-  });
-
-  it("renders fatal error screen when scan fails", async () => {
-    const fatalErr = new AnimeScanHttpError(
-      1,
-      AnimeScanStep.GET_TOTAL_PAGES,
-      "https://ani.gamer.com.tw/error",
-      "Bad Request",
-      400,
-      undefined,
-    );
-    const spy = vi
-      .spyOn(animeScraper, "getTotalPages")
-      .mockResolvedValue(fatalErr);
-
-    await act(async () => {
-      render(
-        <ServiceProvider>
-          <App />
-        </ServiceProvider>,
-      );
-    });
-
-    await act(async () => {
-      fireEvent.click(screen.getByText("Scan 巴哈姆特動漫瘋"));
-    });
-
-    // Check if the spy was actually called
-    await waitFor(() => expect(spy).toHaveBeenCalled());
-
-    // Verify fatal error screen is rendered and progress bar / tabs are NOT rendered
-    await waitFor(() =>
-      expect(screen.getByTestId("fatal-error-container")).toBeDefined(),
-    );
-    expect(screen.queryByTestId("progress-container")).toBeNull();
-    expect(screen.getByTestId("tabs-container")).toBeDefined();
-  });
-
-  it("renders ErrorsPanel inside Results tab and hides it when retry clears the errors", async () => {
-    const anime = makeAnime({ title: "Partial Success", score: 9.0 });
-    const error = new AnimeScanHttpError(
-      1,
-      AnimeScanStep.GET_TOTAL_PAGES,
-      "https://ani.gamer.com.tw/animeList.php?page=1",
-      "fail",
-      500,
-      undefined,
-    );
-
-    vi.spyOn(animeScraper, "getTotalPages").mockResolvedValue(1);
-
-    const parseError = new AnimeScanParseError(
-      1,
-      AnimeScanStep.PARSE_ANIME_INFO,
-      "https://ani.gamer.com.tw/anime.php",
-      "fail parse",
-      "Parsing failed",
-    );
-
-    const parseErrorNoUrl = new AnimeScanParseError(
-      0,
-      AnimeScanStep.PARSE_ANIME_INFO,
-      undefined as unknown as string,
-      "fail parse no url",
-      "Parsing failed",
-    );
-
-    const parseErrorWithPage = new AnimeScanParseError(
-      3,
-      AnimeScanStep.PARSE_ANIME_INFO,
-      "https://ani.gamer.com.tw/animeList.php?page=3",
-      "fail parse page",
-      "Parsing failed",
-    );
-
-    const errorNoPage = new AnimeScanHttpError(
-      0,
-      AnimeScanStep.GET_TOTAL_PAGES,
-      "https://ani.gamer.com.tw/anime.php",
-      "fail no page",
-      500,
-      undefined,
-    );
-
-    // First scan yields error
-    const pipelineMock = vi.spyOn(AnimeScanner.prototype, "scan");
-    pipelineMock.mockImplementationOnce(() => {
-      return createMockObservable([
-        { ...anime },
-        error,
-        errorNoPage,
-        parseError,
-        parseErrorNoUrl,
-        parseErrorWithPage,
-      ]);
-    });
-
-    await act(async () => {
-      render(
-        <ServiceProvider>
-          <App />
-        </ServiceProvider>,
-      );
-    });
-
-    await act(async () => {
-      fireEvent.click(screen.getByText("Scan 巴哈姆特動漫瘋"));
-    });
-
-    await waitFor(() => expect(screen.queryByText("Scanning...")).toBeNull());
-
-    // ErrorsPanel should be rendered since we are on the Results tab and there are errors
-    expect(screen.getByTestId("errors-panel")).toBeDefined();
-
-    // Mock second scan (retry) to succeed with no errors
-    pipelineMock.mockImplementationOnce(() => {
-      return createMockObservable([{ ...anime }]);
-    });
-
-    // Click retry button in ErrorsPanel
-    const retryBtn = screen.getByTestId("retry-errors-btn");
-    await act(async () => {
-      fireEvent.click(retryBtn);
-    });
-
-    // Wait for the scan to finish and verify that ErrorsPanel is hidden
-    await waitFor(() => expect(screen.queryByText("Scanning...")).toBeNull());
-
-    // ErrorsPanel should be hidden now
-    expect(screen.queryByTestId("errors-panel")).toBeNull();
-  });
-
   it("renders SettingsTab when Settings tab is active", async () => {
     render(
       <ServiceProvider>
@@ -860,6 +621,67 @@ describe("Scan functionality", () => {
     expect(screen.getByTestId("settings-tab")).toBeInTheDocument();
   });
 
+  it("supports importing backup data through SettingsTab", async () => {
+    render(
+      <ServiceProvider>
+        <App />
+      </ServiceProvider>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText("Settings")).toBeInTheDocument();
+    });
+
+    await act(async () => {
+      fireEvent.click(screen.getByText("Settings"));
+    });
+
+    const mockFileContent = JSON.stringify({
+      scannedList: [
+        {
+          link: "https://example.com/anime/import-app",
+          title: "Imported App Anime",
+          watchCount: 500,
+          episodeCount: 12,
+          uploadDate: "2024-05-01T00:00:00.000Z",
+          score: 4.8,
+          ratingCount: 100,
+          description: "Successfully imported in app",
+        },
+      ],
+    });
+
+    const file = new File([mockFileContent], "backup.json", {
+      type: "application/json",
+    });
+
+    class MockFileReader {
+      onload: ((ev: ProgressEvent<FileReader>) => void) | null = null;
+      readAsText() {
+        if (this.onload) {
+          this.onload({
+            target: {
+              result: mockFileContent,
+            },
+          } as unknown as ProgressEvent<FileReader>);
+        }
+      }
+    }
+    vi.stubGlobal("FileReader", MockFileReader);
+
+    const input = screen.getByTestId("file-import-input");
+    fireEvent.change(input, { target: { files: [file] } });
+
+    await act(async () => {
+      const searchTab = screen.getByTestId("tab-scanned");
+      fireEvent.click(searchTab);
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText("Imported App Anime")).toBeInTheDocument();
+    });
+  });
+
   it("supports sorting items by different columns in search results", async () => {
     const itemA = makeAnime({
       link: "https://ani.gamer.com.tw/anime.php?sn=1",
@@ -867,7 +689,7 @@ describe("Scan functionality", () => {
       score: 9.5,
       watchCount: 10000,
       episodeCount: 12,
-      uploadDate: new Date("2024-01-01"),
+      uploadDate: "2024-01-01T00:00:00.000Z",
     });
     const itemB = makeAnime({
       link: "https://ani.gamer.com.tw/anime.php?sn=2",
@@ -875,7 +697,7 @@ describe("Scan functionality", () => {
       score: 8.0,
       watchCount: 50000,
       episodeCount: 24,
-      uploadDate: new Date("2023-01-01"),
+      uploadDate: "2023-01-01T00:00:00.000Z",
     });
     const itemC = makeAnime({
       link: "https://ani.gamer.com.tw/anime.php?sn=3",
@@ -883,28 +705,24 @@ describe("Scan functionality", () => {
       score: 9.0,
       watchCount: 5000,
       episodeCount: 6,
-      uploadDate: new Date("2025-01-01"),
+      uploadDate: "2025-01-01T00:00:00.000Z",
     });
     const itemD = makeAnime({
       link: "https://ani.gamer.com.tw/anime.php?sn=4",
       title: "Date N/A Anime",
-      uploadDate: new Date(NaN),
+      uploadDate: "Invalid Date",
     });
 
     const useAnimeDataSpy = vi
       .spyOn(useAnimeDataModule, "useAnimeData")
       .mockReturnValue({
-        searchList: [itemA, itemB, itemC, itemD],
+        scannedList: [itemA, itemB, itemC, itemD],
         favoriteList: [],
         trashList: [],
         moveToFavorites: vi.fn(),
         moveToTrash: vi.fn(),
-        restoreFromTrash: vi.fn(),
-        saveData: vi.fn(),
+        updateLists: vi.fn(),
         isLoaded: true,
-        setSearchList: vi.fn(),
-        setFavoriteList: vi.fn(),
-        setTrashList: vi.fn(),
       });
 
     await act(async () => {
@@ -985,5 +803,165 @@ describe("Scan functionality", () => {
     expect(titles[2]).toBe("Cherry Anime");
 
     useAnimeDataSpy.mockRestore();
+  });
+
+  it("handles sorting when multiple items have invalid uploadDate (NaN) or mismatched types", async () => {
+    const itemX = makeAnime({
+      link: "https://ani.gamer.com.tw/anime.php?sn=10",
+      title: "X Anime",
+      uploadDate: "Invalid Date",
+    });
+    // @ts-expect-error - testing sorting with mismatched type
+    itemX.watchCount = "mismatched";
+    const itemY = makeAnime({
+      link: "https://ani.gamer.com.tw/anime.php?sn=11",
+      title: "Y Anime",
+      uploadDate: "Invalid Date",
+    });
+
+    const useAnimeDataSpy = vi
+      .spyOn(useAnimeDataModule, "useAnimeData")
+      .mockReturnValue({
+        scannedList: [itemX, itemY],
+        favoriteList: [],
+        trashList: [],
+        moveToFavorites: vi.fn(),
+        moveToTrash: vi.fn(),
+        updateLists: vi.fn(),
+        isLoaded: true,
+      });
+
+    await act(async () => {
+      render(
+        <ServiceProvider>
+          <App />
+        </ServiceProvider>,
+      );
+    });
+
+    // Sort by watchCount to trigger the typeof comparison failure (reaches return 0)
+    await act(async () => {
+      fireEvent.click(screen.getByTestId("sort-header-watchCount"));
+    });
+
+    // Sort by uploadDate descending then ascending to trigger all comparisons
+    await act(async () => {
+      fireEvent.click(screen.getByTestId("sort-header-uploadDate"));
+    });
+    await act(async () => {
+      fireEvent.click(screen.getByTestId("sort-header-uploadDate"));
+    });
+
+    const titles = screen.getAllByRole("link").map((el) => el.textContent);
+    expect(titles).toContain("X Anime");
+    expect(titles).toContain("Y Anime");
+
+    useAnimeDataSpy.mockRestore();
+  });
+
+  it("renders scan stats panel when scan finishes and allows dismissing it", async () => {
+    const anime = makeAnime({
+      title: "Scan Stats Anime",
+      score: 4.9,
+      link: "http://stats-anime",
+    });
+    vi.spyOn(animeScanner, "getTotalPages").mockResolvedValue(1);
+    vi.spyOn(AnimeScanner.prototype, "scanPages").mockResolvedValue([anime]);
+    vi.spyOn(AnimeScanner.prototype, "scanAnimeDetails").mockImplementation(
+      async (options) => {
+        for (const item of options.items) {
+          options.onDetailScanned({
+            ...item,
+            ratingCount: 100,
+            description: "Stats item",
+            score: 4.9,
+          } as AnimeItem);
+        }
+      },
+    );
+
+    await act(async () => {
+      render(
+        <ServiceProvider>
+          <App />
+        </ServiceProvider>,
+      );
+    });
+
+    // Stats container should not be visible before scan
+    expect(screen.queryByTestId("scan-stats-container")).toBeNull();
+
+    await act(async () => {
+      fireEvent.click(screen.getByText("Scan"));
+    });
+
+    // Stats container should be rendered after scan completes
+    await waitFor(() =>
+      expect(screen.getByTestId("scan-stats-container")).toBeDefined(),
+    );
+    expect(screen.getByTestId("chip-success")).toBeDefined();
+    expect(screen.getByTestId("chip-added")).toBeDefined();
+
+    // Click dismiss button to clear stats
+    await act(async () => {
+      fireEvent.click(screen.getByLabelText("Dismiss scan results"));
+    });
+
+    expect(screen.queryByTestId("scan-stats-container")).toBeNull();
+  });
+
+  it("supports dragging the floating status bar to a new position, but ignores dragging when clicking buttons", async () => {
+    vi.spyOn(animeScanner, "getTotalPages").mockResolvedValue(1);
+
+    let resolvePages: (value: AnimeInfo[]) => void;
+    vi.spyOn(AnimeScanner.prototype, "scanPages").mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          resolvePages = resolve;
+        }),
+    );
+
+    await act(async () => {
+      render(
+        <ServiceProvider>
+          <App />
+        </ServiceProvider>,
+      );
+    });
+
+    await act(async () => {
+      fireEvent.click(screen.getByText("Scan"));
+    });
+
+    await waitFor(() => {
+      expect(screen.getByTestId("progress-container")).toBeDefined();
+    });
+
+    const floatingBar = screen.getByTestId("floating-status-bar");
+
+    fireEvent.mouseDown(floatingBar, { clientX: 100, clientY: 200 });
+    fireEvent.mouseMove(document, { clientX: 150, clientY: 280 });
+    expect(floatingBar.style.transform).toContain("50px");
+    expect(floatingBar.style.transform).toContain("80px");
+    fireEvent.mouseUp(document);
+
+    await act(async () => {
+      resolvePages([]);
+    });
+
+    await waitFor(() => {
+      expect(screen.getByTestId("scan-stats-container")).toBeDefined();
+    });
+
+    const dismissButton = screen.getByRole("button", {
+      name: /Dismiss scan results/i,
+    });
+
+    fireEvent.mouseDown(dismissButton, { clientX: 150, clientY: 280 });
+    fireEvent.mouseMove(document, { clientX: 250, clientY: 380 });
+
+    expect(floatingBar.style.transform).toContain("50px");
+    expect(floatingBar.style.transform).toContain("80px");
+    fireEvent.mouseUp(document);
   });
 });

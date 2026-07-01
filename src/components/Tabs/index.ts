@@ -1,1 +1,1 @@
-export * from "./Tabs";
+export { Tabs, Tab } from "./Tabs";

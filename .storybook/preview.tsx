@@ -1,9 +1,7 @@
 import type { Preview } from "@storybook/react";
-import * as React from "react";
 import "../src/index.css";
 
 const preview: Preview = {
-  decorators: [(Story) => <Story />],
   parameters: {
     layout: "fullscreen",
     // Configure Chromatic to capture all snapshots at 1200px width

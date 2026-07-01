@@ -3,7 +3,7 @@ import { z } from "zod";
 import { type AnimeItem, AnimeItemSchema } from "../services/animeScanner";
 
 export function useAnimeData() {
-  const [searchList, setSearchList] = useState<AnimeItem[]>([]);
+  const [scannedList, setScannedList] = useState<AnimeItem[]>([]);
   const [favoriteList, setFavoriteList] = useState<AnimeItem[]>([]);
   const [trashList, setTrashList] = useState<AnimeItem[]>([]);
   const [isLoaded, setIsLoaded] = useState(false);
@@ -11,52 +11,74 @@ export function useAnimeData() {
   // Load data on mount
   useEffect(() => {
     const parseList = (data: unknown): AnimeItem[] => {
+      if (!Array.isArray(data)) {
+        console.error("Loaded data is not an array");
+        return [];
+      }
+
       const result = z.array(AnimeItemSchema).safeParse(data);
       if (!result.success) {
         console.error("Zod parse error:", result.error, "Data was:", data);
         return [];
       }
+
       return result.data;
     };
 
     const loadData = async () => {
-      try {
-        if (typeof chrome !== "undefined" && chrome.storage) {
-          const data = await chrome.storage.local.get([
+      let rawData: Record<string, unknown> = {};
+
+      if (
+        typeof chrome !== "undefined" &&
+        chrome.storage &&
+        chrome.storage.local
+      ) {
+        try {
+          rawData = await chrome.storage.local.get([
+            "scannedList",
             "searchList",
             "favoriteList",
             "trashList",
           ]);
-          if (data.searchList) {
-            setSearchList(parseList(data.searchList));
+          // Migration: fallback to searchList if scannedList is empty/undefined
+          if (rawData.searchList && !rawData.scannedList) {
+            rawData.scannedList = rawData.searchList;
           }
-          if (data.favoriteList) {
-            setFavoriteList(parseList(data.favoriteList));
-          }
-          if (data.trashList) {
-            setTrashList(parseList(data.trashList));
-          }
-        } else {
-          // Fallback for local web dev without extension context
-          const localData = localStorage.getItem("animeData");
-          if (localData) {
-            const parsed = JSON.parse(localData);
-            if (parsed.searchList) {
-              setSearchList(parseList(parsed.searchList));
+        } catch (err) {
+          console.error("Failed to load data", err);
+        }
+      } else {
+        // Fallback for local web dev without extension context
+        let localData: string | null = null;
+        try {
+          localData = localStorage.getItem("animeData");
+        } catch (err) {
+          console.error("Failed to load data", err);
+        }
+
+        if (localData) {
+          try {
+            rawData = JSON.parse(localData);
+            // Migration fallback
+            if (rawData.searchList && !rawData.scannedList) {
+              rawData.scannedList = rawData.searchList;
             }
-            if (parsed.favoriteList) {
-              setFavoriteList(parseList(parsed.favoriteList));
-            }
-            if (parsed.trashList) {
-              setTrashList(parseList(parsed.trashList));
-            }
+          } catch (err) {
+            console.error("Failed to load data", err);
           }
         }
-      } catch (err) {
-        console.error("Failed to load data", err);
-      } finally {
-        setIsLoaded(true);
       }
+
+      if (rawData.scannedList) {
+        setScannedList(parseList(rawData.scannedList));
+      }
+      if (rawData.favoriteList) {
+        setFavoriteList(parseList(rawData.favoriteList));
+      }
+      if (rawData.trashList) {
+        setTrashList(parseList(rawData.trashList));
+      }
+      setIsLoaded(true);
     };
     loadData();
   }, []);
@@ -64,19 +86,17 @@ export function useAnimeData() {
   // Save data when state changes
   const saveData = async (s: AnimeItem[], f: AnimeItem[], t: AnimeItem[]) => {
     try {
-      const serializeList = (list: AnimeItem[]) =>
-        list.map((item) => ({
-          ...item,
-          uploadDate: item.uploadDate.toISOString(),
-        }));
-
       const payload = {
-        searchList: serializeList(s),
-        favoriteList: serializeList(f),
-        trashList: serializeList(t),
+        scannedList: s,
+        favoriteList: f,
+        trashList: t,
       };
 
-      if (typeof chrome !== "undefined" && chrome.storage) {
+      if (
+        typeof chrome !== "undefined" &&
+        chrome.storage &&
+        chrome.storage.local
+      ) {
         await chrome.storage.local.set(payload);
       } else {
         localStorage.setItem("animeData", JSON.stringify(payload));
@@ -86,43 +106,34 @@ export function useAnimeData() {
     }
   };
 
+  const updateLists = (s: AnimeItem[], f: AnimeItem[], t: AnimeItem[]) => {
+    setScannedList(s);
+    setFavoriteList(f);
+    setTrashList(t);
+    saveData(s, f, t);
+  };
+
   const moveToFavorites = (item: AnimeItem) => {
-    const newSearch = searchList.filter((i) => i.link !== item.link);
+    const newScanned = scannedList.filter((i) => i.link !== item.link);
+    const newTrash = trashList.filter((i) => i.link !== item.link);
     const newFav = [...favoriteList, item];
-    setSearchList(newSearch);
-    setFavoriteList(newFav);
-    saveData(newSearch, newFav, trashList);
+    updateLists(newScanned, newFav, newTrash);
   };
 
   const moveToTrash = (item: AnimeItem) => {
-    const newSearch = searchList.filter((i) => i.link !== item.link);
+    const newScanned = scannedList.filter((i) => i.link !== item.link);
     const newFav = favoriteList.filter((i) => i.link !== item.link);
     const newTrash = [...trashList, item];
-    setSearchList(newSearch);
-    setFavoriteList(newFav);
-    setTrashList(newTrash);
-    saveData(newSearch, newFav, newTrash);
-  };
-
-  const restoreFromTrash = (item: AnimeItem) => {
-    const newTrash = trashList.filter((i) => i.link !== item.link);
-    const newSearch = [...searchList, item];
-    setTrashList(newTrash);
-    setSearchList(newSearch);
-    saveData(newSearch, favoriteList, newTrash);
+    updateLists(newScanned, newFav, newTrash);
   };
 
   return {
-    searchList,
-    setSearchList,
+    scannedList,
     favoriteList,
-    setFavoriteList,
     trashList,
-    setTrashList,
     moveToFavorites,
     moveToTrash,
-    restoreFromTrash,
-    saveData,
+    updateLists,
     isLoaded,
   };
 }

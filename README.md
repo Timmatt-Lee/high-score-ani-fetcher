@@ -1,4 +1,4 @@
-# High Score Ani Fetcher
+# 巴哈姆特動漫瘋 Scanner
 
 [![CI Pipeline](https://github.com/Timmatt-Lee/high-score-ani-fetcher/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/Timmatt-Lee/high-score-ani-fetcher/actions/workflows/ci.yml)
 [![Coverage Status](https://img.shields.io/badge/coverage-%E2%89%A599%25-brightgreen.svg?style=flat-square)](#-testing)

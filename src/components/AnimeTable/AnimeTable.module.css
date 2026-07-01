@@ -1,0 +1,187 @@
+.tableWrapper {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 1fr;
+  grid-template-rows: 1fr;
+  overflow: visible;
+  isolation: isolate;
+}
+
+.tableBackdrop {
+  grid-area: 1 / 1;
+  position: sticky;
+  top: var(--table-header-top, 84px);
+  width: 100%;
+  height: 100%;
+  max-height: calc(100vh - var(--table-header-top, 84px));
+  background-color: var(--panel-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+  z-index: -1;
+  pointer-events: none;
+}
+
+.emptyState {
+  grid-area: 1 / 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 40px;
+  background: var(--panel-bg);
+  border: 1px dashed var(--border);
+  border-radius: var(--radius);
+  color: var(--text-muted);
+  font-size: 0.95rem;
+  font-weight: 500;
+  text-align: center;
+  animation: fadeIn 0.3s ease-out;
+  z-index: 1;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animeTable {
+  grid-area: 1 / 1;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  z-index: 1; /* Stay above backdrop */
+}
+
+.tableHeader {
+  display: grid;
+  grid-template-columns: var(--grid-cols);
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  margin-top: -1px; /* Overlaps the wrapper's top border so it's not doubled, but pulls away when sticky */
+  position: sticky;
+  top: var(--table-header-top, 60px);
+  z-index: 160;
+  background: var(--panel-bg);
+  padding: 0;
+  align-items: center;
+  border-top-left-radius: var(--radius);
+  border-top-right-radius: var(--radius);
+}
+
+/*
+ * 🚨 STICKY CORNER MASK HACK (丙方案)
+ * Why we need this:
+ * Because we use global window scrolling, the parent container (.tableWrapper) CANNOT have `overflow: hidden`
+ * (otherwise `position: sticky` on the header will break).
+ * Since we can't clip the children with overflow:hidden, when table rows scroll up, they would bleed 
+ * through the transparent corners of the tableHeader's border-radius.
+ * To fix this bleeding, we dynamically overlay two fake background-colored (var(--bg-color)) mask corners
+ * via ::before and ::after ONLY when the header is stuck (isSticky is true).
+ */
+.tableHeader.isSticky::before,
+.tableHeader.isSticky::after {
+  content: "";
+  position: absolute;
+  top: -1px;
+  width: var(--radius);
+  height: var(--radius);
+  pointer-events: none;
+  z-index: 161;
+}
+
+.tableHeader.isSticky::before {
+  left: -1px;
+  background: radial-gradient(
+    circle at bottom right,
+    transparent var(--radius),
+    var(--bg-color) var(--radius)
+  );
+}
+
+.tableHeader.isSticky::after {
+  right: -1px;
+  background: radial-gradient(
+    circle at bottom left,
+    transparent var(--radius),
+    var(--bg-color) var(--radius)
+  );
+}
+
+.sortableHeader {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  user-select: none;
+  padding: 12px 16px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.sortableHeader:hover {
+  color: var(--accent);
+}
+
+.sorted {
+  color: var(--text-main);
+}
+
+.sortIndicator {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--accent);
+  font-size: 0.65rem;
+  line-height: 1;
+}
+
+.headerLabel {
+  white-space: nowrap;
+}
+
+.actionsHeader {
+  width: 100%;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 12px 16px;
+  box-sizing: border-box;
+}
+
+@media (max-width: 768px) {
+  .tableWrapper {
+    overflow: visible;
+  }
+  .tableHeader > [data-testid="sort-header-uploadDate"] {
+    display: none;
+  }
+}
+
+@media (max-width: 600px) {
+  .tableHeader > [data-testid="sort-header-episodeCount"] {
+    display: none;
+  }
+  .sortableHeader,
+  .actionsHeader {
+    padding: 8px 4px;
+    font-size: 0.7rem;
+  }
+  .sortIndicator {
+    display: none !important;
+  }
+}

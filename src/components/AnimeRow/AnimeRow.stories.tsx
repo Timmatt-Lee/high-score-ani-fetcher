@@ -8,21 +8,45 @@ const meta: Meta<typeof AnimeRow> = {
   component: AnimeRow,
   decorators: [
     (Story) => (
-      <table style={{ width: "100%", borderCollapse: "collapse" }}>
-        <tbody>
+      <div
+        style={{
+          width: "100%",
+          overflowX: "auto",
+          background: "var(--bg-color)",
+          padding: "10px",
+          boxSizing: "border-box",
+        }}
+      >
+        <div
+          style={{
+            background: "#1e293b",
+            border: "1px solid #334155",
+            borderRadius: "12px",
+            overflow: "visible",
+            fontFamily: "Inter, sans-serif",
+            color: "#f8fafc",
+            display: "flex",
+            flexDirection: "column",
+            width: "100%",
+          }}
+        >
           <Story />
-        </tbody>
-      </table>
+        </div>
+      </div>
     ),
   ],
   argTypes: {
     activeTab: {
       control: "select",
-      options: [Tab.Search, Tab.Favorites, Tab.Trash],
+      options: [Tab.Scanned, Tab.Favorites, Tab.Trash],
     },
     onMoveToFavorites: { action: "moveToFavorites" },
     onMoveToTrash: { action: "moveToTrash" },
-    onRestoreFromTrash: { action: "restoreFromTrash" },
+  },
+  parameters: {
+    chromatic: {
+      viewports: [320, 768, 1200],
+    },
   },
 };
 
@@ -34,7 +58,7 @@ const baseAnime: AnimeItem = {
   title: "Frieren: Beyond Journey's End",
   watchCount: 1500000,
   episodeCount: 28,
-  uploadDate: new Date("2023-09-29"),
+  uploadDate: "2023-09-29T00:00:00.000Z",
   score: 9.39,
   ratingCount: 120000,
   description:
@@ -44,7 +68,7 @@ const baseAnime: AnimeItem = {
 export const SearchTab: Story = {
   args: {
     item: baseAnime,
-    activeTab: Tab.Search,
+    activeTab: Tab.Scanned,
   },
 };
 
@@ -73,12 +97,11 @@ export const LongText: Story = {
       description:
         "This is an extremely long description designed to test if the row handles large amounts of paragraph text gracefully without overflowing the layout boundaries. It should wrap properly and maintain the visual spacing guidelines.",
     },
-    activeTab: Tab.Search,
+    activeTab: Tab.Scanned,
   },
 };
 
-const mockInvalidDate = new Date(NaN);
-mockInvalidDate.toISOString = () => "Invalid Date";
+const mockInvalidDate = "Invalid Date";
 
 export const InvalidDate: Story = {
   args: {
@@ -86,14 +109,6 @@ export const InvalidDate: Story = {
       ...baseAnime,
       uploadDate: mockInvalidDate,
     },
-    activeTab: Tab.Search,
-  },
-};
-
-export const Disabled: Story = {
-  args: {
-    item: baseAnime,
-    activeTab: Tab.Search,
-    isDisabled: true,
+    activeTab: Tab.Scanned,
   },
 };

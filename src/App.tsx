@@ -1,53 +1,93 @@
-import { useState } from "react";
-import { useAnimeData } from "./hooks/useAnimeData";
-import { useAnimeScanner } from "./hooks/useAnimeScanner";
-import { type AnimeItem } from "./services/animeScanner";
-import { useSettings } from "./hooks/useSettings";
-import { AnimeList } from "./components/AnimeList";
-import { ProgressBar } from "./components/ProgressBar";
-import { Tabs, Tab } from "./components/Tabs";
-import { ErrorPanel } from "./components/ErrorPanel/ErrorPanel";
-import { ErrorCard } from "./components/ErrorCard/ErrorCard";
-import { SettingsTab } from "./components/SettingsTab";
+import React, { useState, useRef } from "react";
 import styles from "./App.module.css";
-import "./index.css";
+import { Tabs, Tab } from "./components/Tabs/Tabs";
+import { ProgressBar } from "./components/ProgressBar/ProgressBar";
+import { ResultBanner } from "./components/ResultBanner/ResultBanner";
+import { AnimeTable } from "./components/AnimeTable/AnimeTable";
+import { ErrorCard } from "./components/ErrorCard/ErrorCard";
+import { useAnimeScanner } from "./hooks/useAnimeScanner";
+import { useAnimeData } from "./hooks/useAnimeData";
+import { useSettings } from "./hooks/useSettings";
+import { SettingsTab } from "./components/SettingsTab/SettingsTab";
+import { type AnimeItem } from "./services/animeScanner";
+import { StopIcon } from "./components/Icons";
 
 function App() {
-  const [activeTab, setActiveTab] = useState<Tab>(Tab.Search);
+  const [activeTab, setActiveTab] = useState<Tab>(Tab.Scanned);
   const [sortBy, setSortBy] = useState<
-    "title" | "score" | "watchCount" | "uploadDate" | "episodeCount" | null
-  >(null);
-  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
+    "title" | "score" | "watchCount" | "uploadDate" | "episodeCount"
+  >("watchCount");
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
+
+  // Draggable floating bar state
+  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+  const isDraggingRef = useRef(false);
+  const dragStartRef = useRef({ x: 0, y: 0 });
+  const floatingBarRef = useRef<HTMLDivElement | null>(null);
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    // Avoid triggering drag if clicking action buttons inside the banner
+    if ((e.target as HTMLElement).closest("button")) return;
+
+    isDraggingRef.current = true;
+    dragStartRef.current = {
+      x: e.clientX - dragOffset.x,
+      y: e.clientY - dragOffset.y,
+    };
+
+    const handleMouseMove = (moveEvent: MouseEvent) => {
+      if (!isDraggingRef.current) return;
+      setDragOffset({
+        x: moveEvent.clientX - dragStartRef.current.x,
+        y: moveEvent.clientY - dragStartRef.current.y,
+      });
+    };
+
+    const handleMouseUp = () => {
+      isDraggingRef.current = false;
+      document.removeEventListener("mousemove", handleMouseMove);
+      document.removeEventListener("mouseup", handleMouseUp);
+    };
+
+    document.addEventListener("mousemove", handleMouseMove);
+    document.addEventListener("mouseup", handleMouseUp);
+  };
 
   const { settings, saveSettings, isLoaded: isSettingsLoaded } = useSettings();
 
   const {
-    searchList,
-    setSearchList,
+    scannedList,
     favoriteList,
-    setFavoriteList,
     trashList,
-    setTrashList,
     moveToFavorites,
     moveToTrash,
-    restoreFromTrash,
-    saveData,
+    updateLists,
     isLoaded: isAnimeDataLoaded,
   } = useAnimeData();
 
-  const { isScanning, progress, httpErrors, parseErrors, error, handleScan } =
-    useAnimeScanner(searchList, favoriteList, trashList, (result) => {
-      setSearchList(result.newSearchItems);
-      setFavoriteList(result.updatedFavoriteList);
-      setTrashList(result.updatedTrashList);
-      saveData(
-        result.newSearchItems,
-        result.updatedFavoriteList,
-        result.updatedTrashList,
-      );
-    });
+  const {
+    isScanning,
+    progress,
+    error,
+    clearError,
+    handleScan,
+    cancelScan,
+    scanResult,
+    clearScanResult,
+  } = useAnimeScanner(scannedList, favoriteList, trashList, (result) => {
+    updateLists(
+      result.updatedScannedList,
+      result.updatedFavoriteList,
+      result.updatedTrashList,
+    );
+  });
 
-  const totalErrors = httpErrors.length + parseErrors.length;
+  const [appError, setAppError] = useState<Error | null>(null);
+  const activeError = error || appError;
+  const handleDismissError = () => {
+    clearError();
+    setAppError(null);
+  };
 
   const handleSort = (
     field: "title" | "score" | "watchCount" | "uploadDate" | "episodeCount",
@@ -61,14 +101,13 @@ function App() {
   };
 
   const getSortedList = (list: AnimeItem[]) => {
-    if (!sortBy) return list;
     return [...list].sort((a, b) => {
       const valA = a[sortBy];
       const valB = b[sortBy];
 
       if (sortBy === "uploadDate") {
-        const timeA = a.uploadDate.getTime();
-        const timeB = b.uploadDate.getTime();
+        const timeA = new Date(a.uploadDate).getTime();
+        const timeB = new Date(b.uploadDate).getTime();
         const valA = isNaN(timeA) ? 0 : timeA;
         const valB = isNaN(timeB) ? 0 : timeB;
         return sortOrder === "asc" ? valA - valB : valB - valA;
@@ -80,10 +119,11 @@ function App() {
           : valB.localeCompare(valA, "zh-Hant");
       }
 
-      // Remaining sortable properties (score, watchCount, episodeCount) are numbers
-      const numA = valA as number;
-      const numB = valB as number;
-      return sortOrder === "asc" ? numA - numB : numB - numA;
+      if (typeof valA === "number" && typeof valB === "number") {
+        return sortOrder === "asc" ? valA - valB : valB - valA;
+      }
+
+      return 0;
     });
   };
 
@@ -91,114 +131,133 @@ function App() {
     return null;
   }
 
+  const displayedScannedList = scannedList.filter(
+    (item) => item.score >= settings.targetScore,
+  );
+
   return (
     <div className={styles.appContainer} data-testid="app-container">
+      <div className={styles.headerBg} />
+      <div className={styles.headerSpacer} />
       <div className={styles.header}>
-        <h1>AniFetcher Pro</h1>
-        {isScanning ? (
-          <ProgressBar
-            isScanning={isScanning}
-            percent={progress.percent}
-            message={progress.message}
-          />
-        ) : (
-          <button
-            className={styles.btn}
-            onClick={() => handleScan()}
-            disabled={isScanning}
-          >
-            Scan 巴哈姆特動漫瘋
-          </button>
-        )}
-      </div>
+        <div className={styles.titleWrapper}>
+          <img src="/icon.png" alt="Logo" className={styles.logoIcon} />
+          <h1>巴哈動畫評分</h1>
+        </div>
 
-      <div className={styles.mainLayout}>
-        <div className={styles.sidebar}>
+        <div className={styles.headerCenter}>
           <Tabs
             activeTab={activeTab}
             setActiveTab={setActiveTab}
-            searchCount={searchList.length}
+            scannedCount={displayedScannedList.length}
             favoritesCount={favoriteList.length}
             trashCount={trashList.length}
           />
         </div>
 
-        <div className={styles.contentArea}>
-          {error && (
-            <div
-              className={styles.fatalErrorContainer}
-              data-testid="fatal-error-container"
+        <div className={styles.headerRight}>
+          {isScanning ? (
+            <button
+              className={`${styles.btn} ${styles.btnStop}`}
+              onClick={cancelScan}
+              disabled={!isScanning}
+              aria-label="Stop Scan"
+              title="Stop Scan"
             >
-              <ErrorCard error={error} />
-            </div>
-          )}
-
-          {activeTab === Tab.Search && totalErrors > 0 && !isScanning && (
-            <div className={styles.errorsPanel} data-testid="errors-panel">
-              <div className={styles.summaryBar}>
-                <span
-                  className={styles.summaryText}
-                  data-testid="errors-summary-text"
-                >
-                  {totalErrors}{" "}
-                  {totalErrors === 1 ? "error occurred" : "errors occurred"}
-                </span>
-                <button
-                  className={`${styles.btn} ${styles.btnRetry}`}
-                  onClick={() => {
-                    const failedPagesSet = new Set<number>();
-                    httpErrors.forEach((err) => {
-                      if (err.page) failedPagesSet.add(err.page);
-                    });
-                    parseErrors.forEach((err) => {
-                      if (err.page) failedPagesSet.add(err.page);
-                    });
-                    handleScan({
-                      onlyPages: Array.from(failedPagesSet),
-                    });
-                  }}
-                  disabled={isScanning || totalErrors === 0}
-                  data-testid="retry-errors-btn"
-                >
-                  Retry Failed Animes
-                </button>
-              </div>
-
-              <div className={styles.accordion}>
-                <ErrorPanel
-                  title="HTTP Network Errors"
-                  testIdPrefix="http-errors"
-                  emptyMessage="No network errors."
-                  errors={httpErrors}
-                />
-                <ErrorPanel
-                  title="Document Parser Errors"
-                  testIdPrefix="parse-errors"
-                  emptyMessage="No parser errors."
-                  errors={parseErrors}
-                />
-              </div>
-            </div>
-          )}
-
-          {activeTab === Tab.Settings ? (
-            <SettingsTab settings={settings} onSave={saveSettings} />
+              <StopIcon width="16" height="16" />
+            </button>
           ) : (
-            <AnimeList
-              activeTab={activeTab}
-              searchList={getSortedList(searchList)}
-              favoriteList={getSortedList(favoriteList)}
-              trashList={getSortedList(trashList)}
-              onMoveToFavorites={moveToFavorites}
-              onMoveToTrash={moveToTrash}
-              onRestoreFromTrash={restoreFromTrash}
-              sortBy={sortBy}
-              sortOrder={sortOrder}
-              onSort={handleSort}
-            />
+            <button
+              className={styles.btn}
+              onClick={() => handleScan()}
+              disabled={isScanning}
+              title="Start scanning anime list from Bahamut"
+            >
+              Scan
+            </button>
           )}
         </div>
       </div>
+
+      <div className={styles.contentArea}>
+        {activeError && (
+          <div
+            className={styles.fatalErrorContainer}
+            data-testid="fatal-error-container"
+          >
+            <ErrorCard error={activeError} onDismiss={handleDismissError} />
+          </div>
+        )}
+
+        {activeTab === Tab.Settings ? (
+          <SettingsTab
+            settings={settings}
+            onSave={saveSettings}
+            scannedList={scannedList}
+            favoriteList={favoriteList}
+            trashList={trashList}
+            onImportData={({
+              scannedList: s,
+              favoriteList: f,
+              trashList: t,
+            }) => {
+              updateLists(s, f, t);
+            }}
+            onError={setAppError}
+          />
+        ) : (
+          <AnimeTable
+            activeTab={activeTab}
+            list={getSortedList(
+              activeTab === Tab.Scanned
+                ? displayedScannedList
+                : activeTab === Tab.Favorites
+                  ? favoriteList
+                  : trashList,
+            )}
+            onMoveToFavorites={moveToFavorites}
+            onMoveToTrash={moveToTrash}
+            sortBy={sortBy}
+            sortOrder={sortOrder}
+            onSort={handleSort}
+            targetScore={settings.targetScore}
+          />
+        )}
+      </div>
+
+      {(isScanning || (scanResult && !isScanning)) && (
+        <div
+          ref={floatingBarRef}
+          className={styles.floatingStatusContainer}
+          style={{
+            transform: `translate(calc(-50% + ${dragOffset.x}px), ${dragOffset.y}px)`,
+          }}
+          onMouseDown={handleMouseDown}
+          data-testid="floating-status-bar"
+        >
+          <div className={styles.floatingContent}>
+            {isScanning ? (
+              <ProgressBar
+                stepsCount={2}
+                currentStepIndex={progress.step - 1}
+                currentStepPercent={progress.percent}
+                message={progress.message}
+              />
+            ) : (
+              scanResult && (
+                <ResultBanner
+                  successCount={scanResult.successCount}
+                  addedCount={scanResult.addedCount}
+                  updatedCount={scanResult.updatedCount}
+                  skippedCachedCount={scanResult.skippedCachedCount}
+                  failedCount={scanResult.failedCount}
+                  onDismiss={() => clearScanResult()}
+                />
+              )
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

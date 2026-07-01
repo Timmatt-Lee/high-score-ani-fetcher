@@ -1,0 +1,191 @@
+.bannerContainer {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  height: 38px;
+}
+
+.bannerContent {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 4px;
+}
+
+.group:not(:last-child) {
+  border-right: 1px solid rgba(255, 255, 255, 0.1);
+  padding-right: 16px;
+}
+
+.chip {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  min-width: 32px;
+  height: 26px;
+  box-sizing: border-box;
+  user-select: none;
+}
+
+/* Success Total: Green */
+.chipSuccess {
+  background: rgba(16, 185, 129, 0.15);
+  color: #34d399;
+  border: 1px solid rgba(16, 185, 129, 0.25);
+}
+.chipSuccess:hover,
+.chipSuccess.expanded {
+  background: rgba(16, 185, 129, 0.25);
+  box-shadow: 0 0 12px rgba(16, 185, 129, 0.3);
+}
+
+/* Added Subgroup: Blue */
+.chipAdded {
+  background: rgba(59, 130, 246, 0.15);
+  color: #60a5fa;
+  border: 1px solid rgba(59, 130, 246, 0.25);
+}
+.chipAdded:hover,
+.chipAdded.expanded {
+  background: rgba(59, 130, 246, 0.25);
+  box-shadow: 0 0 12px rgba(59, 130, 246, 0.3);
+}
+
+/* Updated Subgroup: Purple */
+.chipUpdated {
+  background: rgba(139, 92, 246, 0.15);
+  color: #a78bfa;
+  border: 1px solid rgba(139, 92, 246, 0.25);
+}
+.chipUpdated:hover,
+.chipUpdated.expanded {
+  background: rgba(139, 92, 246, 0.25);
+  box-shadow: 0 0 12px rgba(139, 92, 246, 0.3);
+}
+
+/* Skip/Cached Group: Grey */
+.chipSkip {
+  background: rgba(148, 163, 184, 0.15);
+  color: #94a3b8;
+  border: 1px solid rgba(148, 163, 184, 0.25);
+}
+.chipSkip:hover,
+.chipSkip.expanded {
+  background: rgba(148, 163, 184, 0.25);
+  box-shadow: 0 0 12px rgba(148, 163, 184, 0.3);
+}
+
+/* Fail Group: Red */
+.chipFail {
+  background: rgba(239, 68, 68, 0.15);
+  color: #fca5a5;
+  border: 1px solid rgba(239, 68, 68, 0.25);
+}
+.chipFail:hover,
+.chipFail.expanded {
+  background: rgba(239, 68, 68, 0.25);
+  box-shadow: 0 0 12px rgba(239, 68, 68, 0.3);
+}
+
+/* Hover/Expansion States */
+.expanded {
+  padding-left: 12px;
+  padding-right: 12px;
+  transform: scale(1.05);
+}
+
+.collapsed {
+  opacity: 0.8;
+  transform: scale(0.95);
+}
+
+.chipText {
+  max-width: 0;
+  opacity: 0;
+  overflow: hidden;
+  transition:
+    max-width 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+    opacity 0.2s ease,
+    margin-right 0.25s ease;
+  display: inline-block;
+  white-space: nowrap;
+  font-size: 0.8rem;
+  line-height: 1;
+}
+
+.chip:hover .chipText,
+.chip.expanded .chipText {
+  max-width: 80px;
+  opacity: 1;
+  margin-right: 4px;
+}
+
+.icon {
+  font-size: 0.95rem;
+}
+
+.count {
+  white-space: nowrap;
+}
+
+.dismissBtn {
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.4);
+  font-size: 0.8rem;
+  cursor: pointer;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: all 0.2s ease;
+  margin-left: 4px;
+}
+
+.dismissBtn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.9);
+}
+
+@media (max-width: 600px) {
+  .bannerContainer {
+    height: auto;
+    width: 100%;
+    justify-content: space-between;
+  }
+  .bannerContent {
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: center;
+    width: 100%;
+  }
+  .group {
+    gap: 6px;
+    padding: 0;
+  }
+  .group:not(:last-child) {
+    border-right: none;
+    padding-right: 0;
+  }
+  .chip {
+    font-size: 0.8rem;
+    padding: 3px 8px;
+    height: 24px;
+  }
+}

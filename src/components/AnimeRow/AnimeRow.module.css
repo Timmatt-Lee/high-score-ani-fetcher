@@ -1,22 +1,33 @@
 .animeRow {
+  display: grid;
+  grid-template-columns: var(--grid-cols);
+  align-items: center;
+  padding: 0;
   border-bottom: 1px solid var(--border);
   transition: background-color 0.2s ease;
+  scroll-margin-top: 130px;
 }
 
 .animeRow:hover {
   background-color: rgba(255, 255, 255, 0.02);
 }
 
+.animeRow:last-child {
+  border-bottom: none;
+  border-bottom-left-radius: 11px;
+  border-bottom-right-radius: 11px;
+}
+
 .titleCell {
-  padding: 16px 12px;
-  vertical-align: top;
-  width: 99%;
+  padding: 12px 16px;
+  min-width: 0; /* critical to allow CSS Grid track to shrink below min-content */
 }
 
 .titleWrapper {
   display: flex;
   flex-direction: column;
   gap: 4px;
+  min-width: 0;
 }
 
 .titleLink {
@@ -26,6 +37,8 @@
   font-size: 0.95rem;
   transition: color 0.2s ease;
   line-height: 1.4;
+  word-break: break-word; /* allow long names without spaces to break */
+  overflow-wrap: anywhere;
 }
 
 .titleLink:hover {
@@ -48,17 +61,13 @@
 .yearCell,
 .episodesCell,
 .actionsCell {
-  padding: 16px 12px;
-  vertical-align: middle;
+  padding: 12px 16px;
   font-size: 0.875rem;
   color: var(--text-main);
   white-space: nowrap;
-  width: 1%;
 }
 
 .scoreBadge {
-  background-color: rgba(245, 158, 11, 0.1);
-  color: #f59e0b;
   padding: 4px 8px;
   border-radius: 6px;
   font-weight: 700;
@@ -67,6 +76,21 @@
   align-items: center;
   gap: 4px;
   flex-shrink: 0;
+}
+
+.scoreExcellent {
+  background-color: rgba(16, 185, 129, 0.1);
+  color: var(--success);
+}
+
+.scoreGood {
+  background-color: rgba(234, 179, 8, 0.1);
+  color: #eab308;
+}
+
+.scoreAverage {
+  background-color: rgba(239, 68, 68, 0.1);
+  color: var(--danger);
 }
 
 .rowActions {
@@ -79,35 +103,77 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
-  padding: 6px 12px;
-  border-radius: 6px;
-  font-size: 0.8rem;
-  font-weight: 600;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
   cursor: pointer;
-  background-color: var(--panel-bg);
-  border: 1px solid var(--border);
-  color: var(--text-main);
-  transition: all 0.2s ease;
-}
-
-.actionBtn:hover:not(:disabled) {
-  background-color: var(--border);
+  border: 1px solid transparent;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  flex-shrink: 0;
 }
 
 .actionBtn:disabled {
-  opacity: 0.5;
+  opacity: 0.3;
   cursor: not-allowed;
+  transform: none !important;
+}
+
+.fav {
+  color: var(--success);
+  background-color: rgba(16, 185, 129, 0.08);
+  border-color: rgba(16, 185, 129, 0.25);
 }
 
 .fav:hover:not(:disabled) {
-  background-color: rgba(16, 185, 129, 0.1);
+  background-color: rgba(16, 185, 129, 0.2);
   border-color: var(--success);
-  color: var(--success);
+  transform: scale(1.08);
+  box-shadow: 0 0 8px rgba(16, 185, 129, 0.3);
+}
+
+.trash {
+  color: var(--danger);
+  background-color: rgba(239, 68, 68, 0.08);
+  border-color: rgba(239, 68, 68, 0.25);
 }
 
 .trash:hover:not(:disabled) {
-  background-color: rgba(239, 68, 68, 0.1);
+  background-color: rgba(239, 68, 68, 0.2);
   border-color: var(--danger);
-  color: var(--danger);
+  transform: scale(1.08);
+  box-shadow: 0 0 8px rgba(239, 68, 68, 0.3);
+}
+
+@media (max-width: 768px) {
+  .yearCell {
+    display: none;
+  }
+  .actionsCell {
+    padding-left: 8px;
+    padding-right: 8px;
+  }
+}
+
+@media (max-width: 600px) {
+  .episodesCell {
+    display: none;
+  }
+  .titleCell,
+  .scoreCell,
+  .viewsCell,
+  .actionsCell {
+    padding: 8px 4px;
+    font-size: 0.75rem;
+  }
+  .actionBtn {
+    width: 28px;
+    height: 28px;
+  }
+  .rowActions {
+    gap: 4px;
+  }
+  .scoreBadge {
+    padding: 2px 4px;
+    font-size: 0.7rem;
+  }
 }

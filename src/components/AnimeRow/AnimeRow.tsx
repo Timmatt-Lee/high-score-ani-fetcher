@@ -3,41 +3,51 @@ import { Tab } from "../Tabs";
 import styles from "./AnimeRow.module.css";
 import { HeartIcon, TrashIcon } from "../Icons";
 
+function formatViews(views: number): string {
+  if (views >= 1_000_000) {
+    return (views / 1_000_000).toFixed(1).replace(/\.0$/, "") + "M";
+  }
+  if (views >= 1_000) {
+    return (views / 1_000).toFixed(1).replace(/\.0$/, "") + "K";
+  }
+  return views.toString();
+}
+
 interface AnimeRowProps {
   item: AnimeItem;
-  isDisabled?: boolean;
   activeTab: Tab;
   onMoveToFavorites: (item: AnimeItem) => void;
   onMoveToTrash: (item: AnimeItem) => void;
-  onRestoreFromTrash: (item: AnimeItem) => void;
+  targetScore?: number;
 }
 
 export function AnimeRow({
   item,
-  isDisabled,
   activeTab,
   onMoveToFavorites,
   onMoveToTrash,
-  onRestoreFromTrash,
+  targetScore = 4.8,
 }: AnimeRowProps) {
   const renderActions = () => {
     switch (activeTab) {
-      case Tab.Search:
+      case Tab.Scanned:
         return (
           <>
             <button
               className={`${styles.actionBtn} ${styles.fav}`}
               onClick={() => onMoveToFavorites(item)}
-              disabled={isDisabled}
+              aria-label="Add to Favorites"
+              title="Add to Favorites"
             >
-              <HeartIcon /> Favorite
+              <HeartIcon width="18" height="18" />
             </button>
             <button
               className={`${styles.actionBtn} ${styles.trash}`}
               onClick={() => onMoveToTrash(item)}
-              disabled={isDisabled}
+              aria-label="Move to Trash"
+              title="Move to Trash"
             >
-              <TrashIcon /> Trash
+              <TrashIcon width="18" height="18" />
             </button>
           </>
         );
@@ -46,19 +56,21 @@ export function AnimeRow({
           <button
             className={`${styles.actionBtn} ${styles.trash}`}
             onClick={() => onMoveToTrash(item)}
-            disabled={isDisabled}
+            aria-label="Move to Trash"
+            title="Move to Trash"
           >
-            <TrashIcon /> Trash
+            <TrashIcon width="18" height="18" />
           </button>
         );
       case Tab.Trash:
         return (
           <button
-            disabled={isDisabled}
             className={`${styles.actionBtn} ${styles.fav}`}
-            onClick={() => onRestoreFromTrash(item)}
+            onClick={() => onMoveToFavorites(item)}
+            aria-label="Restore to Favorites"
+            title="Restore to Favorites"
           >
-            <HeartIcon /> Favorite
+            <HeartIcon width="18" height="18" />
           </button>
         );
       case Tab.Settings:
@@ -70,14 +82,30 @@ export function AnimeRow({
     }
   };
 
-  const uploadYear =
-    item.uploadDate instanceof Date && !isNaN(item.uploadDate.getTime())
-      ? item.uploadDate.getFullYear().toString()
-      : "N/A";
+  const getScoreClass = (score: number) => {
+    const maxScore = 5.0;
+    const range = maxScore - targetScore;
+    if (range <= 0) {
+      return styles.scoreExcellent;
+    }
+    const step = range / 3;
+    if (score >= targetScore + 2 * step) {
+      return styles.scoreExcellent;
+    }
+    if (score >= targetScore + step) {
+      return styles.scoreGood;
+    }
+    return styles.scoreAverage;
+  };
+
+  const uploadDateObj = new Date(item.uploadDate);
+  const uploadYear = !isNaN(uploadDateObj.getTime())
+    ? uploadDateObj.getUTCFullYear().toString()
+    : "N/A";
 
   return (
-    <tr className={styles.animeRow} data-testid="anime-card">
-      <td className={styles.titleCell}>
+    <div className={styles.animeRow} data-testid="anime-card">
+      <div className={styles.titleCell}>
         <div className={styles.titleWrapper}>
           <a
             href={item.link}
@@ -89,16 +117,18 @@ export function AnimeRow({
           </a>
           <span className={styles.descriptionText}>{item.description}</span>
         </div>
-      </td>
-      <td className={styles.scoreCell}>
-        <span className={styles.scoreBadge}>★ {item.score.toFixed(1)}</span>
-      </td>
-      <td className={styles.viewsCell}>{item.watchCount.toLocaleString()}</td>
-      <td className={styles.yearCell}>{uploadYear}</td>
-      <td className={styles.episodesCell}>{item.episodeCount} Episodes</td>
-      <td className={styles.actionsCell}>
+      </div>
+      <div className={styles.scoreCell}>
+        <span className={`${styles.scoreBadge} ${getScoreClass(item.score)}`}>
+          ★ {item.score.toFixed(1)}
+        </span>
+      </div>
+      <div className={styles.viewsCell}>{formatViews(item.watchCount)}</div>
+      <div className={styles.yearCell}>{uploadYear}</div>
+      <div className={styles.episodesCell}>{item.episodeCount}</div>
+      <div className={styles.actionsCell}>
         <div className={styles.rowActions}>{renderActions()}</div>
-      </td>
-    </tr>
+      </div>
+    </div>
   );
 }

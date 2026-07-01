@@ -1,5 +1,5 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, fireEvent, act } from "@testing-library/react";
+import { describe, it, expect, vi } from "vitest";
+import { render, screen, act } from "@testing-library/react";
 import { ErrorCard } from "./ErrorCard";
 import {
   AnimeScanError,
@@ -9,19 +9,7 @@ import {
 } from "../../services/animeScanner";
 
 describe("ErrorCard", () => {
-  const writeTextMock = vi.fn();
-
-  beforeEach(() => {
-    vi.stubGlobal("navigator", {
-      clipboard: {
-        writeText: writeTextMock,
-      },
-    });
-    writeTextMock.mockReset();
-    vi.useRealTimers();
-  });
-
-  it("renders HTTP error with title correctly and handles copy", async () => {
+  it("renders HTTP error with title correctly", () => {
     const error = new AnimeScanHttpError(
       2,
       AnimeScanStep.GET_TOTAL_PAGES,
@@ -30,9 +18,8 @@ describe("ErrorCard", () => {
       500,
       "葬送的芙莉蓮",
     );
-    writeTextMock.mockResolvedValue(undefined);
 
-    render(<ErrorCard error={error} />);
+    render(<ErrorCard error={error} onDismiss={vi.fn()} />);
 
     expect(screen.getByTestId("error-card-title").textContent).toBe(
       "葬送的芙莉蓮",
@@ -43,12 +30,6 @@ describe("ErrorCard", () => {
     expect(screen.getByTestId("error-card-message").textContent).toBe(
       error.message,
     );
-
-    const copyBtn = screen.getByTestId("error-card-copy-btn");
-    await act(async () => {
-      fireEvent.click(copyBtn);
-    });
-    expect(copyBtn.textContent).toBe("✓");
   });
 
   it("renders HTTP error without title correctly", () => {
@@ -61,7 +42,7 @@ describe("ErrorCard", () => {
       undefined,
     );
 
-    render(<ErrorCard error={error} />);
+    render(<ErrorCard error={error} onDismiss={vi.fn()} />);
 
     expect(screen.getByTestId("error-card-title").textContent).toBe("Page: 3");
     expect(screen.getByTestId("error-card-subtitle").textContent).toBe(
@@ -79,7 +60,7 @@ describe("ErrorCard", () => {
       "鬼滅之刃",
     );
 
-    render(<ErrorCard error={error} />);
+    render(<ErrorCard error={error} onDismiss={vi.fn()} />);
 
     expect(screen.getByTestId("error-card-title").textContent).toBe("鬼滅之刃");
     expect(screen.getByTestId("error-card-subtitle").textContent).toBe(
@@ -96,7 +77,7 @@ describe("ErrorCard", () => {
       "Parse failed",
     );
 
-    render(<ErrorCard error={error} />);
+    render(<ErrorCard error={error} onDismiss={vi.fn()} />);
 
     expect(screen.getByTestId("error-card-title").textContent).toBe(
       "Parser Error",
@@ -113,8 +94,8 @@ describe("ErrorCard", () => {
         expected: "When doing: fetching total pages",
       },
       {
-        source: AnimeScanStep.SCRAPE_LIST_PAGE,
-        expected: "When doing: scraping list page",
+        source: AnimeScanStep.SCAN_LIST_PAGE,
+        expected: "When doing: scanning list page",
       },
       {
         source: AnimeScanStep.PARSE_ANIME_INFO,
@@ -134,7 +115,9 @@ describe("ErrorCard", () => {
         "bad html",
         "Parse failed",
       );
-      const { unmount } = render(<ErrorCard error={error} />);
+      const { unmount } = render(
+        <ErrorCard error={error} onDismiss={vi.fn()} />,
+      );
       expect(screen.getByTestId("error-card-subtitle").textContent).toBe(
         expected,
       );
@@ -151,46 +134,21 @@ describe("ErrorCard", () => {
       "Parse failed",
     );
     const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
-    expect(() => render(<ErrorCard error={error} />)).toThrow(
-      "Unhandled AnimeScanStep: 999",
-    );
+    expect(() =>
+      render(<ErrorCard error={error} onDismiss={vi.fn()} />),
+    ).toThrow("Unhandled AnimeScanStep: 999");
     consoleSpy.mockRestore();
   });
 
-  it("renders Unknown/Fatal error and handles copy click", async () => {
-    vi.useFakeTimers();
+  it("renders Unknown/Fatal error correctly", () => {
     const error = new Error("Fatal System Error");
-    writeTextMock.mockResolvedValue(undefined);
 
-    render(<ErrorCard error={error} />);
+    render(<ErrorCard error={error} onDismiss={vi.fn()} />);
 
     expect(screen.getByTestId("error-card-title").textContent).toBe("Error");
-
-    const copyBtn = screen.getByTestId("error-card-copy-btn");
-    expect(copyBtn.textContent).toBe("Copy");
-
-    await act(async () => {
-      fireEvent.click(copyBtn);
-    });
-
-    expect(writeTextMock).toHaveBeenCalled();
-    const copiedText = writeTextMock.mock.calls[0][0];
-    // Stack trace should be included in the copied text
-    expect(copiedText).toContain(error.toString());
-    if (error.stack) {
-      expect(copiedText).toContain(error.stack);
-    }
-
-    expect(copyBtn.textContent).toBe("✓");
-
-    // Advance timers by 2 seconds to cover setTimeout callback
-    await act(async () => {
-      vi.advanceTimersByTime(2000);
-    });
-    expect(copyBtn.textContent).toBe("Copy");
   });
 
-  it("renders fallbackTitle using error.name when page, title, and other properties are missing", async () => {
+  it("renders fallbackTitle using error.name when page, title, and other properties are missing", () => {
     class CustomError extends AnimeScanError {
       constructor() {
         super("Custom msg", 0, AnimeScanStep.GET_TOTAL_PAGES, "unknown");
@@ -198,7 +156,7 @@ describe("ErrorCard", () => {
       }
     }
     const error = new CustomError();
-    const { unmount } = render(<ErrorCard error={error} />);
+    const { unmount } = render(<ErrorCard error={error} onDismiss={vi.fn()} />);
     expect(screen.getByTestId("error-card-title").textContent).toBe(
       "TestCustomError",
     );
@@ -206,16 +164,10 @@ describe("ErrorCard", () => {
 
     const errorWithNoName = new Error("Fatal System Error");
     Object.defineProperty(errorWithNoName, "name", { value: "" });
-    const { unmount: unmount2 } = render(<ErrorCard error={errorWithNoName} />);
+    const { unmount: unmount2 } = render(
+      <ErrorCard error={errorWithNoName} onDismiss={vi.fn()} />,
+    );
     expect(screen.getByTestId("error-card-title").textContent).toBe("Error");
-
-    // Trigger copy click on non-AnimeScanError to cover isCopied branch in early return
-    writeTextMock.mockResolvedValue(undefined);
-    const copyBtn = screen.getByTestId("error-card-copy-btn");
-    await act(async () => {
-      fireEvent.click(copyBtn);
-    });
-    expect(copyBtn.textContent).toBe("✓");
     unmount2();
 
     class CustomErrorNoName extends AnimeScanError {
@@ -225,80 +177,219 @@ describe("ErrorCard", () => {
       }
     }
     const errorNoName = new CustomErrorNoName();
-    const { unmount: unmount3 } = render(<ErrorCard error={errorNoName} />);
+    const { unmount: unmount3 } = render(
+      <ErrorCard error={errorNoName} onDismiss={vi.fn()} />,
+    );
     expect(screen.getByTestId("error-card-title").textContent).toBe(
       "Unexpected Error",
     );
     unmount3();
   });
 
-  it("handles copy failure gracefully", async () => {
-    const error = new AnimeScanHttpError(
-      1,
-      AnimeScanStep.GET_TOTAL_PAGES,
-      "https://ani.gamer.com.tw/animeList.php?page=1",
-      "HTTP 404",
-      404,
-      undefined,
-    );
-    const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
-    writeTextMock.mockRejectedValue(new Error("Clipboard block"));
+  it("calls onDismiss when dismiss button is clicked", () => {
+    const error = new Error("Test error");
+    const onDismiss = vi.fn();
+    render(<ErrorCard error={error} onDismiss={onDismiss} />);
 
-    render(<ErrorCard error={error} />);
+    const dismissBtn = screen.getByTestId("error-card-dismiss-btn");
+    expect(dismissBtn).toBeDefined();
 
-    const copyBtn = screen.getByTestId("error-card-copy-btn");
-    await act(async () => {
-      fireEvent.click(copyBtn);
-    });
-
-    expect(writeTextMock).toHaveBeenCalled();
-    expect(consoleSpy).toHaveBeenCalledWith(
-      "Failed to copy error details",
-      expect.any(Error),
-    );
-    consoleSpy.mockRestore();
+    dismissBtn.click();
+    expect(onDismiss).toHaveBeenCalledTimes(1);
   });
 
-  it("copy button includes stack trace in clipboard text when stack is available", async () => {
+  it("copies details without trace when copy button is clicked and resets after timeout", () => {
+    vi.useFakeTimers();
     const error = new AnimeScanHttpError(
       1,
       AnimeScanStep.GET_TOTAL_PAGES,
-      "https://ani.gamer.com.tw/animeList.php?page=1",
-      "HTTP 500",
+      "https://example.com",
+      "Forbidden",
+      403,
+      "My Anime",
+    );
+
+    const writeTextMock = vi.fn();
+    Object.defineProperty(navigator, "clipboard", {
+      value: {
+        writeText: writeTextMock,
+      },
+      writable: true,
+      configurable: true,
+    });
+
+    render(<ErrorCard error={error} onDismiss={vi.fn()} />);
+    const copyBtn = screen.getByTestId("error-card-copy-btn");
+
+    act(() => {
+      copyBtn.click();
+    });
+
+    expect(writeTextMock).toHaveBeenCalledWith(
+      "My Anime\nHTTP request failed with status 403 (URL: https://example.com)\nURL: https://example.com\nStatus: 403\nHTML/Body Snippet:\nForbidden",
+    );
+
+    // Verify button has .copied class
+    expect(copyBtn.className).toContain("copied");
+
+    // Fast forward timer
+    act(() => {
+      vi.advanceTimersByTime(2000);
+    });
+
+    // Verify .copied class is removed
+    expect(copyBtn.className).not.toContain("copied");
+    vi.useRealTimers();
+  });
+
+  it("copies details without subtitle when copy button is clicked", () => {
+    const error = new Error("System is down");
+
+    const writeTextMock = vi.fn();
+    Object.defineProperty(navigator, "clipboard", {
+      value: {
+        writeText: writeTextMock,
+      },
+      writable: true,
+      configurable: true,
+    });
+
+    render(<ErrorCard error={error} onDismiss={vi.fn()} />);
+    const copyBtn = screen.getByTestId("error-card-copy-btn");
+
+    act(() => {
+      copyBtn.click();
+    });
+
+    expect(writeTextMock).toHaveBeenCalledWith("Error\nSystem is down");
+  });
+
+  it("copies details with HTML/Body Snippet for AnimeScanParseError", () => {
+    const error = new AnimeScanParseError(
+      1,
+      AnimeScanStep.PARSE_ANIME_INFO,
+      "https://example.com",
+      "<div>Bad HTML</div>",
+      "Parse error",
+      "Some Anime",
+    );
+
+    const writeTextMock = vi.fn();
+    Object.defineProperty(navigator, "clipboard", {
+      value: {
+        writeText: writeTextMock,
+      },
+      writable: true,
+      configurable: true,
+    });
+
+    render(<ErrorCard error={error} onDismiss={vi.fn()} />);
+    const copyBtn = screen.getByTestId("error-card-copy-btn");
+
+    act(() => {
+      copyBtn.click();
+    });
+
+    expect(writeTextMock).toHaveBeenCalledWith(
+      "Some Anime\nParse error\nURL: https://example.com\nHTML/Body Snippet:\n<div>Bad HTML</div>",
+    );
+  });
+
+  it("copies details when AnimeScanHttpError has no html snippet", () => {
+    const error = new AnimeScanHttpError(
+      1,
+      AnimeScanStep.GET_TOTAL_PAGES,
+      "https://example.com",
+      "",
       500,
-      undefined,
+      "Some Anime",
     );
-    writeTextMock.mockResolvedValue(undefined);
-    // Manually set a stack for deterministic assertion
-    Object.defineProperty(error, "stack", {
-      value: "AnimeScanHttpError: HTTP 500\n  at test.ts:1:1",
+
+    const writeTextMock = vi.fn();
+    Object.defineProperty(navigator, "clipboard", {
+      value: {
+        writeText: writeTextMock,
+      },
+      writable: true,
+      configurable: true,
     });
 
-    render(<ErrorCard error={error} />);
-
+    render(<ErrorCard error={error} onDismiss={vi.fn()} />);
     const copyBtn = screen.getByTestId("error-card-copy-btn");
-    await act(async () => {
-      fireEvent.click(copyBtn);
+
+    act(() => {
+      copyBtn.click();
     });
 
-    expect(writeTextMock).toHaveBeenCalled();
-    const copiedText = writeTextMock.mock.calls[0][0];
-    expect(copiedText).toContain(error.toString());
-    expect(copiedText).toContain("at test.ts:1:1");
+    expect(writeTextMock).toHaveBeenCalledWith(
+      "Some Anime\nHTTP request failed with status 500 (URL: https://example.com)\nURL: https://example.com\nStatus: 500",
+    );
   });
 
-  it("copy button only sends error.toString() when no stack is available", async () => {
-    const error = new Error("No stack error");
-    Object.defineProperty(error, "stack", { value: undefined });
-    writeTextMock.mockResolvedValue(undefined);
+  it("copies details when AnimeScanParseError has no html snippet", () => {
+    const error = new AnimeScanParseError(
+      1,
+      AnimeScanStep.PARSE_ANIME_INFO,
+      "https://example.com",
+      "",
+      "Parse error",
+      "Some Anime",
+    );
 
-    render(<ErrorCard error={error} />);
-
-    const copyBtn = screen.getByTestId("error-card-copy-btn");
-    await act(async () => {
-      fireEvent.click(copyBtn);
+    const writeTextMock = vi.fn();
+    Object.defineProperty(navigator, "clipboard", {
+      value: {
+        writeText: writeTextMock,
+      },
+      writable: true,
+      configurable: true,
     });
 
-    expect(writeTextMock).toHaveBeenCalledWith(error.toString());
+    render(<ErrorCard error={error} onDismiss={vi.fn()} />);
+    const copyBtn = screen.getByTestId("error-card-copy-btn");
+
+    act(() => {
+      copyBtn.click();
+    });
+
+    expect(writeTextMock).toHaveBeenCalledWith(
+      "Some Anime\nParse error\nURL: https://example.com",
+    );
+  });
+
+  it("copies details when error is a custom AnimeScanError", () => {
+    class CustomError extends AnimeScanError {
+      constructor() {
+        super(
+          "Custom msg",
+          1,
+          AnimeScanStep.GET_TOTAL_PAGES,
+          "https://example.com",
+          "Some Anime",
+        );
+        this.name = "TestCustomError";
+      }
+    }
+    const error = new CustomError();
+
+    const writeTextMock = vi.fn();
+    Object.defineProperty(navigator, "clipboard", {
+      value: {
+        writeText: writeTextMock,
+      },
+      writable: true,
+      configurable: true,
+    });
+
+    render(<ErrorCard error={error} onDismiss={vi.fn()} />);
+    const copyBtn = screen.getByTestId("error-card-copy-btn");
+
+    act(() => {
+      copyBtn.click();
+    });
+
+    expect(writeTextMock).toHaveBeenCalledWith(
+      "Some Anime\nCustom msg\nURL: https://example.com",
+    );
   });
 });

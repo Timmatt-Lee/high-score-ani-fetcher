@@ -1,65 +1,134 @@
 .tabs {
   display: flex;
-  flex-direction: column;
-  gap: 6px;
-  background: rgba(30, 41, 59, 0.6);
-  border: 1px solid var(--border);
-  padding: 6px;
-  border-radius: 16px;
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  width: 200px;
+  flex-direction: row;
+  gap: 4px;
+  background: transparent;
+  border: none;
+  padding: 4px;
+  border-radius: 12px;
+  height: 38px;
+  align-items: center;
+  box-sizing: border-box;
 }
 
 .tab {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 10px;
+  border-radius: 8px;
+  border: none;
   background: transparent;
   color: var(--text-muted);
-  border: none;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   font-size: 0.85rem;
   font-weight: 600;
-  cursor: pointer;
-  padding: 10px 16px;
-  border-radius: 10px;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  height: 100%;
   white-space: nowrap;
-  text-align: left;
-  width: 100%;
+  box-sizing: border-box;
+  position: relative;
+  gap: 0;
+}
+
+.tabIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.tabText {
+  max-width: 0;
+  opacity: 0;
+  overflow: hidden;
+  transition:
+    max-width 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+    opacity 0.2s ease,
+    margin-left 0.25s ease;
+  display: inline-block;
+}
+
+.tab:hover .tabText,
+.tab.active .tabText {
+  max-width: 100px;
+  opacity: 1;
+  margin-left: 6px;
+}
+
+.tabCount {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  margin-left: 4px;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  line-height: 1;
+}
+
+.tabCount::before {
+  content: "";
+}
+
+.tabCount::after {
+  content: "";
+}
+
+.tab:hover .tabCount::before,
+.tab.active .tabCount::before {
+  content: "(";
+}
+
+.tab:hover .tabCount::after,
+.tab.active .tabCount::after {
+  content: ")";
 }
 
 .tab:hover {
+  color: var(--text-main);
   background: rgba(255, 255, 255, 0.05);
+}
+
+.tab:hover .tabCount {
   color: var(--text-main);
 }
 
 .tab.active {
   background: var(--accent);
   color: #ffffff;
-  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+  box-shadow: 0 4px 10px rgba(0, 176, 240, 0.25);
 }
 
-.tab.hasErrors {
-  color: #fca5a5;
-}
-
-.tab.hasErrors.active {
-  background: var(--danger);
+.tab.active .tabCount {
   color: #ffffff;
-  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
 }
 
 @media (max-width: 768px) {
   .tabs {
-    flex-direction: row;
-    border-radius: 100px;
-    width: auto;
-    padding: 4px;
-    align-self: flex-start;
+    gap: 2px;
+    padding: 2px;
+  }
+  .tab {
+    padding: 0 6px;
+    font-size: 0.8rem;
+  }
+}
+
+@media (max-width: 600px) {
+  /* On very small screen, don't expand text on hover/active to fit space perfectly */
+  .tab:hover .tabText,
+  .tab.active .tabText {
+    max-width: 0;
+    opacity: 0;
+    margin-left: 0;
   }
 
-  .tab {
-    border-radius: 100px;
-    text-align: center;
-    width: auto;
-    padding: 8px 16px;
+  /* Also prevent showing parenthesis since text is collapsed */
+  .tab:hover .tabCount::before,
+  .tab.active .tabCount::before,
+  .tab:hover .tabCount::after,
+  .tab.active .tabCount::after {
+    content: "";
   }
 }

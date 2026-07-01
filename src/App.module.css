@@ -1,28 +1,103 @@
 .appContainer {
   width: 100%;
-  max-width: 1200px;
   min-height: 100vh;
-  margin: 0 auto;
-  padding: 24px;
+  padding: 84px 0 24px; /* Only top/bottom padding */
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  position: relative; /* Set anchor context for absolute positioning */
 }
 
 .header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  border-bottom: 1px solid var(--border);
-  padding-bottom: 15px;
+  flex-wrap: nowrap; /* Prevent vertical wrapping/collapsing entirely */
+  position: fixed;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 1200px;
+  height: 60px;
+  padding: 0 24px;
+  z-index: 200;
+  background: var(--bg-color);
+  gap: 16px;
+  box-sizing: border-box;
+}
+
+.header::before {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 24px;
+  right: 24px;
+  height: 1px;
+  background-color: var(--border);
+  z-index: 201;
+}
+
+.headerSpacer {
+  position: fixed;
+  top: 60px; /* Positioned directly under the 60px header */
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 1200px;
+  height: 24px; /* Creates the padding gap below header line */
+  background: var(--bg-color);
+  z-index: 140; /* Under header content and table header, but above table rows */
+  pointer-events: none;
+}
+
+.headerCenter {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-width: 0;
+  flex: 1;
+  margin: 0 24px;
+}
+
+.headerRight {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+}
+
+.titleWrapper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.logoIcon {
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+  animation: floatLogo 3s ease-in-out infinite;
+}
+
+@keyframes floatLogo {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-2px);
+  }
 }
 
 .header h1 {
   font-size: 1.2rem;
   font-weight: 700;
-  background: linear-gradient(135deg, #60a5fa, #a78bfa);
+  background: linear-gradient(135deg, #00b0f0, #008cbe);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
+  white-space: nowrap;
+  flex-shrink: 0;
+  margin: 0;
 }
 
 .btn {
@@ -39,6 +114,8 @@
   align-items: center;
   justify-content: center;
   gap: 8px;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .btn:hover:not(:disabled) {
@@ -61,6 +138,24 @@
 .btnDanger:hover:not(:disabled) {
   background-color: rgba(239, 68, 68, 0.1);
   box-shadow: none;
+}
+
+.btnStop {
+  background-color: var(--danger);
+  border-radius: 50%;
+  width: 38px;
+  height: 38px;
+  min-width: 38px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btnStop:hover:not(:disabled) {
+  background-color: #dc2626;
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
+  transform: translateY(-1px);
 }
 
 .fatalErrorContainer {
@@ -97,7 +192,7 @@
   display: flex;
   flex-direction: column;
   gap: 16px;
-  padding-right: 4px;
+  width: 100%;
 }
 
 .summaryBar {
@@ -153,29 +248,173 @@
   }
 }
 
-.mainLayout {
-  display: flex;
-  gap: 32px;
-  align-items: flex-start;
-  width: 100%;
-}
-
-.sidebar {
-  flex-shrink: 0;
-}
-
 .contentArea {
   flex-grow: 1;
   display: flex;
   flex-direction: column;
   gap: 24px;
   min-width: 0;
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 24px 24px 24px; /* added bottom padding */
+  box-sizing: border-box;
+  --table-header-top: 84px; /* Leaves 24px gap under fixed 60px header */
 }
 
 @media (max-width: 768px) {
-  .mainLayout {
-    flex-direction: column;
-    gap: 20px;
-    align-items: stretch;
+  .appContainer {
+    padding: 84px 0 12px; /* Set top/bottom padding, horizontal is 0 */
+  }
+  .contentArea {
+    padding: 0 12px;
+  }
+  .header {
+    padding: 0 12px;
+  }
+  .header::before {
+    left: 12px;
+    right: 12px;
   }
 }
+
+@media (max-width: 600px) {
+  .header h1 {
+    display: none;
+  }
+  .headerCenter {
+    margin: 0 4px;
+  }
+  .header {
+    padding: 0 12px;
+    gap: 8px;
+  }
+}
+
+.floatingStatusContainer {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 500;
+  display: flex;
+  align-items: center;
+  background: rgba(22, 27, 38, 0.9);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 8px 16px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+  cursor: grab;
+  transition:
+    box-shadow 0.2s ease,
+    border-color 0.2s ease;
+  user-select: none;
+  width: auto;
+  box-sizing: border-box;
+}
+
+.floatingStatusContainer:active {
+  cursor: grabbing;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.7);
+  border-color: var(--accent);
+}
+
+.floatingContent {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+}
+
+.inlineStats {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--panel-bg);
+  border: 1px solid var(--border);
+  padding: 4px 8px;
+  border-radius: 20px;
+  animation: fadeIn 0.3s ease-out;
+  flex-shrink: 0;
+}
+
+.inlineStatBadge {
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.statSuccess {
+  background-color: rgba(16, 185, 129, 0.1);
+  color: var(--success);
+}
+
+.statNew {
+  background-color: rgba(59, 130, 246, 0.1);
+  color: var(--accent);
+}
+
+.statUpdated {
+  background-color: rgba(139, 92, 246, 0.1);
+  color: #a78bfa;
+}
+
+.statCached {
+  background-color: rgba(148, 163, 184, 0.1);
+  color: var(--text-muted);
+}
+
+.statFailed {
+  background-color: rgba(239, 68, 68, 0.1);
+  color: var(--danger);
+}
+
+.inlineStatsCloseBtn {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 0 4px;
+  font-size: 0.75rem;
+  line-height: 1;
+  font-weight: 700;
+  transition: color 0.2s;
+}
+
+.inlineStatsCloseBtn:hover {
+  color: var(--text-main);
+}
+
+@media (max-width: 600px) {
+  .header {
+    flex-wrap: nowrap; /* Prevent columns from wrapping and collapsing */
+    gap: 8px;
+    padding: 12px 12px;
+  }
+  .header h1 {
+    font-size: 0.95rem;
+    white-space: nowrap;
+    text-align: left;
+  }
+  .headerCenter {
+    margin: 0 8px;
+    justify-content: center;
+  }
+  .headerRight {
+    width: auto;
+    justify-content: flex-end;
+  }
+  .headerRight .btn {
+    width: auto;
+    padding: 8px 12px;
+    font-size: 0.8rem;
+  }
+}
+
+/* Removed max-width: 480px appContainer padding override as it is inherited from max-width: 768px */

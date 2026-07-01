@@ -1,22 +1,27 @@
 @import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap");
 
 :root {
-  --bg-color: #0f172a;
-  --panel-bg: #1e293b;
+  --bg-color: #0c111d;
+  --panel-bg: #161b26;
   --text-main: #f8fafc;
   --text-muted: #94a3b8;
-  --accent: #3b82f6;
-  --accent-hover: #2563eb;
+  --accent: #00b0f0;
+  --accent-hover: #008cbe;
   --success: #10b981;
   --danger: #ef4444;
-  --border: #334155;
+  --border: #272e3f;
   --radius: 12px;
+  --grid-cols: 1fr 100px 100px 100px 100px 120px;
 }
 
 * {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
+}
+
+html {
+  background-color: var(--bg-color);
 }
 
 body {
@@ -31,12 +36,18 @@ body {
   overflow-x: hidden;
 }
 
+#root {
+  display: flex;
+  flex-direction: column;
+}
+
 /* Custom Scrollbar */
 ::-webkit-scrollbar {
   width: 8px;
+  height: 8px;
 }
 ::-webkit-scrollbar-track {
-  background: var(--bg-color);
+  background: transparent;
 }
 ::-webkit-scrollbar-thumb {
   background: var(--border);
@@ -44,4 +55,22 @@ body {
 }
 ::-webkit-scrollbar-thumb:hover {
   background: var(--text-muted);
+}
+
+@media (max-width: 1024px) {
+  :root {
+    --grid-cols: 1fr 80px 80px 80px 80px 100px;
+  }
+}
+
+@media (max-width: 768px) {
+  :root {
+    --grid-cols: 1fr 70px 80px 70px 110px;
+  }
+}
+
+@media (max-width: 600px) {
+  :root {
+    --grid-cols: 1fr 50px 60px 76px;
+  }
 }

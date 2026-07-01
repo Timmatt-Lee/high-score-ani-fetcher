@@ -4,48 +4,101 @@ import App from "./App";
 import { ServiceProvider } from "./contexts/ServiceContext";
 import {
   AnimeScanHttpError,
-  AnimeScanParseError,
   AnimeScanStep,
-  AnimeScanner,
   type AnimeItem,
 } from "./services/animeScanner";
-import { AnimeScraper } from "./services/animeScanner/animeScraper";
-import { Observable } from "rxjs";
 import { within } from "@storybook/test";
 
-// Helper to create sample anime items
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
 const createMockAnime = (overrides: Partial<AnimeItem> = {}): AnimeItem => ({
   link: `https://ani.gamer.com.tw/anime.php?sn=${Math.floor(Math.random() * 10000)}`,
   title: "葬送的芙莉蓮",
   watchCount: 120000,
   episodeCount: 28,
-  uploadDate: new Date("2023-09-29"),
+  uploadDate: "2023-09-29T00:00:00.000Z",
   score: 4.9,
   ratingCount: 15432,
   description: "芙莉蓮與勇者一行人打倒魔王後，展開的新旅程與歲月流逝的故事。",
   ...overrides,
 });
 
-const mockAnimeScraper = {
+const mockAnimeScanner = {
   getTotalPages: async () => 4,
-  scrapeAnimesOnPage: async (page: number): Promise<any> => {
-    return {
-      animeItems: [
-        createMockAnime({ title: `動漫 ${page}-1`, score: 4.9 }),
-        createMockAnime({ title: `動漫 ${page}-2`, score: 4.8 }),
-      ],
-      httpErrors: [],
-      parseErrors: [],
-    };
+  scanAnimesOnPage: async (page: number): Promise<any> => {
+    return [
+      createMockAnime({ title: `動漫 ${page}-1`, score: 4.9 }),
+      createMockAnime({ title: `動漫 ${page}-2`, score: 4.8 }),
+    ];
   },
-  scrapeAnimeDetails: async (link: string, page: number): Promise<any> => {
+  scanAnimeDetail: async (link: string, page: number): Promise<any> => {
     return {
       score: 4.9,
       ratingCount: 5000,
       description: `詳細介紹 ${link} page ${page}`,
     };
   },
+  delay: async () => {},
+  scanPages: async () => {
+    return [
+      createMockAnime({ title: "葬送的芙莉蓮", score: 4.9 }),
+      createMockAnime({ title: "鬼滅之刃 柱訓練篇", score: 4.8 }),
+      createMockAnime({ title: "無職轉生", score: 4.8 }),
+      createMockAnime({ title: "神作續篇", score: 4.9 }),
+    ];
+  },
+  scanAnimeDetails: async (options: any) => {
+    let completed = 0;
+    for (const item of options.items) {
+      await new Promise((resolve) => setTimeout(resolve, 10));
+      options.onDetailScanned(item, ++completed);
+    }
+  },
 };
+
+/** Seed localStorage with realistic multi-tab data. */
+const seedExistingData = () => {
+  const existingSearch = [
+    createMockAnime({
+      title: "葬送的芙莉蓮",
+      score: 4.9,
+      link: "https://ani.gamer.com.tw/anime.php?sn=1111",
+    }),
+    createMockAnime({
+      title: "鬼滅之刃 柱訓練篇",
+      score: 4.8,
+      link: "https://ani.gamer.com.tw/anime.php?sn=2222",
+    }),
+  ];
+  const existingFavorites = [
+    createMockAnime({
+      title: "無職轉生 ～到了異世界就拿出真本事～",
+      score: 4.9,
+      link: "https://ani.gamer.com.tw/anime.php?sn=3333",
+    }),
+  ];
+  const existingTrash = [
+    createMockAnime({
+      title: "我推的孩子",
+      score: 3.5,
+      link: "https://ani.gamer.com.tw/anime.php?sn=4444",
+    }),
+  ];
+  localStorage.setItem(
+    "animeData",
+    JSON.stringify({
+      scannedList: existingSearch,
+      favoriteList: existingFavorites,
+      trashList: existingTrash,
+    }),
+  );
+};
+
+// ---------------------------------------------------------------------------
+// Meta
+// ---------------------------------------------------------------------------
 
 const meta: Meta<typeof App> = {
   title: "App",
@@ -53,43 +106,29 @@ const meta: Meta<typeof App> = {
   decorators: [
     (Story) => {
       localStorage.clear();
-      // Define a default mock implementation for AnimeScanner.prototype.scan
-      AnimeScanner.prototype.scan = function (this: any) {
-        return new Observable((subscriber) => {
-          const items = [
-            createMockAnime({ title: "葬送的芙莉蓮", score: 4.9 }),
-            createMockAnime({ title: "鬼滅之刃 柱訓練篇", score: 4.8 }),
-            createMockAnime({ title: "無職轉生", score: 4.8 }),
-            createMockAnime({ title: "神作續篇", score: 4.9 }),
-          ];
-          const run = async () => {
-            for (const item of items) {
-              await new Promise((resolve) => setTimeout(resolve, 10));
-              subscriber.next(item);
-            }
-            subscriber.complete();
-          };
-          run();
-        });
+      // Restore default story mock methods on mockAnimeScanner
+      mockAnimeScanner.scanPages = async () => {
+        return [
+          createMockAnime({ title: "葬送的芙莉蓮", score: 4.9 }),
+          createMockAnime({ title: "鬼滅之刃 柱訓練篇", score: 4.8 }),
+          createMockAnime({ title: "無職轉生", score: 4.8 }),
+          createMockAnime({ title: "神作續篇", score: 4.9 }),
+        ];
       };
-      return (
-        <div
-          style={{
-            width: "100%",
-            maxWidth: "1200px",
-            minHeight: "600px",
-            background: "#121212",
-            padding: "20px",
-          }}
-        >
-          <Story />
-        </div>
-      );
+      mockAnimeScanner.scanAnimeDetails = async (options: any) => {
+        let completed = 0;
+        for (const item of options.items) {
+          await new Promise((resolve) => setTimeout(resolve, 10));
+          options.onDetailScanned(item, ++completed);
+        }
+      };
+      return <Story />;
     },
   ],
   parameters: {
     chromatic: {
       cropToViewport: true,
+      viewports: [320, 768, 1200],
     },
   },
 };
@@ -97,399 +136,227 @@ const meta: Meta<typeof App> = {
 export default meta;
 type Story = StoryObj<typeof App>;
 
-export const InitialEmptyState: Story = {
+// ---------------------------------------------------------------------------
+// 1. Empty / First-Run State
+// ---------------------------------------------------------------------------
+
+/** App on first launch — no data, search tab active. */
+export const EmptySearchTab: Story = {
   decorators: [
     (Story) => (
-      <ServiceProvider animeScraper={mockAnimeScraper as any}>
+      <ServiceProvider animeScanner={mockAnimeScanner as any}>
         <Story />
       </ServiceProvider>
     ),
   ],
 };
 
-export const FavoritesTabEmptyState: Story = {
-  decorators: [
-    (Story) => (
-      <ServiceProvider animeScraper={mockAnimeScraper as any}>
-        <Story />
-      </ServiceProvider>
-    ),
-  ],
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement);
-    const favTab = await canvas.findByRole("button", { name: /Favorites/i });
-    favTab.click();
-  },
-};
+// ---------------------------------------------------------------------------
+// 2. Populated Data — Tab Navigation
+// ---------------------------------------------------------------------------
 
-export const TrashTabEmptyState: Story = {
-  decorators: [
-    (Story) => (
-      <ServiceProvider animeScraper={mockAnimeScraper as any}>
-        <Story />
-      </ServiceProvider>
-    ),
-  ],
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement);
-    const trashTab = await canvas.findByRole("button", { name: /Trash/i });
-    trashTab.click();
-  },
-};
-
-export const ScanningFromEmpty: Story = {
-  decorators: [
-    (Story) => {
-      AnimeScanner.prototype.scan = function (this: any) {
-        return new Observable((subscriber) => {
-          const run = async () => {
-            await new Promise((resolve) => setTimeout(resolve, 10));
-            subscriber.next(
-              createMockAnime({ title: "葬送的芙莉蓮", score: 4.9 }),
-            );
-          };
-          run();
-        });
-      };
-      return (
-        <ServiceProvider animeScraper={mockAnimeScraper as any}>
-          <Story />
-        </ServiceProvider>
-      );
-    },
-  ],
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement);
-    const scanBtn = await canvas.findByRole("button", { name: /Scan/i });
-    scanBtn.click();
-  },
-};
-
-export const PartiallyFailedScan: Story = {
-  decorators: [
-    (Story) => {
-      AnimeScanner.prototype.scan = function (this: any) {
-        const options = this.options;
-        return new Observable((subscriber) => {
-          const run = async () => {
-            if (options) {
-              await new Promise((resolve) => setTimeout(resolve, 10));
-              subscriber.next(
-                createMockAnime({ title: "Retry Progress Detail", score: 4.9 }),
-              );
-              return;
-            }
-
-            await new Promise((resolve) => setTimeout(resolve, 20));
-            subscriber.next(
-              createMockAnime({
-                title: "部分解析成功的動畫",
-                score: 4.9,
-              }),
-            );
-            subscriber.next(
-              Object.assign(
-                new AnimeScanHttpError(
-                  2,
-                  AnimeScanStep.GET_TOTAL_PAGES,
-                  "https://ani.gamer.com.tw/animeList.php?page=2",
-                  "",
-                  502,
-                  undefined,
-                ),
-                { animeName: "某個好看但部分章節損壞的番" },
-              ),
-            );
-            subscriber.next(
-              Object.assign(
-                new AnimeScanParseError(
-                  3,
-                  AnimeScanStep.PARSE_ANIME_INFO,
-                  "https://ani.gamer.com.tw/animeList.php?page=3",
-                  "",
-                  "解析失敗",
-                ),
-                { animeName: "某個結構毀損無法取得標題的番" },
-              ),
-            );
-            subscriber.complete();
-          };
-          run();
-        });
-      };
-      return (
-        <ServiceProvider animeScraper={mockAnimeScraper as any}>
-          <Story />
-        </ServiceProvider>
-      );
-    },
-  ],
-  play: async ({ canvasElement }) => {
-    // Click scan
-    const canvas = within(canvasElement);
-    const scanBtn = await canvas.findByRole("button", { name: /Scan/i });
-    scanBtn.click();
-  },
-};
-
-export const PartiallyFailedScanExpanded: Story = {
-  ...PartiallyFailedScan,
-  play: async (context) => {
-    // Click scan first
-    await PartiallyFailedScan.play?.(context);
-    const { canvasElement } = context;
-    const canvas = within(canvasElement);
-
-    // Wait for the scanning to complete and show results / errors tab using findBy
-    await canvas.findByTestId("errors-panel");
-
-    // Expand HTTP errors
-    const httpHeader = await canvas.findByTestId("http-errors-header");
-    httpHeader.click();
-
-    // Expand Parser errors
-    const parseHeader = await canvas.findByTestId("parse-errors-header");
-    parseHeader.click();
-  },
-};
-
-export const WithError: Story = {
-  decorators: [
-    (Story) => {
-      localStorage.clear();
-      return <Story />;
-    },
-  ],
+/** Search tab showing pre-loaded anime items. */
+export const PopulatedSearchTab: Story = {
   render: () => {
-    const mockAnimeScraperWithFatalError = {
-      ...mockAnimeScraper,
-      getTotalPages: async () => {
-        return new AnimeScanHttpError(
-          1,
-          AnimeScanStep.GET_TOTAL_PAGES,
-          "https://ani.gamer.com.tw/animeList.php",
-          "",
-          500,
-          undefined,
-        );
-      },
-    };
-
+    seedExistingData();
     return (
-      <ServiceProvider
-        animeScraper={mockAnimeScraperWithFatalError as unknown as AnimeScraper}
-      >
+      <ServiceProvider animeScanner={mockAnimeScanner as any}>
+        <App />
+      </ServiceProvider>
+    );
+  },
+};
+
+/** Favorites tab with a saved item. */
+export const PopulatedFavoritesTab: Story = {
+  render: () => {
+    seedExistingData();
+    return (
+      <ServiceProvider animeScanner={mockAnimeScanner as any}>
         <App />
       </ServiceProvider>
     );
   },
   play: async ({ canvasElement }) => {
+    const { userEvent } = await import("@storybook/test");
     const canvas = within(canvasElement);
-    const scanBtn = await canvas.findByRole("button", { name: /Scan/i });
-    scanBtn.click();
+    // Wait for the app container to be mounted in the DOM
+    await canvas.findByTestId("app-container", {}, { timeout: 5000 });
+    const favTab = await canvas.findByTestId("tab-favorites");
+    await userEvent.click(favTab);
   },
 };
 
-export const InitialExistingData: Story = {
-  decorators: [
-    (Story) => {
-      const existingSearch = [
-        createMockAnime({
-          title: "原有已快取的動畫 (高分)",
-          score: 4.8,
-          link: "https://ani.gamer.com.tw/anime.php?sn=1111",
-        }),
-        createMockAnime({
-          title: "被過濾的動畫 (分數太低不重新掃描)",
-          score: 4.2,
-          link: "https://ani.gamer.com.tw/anime.php?sn=2222",
-        }),
-      ];
-      const existingFavorites = [
-        createMockAnime({
-          title: "原有的最愛動畫",
-          score: 4.9,
-          link: "https://ani.gamer.com.tw/anime.php?sn=3333",
-        }),
-      ];
-      const existingTrash = [
-        createMockAnime({
-          title: "原有的垃圾桶動畫",
-          score: 3.5,
-          link: "https://ani.gamer.com.tw/anime.php?sn=4444",
-        }),
-      ];
-
-      localStorage.setItem(
-        "animeData",
-        JSON.stringify({
-          searchList: existingSearch,
-          favoriteList: existingFavorites,
-          trashList: existingTrash,
-        }),
-      );
-
-      return (
-        <ServiceProvider animeScraper={mockAnimeScraper as any}>
-          <Story />
-        </ServiceProvider>
-      );
-    },
-  ],
-};
-
-export const ScanningWithExistingData: Story = {
-  decorators: [
-    (Story) => {
-      const existingSearch = [
-        createMockAnime({
-          title: "原有已快取的動畫 (高分)",
-          score: 4.8,
-          link: "https://ani.gamer.com.tw/anime.php?sn=1111",
-        }),
-        createMockAnime({
-          title: "被過濾的動畫 (分數太低不重新掃描)",
-          score: 4.2,
-          link: "https://ani.gamer.com.tw/anime.php?sn=2222",
-        }),
-      ];
-      const existingFavorites = [
-        createMockAnime({
-          title: "原有的最愛動畫",
-          score: 4.9,
-          link: "https://ani.gamer.com.tw/anime.php?sn=3333",
-        }),
-      ];
-      const existingTrash = [
-        createMockAnime({
-          title: "原有的垃圾桶動畫",
-          score: 3.5,
-          link: "https://ani.gamer.com.tw/anime.php?sn=4444",
-        }),
-      ];
-
-      localStorage.setItem(
-        "animeData",
-        JSON.stringify({
-          searchList: existingSearch,
-          favoriteList: existingFavorites,
-          trashList: existingTrash,
-        }),
-      );
-
-      AnimeScanner.prototype.scan = function (this: any) {
-        return new Observable((subscriber) => {
-          const run = async () => {
-            await new Promise((resolve) => setTimeout(resolve, 10));
-            subscriber.next(
-              createMockAnime({
-                title: "正在掃描的新動畫...",
-                score: 4.9,
-                link: "https://ani.gamer.com.tw/anime.php?sn=5555",
-              }),
-            );
-          };
-          run();
-        });
-      };
-
-      return (
-        <ServiceProvider animeScraper={mockAnimeScraper as any}>
-          <Story />
-        </ServiceProvider>
-      );
-    },
-  ],
+/** Trash tab with a discarded item. */
+export const PopulatedTrashTab: Story = {
+  render: () => {
+    seedExistingData();
+    return (
+      <ServiceProvider animeScanner={mockAnimeScanner as any}>
+        <App />
+      </ServiceProvider>
+    );
+  },
   play: async ({ canvasElement }) => {
+    const { userEvent } = await import("@storybook/test");
     const canvas = within(canvasElement);
-    const scanBtn = await canvas.findByRole("button", { name: /Scan/i });
-    scanBtn.click();
+    // Wait for the app container to be mounted in the DOM
+    await canvas.findByTestId("app-container", {}, { timeout: 5000 });
+    const trashTab = await canvas.findByTestId("tab-trash");
+    await userEvent.click(trashTab);
   },
 };
 
-export const ScanCompletedWithExistingData: Story = {
-  decorators: [
-    (Story) => {
-      const existingSearch = [
-        createMockAnime({
-          title: "原有已快取的動畫 (高分)",
-          score: 4.8,
-          link: "https://ani.gamer.com.tw/anime.php?sn=1111",
-        }),
-        createMockAnime({
-          title: "被過濾的動畫 (分數太低不重新掃描)",
-          score: 4.2,
-          link: "https://ani.gamer.com.tw/anime.php?sn=2222",
-        }),
-      ];
-      const existingFavorites = [
-        createMockAnime({
-          title: "原有的最愛動畫",
-          score: 4.9,
-          link: "https://ani.gamer.com.tw/anime.php?sn=3333",
-        }),
-      ];
-      const existingTrash = [
-        createMockAnime({
-          title: "原有的垃圾桶動畫",
-          score: 3.5,
-          link: "https://ani.gamer.com.tw/anime.php?sn=4444",
-        }),
-      ];
-
-      localStorage.setItem(
-        "animeData",
-        JSON.stringify({
-          searchList: existingSearch,
-          favoriteList: existingFavorites,
-          trashList: existingTrash,
-        }),
-      );
-
-      AnimeScanner.prototype.scan = function (this: any) {
-        return new Observable((subscriber) => {
-          const run = async () => {
-            await new Promise((resolve) => setTimeout(resolve, 10));
-            subscriber.next(
-              createMockAnime({
-                title: "掃描發現的新動畫",
-                score: 4.9,
-                link: "https://ani.gamer.com.tw/anime.php?sn=5555",
-              }),
-            );
-            subscriber.complete();
-          };
-          run();
-        });
-      };
-
-      return (
-        <ServiceProvider animeScraper={mockAnimeScraper as any}>
-          <Story />
-        </ServiceProvider>
-      );
-    },
-  ],
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement);
-    const scanBtn = await canvas.findByRole("button", { name: /Scan/i });
-    scanBtn.click();
-  },
-};
-
-export const SettingsTabShowcase: Story = {
+/** Settings panel accessed via the gear icon tab. */
+export const SettingsTab: Story = {
   decorators: [
     (Story) => (
-      <ServiceProvider animeScraper={mockAnimeScraper as any}>
+      <ServiceProvider animeScanner={mockAnimeScanner as any}>
         <Story />
       </ServiceProvider>
     ),
   ],
   play: async ({ canvasElement }) => {
+    const { userEvent } = await import("@storybook/test");
     const canvas = within(canvasElement);
-    const settingsTabBtn = await canvas.findByRole("button", {
-      name: /Settings/i,
-    });
-    settingsTabBtn.click();
+    // Wait for the app container to be mounted in the DOM
+    await canvas.findByTestId("app-container", {}, { timeout: 5000 });
+    const settingsBtn = await canvas.findByTestId("tab-settings");
+    await userEvent.click(settingsBtn);
+  },
+};
+
+// ---------------------------------------------------------------------------
+// 3. Scan Lifecycle
+// ---------------------------------------------------------------------------
+
+/** Scan in-progress — floating ProgressBar visible. */
+export const ScanInProgress: Story = {
+  decorators: [
+    (Story) => {
+      mockAnimeScanner.scanPages = async () => {
+        return [createMockAnime({ title: "葬送的芙莉蓮", score: 4.9 })];
+      };
+      mockAnimeScanner.scanAnimeDetails = function () {
+        return new Promise(() => {}); // never resolves to keep scanning state visible
+      };
+      return (
+        <ServiceProvider animeScanner={mockAnimeScanner as any}>
+          <Story />
+        </ServiceProvider>
+      );
+    },
+  ],
+  play: async ({ canvasElement }) => {
+    const { userEvent } = await import("@storybook/test");
+    const canvas = within(canvasElement);
+    await canvas.findByTestId("app-container", {}, { timeout: 5000 });
+    const scanBtn = await canvas.findByRole("button", { name: /Scan/i });
+    await userEvent.click(scanBtn);
+  },
+};
+
+/** Scan completed — floating ResultBanner visible. */
+export const ScanCompleted: Story = {
+  render: () => {
+    seedExistingData();
+    mockAnimeScanner.scanPages = async () => {
+      return [
+        createMockAnime({
+          title: "新發現的動畫",
+          score: 4.9,
+          link: "https://ani.gamer.com.tw/anime.php?sn=5555",
+        }),
+      ];
+    };
+    mockAnimeScanner.scanAnimeDetails = async (options: any) => {
+      options.onDetailScanned(options.items[0], 1);
+    };
+    return (
+      <ServiceProvider animeScanner={mockAnimeScanner as any}>
+        <App />
+      </ServiceProvider>
+    );
+  },
+  play: async ({ canvasElement }) => {
+    const { userEvent } = await import("@storybook/test");
+    const canvas = within(canvasElement);
+    await canvas.findByTestId("app-container", {}, { timeout: 5000 });
+    const scanBtn = await canvas.findByRole("button", { name: /Scan/i });
+    await userEvent.click(scanBtn);
+  },
+};
+
+// ---------------------------------------------------------------------------
+// 4. Error States
+// ---------------------------------------------------------------------------
+
+/** Scan error — scan errors mid-way, shows ErrorCard + partial data. */
+export const ScanError: Story = {
+  decorators: [
+    (Story) => {
+      mockAnimeScanner.scanPages = async () => {
+        return [
+          createMockAnime({
+            title: "部分解析成功的動畫",
+            score: 4.9,
+          }),
+        ];
+      };
+      mockAnimeScanner.scanAnimeDetails = async (options: any) => {
+        options.onDetailScanned(options.items[0], 1);
+        await new Promise((resolve) => setTimeout(resolve, 10));
+        throw new AnimeScanHttpError(
+          2,
+          AnimeScanStep.SCAN_LIST_PAGE,
+          "https://ani.gamer.com.tw/animeList.php?page=2",
+          "Internal Server Error",
+          500,
+          "某個損壞的動畫番",
+        );
+      };
+      return (
+        <ServiceProvider animeScanner={mockAnimeScanner as any}>
+          <Story />
+        </ServiceProvider>
+      );
+    },
+  ],
+  play: async ({ canvasElement }) => {
+    const { userEvent } = await import("@storybook/test");
+    const canvas = within(canvasElement);
+    await canvas.findByTestId("app-container", {}, { timeout: 5000 });
+    const scanBtn = await canvas.findByRole("button", { name: /Scan/i });
+    await userEvent.click(scanBtn);
+  },
+};
+
+/** Settings Import Error — shows ErrorCard when backup file import fails schema validation. */
+export const SettingsImportError: Story = {
+  decorators: [
+    (Story) => (
+      <ServiceProvider animeScanner={mockAnimeScanner as any}>
+        <Story />
+      </ServiceProvider>
+    ),
+  ],
+  play: async ({ canvasElement }) => {
+    const { userEvent, fireEvent } = await import("@storybook/test");
+    const canvas = within(canvasElement);
+    await canvas.findByTestId("app-container", {}, { timeout: 5000 });
+
+    // Go to Settings tab
+    const settingsBtn = await canvas.findByTestId("tab-settings");
+    await userEvent.click(settingsBtn);
+
+    // Mock file input trigger with invalid content
+    const fileInput = await canvas.findByTestId("file-import-input");
+    const invalidFile = new File(
+      [JSON.stringify({ scannedList: [{ title: 12345 }] })],
+      "bad-backup.json",
+      { type: "application/json" },
+    );
+
+    fireEvent.change(fileInput, { target: { files: [invalidFile] } });
   },
 };

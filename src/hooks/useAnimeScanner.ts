@@ -1,195 +1,280 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useServices } from "../contexts/ServiceContext";
 import { useSettings } from "./useSettings";
-import {
-  AnimeScanHttpError,
-  AnimeScanParseError,
-  AnimeScanner,
-  type PipelineOptions,
-  type AnimeItem,
-} from "../services/animeScanner";
-import { isError } from "../types/result";
+import { type AnimeItem, type AnimeInfo } from "../services/animeScanner";
 
 export interface ScanUpdateResult {
-  newSearchItems: AnimeItem[];
+  updatedScannedList: AnimeItem[];
   updatedFavoriteList: AnimeItem[];
   updatedTrashList: AnimeItem[];
 }
 
 export function useAnimeScanner(
-  searchList: AnimeItem[],
+  scannedList: AnimeItem[],
   favoriteList: AnimeItem[],
   trashList: AnimeItem[],
   onScanUpdate: (result: ScanUpdateResult) => void,
 ) {
-  const { animeScraper } = useServices();
+  const { animeScanner } = useServices();
   const { settings } = useSettings();
   const [isScanning, setIsScanning] = useState(false);
-  const [progress, setProgress] = useState({ percent: 0, message: "" });
-  const [httpErrors, setHttpErrors] = useState<AnimeScanHttpError[]>([]);
-  const [parseErrors, setParseErrors] = useState<AnimeScanParseError[]>([]);
+  const [progress, setProgress] = useState({
+    percent: 0,
+    message: "",
+    step: 1,
+  });
   const [error, setError] = useState<Error | null>(null);
-  const [totalPagesCount, setTotalPagesCount] = useState(0);
+
+  const [scanResult, setScanResult] = useState<{
+    successCount: number;
+    skippedCachedCount: number;
+    updatedCount: number;
+    addedCount: number;
+    failedCount: number;
+  } | null>(null);
+
+  // Ref to hold the AbortController for cancellation
+  const abortControllerRef = useRef<AbortController | null>(null);
+
+  const scannedListRef = useRef(scannedList);
+  const favoriteListRef = useRef(favoriteList);
+  const trashListRef = useRef(trashList);
+
+  useEffect(() => {
+    scannedListRef.current = scannedList;
+    favoriteListRef.current = favoriteList;
+    trashListRef.current = trashList;
+  }, [scannedList, favoriteList, trashList]);
 
   const clearError = () => {
     setError(null);
   };
 
-  const handleScan = async (options?: PipelineOptions) => {
-    setHttpErrors([]);
-    setParseErrors([]);
+  const handleScan = async () => {
+    // Reset state before starting a new scan
     setError(null);
+    setProgress({
+      percent: 0,
+      message: "Loading anime index",
+      step: 1,
+    });
     setIsScanning(true);
 
-    const isRetry = !!(
-      options &&
-      options.onlyPages &&
-      options.onlyPages.length > 0
-    );
-    let totalPages = totalPagesCount;
+    let skippedCachedCount = 0;
+    let updatedCount = 0;
+    let addedCount = 0;
+    let successCount = 0;
+    let failedCount = 0;
 
-    if (!isRetry) {
-      setProgress({ percent: 0, message: "Getting total pages..." });
-      const totalPagesResult = await animeScraper.getTotalPages();
-      if (isError(totalPagesResult)) {
-        console.error("Scan failed", totalPagesResult);
-        setError(totalPagesResult);
-        setIsScanning(false);
-        setProgress({ percent: 0, message: "" });
-        return;
-      }
-      totalPages = totalPagesResult;
-      setTotalPagesCount(totalPagesResult);
-    } else {
-      setProgress({ percent: 0, message: "Retrying failed items..." });
-    }
+    const scan = async (signal: AbortSignal) => {
+      // 1. Get total pages
+      const totalPages = await animeScanner.getTotalPages();
 
-    const existingMap = new Map<string, AnimeItem>();
-    searchList.forEach((x) => existingMap.set(x.link, x));
-    favoriteList.forEach((x) => existingMap.set(x.link, x));
-    trashList.forEach((x) => existingMap.set(x.link, x));
+      // 2. Scan pages (Stage 1)
+      const allItems = await animeScanner.scanPages({
+        totalPages,
+        requestDelayMs: settings.requestDelayMs,
+        onPageScanned: (page) => {
+          const percent = Math.min(99, Math.round((page / totalPages) * 100));
+          setProgress({
+            percent,
+            message: `Loading anime index (${page}/${totalPages})`,
+            step: 1,
+          });
+        },
+        signal,
+      });
 
-    const filterItem = (item: AnimeItem) => {
-      // Skip scanning details if cached data is still valid and has a low score
-      const storedAnimeItem = existingMap.get(item.link);
-      if (storedAnimeItem) {
+      // 3. Filter items and calculate skipped/stats in memory (Stage 1 filter)
+      const allScannedAnimeMap = new Map<string, AnimeItem>();
+      scannedListRef.current.forEach((x) => allScannedAnimeMap.set(x.link, x));
+      favoriteListRef.current.forEach((x) => allScannedAnimeMap.set(x.link, x));
+      trashListRef.current.forEach((x) => allScannedAnimeMap.set(x.link, x));
+
+      const isScanRequired = (item: AnimeInfo) => {
+        if (isNaN(item.episodeCount) || item.episodeCount < 10) return false;
+        if (item.title.includes("OVA")) return false;
+
+        const storedAnime = allScannedAnimeMap.get(item.link);
+        if (!storedAnime) return true;
+
+        if (storedAnime.scannedAt) {
+          const ageMs = Date.now() - new Date(storedAnime.scannedAt).getTime();
+          const ageDays = ageMs / (1000 * 60 * 60 * 24);
+          if (ageDays < settings.cacheExpireDays) return false;
+        }
+
         const threshold =
           settings.targetScore * (settings.rescanThreshold / 100);
-        if (storedAnimeItem.score > 0 && storedAnimeItem.score < threshold) {
+        if (storedAnime.score > 0 && storedAnime.score < threshold)
           return false;
+
+        return true;
+      };
+
+      const itemsToScan: AnimeInfo[] = [];
+      for (const item of allItems) {
+        if (isScanRequired(item)) {
+          itemsToScan.push(item);
+        } else {
+          skippedCachedCount++;
         }
       }
 
-      if (isNaN(item.episodeCount) || item.episodeCount < 10) return false;
-      if (item.title.includes("OVA")) return false;
+      const detailsTotalCount = itemsToScan.length;
 
-      return true;
-    };
-
-    let detailsCompletedCount = 0;
-    let detailsTotalCount = 0;
-
-    const filterAndCountItem = (item: AnimeItem) => {
-      const isKept = filterItem(item);
-      if (isKept) {
-        detailsTotalCount++;
-      }
-      return isKept;
-    };
-
-    const updateProgress = (currentTitle?: string) => {
-      const detailsPercent =
-        detailsTotalCount > 0 ? detailsCompletedCount / detailsTotalCount : 0;
-      const rawPercent = Math.floor(detailsPercent * 99);
-      const percent = Math.min(99, rawPercent);
-
-      const actionPrefix = isRetry ? "Retrying failed items" : "Scanning";
-      let msg = actionPrefix;
-      if (detailsTotalCount > 0) {
-        msg = `${actionPrefix} (${detailsCompletedCount}/${detailsTotalCount})`;
-      }
-      msg += "...";
-      if (currentTitle) {
-        msg += ` [${currentTitle}]`;
-      }
-
-      setProgress({ percent, message: msg });
-    };
-
-    const updatedSearch = [...searchList];
-    const updatedFav = [...favoriteList];
-    const updatedTrash = [...trashList];
-
-    const saveUpdatedState = () => {
-      onScanUpdate({
-        newSearchItems: updatedSearch,
-        updatedFavoriteList: updatedFav,
-        updatedTrashList: updatedTrash,
+      // Update initial stats with calculated skipped count
+      setScanResult({
+        successCount: 0,
+        skippedCachedCount,
+        updatedCount: 0,
+        addedCount: 0,
+        failedCount: 0,
       });
+
+      const completeScan = () => {
+        onScanUpdate({
+          updatedScannedList: [...scannedListRef.current],
+          updatedFavoriteList: [...favoriteListRef.current],
+          updatedTrashList: [...trashListRef.current],
+        });
+        setProgress({
+          percent: 100,
+          message: "Done!",
+          step: 2,
+        });
+      };
+
+      // 4. Scan detail pages (Stage 2)
+      if (detailsTotalCount === 0) {
+        completeScan();
+        return;
+      }
+
+      let scannedCount = 0;
+      await animeScanner.scanAnimeDetails({
+        items: itemsToScan,
+        requestDelayMs: settings.requestDelayMs,
+        onDetailScanned: (item) => {
+          scannedCount++;
+          const percent = Math.min(
+            99,
+            Math.round((scannedCount / detailsTotalCount) * 100),
+          );
+
+          const msg = `Parsing (${scannedCount}/${detailsTotalCount})`;
+          const finalMsg = `${msg} "${item.title}"`;
+          setProgress({
+            percent,
+            message: finalMsg,
+            step: 2,
+          });
+
+          successCount++;
+          const storedAnime = allScannedAnimeMap.get(item.link);
+
+          const currentFav = [...favoriteListRef.current];
+          const currentTrash = [...trashListRef.current];
+          const currentScanned = [...scannedListRef.current];
+
+          if (storedAnime) {
+            updatedCount++;
+            for (const list of [currentFav, currentTrash, currentScanned]) {
+              const idx = list.findIndex((x) => x.link === item.link);
+              if (idx !== -1) {
+                list[idx] = item;
+                break;
+              }
+            }
+          } else {
+            addedCount++;
+            currentScanned.push(item);
+          }
+
+          setScanResult({
+            successCount,
+            skippedCachedCount,
+            updatedCount,
+            addedCount,
+            failedCount: 0,
+          });
+
+          onScanUpdate({
+            updatedScannedList: currentScanned,
+            updatedFavoriteList: currentFav,
+            updatedTrashList: currentTrash,
+          });
+
+          scannedListRef.current = currentScanned;
+          favoriteListRef.current = currentFav;
+          trashListRef.current = currentTrash;
+        },
+        signal,
+      });
+
+      // Complete
+      completeScan();
     };
 
-    const scanHttpErrors: AnimeScanHttpError[] = [];
-    const scanParseErrors: AnimeScanParseError[] = [];
-
-    const pipeline = new AnimeScanner(
-      totalPages,
-      filterAndCountItem,
-      animeScraper,
-      isRetry ? options : undefined,
-    );
-
-    pipeline.scan().subscribe({
-      next: (event) => {
-        if (event instanceof AnimeScanHttpError) {
-          scanHttpErrors.push(event);
-          setHttpErrors([...scanHttpErrors]);
-          updateProgress(event.animeName);
-        } else if (event instanceof AnimeScanParseError) {
-          scanParseErrors.push(event);
-          setParseErrors([...scanParseErrors]);
-          updateProgress(event.animeName);
-        } else if (!(event instanceof Error)) {
-          detailsCompletedCount++;
-          updateProgress(event.title);
-
-          let isUpdated = false;
-          for (const list of [updatedFav, updatedTrash, updatedSearch]) {
-            const idx = list.findIndex((x) => x.link === event.link);
-            if (idx !== -1) {
-              list[idx] = event;
-              isUpdated = true;
-              break;
-            }
-          }
-
-          if (!isUpdated && event.score >= 4.8) {
-            updatedSearch.push(event);
-          }
-
-          saveUpdatedState();
-        }
-      },
-      complete: () => {
-        saveUpdatedState();
-        setIsScanning(false);
-        setProgress({ percent: 100, message: "Done!" });
-      },
-      error: (err: unknown) => {
-        const error = err instanceof Error ? err : new Error(String(err));
-        setError(error);
-        setIsScanning(false);
-        setProgress({ percent: 0, message: "" });
-      },
+    setScanResult({
+      successCount: 0,
+      skippedCachedCount: 0,
+      updatedCount: 0,
+      addedCount: 0,
+      failedCount: 0,
     });
+
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+    const signal = controller.signal;
+
+    try {
+      await scan(signal);
+    } catch (err: unknown) {
+      setProgress({ percent: 0, message: "", step: 1 });
+
+      if (
+        (err instanceof Error || err instanceof DOMException) &&
+        err.name === "AbortError"
+      ) {
+        return;
+      }
+
+      const error = err instanceof Error ? err : new Error(String(err));
+      console.error("Scan failed", error);
+      setError(error);
+      failedCount = 1;
+    } finally {
+      setIsScanning(false);
+      setScanResult({
+        successCount,
+        skippedCachedCount,
+        updatedCount,
+        addedCount,
+        failedCount,
+      });
+      if (abortControllerRef.current === controller) {
+        abortControllerRef.current = null;
+      }
+    }
+  };
+
+  const cancelScan = () => {
+    abortControllerRef.current?.abort();
+  };
+
+  const clearScanResult = () => {
+    setScanResult(null);
   };
 
   return {
     isScanning,
     progress,
-    httpErrors,
-    parseErrors,
     error,
     clearError,
     handleScan,
+    cancelScan,
+    scanResult,
+    clearScanResult,
   };
 }

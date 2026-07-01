@@ -7,22 +7,27 @@ const meta: Meta<typeof Tabs> = {
   argTypes: {
     activeTab: {
       control: "select",
-      options: [Tab.Search, Tab.Favorites, Tab.Trash],
+      options: [Tab.Scanned, Tab.Favorites, Tab.Trash, Tab.Settings],
     },
-    searchCount: { control: { type: "number", min: 0 } },
+    scannedCount: { control: { type: "number", min: 0 } },
     favoritesCount: { control: { type: "number", min: 0 } },
     trashCount: { control: { type: "number", min: 0 } },
     setActiveTab: { action: "setActiveTab" },
+  },
+  parameters: {
+    chromatic: {
+      viewports: [320, 768, 1200],
+    },
   },
 };
 
 export default meta;
 type Story = StoryObj<typeof Tabs>;
 
-export const SearchActive: Story = {
+export const ScannedActive: Story = {
   args: {
-    activeTab: Tab.Search,
-    searchCount: 15,
+    activeTab: Tab.Scanned,
+    scannedCount: 15,
     favoritesCount: 3,
     trashCount: 2,
   },
@@ -31,7 +36,7 @@ export const SearchActive: Story = {
 export const FavoritesActive: Story = {
   args: {
     activeTab: Tab.Favorites,
-    searchCount: 15,
+    scannedCount: 15,
     favoritesCount: 3,
     trashCount: 2,
   },
@@ -40,17 +45,17 @@ export const FavoritesActive: Story = {
 export const TrashActive: Story = {
   args: {
     activeTab: Tab.Trash,
-    searchCount: 15,
+    scannedCount: 15,
     favoritesCount: 3,
     trashCount: 2,
   },
 };
 
-export const EmptyCounts: Story = {
+export const SettingsActive: Story = {
   args: {
-    activeTab: Tab.Search,
-    searchCount: 0,
-    favoritesCount: 0,
-    trashCount: 0,
+    activeTab: Tab.Settings,
+    scannedCount: 15,
+    favoritesCount: 3,
+    trashCount: 2,
   },
 };

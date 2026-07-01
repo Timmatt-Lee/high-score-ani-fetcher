@@ -4,20 +4,15 @@ import { SettingsTab } from "./SettingsTab";
 const meta = {
   title: "Components/SettingsTab",
   component: SettingsTab,
+  argTypes: {
+    onError: { action: "error" },
+  },
   parameters: {
     layout: "fullscreen",
+    chromatic: {
+      viewports: [320, 768, 1200],
+    },
   },
-  decorators: [
-    (Story) => (
-      <div
-        style={{
-          background: "#0f172a",
-        }}
-      >
-        <Story />
-      </div>
-    ),
-  ],
 } satisfies Meta<typeof SettingsTab>;
 
 export default meta;
@@ -29,7 +24,13 @@ export const Default: Story = {
       targetScore: 4.8,
       rescanThreshold: 95,
       cacheExpireDays: 14,
+      requestDelayMs: 800,
     },
     onSave: (settings) => console.log("Save settings:", settings),
+    scannedList: [],
+    favoriteList: [],
+    trashList: [],
+    onImportData: (data) => console.log("Import data:", data),
+    onError: (err) => console.error("Settings error callback:", err),
   },
 };

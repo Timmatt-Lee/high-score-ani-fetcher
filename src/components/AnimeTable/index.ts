@@ -1,0 +1,1 @@
+export { AnimeTable } from "./AnimeTable";
