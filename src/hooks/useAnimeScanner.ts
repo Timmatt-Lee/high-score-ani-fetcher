@@ -77,15 +77,12 @@ export function useAnimeScanner(
     abortControllerRef.current = controller;
     const signal = controller.signal;
 
-    let totalPages = 0;
-    let allItems: AnimeInfo[];
-
     try {
       // 1. Get total pages
-      totalPages = await animeScanner.getTotalPages();
+      const totalPages = await animeScanner.getTotalPages();
 
       // 2. Scan pages (Stage 1)
-      allItems = await animeScanner.scanPages({
+      const allItems = await animeScanner.scanPages({
         totalPages,
         requestDelayMs: settings.requestDelayMs,
         onPageScanned: (page) => {
@@ -231,7 +228,10 @@ export function useAnimeScanner(
         step: 2,
       });
     } catch (err: unknown) {
-      if (err instanceof DOMException && err.name === "AbortError") {
+      if (
+        (err instanceof Error || err instanceof DOMException) &&
+        err.name === "AbortError"
+      ) {
         return;
       }
 
