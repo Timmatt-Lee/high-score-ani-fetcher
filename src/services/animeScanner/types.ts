@@ -1,27 +1,4 @@
 import { z } from "zod";
-import { type AnimeScanError } from "./animeScanError";
-
-export class AnimeScanPageEvent {
-  constructor(
-    public currentPage: number,
-    public totalPages: number,
-  ) {}
-}
-
-export class AnimeScanSkippedEvent {
-  constructor(public item: AnimeItem) {}
-}
-
-export class AnimeScanQueuedEvent {
-  constructor(public item: AnimeItem) {}
-}
-
-export type AnimeScanEvent =
-  | AnimeItem
-  | AnimeScanError
-  | AnimeScanPageEvent
-  | AnimeScanSkippedEvent
-  | AnimeScanQueuedEvent;
 
 export interface ScannerOptions {
   requestDelayMs: number; // delay between requests to avoid rate limiting

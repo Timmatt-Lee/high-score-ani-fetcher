@@ -15,11 +15,11 @@ describe("ServiceContext", () => {
     spy.mockRestore();
   });
 
-  it("provides animeScraper when used within ServiceProvider", () => {
+  it("provides animeScanner when used within ServiceProvider", () => {
     const wrapper = ({ children }: { children: ReactNode }) => (
       <ServiceProvider>{children}</ServiceProvider>
     );
     const { result } = renderHook(() => useServices(), { wrapper });
-    expect(result.current.animeScraper).toBeDefined();
+    expect(result.current.animeScanner).toBeDefined();
   });
 });

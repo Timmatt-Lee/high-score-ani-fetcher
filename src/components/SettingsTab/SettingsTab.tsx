@@ -105,14 +105,16 @@ export function SettingsTab({
         importedTrash = parseList(backupObj.trashList || []);
       } catch (err) {
         console.error(err);
-        const isZod = err instanceof z.ZodError;
-        const errMsg = isZod
-          ? "Data schema validation failed"
-          : err instanceof Error
-            ? err.message
-            : String(err);
+        let errMsg: string;
+        if (err instanceof z.ZodError) {
+          errMsg = "Data schema validation failed";
+        } else if (err instanceof Error) {
+          errMsg = err.message;
+        } else {
+          errMsg = String(err);
+        }
         onError(
-          new Error(errMsg || "Failed to parse or validate backup file", {
+          new Error(errMsg, {
             cause: err,
           }),
         );

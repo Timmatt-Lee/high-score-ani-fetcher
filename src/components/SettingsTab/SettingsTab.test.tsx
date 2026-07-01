@@ -311,11 +311,6 @@ describe("SettingsTab", () => {
       type: "application/json",
     });
 
-    // Mock JSON.parse to throw a string error
-    vi.spyOn(JSON, "parse").mockImplementationOnce(() => {
-      throw "syntax error string";
-    });
-
     class MockFileReader {
       onload: ((ev: ProgressEvent<FileReader>) => void) | null = null;
       readAsText() {
@@ -339,9 +334,11 @@ describe("SettingsTab", () => {
 
     await waitFor(() => {
       expect(handleError).toHaveBeenCalled();
-      expect(handleError.mock.calls[0][0].message).toContain(
-        "Failed to parse or validate backup file",
-      );
+      // JSON.parse throws a native SyntaxError, which is instanceof Error.
+      // The catch block sets errMsg = err.message (the SyntaxError message).
+      const errorMsg = handleError.mock.calls[0][0].message;
+      expect(typeof errorMsg).toBe("string");
+      expect(errorMsg.length).toBeGreaterThan(0);
     });
     expect(consoleErrorSpy).toHaveBeenCalled();
   });

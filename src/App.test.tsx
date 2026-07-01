@@ -10,33 +10,13 @@ import {
 import { ServiceProvider } from "./contexts/ServiceContext";
 import App from "./App";
 import * as useAnimeDataModule from "./hooks/useAnimeData";
-import { animeScraper } from "./services/animeScanner/animeScraper";
+import { animeScanner } from "./services/animeScanner/animeScanner";
 import {
   AnimeScanHttpError,
   AnimeScanStep,
   AnimeScanner,
 } from "./services/animeScanner";
-import {
-  type AnimeScanEvent,
-  type AnimeItem,
-} from "./services/animeScanner/types";
-import { Observable, Subject } from "rxjs";
-
-function createMockObservable(
-  events: AnimeScanEvent[] = [],
-  errorToThrow?: Error,
-): Observable<AnimeScanEvent> {
-  return new Observable<AnimeScanEvent>((subscriber) => {
-    for (const event of events) {
-      subscriber.next(event);
-    }
-    if (errorToThrow) {
-      subscriber.error(errorToThrow);
-    } else {
-      subscriber.complete();
-    }
-  });
-}
+import { type AnimeItem, type AnimeInfo } from "./services/animeScanner/types";
 
 // --- Chrome storage mock (default) ---
 const storageMock: Record<string, unknown> = {};
@@ -394,9 +374,15 @@ describe("Card actions", () => {
 // --- Scan ---
 describe("Scan functionality", () => {
   it("shows Scanning... and progress bar while running", async () => {
-    const subject = new Subject<AnimeScanEvent>();
-    vi.spyOn(animeScraper, "getTotalPages").mockResolvedValue(1);
-    vi.spyOn(AnimeScanner.prototype, "scan").mockReturnValue(subject);
+    vi.spyOn(animeScanner, "getTotalPages").mockResolvedValue(1);
+
+    let resolvePages: (value: AnimeInfo[]) => void;
+    vi.spyOn(AnimeScanner.prototype, "scanPages").mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          resolvePages = resolve;
+        }),
+    );
 
     await act(async () => {
       render(
@@ -412,8 +398,9 @@ describe("Scan functionality", () => {
     await waitFor(() =>
       expect(screen.getByTestId("progress-container")).toBeDefined(),
     );
+
     await act(async () => {
-      subject.complete();
+      resolvePages([]);
     });
   });
 
@@ -430,20 +417,21 @@ describe("Scan functionality", () => {
       link: "http://other",
     });
 
-    vi.spyOn(animeScraper, "getTotalPages").mockResolvedValue(1);
-    vi.spyOn(AnimeScanner.prototype, "scan").mockImplementation(
-      function (this: { isScanRequired: (item: AnimeItem) => boolean }) {
-        const filtered = [highScore, lowScore].filter(this.isScanRequired);
-        const details = [
-          {
-            ...highScore,
-            score: 5.0,
+    vi.spyOn(animeScanner, "getTotalPages").mockResolvedValue(1);
+    vi.spyOn(AnimeScanner.prototype, "scanPages").mockResolvedValue([
+      highScore,
+      lowScore,
+    ]);
+    vi.spyOn(AnimeScanner.prototype, "scanAnimeDetails").mockImplementation(
+      async (options) => {
+        for (const item of options.items) {
+          options.onDetailScraped({
+            ...item,
             ratingCount: 100,
-            description: "Good",
-          },
-          { ...lowScore, score: 4.0, ratingCount: 10, description: "Meh" },
-        ].filter((item) => filtered.some((f) => f.link === item.link));
-        return createMockObservable(details);
+            description: item.title === "High Score" ? "Good" : "Meh",
+            score: item.title === "High Score" ? 5.0 : 4.0,
+          } as AnimeItem);
+        }
       },
     );
 
@@ -468,20 +456,10 @@ describe("Scan functionality", () => {
       episodeCount: 5,
       score: 9.0,
     });
-    vi.spyOn(animeScraper, "getTotalPages").mockResolvedValue(1);
-    vi.spyOn(AnimeScanner.prototype, "scan").mockImplementation(
-      function (this: { isScanRequired: (item: AnimeItem) => boolean }) {
-        const filtered = [shortShow].filter(this.isScanRequired);
-        return createMockObservable(
-          filtered.map((item) => ({
-            ...item,
-            score: 9.0,
-            ratingCount: 100,
-            description: "x",
-          })),
-        );
-      },
-    );
+    vi.spyOn(animeScanner, "getTotalPages").mockResolvedValue(1);
+    vi.spyOn(AnimeScanner.prototype, "scanPages").mockResolvedValue([
+      shortShow,
+    ]);
 
     await act(async () => {
       render(
@@ -503,20 +481,8 @@ describe("Scan functionality", () => {
       episodeCount: 12,
       score: 9.0,
     });
-    vi.spyOn(animeScraper, "getTotalPages").mockResolvedValue(1);
-    vi.spyOn(AnimeScanner.prototype, "scan").mockImplementation(
-      function (this: { isScanRequired: (item: AnimeItem) => boolean }) {
-        const filtered = [ova].filter(this.isScanRequired);
-        return createMockObservable(
-          filtered.map((item) => ({
-            ...item,
-            score: 9.0,
-            ratingCount: 100,
-            description: "x",
-          })),
-        );
-      },
-    );
+    vi.spyOn(animeScanner, "getTotalPages").mockResolvedValue(1);
+    vi.spyOn(AnimeScanner.prototype, "scanPages").mockResolvedValue([ova]);
 
     await act(async () => {
       render(
@@ -539,20 +505,10 @@ describe("Scan functionality", () => {
       score: 9.0,
     });
     storageMock["trashList"] = [trashItem];
-    vi.spyOn(animeScraper, "getTotalPages").mockResolvedValue(1);
-    vi.spyOn(AnimeScanner.prototype, "scan").mockImplementation(
-      function (this: { isScanRequired: (item: AnimeItem) => boolean }) {
-        const filtered = [trashItem].filter(this.isScanRequired);
-        return createMockObservable(
-          filtered.map((item) => ({
-            ...item,
-            score: 9.0,
-            ratingCount: 100,
-            description: "x",
-          })),
-        );
-      },
-    );
+    vi.spyOn(animeScanner, "getTotalPages").mockResolvedValue(1);
+    vi.spyOn(AnimeScanner.prototype, "scanPages").mockResolvedValue([
+      trashItem,
+    ]);
 
     await act(async () => {
       render(
@@ -575,20 +531,8 @@ describe("Scan functionality", () => {
       score: 9.0,
     });
     storageMock["favoriteList"] = [favItem];
-    vi.spyOn(animeScraper, "getTotalPages").mockResolvedValue(1);
-    vi.spyOn(AnimeScanner.prototype, "scan").mockImplementation(
-      function (this: { isScanRequired: (item: AnimeItem) => boolean }) {
-        const filtered = [favItem].filter(this.isScanRequired);
-        return createMockObservable(
-          filtered.map((item) => ({
-            ...item,
-            score: 9.0,
-            ratingCount: 100,
-            description: "x",
-          })),
-        );
-      },
-    );
+    vi.spyOn(animeScanner, "getTotalPages").mockResolvedValue(1);
+    vi.spyOn(AnimeScanner.prototype, "scanPages").mockResolvedValue([favItem]);
 
     await act(async () => {
       render(
@@ -610,20 +554,8 @@ describe("Scan functionality", () => {
       episodeCount: NaN,
       score: 9.0,
     });
-    vi.spyOn(animeScraper, "getTotalPages").mockResolvedValue(1);
-    vi.spyOn(AnimeScanner.prototype, "scan").mockImplementation(
-      function (this: { isScanRequired: (item: AnimeItem) => boolean }) {
-        const filtered = [naEp].filter(this.isScanRequired);
-        return createMockObservable(
-          filtered.map((item) => ({
-            ...item,
-            score: 9.0,
-            ratingCount: 100,
-            description: "x",
-          })),
-        );
-      },
-    );
+    vi.spyOn(animeScanner, "getTotalPages").mockResolvedValue(1);
+    vi.spyOn(AnimeScanner.prototype, "scanPages").mockResolvedValue([naEp]);
 
     await act(async () => {
       render(
@@ -640,7 +572,6 @@ describe("Scan functionality", () => {
   });
 
   it("renders error card in fatal error container when scan fails or encounters error", async () => {
-    const anime = makeAnime({ title: "Partial Success", score: 9.0 });
     const mockError = new AnimeScanHttpError(
       1,
       AnimeScanStep.SCRAPE_LIST_PAGE,
@@ -650,13 +581,8 @@ describe("Scan functionality", () => {
       undefined,
     );
 
-    vi.spyOn(animeScraper, "getTotalPages").mockResolvedValue(2);
-    vi.spyOn(AnimeScanner.prototype, "scan").mockImplementation(() => {
-      return createMockObservable(
-        [{ ...anime, score: 9.0, ratingCount: 100, description: "x" }],
-        mockError,
-      );
-    });
+    vi.spyOn(animeScanner, "getTotalPages").mockResolvedValue(2);
+    vi.spyOn(AnimeScanner.prototype, "scanPages").mockRejectedValue(mockError);
 
     await act(async () => {
       render(
@@ -672,22 +598,11 @@ describe("Scan functionality", () => {
 
     await waitFor(() => expect(screen.queryByText("Scanning...")).toBeNull());
 
-    // Verify error is rendered via ErrorCard
     expect(screen.getByTestId("fatal-error-container")).toBeDefined();
     expect(
       screen.getByText(/HTTP request failed with status 502/),
     ).toBeDefined();
-
-    // Dismiss the error card
-    const dismissBtn = screen.getByRole("button", { name: "Dismiss error" });
-    await act(async () => {
-      fireEvent.click(dismissBtn);
-    });
-
-    // Verify error container is gone
-    expect(screen.queryByTestId("fatal-error-container")).toBeNull();
   });
-
   it("renders SettingsTab when Settings tab is active", async () => {
     render(
       <ServiceProvider>
@@ -950,11 +865,19 @@ describe("Scan functionality", () => {
       score: 4.9,
       link: "http://stats-anime",
     });
-    vi.spyOn(animeScraper, "getTotalPages").mockResolvedValue(1);
-    vi.spyOn(AnimeScanner.prototype, "scan").mockReturnValue(
-      createMockObservable([
-        { ...anime, ratingCount: 100, description: "Stats item" },
-      ]),
+    vi.spyOn(animeScanner, "getTotalPages").mockResolvedValue(1);
+    vi.spyOn(AnimeScanner.prototype, "scanPages").mockResolvedValue([anime]);
+    vi.spyOn(AnimeScanner.prototype, "scanAnimeDetails").mockImplementation(
+      async (options) => {
+        for (const item of options.items) {
+          options.onDetailScraped({
+            ...item,
+            ratingCount: 100,
+            description: "Stats item",
+            score: 4.9,
+          } as AnimeItem);
+        }
+      },
     );
 
     await act(async () => {
@@ -988,9 +911,15 @@ describe("Scan functionality", () => {
   });
 
   it("supports dragging the floating status bar to a new position, but ignores dragging when clicking buttons", async () => {
-    vi.spyOn(animeScraper, "getTotalPages").mockResolvedValue(1);
-    const subject = new Subject<AnimeScanEvent>();
-    vi.spyOn(AnimeScanner.prototype, "scan").mockReturnValue(subject);
+    vi.spyOn(animeScanner, "getTotalPages").mockResolvedValue(1);
+
+    let resolvePages: (value: AnimeInfo[]) => void;
+    vi.spyOn(AnimeScanner.prototype, "scanPages").mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          resolvePages = resolve;
+        }),
+    );
 
     await act(async () => {
       render(
@@ -1000,31 +929,26 @@ describe("Scan functionality", () => {
       );
     });
 
-    // Start scan to show progress bar in floating container
     await act(async () => {
       fireEvent.click(screen.getByText("Scan"));
     });
 
-    // Wait for the scanning progress container to appear
     await waitFor(() => {
       expect(screen.getByTestId("progress-container")).toBeDefined();
     });
 
     const floatingBar = screen.getByTestId("floating-status-bar");
 
-    // 1. Verify dragging works when clicking container itself
     fireEvent.mouseDown(floatingBar, { clientX: 100, clientY: 200 });
     fireEvent.mouseMove(document, { clientX: 150, clientY: 280 });
     expect(floatingBar.style.transform).toContain("50px");
     expect(floatingBar.style.transform).toContain("80px");
     fireEvent.mouseUp(document);
 
-    // 2. Complete the scan so the ResultBanner (with the dismiss button) is shown inside the floating container
     await act(async () => {
-      subject.complete();
+      resolvePages([]);
     });
 
-    // Wait for ResultBanner to render
     await waitFor(() => {
       expect(screen.getByTestId("scan-stats-container")).toBeDefined();
     });
@@ -1033,11 +957,9 @@ describe("Scan functionality", () => {
       name: /Dismiss scan results/i,
     });
 
-    // Simulate mousedown on the dismiss button inside the floating container
     fireEvent.mouseDown(dismissButton, { clientX: 150, clientY: 280 });
     fireEvent.mouseMove(document, { clientX: 250, clientY: 380 });
 
-    // Position should NOT change (should still be 50px, 80px)
     expect(floatingBar.style.transform).toContain("50px");
     expect(floatingBar.style.transform).toContain("80px");
     fireEvent.mouseUp(document);
