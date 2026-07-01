@@ -135,8 +135,7 @@ export function useAnimeScanner(
         failedCount: 0,
       });
 
-      // 4. Scan detail pages (Stage 2)
-      if (detailsTotalCount === 0) {
+      const completeScan = () => {
         onScanUpdate({
           updatedScannedList: [...scannedListRef.current],
           updatedFavoriteList: [...favoriteListRef.current],
@@ -148,6 +147,11 @@ export function useAnimeScanner(
           message: "Done!",
           step: 2,
         });
+      };
+
+      // 4. Scan detail pages (Stage 2)
+      if (detailsTotalCount === 0) {
+        completeScan();
         return;
       }
 
@@ -217,17 +221,7 @@ export function useAnimeScanner(
       });
 
       // Complete
-      onScanUpdate({
-        updatedScannedList: [...scannedListRef.current],
-        updatedFavoriteList: [...favoriteListRef.current],
-        updatedTrashList: [...trashListRef.current],
-      });
-      setIsScanning(false);
-      setProgress({
-        percent: 100,
-        message: "Done!",
-        step: 2,
-      });
+      completeScan();
     };
 
     setScanResult({
