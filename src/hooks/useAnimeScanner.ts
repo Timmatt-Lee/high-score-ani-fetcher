@@ -235,6 +235,8 @@ export function useAnimeScanner(
         (err instanceof Error || err instanceof DOMException) &&
         err.name === "AbortError"
       ) {
+        setIsScanning(false);
+        setProgress({ percent: 0, message: "", step: 1 });
         return;
       }
 
@@ -258,12 +260,7 @@ export function useAnimeScanner(
   };
 
   const cancelScan = () => {
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort();
-      abortControllerRef.current = null;
-    }
-    setIsScanning(false);
-    setProgress({ percent: 0, message: "", step: 1 });
+    abortControllerRef.current?.abort();
   };
 
   return {
