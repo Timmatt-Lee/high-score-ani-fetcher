@@ -27,13 +27,13 @@ const createMockAnime = (overrides: Partial<AnimeItem> = {}): AnimeItem => ({
 
 const mockAnimeScanner = {
   getTotalPages: async () => 4,
-  scrapeAnimesOnPage: async (page: number): Promise<any> => {
+  scanAnimesOnPage: async (page: number): Promise<any> => {
     return [
       createMockAnime({ title: `動漫 ${page}-1`, score: 4.9 }),
       createMockAnime({ title: `動漫 ${page}-2`, score: 4.8 }),
     ];
   },
-  scrapeAnimeDetails: async (link: string, page: number): Promise<any> => {
+  scanAnimeDetail: async (link: string, page: number): Promise<any> => {
     return {
       score: 4.9,
       ratingCount: 5000,
@@ -53,7 +53,7 @@ const mockAnimeScanner = {
     let completed = 0;
     for (const item of options.items) {
       await new Promise((resolve) => setTimeout(resolve, 10));
-      options.onDetailScraped(item, ++completed);
+      options.onDetailScanned(item, ++completed);
     }
   },
 };
@@ -119,7 +119,7 @@ const meta: Meta<typeof App> = {
         let completed = 0;
         for (const item of options.items) {
           await new Promise((resolve) => setTimeout(resolve, 10));
-          options.onDetailScraped(item, ++completed);
+          options.onDetailScanned(item, ++completed);
         }
       };
       return <Story />;
@@ -270,7 +270,7 @@ export const ScanCompleted: Story = {
       ];
     };
     mockAnimeScanner.scanAnimeDetails = async (options: any) => {
-      options.onDetailScraped(options.items[0], 1);
+      options.onDetailScanned(options.items[0], 1);
     };
     return (
       <ServiceProvider animeScanner={mockAnimeScanner as any}>
@@ -304,11 +304,11 @@ export const ScanError: Story = {
         ];
       };
       mockAnimeScanner.scanAnimeDetails = async (options: any) => {
-        options.onDetailScraped(options.items[0], 1);
+        options.onDetailScanned(options.items[0], 1);
         await new Promise((resolve) => setTimeout(resolve, 10));
         throw new AnimeScanHttpError(
           2,
-          AnimeScanStep.SCRAPE_LIST_PAGE,
+          AnimeScanStep.SCAN_LIST_PAGE,
           "https://ani.gamer.com.tw/animeList.php?page=2",
           "Internal Server Error",
           500,

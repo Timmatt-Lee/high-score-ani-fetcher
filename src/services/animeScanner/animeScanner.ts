@@ -230,11 +230,11 @@ export class AnimeScanner {
   }
 
   /**
-   * Scrapes basic info for all items on a single page.
+   * Scans basic info for all items on a single page.
    */
-  async scrapeAnimesOnPage(page: number): Promise<AnimeInfo[]> {
+  async scanAnimesOnPage(page: number): Promise<AnimeInfo[]> {
     const url = `${BASE_URL}/animeList.php?page=${page}`;
-    const text = await this.fetchUrl(url, page, AnimeScanStep.SCRAPE_LIST_PAGE);
+    const text = await this.fetchUrl(url, page, AnimeScanStep.SCAN_LIST_PAGE);
 
     const doc = new DOMParser().parseFromString(text, "text/html");
     const cards = doc.querySelectorAll("a.theme-list-main");
@@ -249,9 +249,9 @@ export class AnimeScanner {
   }
 
   /**
-   * Scrapes details for a single anime item.
+   * Scans details for a single anime item.
    */
-  async scrapeAnimeDetails(
+  async scanAnimeDetail(
     link: string,
     page: number,
     animeName?: string,
@@ -297,21 +297,21 @@ export class AnimeScanner {
   }
 
   /**
-   * Stage 1: Scrapes index pages sequentially.
+   * Stage 1: Scans index pages sequentially.
    * Returns a list of all scraped AnimeInfo.
    */
   async scanPages(options: {
     totalPages: number;
     requestDelayMs: number;
-    onPageScraped: (page: number, items: AnimeInfo[]) => void;
+    onPageScanned: (page: number, items: AnimeInfo[]) => void;
     signal?: AbortSignal;
   }): Promise<AnimeInfo[]> {
     const allItems: AnimeInfo[] = [];
     for (let page = 1; page <= options.totalPages; page++) {
       options.signal?.throwIfAborted();
-      const pageItems = await this.scrapeAnimesOnPage(page);
+      const pageItems = await this.scanAnimesOnPage(page);
       allItems.push(...pageItems);
-      options.onPageScraped(page, pageItems);
+      options.onPageScanned(page, pageItems);
 
       if (page < options.totalPages) {
         await this.delay(options.requestDelayMs);
@@ -321,25 +321,25 @@ export class AnimeScanner {
   }
 
   /**
-   * Stage 2: Scrapes detail pages sequentially for a list of items.
+   * Stage 2: Scans detail pages sequentially for a list of items.
    */
   async scanAnimeDetails(options: {
     items: AnimeInfo[];
     requestDelayMs: number;
-    onDetailScraped: (item: AnimeItem) => void;
+    onDetailScanned: (item: AnimeItem) => void;
     signal?: AbortSignal;
   }): Promise<void> {
     let completedCount = 0;
     for (const item of options.items) {
       options.signal?.throwIfAborted();
-      const details = await this.scrapeAnimeDetails(item.link, 0, item.title);
+      const details = await this.scanAnimeDetail(item.link, 0, item.title);
       const fullItem: AnimeItem = {
         ...item,
         ...details,
         scannedAt: new Date().toISOString(),
       };
       completedCount++;
-      options.onDetailScraped(fullItem);
+      options.onDetailScanned(fullItem);
 
       if (completedCount < options.items.length) {
         await this.delay(options.requestDelayMs);

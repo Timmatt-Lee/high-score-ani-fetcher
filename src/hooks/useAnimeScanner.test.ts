@@ -35,7 +35,7 @@ describe("useAnimeScanner hook", () => {
     ]);
     vi.spyOn(AnimeScanner.prototype, "scanAnimeDetails").mockImplementation(
       async (options) => {
-        options.onDetailScraped({
+        options.onDetailScanned({
           ...mockAnime,
           score: 9.0,
           ratingCount: 100,
@@ -68,13 +68,13 @@ describe("useAnimeScanner hook", () => {
     vi.spyOn(animeScanner, "getTotalPages").mockResolvedValue(1);
     vi.spyOn(AnimeScanner.prototype, "scanPages").mockImplementation(
       async (options) => {
-        options.onPageScraped(1, [mockAnime]);
+        options.onPageScanned(1, [mockAnime]);
         return [mockAnime];
       },
     );
     vi.spyOn(AnimeScanner.prototype, "scanAnimeDetails").mockImplementation(
       async (options) => {
-        options.onDetailScraped({
+        options.onDetailScanned({
           ...mockAnime,
           score: 9.0,
           ratingCount: 100,
@@ -138,7 +138,7 @@ describe("useAnimeScanner hook", () => {
     vi.spyOn(AnimeScanner.prototype, "scanAnimeDetails").mockImplementation(
       async (options) => {
         for (const item of options.items) {
-          options.onDetailScraped({
+          options.onDetailScanned({
             ...item,
             score: 9.0,
             ratingCount: 100,
@@ -227,7 +227,7 @@ describe("useAnimeScanner hook", () => {
     vi.spyOn(AnimeScanner.prototype, "scanPages").mockResolvedValue([lowScore]);
     vi.spyOn(AnimeScanner.prototype, "scanAnimeDetails").mockImplementation(
       async (options) => {
-        options.onDetailScraped({
+        options.onDetailScanned({
           ...lowScore,
           score: 4.0,
           ratingCount: 10,
@@ -376,7 +376,7 @@ describe("useAnimeScanner hook", () => {
     ]);
     vi.spyOn(AnimeScanner.prototype, "scanAnimeDetails").mockImplementation(
       async (options) => {
-        options.onDetailScraped({
+        options.onDetailScanned({
           ...expiredItem,
           score: 4.95,
         });

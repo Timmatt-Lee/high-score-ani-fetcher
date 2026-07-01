@@ -1,7 +1,7 @@
 import { AnimeScanStep } from "./animeScanStep";
 
 /**
- * Base class for all scraper errors.
+ * Base class for all scanner errors.
  */
 export abstract class AnimeScanError extends Error {
   page: number;

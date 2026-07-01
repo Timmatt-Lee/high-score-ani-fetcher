@@ -94,8 +94,8 @@ describe("ErrorCard", () => {
         expected: "When doing: fetching total pages",
       },
       {
-        source: AnimeScanStep.SCRAPE_LIST_PAGE,
-        expected: "When doing: scraping list page",
+        source: AnimeScanStep.SCAN_LIST_PAGE,
+        expected: "When doing: scanning list page",
       },
       {
         source: AnimeScanStep.PARSE_ANIME_INFO,

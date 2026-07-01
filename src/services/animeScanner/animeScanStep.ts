@@ -1,9 +1,9 @@
 /**
- * Defines the specific step or field that failed during the scraping process.
+ * Defines the specific step or field that failed during the scanning process.
  */
 export enum AnimeScanStep {
   GET_TOTAL_PAGES = "get_total_pages",
-  SCRAPE_LIST_PAGE = "scrape_list_page",
+  SCAN_LIST_PAGE = "scan_list_page",
   PARSE_ANIME_INFO = "parse_anime_info",
   PARSE_ANIME_DETAIL = "parse_anime_detail",
 }
@@ -15,8 +15,8 @@ export function getScanStepLabel(step: AnimeScanStep): string {
   switch (step) {
     case AnimeScanStep.GET_TOTAL_PAGES:
       return "fetching total pages";
-    case AnimeScanStep.SCRAPE_LIST_PAGE:
-      return "scraping list page";
+    case AnimeScanStep.SCAN_LIST_PAGE:
+      return "scanning list page";
     case AnimeScanStep.PARSE_ANIME_INFO:
       return "parsing anime info";
     case AnimeScanStep.PARSE_ANIME_DETAIL:

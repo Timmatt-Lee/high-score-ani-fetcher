@@ -100,8 +100,8 @@ describe("animeScanner.getTotalPages", () => {
   });
 });
 
-// --- scrapeAnimesOnPage ---
-describe("animeScanner.scrapeAnimesOnPage", () => {
+// --- scanAnimesOnPage ---
+describe("animeScanner.scanAnimesOnPage", () => {
   it("parses basic card info correctly", async () => {
     mockFetch(
       makeHtml(`
@@ -115,7 +115,7 @@ describe("animeScanner.scrapeAnimesOnPage", () => {
       </a>
     `),
     );
-    const result = await animeScanner.scrapeAnimesOnPage(1);
+    const result = await animeScanner.scanAnimesOnPage(1);
     expect(result).toHaveLength(1);
     expect(result[0].title).toBe("Test Anime");
     expect(result[0].episodeCount).toBe(12);
@@ -125,7 +125,7 @@ describe("animeScanner.scrapeAnimesOnPage", () => {
 
   it("throws AnimeScanParseError when title is missing", async () => {
     mockFetch(makeHtml('<a class="theme-list-main" href="/x"></a>'));
-    await expect(animeScanner.scrapeAnimesOnPage(1)).rejects.toThrow(
+    await expect(animeScanner.scanAnimesOnPage(1)).rejects.toThrow(
       AnimeScanParseError,
     );
   });
@@ -136,14 +136,14 @@ describe("animeScanner.scrapeAnimesOnPage", () => {
         '<a class="theme-list-main" href="/x"><p class="theme-name"></p></a>',
       ),
     );
-    await expect(animeScanner.scrapeAnimesOnPage(1)).rejects.toThrow(
+    await expect(animeScanner.scanAnimesOnPage(1)).rejects.toThrow(
       AnimeScanParseError,
     );
   });
 
   it("throws AnimeScanParseError when card has no href", async () => {
     mockFetch(makeHtml('<a class="theme-list-main"></a>'));
-    await expect(animeScanner.scrapeAnimesOnPage(1)).rejects.toThrow(
+    await expect(animeScanner.scanAnimesOnPage(1)).rejects.toThrow(
       AnimeScanParseError,
     );
   });
@@ -156,7 +156,7 @@ describe("animeScanner.scrapeAnimesOnPage", () => {
       </a>
     `),
     );
-    await expect(animeScanner.scrapeAnimesOnPage(1)).rejects.toThrow(
+    await expect(animeScanner.scanAnimesOnPage(1)).rejects.toThrow(
       AnimeScanParseError,
     );
   });
@@ -174,7 +174,7 @@ describe("animeScanner.scrapeAnimesOnPage", () => {
       </a>
     `),
     );
-    const result = await animeScanner.scrapeAnimesOnPage(1);
+    const result = await animeScanner.scanAnimesOnPage(1);
     expect(result[0].watchCount).toBe(0);
 
     mockFetch(
@@ -189,7 +189,7 @@ describe("animeScanner.scrapeAnimesOnPage", () => {
       </a>
     `),
     );
-    const resultInvalid = await animeScanner.scrapeAnimesOnPage(1);
+    const resultInvalid = await animeScanner.scanAnimesOnPage(1);
     expect(resultInvalid[0].watchCount).toBe(0);
   });
 
@@ -206,14 +206,14 @@ describe("animeScanner.scrapeAnimesOnPage", () => {
       </a>
     `),
     );
-    const result = await animeScanner.scrapeAnimesOnPage(1);
+    const result = await animeScanner.scanAnimesOnPage(1);
     expect(result[0].watchCount).toBe(25000);
   });
 
-  it("throws error when fetchUrl fails in scrapeAnimesOnPage", async () => {
+  it("throws error when fetchUrl fails in scanAnimesOnPage", async () => {
     const error = new AnimeScanHttpError(
       1,
-      AnimeScanStep.SCRAPE_LIST_PAGE,
+      AnimeScanStep.SCAN_LIST_PAGE,
       "http://x",
       "fail",
       404,
@@ -229,7 +229,7 @@ describe("animeScanner.scrapeAnimesOnPage", () => {
       },
       "fetchUrl",
     ).mockRejectedValue(error);
-    await expect(animeScanner.scrapeAnimesOnPage(1)).rejects.toThrow(error);
+    await expect(animeScanner.scanAnimesOnPage(1)).rejects.toThrow(error);
   });
 
   it("throws AnimeScanParseError when episode count parsing fails", async () => {
@@ -245,7 +245,7 @@ describe("animeScanner.scrapeAnimesOnPage", () => {
       </a>
     `),
     );
-    await expect(animeScanner.scrapeAnimesOnPage(1)).rejects.toThrow(
+    await expect(animeScanner.scanAnimesOnPage(1)).rejects.toThrow(
       AnimeScanParseError,
     );
   });
@@ -263,7 +263,7 @@ describe("animeScanner.scrapeAnimesOnPage", () => {
       </a>
     `),
     );
-    await expect(animeScanner.scrapeAnimesOnPage(1)).rejects.toThrow(
+    await expect(animeScanner.scanAnimesOnPage(1)).rejects.toThrow(
       AnimeScanParseError,
     );
   });
@@ -281,7 +281,7 @@ describe("animeScanner.scrapeAnimesOnPage", () => {
       </a>
     `),
     );
-    const result = await animeScanner.scrapeAnimesOnPage(1);
+    const result = await animeScanner.scanAnimesOnPage(1);
     expect(result).toHaveLength(1);
     expect(new Date(result[0].uploadDate).getUTCFullYear()).toBe(2026);
     expect(new Date(result[0].uploadDate).getUTCMonth()).toBe(3); // April is index 3
@@ -296,7 +296,7 @@ describe("animeScanner.scrapeAnimesOnPage", () => {
       </a>
     `),
     );
-    await expect(animeScanner.scrapeAnimesOnPage(1)).rejects.toThrow(
+    await expect(animeScanner.scanAnimesOnPage(1)).rejects.toThrow(
       AnimeScanParseError,
     );
   });
@@ -313,7 +313,7 @@ describe("animeScanner.scrapeAnimesOnPage", () => {
       </a>
     `),
     );
-    await expect(animeScanner.scrapeAnimesOnPage(1)).rejects.toThrow(
+    await expect(animeScanner.scanAnimesOnPage(1)).rejects.toThrow(
       AnimeScanParseError,
     );
   });
@@ -330,34 +330,34 @@ describe("animeScanner.scrapeAnimesOnPage", () => {
       </a>
     `),
     );
-    await expect(animeScanner.scrapeAnimesOnPage(1)).rejects.toThrow(
+    await expect(animeScanner.scanAnimesOnPage(1)).rejects.toThrow(
       AnimeScanParseError,
     );
   });
 
-  it("bubbles up unexpected errors in scrapeAnimesOnPage", async () => {
+  it("bubbles up unexpected errors in scanAnimesOnPage", async () => {
     mockFetch("Some HTML");
     vi.spyOn(DOMParser.prototype, "parseFromString").mockImplementation(() => {
       throw new Error("unexpected page crash");
     });
-    await expect(animeScanner.scrapeAnimesOnPage(1)).rejects.toThrow(
+    await expect(animeScanner.scanAnimesOnPage(1)).rejects.toThrow(
       "unexpected page crash",
     );
   });
 
-  it("bubbles up unexpected string errors in scrapeAnimesOnPage", async () => {
+  it("bubbles up unexpected string errors in scanAnimesOnPage", async () => {
     mockFetch("Some HTML");
     vi.spyOn(DOMParser.prototype, "parseFromString").mockImplementation(() => {
       throw "unexpected page string crash";
     });
-    await expect(animeScanner.scrapeAnimesOnPage(1)).rejects.toThrow(
+    await expect(animeScanner.scanAnimesOnPage(1)).rejects.toThrow(
       "unexpected page string crash",
     );
   });
 });
 
-// --- scrapeAnimeDetails ---
-describe("animeScanner.scrapeAnimeDetails", () => {
+// --- scanAnimeDetail ---
+describe("animeScanner.scanAnimeDetail", () => {
   it("parses details correctly", async () => {
     mockFetch(
       makeHtml(`
@@ -366,10 +366,7 @@ describe("animeScanner.scrapeAnimeDetails", () => {
       <div class="data-intro"><p>Great show</p></div>
     `),
     );
-    const result = await animeScanner.scrapeAnimeDetails(
-      "http://example.com",
-      1,
-    );
+    const result = await animeScanner.scanAnimeDetail("http://example.com", 1);
     expect(result.score).toBe(8.5);
     expect(result.ratingCount).toBe(1234);
     expect(result.description).toBe("Great show");
@@ -377,19 +374,13 @@ describe("animeScanner.scrapeAnimeDetails", () => {
 
   it("returns default score 0 when score is missing", async () => {
     mockFetch(makeHtml("<div>No score</div>"));
-    const result = await animeScanner.scrapeAnimeDetails(
-      "http://example.com",
-      1,
-    );
+    const result = await animeScanner.scanAnimeDetail("http://example.com", 1);
     expect(result.score).toBe(0);
   });
 
   it("returns default score 0 when score is NaN", async () => {
     mockFetch(makeHtml('<div class="score-overall-number">ABC</div>'));
-    const result = await animeScanner.scrapeAnimeDetails(
-      "http://example.com",
-      1,
-    );
+    const result = await animeScanner.scanAnimeDetail("http://example.com", 1);
     expect(result.score).toBe(0);
   });
 
@@ -399,10 +390,7 @@ describe("animeScanner.scrapeAnimeDetails", () => {
         '<div class="score-overall-number">8.5</div><div class="score-overall-people">NaN人評價</div>',
       ),
     );
-    const result = await animeScanner.scrapeAnimeDetails(
-      "http://example.com",
-      1,
-    );
+    const result = await animeScanner.scanAnimeDetail("http://example.com", 1);
     expect(result.ratingCount).toBe(0);
   });
 
@@ -412,10 +400,7 @@ describe("animeScanner.scrapeAnimeDetails", () => {
         '<div class="score-overall-number">8.5</div><div class="data-intro"><p>Great show</p></div>',
       ),
     );
-    const result = await animeScanner.scrapeAnimeDetails(
-      "http://example.com",
-      1,
-    );
+    const result = await animeScanner.scanAnimeDetail("http://example.com", 1);
     expect(result.ratingCount).toBe(0);
   });
 
@@ -425,14 +410,11 @@ describe("animeScanner.scrapeAnimeDetails", () => {
         '<div class="score-overall-number">8.5</div><div class="score-overall-people">1,234人評價</div>',
       ),
     );
-    const result = await animeScanner.scrapeAnimeDetails(
-      "http://example.com",
-      1,
-    );
+    const result = await animeScanner.scanAnimeDetail("http://example.com", 1);
     expect(result.description).toBe("");
   });
 
-  it("throws AnimeScanHttpError from fetchUrl in scrapeAnimeDetails", async () => {
+  it("throws AnimeScanHttpError from fetchUrl in scanAnimeDetail", async () => {
     const error = new AnimeScanHttpError(
       1,
       AnimeScanStep.PARSE_ANIME_DETAIL,
@@ -451,29 +433,29 @@ describe("animeScanner.scrapeAnimeDetails", () => {
       },
       "fetchUrl",
     ).mockRejectedValue(error);
-    await expect(
-      animeScanner.scrapeAnimeDetails("http://x", 1),
-    ).rejects.toThrow(error);
+    await expect(animeScanner.scanAnimeDetail("http://x", 1)).rejects.toThrow(
+      error,
+    );
   });
 
-  it("bubbles up unexpected crash in scrapeAnimeDetails", async () => {
+  it("bubbles up unexpected crash in scanAnimeDetail", async () => {
     mockFetch("Some HTML");
     vi.spyOn(DOMParser.prototype, "parseFromString").mockImplementation(() => {
       throw new Error("crash");
     });
-    await expect(
-      animeScanner.scrapeAnimeDetails("http://x", 1),
-    ).rejects.toThrow("crash");
+    await expect(animeScanner.scanAnimeDetail("http://x", 1)).rejects.toThrow(
+      "crash",
+    );
   });
 
-  it("bubbles up unexpected string crash in scrapeAnimeDetails", async () => {
+  it("bubbles up unexpected string crash in scanAnimeDetail", async () => {
     mockFetch("Some HTML");
     vi.spyOn(DOMParser.prototype, "parseFromString").mockImplementation(() => {
       throw "details string crash";
     });
-    await expect(
-      animeScanner.scrapeAnimeDetails("http://x", 1),
-    ).rejects.toThrow("details string crash");
+    await expect(animeScanner.scanAnimeDetail("http://x", 1)).rejects.toThrow(
+      "details string crash",
+    );
   });
 });
 
@@ -625,38 +607,38 @@ describe("AnimeScanner pipeline methods", () => {
         { link: "http://c", title: "C" } as AnimeInfo,
       ]);
 
-      const onPageScraped = vi.fn();
+      const onPageScanned = vi.fn();
       const delaySpy = vi.fn().mockResolvedValue(undefined);
 
       const scanner = new AnimeScanner();
-      scanner.scrapeAnimesOnPage = listSpy;
+      scanner.scanAnimesOnPage = listSpy;
       scanner.delay = delaySpy;
 
       const results = await scanner.scanPages({
         totalPages: 2,
         requestDelayMs: 10,
-        onPageScraped,
+        onPageScanned,
       });
 
       expect(listSpy).toHaveBeenCalledTimes(2);
-      expect(onPageScraped).toHaveBeenCalledTimes(2);
+      expect(onPageScanned).toHaveBeenCalledTimes(2);
       expect(delaySpy).toHaveBeenCalledTimes(1); // 1 delay between page 1 and page 2
       expect(results).toHaveLength(3);
       expect(results[0].title).toBe("A");
       expect(results[2].title).toBe("C");
     });
 
-    it("propagates scraping errors", async () => {
+    it("propagates scanning errors", async () => {
       const listSpy = vi.fn().mockRejectedValue(new Error("network error"));
 
       const scanner = new AnimeScanner();
-      scanner.scrapeAnimesOnPage = listSpy;
+      scanner.scanAnimesOnPage = listSpy;
 
       await expect(
         scanner.scanPages({
           totalPages: 1,
           requestDelayMs: 0,
-          onPageScraped: vi.fn(),
+          onPageScanned: vi.fn(),
         }),
       ).rejects.toThrow("network error");
     });
@@ -668,14 +650,14 @@ describe("AnimeScanner pipeline methods", () => {
       controller.abort();
 
       const scanner = new AnimeScanner();
-      scanner.scrapeAnimesOnPage = listSpy;
+      scanner.scanAnimesOnPage = listSpy;
       scanner.delay = vi.fn().mockResolvedValue(undefined);
 
       await expect(
         scanner.scanPages({
           totalPages: 5,
           requestDelayMs: 0,
-          onPageScraped: vi.fn(),
+          onPageScanned: vi.fn(),
           signal: controller.signal,
         }),
       ).rejects.toThrow(/aborted/);
@@ -700,24 +682,24 @@ describe("AnimeScanner pipeline methods", () => {
         } as AnimeDetails;
       });
 
-      const onDetailScraped = vi.fn();
+      const onDetailScanned = vi.fn();
       const delaySpy = vi.fn().mockResolvedValue(undefined);
 
       const scanner = new AnimeScanner();
-      scanner.scrapeAnimeDetails = detailSpy;
+      scanner.scanAnimeDetail = detailSpy;
       scanner.delay = delaySpy;
 
       await scanner.scanAnimeDetails({
         items,
         requestDelayMs: 10,
-        onDetailScraped,
+        onDetailScanned,
       });
 
       expect(detailSpy).toHaveBeenCalledTimes(2);
-      expect(onDetailScraped).toHaveBeenCalledTimes(2);
+      expect(onDetailScanned).toHaveBeenCalledTimes(2);
       expect(delaySpy).toHaveBeenCalledTimes(1); // 1 delay between item 1 and item 2
 
-      const call1 = onDetailScraped.mock.calls[0];
+      const call1 = onDetailScanned.mock.calls[0];
       expect(call1[0].title).toBe("A");
       expect(call1[0].score).toBe(9.0);
       expect(call1[0].description).toBe("Desc A");
@@ -735,13 +717,13 @@ describe("AnimeScanner pipeline methods", () => {
       );
 
       const scanner = new AnimeScanner();
-      scanner.scrapeAnimeDetails = vi.fn().mockRejectedValue(detailError);
+      scanner.scanAnimeDetail = vi.fn().mockRejectedValue(detailError);
 
       await expect(
         scanner.scanAnimeDetails({
           items: [{ link: "http://a", title: "A" } as AnimeInfo],
           requestDelayMs: 0,
-          onDetailScraped: vi.fn(),
+          onDetailScanned: vi.fn(),
         }),
       ).rejects.toThrow(detailError);
     });
@@ -753,14 +735,14 @@ describe("AnimeScanner pipeline methods", () => {
       controller.abort();
 
       const scanner = new AnimeScanner();
-      scanner.scrapeAnimeDetails = detailSpy;
+      scanner.scanAnimeDetail = detailSpy;
       scanner.delay = vi.fn().mockResolvedValue(undefined);
 
       await expect(
         scanner.scanAnimeDetails({
           items: [{ link: "http://a", title: "A" } as AnimeInfo],
           requestDelayMs: 0,
-          onDetailScraped: vi.fn(),
+          onDetailScanned: vi.fn(),
           signal: controller.signal,
         }),
       ).rejects.toThrow(/aborted/);

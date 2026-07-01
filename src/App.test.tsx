@@ -425,7 +425,7 @@ describe("Scan functionality", () => {
     vi.spyOn(AnimeScanner.prototype, "scanAnimeDetails").mockImplementation(
       async (options) => {
         for (const item of options.items) {
-          options.onDetailScraped({
+          options.onDetailScanned({
             ...item,
             ratingCount: 100,
             description: item.title === "High Score" ? "Good" : "Meh",
@@ -574,7 +574,7 @@ describe("Scan functionality", () => {
   it("renders error card in fatal error container when scan fails or encounters error", async () => {
     const mockError = new AnimeScanHttpError(
       1,
-      AnimeScanStep.SCRAPE_LIST_PAGE,
+      AnimeScanStep.SCAN_LIST_PAGE,
       "https://ani.gamer.com.tw/animeList.php?page=1",
       "HTTP 502",
       502,
@@ -870,7 +870,7 @@ describe("Scan functionality", () => {
     vi.spyOn(AnimeScanner.prototype, "scanAnimeDetails").mockImplementation(
       async (options) => {
         for (const item of options.items) {
-          options.onDetailScraped({
+          options.onDetailScanned({
             ...item,
             ratingCount: 100,
             description: "Stats item",

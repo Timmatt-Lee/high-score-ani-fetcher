@@ -88,7 +88,7 @@ export function useAnimeScanner(
       allItems = await animeScanner.scanPages({
         totalPages,
         requestDelayMs: settings.requestDelayMs,
-        onPageScraped: (page) => {
+        onPageScanned: (page) => {
           const percent = Math.round((page / totalPages) * 100);
           setProgress({
             percent,
@@ -156,7 +156,7 @@ export function useAnimeScanner(
         await animeScanner.scanAnimeDetails({
           items: itemsToScan,
           requestDelayMs: settings.requestDelayMs,
-          onDetailScraped: (item) => {
+          onDetailScanned: (item) => {
             localCompletedCount++;
             const detailsPercent = localCompletedCount / detailsTotalCount;
             const rawPercent = Math.floor(detailsPercent * 99);
