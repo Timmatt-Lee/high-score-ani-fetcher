@@ -112,8 +112,6 @@ export function AnimeTable({
           className={styles.tableBody}
           style={{
             height: `${virtualizer.getTotalSize()}px`,
-            width: "100%",
-            position: "relative",
           }}
         >
           {virtualizer.getVirtualItems().map((virtualRow) => {
@@ -123,11 +121,8 @@ export function AnimeTable({
                 key={item.link}
                 data-index={virtualRow.index}
                 ref={virtualizer.measureElement}
+                className={styles.virtualRowWrapper}
                 style={{
-                  position: "absolute",
-                  top: 0,
-                  left: 0,
-                  width: "100%",
                   transform: `translateY(${virtualRow.start}px)`,
                 }}
               >

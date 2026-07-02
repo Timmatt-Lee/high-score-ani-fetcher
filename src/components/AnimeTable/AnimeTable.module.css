@@ -163,6 +163,18 @@
   box-sizing: border-box;
 }
 
+.tableBody {
+  width: 100%;
+  position: relative;
+}
+
+.virtualRowWrapper {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+}
+
 @media (max-width: 768px) {
   .tableWrapper {
     overflow: visible;
