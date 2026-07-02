@@ -941,8 +941,8 @@ describe("Scan functionality", () => {
 
     fireEvent.mouseDown(floatingBar, { clientX: 100, clientY: 200 });
     fireEvent.mouseMove(document, { clientX: 150, clientY: 280 });
-    expect(floatingBar.style.transform).toContain("50px");
-    expect(floatingBar.style.transform).toContain("80px");
+    expect(floatingBar.style.getPropertyValue("--drag-x")).toBe("50px");
+    expect(floatingBar.style.getPropertyValue("--drag-y")).toBe("80px");
     fireEvent.mouseUp(document);
 
     await act(async () => {
@@ -960,8 +960,8 @@ describe("Scan functionality", () => {
     fireEvent.mouseDown(dismissButton, { clientX: 150, clientY: 280 });
     fireEvent.mouseMove(document, { clientX: 250, clientY: 380 });
 
-    expect(floatingBar.style.transform).toContain("50px");
-    expect(floatingBar.style.transform).toContain("80px");
+    expect(floatingBar.style.getPropertyValue("--drag-x")).toBe("50px");
+    expect(floatingBar.style.getPropertyValue("--drag-y")).toBe("80px");
     fireEvent.mouseUp(document);
   });
 });

@@ -229,9 +229,12 @@ function App() {
         <div
           ref={floatingBarRef}
           className={styles.floatingStatusContainer}
-          style={{
-            transform: `translate(calc(-50% + ${dragOffset.x}px), ${dragOffset.y}px)`,
-          }}
+          style={
+            {
+              "--drag-x": `${dragOffset.x}px`,
+              "--drag-y": `${dragOffset.y}px`,
+            } as React.CSSProperties
+          }
           onMouseDown={handleMouseDown}
           data-testid="floating-status-bar"
         >

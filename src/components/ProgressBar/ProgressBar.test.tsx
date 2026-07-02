@@ -24,7 +24,7 @@ describe("ProgressBar", () => {
     expect(step2.className).toContain("active");
 
     const step2Inner = screen.getByTestId("step2-inner");
-    expect(step2Inner.style.width).toBe("50%");
+    expect(step2Inner.style.getPropertyValue("--percent")).toBe("50%");
   });
 
   it("renders Step 1 active and Step 2 inactive", () => {
@@ -42,7 +42,7 @@ describe("ProgressBar", () => {
     expect(step1.className).toContain("active");
 
     const step1Inner = screen.getByTestId("step1-inner");
-    expect(step1Inner.style.width).toBe("20%");
+    expect(step1Inner.style.getPropertyValue("--percent")).toBe("20%");
 
     // Step 2 should be inactive
     const step2 = screen.getByTestId("step-circle-2");
@@ -69,7 +69,9 @@ describe("ProgressBar", () => {
       />,
     );
     const zeroProgressInner = screen.getByTestId("step1-inner");
-    expect(zeroProgressInner.style.transition).toBe("none");
+    expect(zeroProgressInner.style.getPropertyValue("--transition")).toBe(
+      "none",
+    );
 
     // Test empty message
     rerender(
