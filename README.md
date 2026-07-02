@@ -1,4 +1,4 @@
-# 巴哈姆特動漫瘋 Scanner
+# 巴哈動畫評分
 
 [![CI Pipeline](https://github.com/Timmatt-Lee/high-score-ani-fetcher/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/Timmatt-Lee/high-score-ani-fetcher/actions/workflows/ci.yml)
 [![Coverage Status](https://img.shields.io/badge/coverage-%E2%89%A599%25-brightgreen.svg?style=flat-square)](#-testing)
@@ -8,11 +8,11 @@
 [![License](https://img.shields.io/github/license/Timmatt-Lee/high-score-ani-fetcher?style=flat-square&color=orange)](LICENSE)
 [![CodeQL Analysis](https://github.com/Timmatt-Lee/high-score-ani-fetcher/actions/workflows/codeql-analysis.yml/badge.svg)](https://github.com/Timmatt-Lee/high-score-ani-fetcher/actions/workflows/codeql-analysis.yml)
 
-A modern Chrome Extension built with React, TypeScript, and Vite that fetches and filters high-score anime from 巴哈姆特動漫瘋 (動畫瘋 - ani.gamer.com.tw).
+A modern Chrome Extension built with React, TypeScript, and Vite that fetches and filters high-score anime from [巴哈姆特動漫瘋](ani.gamer.com.tw).
 
 ## 🚀 Features
 
-- **Fetch High Scores**: Automatically retrieves anime data from 巴哈姆特動漫瘋.
+- **Fetch High Scores**: Automatically retrieves anime data from [巴哈姆特動漫瘋](ani.gamer.com.tw).
 - **Filter & Sort**: Easily sort and filter through anime lists based on user ratings.
 - **Modern Tech Stack**: Built with React 19, TypeScript, and Vite for blazing fast development.
 - **Robust Quality Control**: Includes strict ESLint rules, Vitest for unit/coverage testing, and Husky for pre-commit hooks.
@@ -96,4 +96,4 @@ This project maintains a strictly 99% test coverage standard (the AI-augmented g
 
 ## 📜 License
 
-This project is licensed under the terms specified in the `LICENSE` file.
+This project is licensed under the terms specified in the [LICENSE](LICENSE) file.
