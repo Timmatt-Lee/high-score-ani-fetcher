@@ -62,10 +62,12 @@ export function ProgressBar({
             ) : step.isActive ? (
               <div
                 className={styles.barInner}
-                style={{
-                  width: `${step.percent}%`,
-                  transition: step.percent === 0 ? "none" : undefined,
-                }}
+                style={
+                  {
+                    "--percent": `${step.percent}%`,
+                    "--transition": step.percent === 0 ? "none" : undefined,
+                  } as React.CSSProperties
+                }
                 data-testid={`step${step.index + 1}-inner`}
               />
             ) : (
