@@ -12,11 +12,15 @@ test.describe("Popup Layout", () => {
   });
 
   test("should switch between tabs", async ({ page }) => {
-    const favTab = page.getByRole("button").filter({ hasText: /Favorites/ });
-    const resultsTab = page.getByRole("button").filter({ hasText: /Results/ });
+    const favTab = page.getByTestId("tab-favorites");
+    const resultsTab = page.getByTestId("tab-scanned");
+    const settingsTab = page.getByTestId("tab-settings");
 
     await favTab.click();
     await expect(page.getByText("No anime found in this list.")).toBeVisible();
+
+    await settingsTab.click();
+    await expect(page.getByTestId("settings-tab")).toBeVisible();
 
     await resultsTab.click();
     await expect(page.getByText("No anime found in this list.")).toBeVisible();
