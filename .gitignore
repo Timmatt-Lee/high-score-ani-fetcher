@@ -30,3 +30,6 @@ storybook-static/
 
 # Tooling
 .antigravitycli/
+
+# Build artifacts
+extension.zip
