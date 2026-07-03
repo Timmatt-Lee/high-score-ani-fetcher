@@ -136,7 +136,7 @@ For any privacy questions or support requests, please contact the developer via 
 Timmatt Lee
 
 **Contact Email** [REQUIRED]
-<timmatt@example.com>
+<lee.timmatt+ctx@gmail.com>
 
 **Support URL / Email** [RECOMMENDED]
 <https://github.com/Timmatt-Lee/high-score-ani-fetcher/issues>
