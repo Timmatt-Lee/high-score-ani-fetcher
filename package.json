@@ -27,7 +27,7 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
-    "@crxjs/vite-plugin": "^2.5.0",
+    "@crxjs/vite-plugin": "^2.7.1",
     "@eslint/js": "^10.0.1",
     "@playwright/test": "^1.62.0",
     "@storybook/addon-essentials": "^8.6.18",
