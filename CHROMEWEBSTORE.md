@@ -73,6 +73,9 @@ Traditional Chinese
 | ------------------------ | ---------------- | ------------------------------------------------------------------------------------------------------------------------------ |
 | `storage`                | permissions      | Used to save user preferences, sorting criteria, and temporary anime rating cache data locally to avoid redundant scans.       |
 | `tabs`                   | permissions      | Used to programmatically open the corresponding anime details page on Gamer Anime Crazy in a new tab when a user clicks a row. |
+| `declarativeNetRequest`  | permissions      | Used to modify HTTP headers (removing cross-origin Origin and setting Referer) for anime list and details requests.            |
+| `cookies`                | permissions      | Used to include session credentials when fetching anime information from Gamer Anime Crazy.                                    |
+| `scripting`              | permissions      | Used to securely execute fetch requests within open Gamer Anime Crazy tabs to verify and bypass Cloudflare challenge checks.   |
 | `*://ani.gamer.com.tw/*` | host_permissions | Used to fetch the anime titles and rating information from the Gamer Anime Crazy API and web pages.                            |
 
 ---

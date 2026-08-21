@@ -1,0 +1,24 @@
+[
+  {
+    "id": 1,
+    "priority": 1,
+    "action": {
+      "type": "modifyHeaders",
+      "requestHeaders": [
+        {
+          "header": "Referer",
+          "operation": "set",
+          "value": "https://ani.gamer.com.tw/"
+        },
+        {
+          "header": "Origin",
+          "operation": "remove"
+        }
+      ]
+    },
+    "condition": {
+      "urlFilter": "||ani.gamer.com.tw",
+      "resourceTypes": ["xmlhttprequest", "other", "sub_frame", "main_frame"]
+    }
+  }
+]

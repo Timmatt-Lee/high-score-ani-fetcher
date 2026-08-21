@@ -19,36 +19,79 @@ export class AnimeScanner {
     scanStep: AnimeScanStep,
     animeName?: string,
   ): Promise<string> {
-    let response: Response;
-    try {
-      response = await fetch(url, {
-        credentials: "include",
-        headers: {
-          Referer: "https://ani.gamer.com.tw/",
-        },
-      });
-    } catch (err) {
-      const errorMsg = err instanceof Error ? err.message : String(err);
-      throw new AnimeScanHttpError(page, scanStep, url, errorMsg, 0, animeName);
+    let responseText: string | null = null;
+    let responseStatus = 200;
+    let isOk = true;
+
+    // Check if an open tab on ani.gamer.com.tw exists to execute same-origin fetch and bypass Cloudflare WAF challenge
+    if (typeof chrome !== "undefined" && chrome.tabs && chrome.scripting) {
+      try {
+        const tabs = await chrome.tabs.query({ url: "*://ani.gamer.com.tw/*" });
+        const targetTabId = tabs[0]?.id;
+        if (targetTabId !== undefined) {
+          const [firstResult] = await chrome.scripting.executeScript({
+            target: { tabId: targetTabId },
+            func: async (targetUrl: string) => {
+              const resp = await fetch(targetUrl, { credentials: "include" });
+              const text = await resp.text();
+              return {
+                ok: resp.ok,
+                status: resp.status,
+                text,
+              };
+            },
+            args: [url],
+          });
+
+          if (firstResult?.result) {
+            isOk = firstResult.result.ok;
+            responseStatus = firstResult.result.status;
+            responseText = firstResult.result.text;
+          }
+        }
+      } catch {
+        // Fall back to direct fetch if scripting fails or is disallowed
+      }
     }
 
-    if (response.ok) {
-      return await response.text();
+    if (responseText === null) {
+      let response: Response;
+      try {
+        response = await fetch(url, {
+          credentials: "include",
+        });
+      } catch (err) {
+        const errorMsg = err instanceof Error ? err.message : String(err);
+        throw new AnimeScanHttpError(
+          page,
+          scanStep,
+          url,
+          errorMsg,
+          0,
+          animeName,
+        );
+      }
+
+      isOk = response.ok;
+      responseStatus = response.status;
+      try {
+        responseText = await response.text();
+      } catch {
+        responseText = "";
+      }
     }
 
-    let snippet = "";
-    try {
-      const t = await response.text();
-      snippet = t.slice(0, 200);
-    } catch {
-      // Swallowing the error is safe and intentional because snippet is just a helper for debugging and defaults to empty.
+    if (isOk && responseText !== null) {
+      return responseText;
     }
+
+    const snippet = responseText ? responseText.slice(0, 200) : "";
     throw new AnimeScanHttpError(
       page,
       scanStep,
       url,
       snippet,
-      response.status,
+      responseStatus,
       animeName,
     );
   }
