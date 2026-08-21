@@ -596,6 +596,212 @@ describe("AnimeScanner pipeline methods", () => {
     }
   });
 
+  it("fetches via chrome.scripting when open Bahamut tab exists", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: true,
+        status: 200,
+        text: async () => "<html><body>Tab HTML content</body></html>",
+      }),
+    );
+
+    const mockExecuteScript = vi
+      .fn()
+      .mockImplementation(
+        async ({
+          func,
+          args,
+        }: {
+          func: (url: string) => Promise<unknown>;
+          args: [string];
+        }) => {
+          const result = await func(args[0]);
+          return [{ result }];
+        },
+      );
+    const mockQuery = vi.fn().mockResolvedValue([{ id: 123 }]);
+
+    vi.stubGlobal("chrome", {
+      tabs: { query: mockQuery },
+      scripting: { executeScript: mockExecuteScript },
+    });
+
+    const scraper = animeScanner as unknown as {
+      fetchUrl: (
+        url: string,
+        page: number,
+        scanStep: AnimeScanStep,
+      ) => Promise<string>;
+    };
+
+    const text = await scraper.fetchUrl(
+      "https://ani.gamer.com.tw/animeList.php?page=1",
+      1,
+      AnimeScanStep.GET_TOTAL_PAGES,
+    );
+
+    expect(text).toBe("<html><body>Tab HTML content</body></html>");
+    expect(mockQuery).toHaveBeenCalledWith({ url: "*://ani.gamer.com.tw/*" });
+    expect(mockExecuteScript).toHaveBeenCalledWith({
+      target: { tabId: 123 },
+      func: expect.any(Function),
+      args: ["https://ani.gamer.com.tw/animeList.php?page=1"],
+    });
+  });
+
+  it("throws AnimeScanHttpError when chrome.scripting returns non-ok status", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: false,
+        status: 403,
+        text: async () => "Forbidden challenge from tab",
+      }),
+    );
+
+    const mockExecuteScript = vi
+      .fn()
+      .mockImplementation(
+        async ({
+          func,
+          args,
+        }: {
+          func: (url: string) => Promise<unknown>;
+          args: [string];
+        }) => {
+          const result = await func(args[0]);
+          return [{ result }];
+        },
+      );
+    const mockQuery = vi.fn().mockResolvedValue([{ id: 123 }]);
+
+    vi.stubGlobal("chrome", {
+      tabs: { query: mockQuery },
+      scripting: { executeScript: mockExecuteScript },
+    });
+
+    const scraper = animeScanner as unknown as {
+      fetchUrl: (
+        url: string,
+        page: number,
+        scanStep: AnimeScanStep,
+      ) => Promise<string>;
+    };
+
+    await expect(
+      scraper.fetchUrl(
+        "https://ani.gamer.com.tw/animeList.php?page=1",
+        1,
+        AnimeScanStep.GET_TOTAL_PAGES,
+      ),
+    ).rejects.toThrow("HTTP request failed with status 403");
+  });
+
+  it("falls back to direct fetch when chrome.tabs.query throws or finds no tab", async () => {
+    const mockQuery = vi.fn().mockRejectedValue(new Error("tabs query failed"));
+    vi.stubGlobal("chrome", {
+      tabs: { query: mockQuery },
+      scripting: { executeScript: vi.fn() },
+    });
+
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: true,
+        status: 200,
+        text: async () => "Fallback direct fetch HTML",
+        headers: { get: () => null },
+      }),
+    );
+
+    const scraper = animeScanner as unknown as {
+      fetchUrl: (
+        url: string,
+        page: number,
+        scanStep: AnimeScanStep,
+      ) => Promise<string>;
+    };
+
+    const text = await scraper.fetchUrl(
+      "https://ani.gamer.com.tw/animeList.php?page=1",
+      1,
+      AnimeScanStep.GET_TOTAL_PAGES,
+    );
+
+    expect(text).toBe("Fallback direct fetch HTML");
+  });
+
+  it("falls back to direct fetch when tabs array is empty or tab id is undefined", async () => {
+    const mockQuery = vi.fn().mockResolvedValue([{ id: undefined }]);
+    vi.stubGlobal("chrome", {
+      tabs: { query: mockQuery },
+      scripting: { executeScript: vi.fn() },
+    });
+
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: true,
+        status: 200,
+        text: async () => "Direct fetch because tab id is undefined",
+        headers: { get: () => null },
+      }),
+    );
+
+    const scraper = animeScanner as unknown as {
+      fetchUrl: (
+        url: string,
+        page: number,
+        scanStep: AnimeScanStep,
+      ) => Promise<string>;
+    };
+
+    const text = await scraper.fetchUrl(
+      "https://ani.gamer.com.tw/animeList.php?page=1",
+      1,
+      AnimeScanStep.GET_TOTAL_PAGES,
+    );
+
+    expect(text).toBe("Direct fetch because tab id is undefined");
+  });
+
+  it("falls back to direct fetch when executeScript result is undefined", async () => {
+    const mockExecuteScript = vi.fn().mockResolvedValue([{}]);
+    const mockQuery = vi.fn().mockResolvedValue([{ id: 456 }]);
+
+    vi.stubGlobal("chrome", {
+      tabs: { query: mockQuery },
+      scripting: { executeScript: mockExecuteScript },
+    });
+
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: true,
+        status: 200,
+        text: async () => "Direct fetch because result is undefined",
+        headers: { get: () => null },
+      }),
+    );
+
+    const scraper = animeScanner as unknown as {
+      fetchUrl: (
+        url: string,
+        page: number,
+        scanStep: AnimeScanStep,
+      ) => Promise<string>;
+    };
+
+    const text = await scraper.fetchUrl(
+      "https://ani.gamer.com.tw/animeList.php?page=1",
+      1,
+      AnimeScanStep.GET_TOTAL_PAGES,
+    );
+
+    expect(text).toBe("Direct fetch because result is undefined");
+  });
+
   describe("scanPages", () => {
     it("scrapes index pages sequentially and collects all items", async () => {
       const listSpy = vi.fn();
