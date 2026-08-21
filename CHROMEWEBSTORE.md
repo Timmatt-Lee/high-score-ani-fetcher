@@ -151,10 +151,11 @@ Timmatt Lee
 
 ## Version History
 
-| Version | Date       | Changes                                          | Status    |
-| ------- | ---------- | ------------------------------------------------ | --------- |
-| 1.0.0   | 2026-07-02 | Initial release preparing for store publication. | Published |
-| 1.0.1   | 2026-07-05 | Add CI/CD automated deployment workflow.         | Published |
+| Version | Date       | Changes                                                           | Status    |
+| ------- | ---------- | ----------------------------------------------------------------- | --------- |
+| 1.0.0   | 2026-07-02 | Initial release preparing for store publication.                  | Published |
+| 1.0.1   | 2026-07-05 | Add CI/CD automated deployment workflow.                          | Published |
+| 1.0.2   | 2026-08-21 | Fix Cloudflare 403 challenge using tab scripting proxy and rules. | Published |
 
 ---
 

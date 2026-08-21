@@ -9,12 +9,7 @@ interface AnimeTableProps {
   activeTab: Tab;
   list: AnimeItem[];
   sortBy:
-    | "title"
-    | "score"
-    | "watchCount"
-    | "uploadDate"
-    | "episodeCount"
-    | null;
+    "title" | "score" | "watchCount" | "uploadDate" | "episodeCount" | null;
   sortOrder: "asc" | "desc";
   onSort: (
     field: "title" | "score" | "watchCount" | "uploadDate" | "episodeCount",
